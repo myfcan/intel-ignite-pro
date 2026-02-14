@@ -133,16 +133,16 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
 
           {/* CTA */}
           <button
-            className="w-full py-3 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]"
+            className="w-full py-3 px-4 rounded-xl text-[13px] font-bold flex items-center gap-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]"
             style={{
               background: 'linear-gradient(135deg, hsl(239 84% 67%), hsl(258 90% 66%))',
               color: 'white',
               boxShadow: '0 4px 12px hsl(239 84% 67% / 0.25)',
             }}
           >
-            <Zap className="w-4 h-4" />
-            Continuar Aprendendo
-            <ChevronRight className="w-3.5 h-3.5 ml-auto opacity-70" />
+            <Zap className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 text-left">Continuar Aprendendo</span>
+            <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
           </button>
         </div>
       </motion.div>
