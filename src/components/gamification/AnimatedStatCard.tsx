@@ -71,10 +71,10 @@ export const AnimatedStatCard = ({
         background: isColored
           ? `linear-gradient(145deg, ${gradientFrom}, ${gradientTo})`
           : '#FFFFFF',
-        border: isColored ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        border: isColored ? 'none' : '1px solid rgba(0,0,0,0.04)',
         boxShadow: isColored
-          ? `0 4px 20px ${gradientFrom}30`
-          : '0 2px 12px rgba(0,0,0,0.06)',
+          ? `0 8px 32px ${gradientFrom}30`
+          : '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)',
       }}
     >
       <div className="flex items-center justify-between mb-3">
