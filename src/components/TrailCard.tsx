@@ -108,7 +108,7 @@ const TrailCard = ({
             ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
             : isGold
               ? 'linear-gradient(135deg, #F5D060, #D4A017, #B8860B)'
-              : `linear-gradient(135deg, ${theme.accent}, #10B981, #06B6D4, ${theme.accent})`,
+              : `linear-gradient(135deg, ${theme.accent}, #818CF8, #06B6D4, ${theme.accent})`,
           backgroundSize: isLocked || isGold ? '100% 100%' : '300% 300%',
           animation: isLocked || isGold ? undefined : 'aurora-shift 8s ease infinite',
         }}
