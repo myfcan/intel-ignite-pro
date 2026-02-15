@@ -281,10 +281,10 @@ const Dashboard = () => {
 
   const TRAIL_CATEGORY_MAP: Record<number, string> = {
     1: 'Fundamentos',
-    2: 'Negócios',
-    3: 'Copyright',
-    4: 'Renda Extra',
-    5: 'Profissionais',
+    2: 'Profissionais',
+    3: 'Negócios',
+    4: 'Copyright',
+    5: 'Renda Extra',
     6: 'Vendas',
   };
 
