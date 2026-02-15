@@ -8,7 +8,7 @@ import TrailCard from "@/components/TrailCard";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { GamificationHeader } from "@/components/gamification/GamificationHeader";
 import { useUserGamification } from "@/hooks/useUserGamification";
 import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
@@ -552,31 +552,40 @@ const Dashboard = () => {
               </div>
 
               {/* Trail cards grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {visibleTrails.map((trail, index) => {
-                  const globalIndex = trailPage * TRAILS_PER_PAGE + index;
-                  const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-                  const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
-                  const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
-                  const previousTrail = trails[globalIndex - 1];
-                  const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
-                  const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={trailPage}
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -40 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                >
+                  {visibleTrails.map((trail, index) => {
+                    const globalIndex = trailPage * TRAILS_PER_PAGE + index;
+                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                    const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+                    const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
+                    const previousTrail = trails[globalIndex - 1];
+                    const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
+                    const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
 
-                  return (
-                    <TrailCard
-                      key={trail.id}
-                      trail={trail}
-                      Icon={Icon}
-                      progress={trailProgress?.progress || 0}
-                      completedLessons={trailProgress?.completedLessons || 0}
-                      totalLessons={trailProgress?.totalLessons || 0}
-                      status={trailProgress?.status || 'locked'}
-                      gradient={gradient}
-                      isNext={isNext}
-                    />
-                  );
-                })}
-              </div>
+                    return (
+                      <TrailCard
+                        key={trail.id}
+                        trail={trail}
+                        Icon={Icon}
+                        progress={trailProgress?.progress || 0}
+                        completedLessons={trailProgress?.completedLessons || 0}
+                        totalLessons={trailProgress?.totalLessons || 0}
+                        status={trailProgress?.status || 'locked'}
+                        gradient={gradient}
+                        isNext={isNext}
+                      />
+                    );
+                  })}
+                </motion.div>
+              </AnimatePresence>
             </motion.div>
 
             {/* ===== FOR YOU - Feature Cards ===== */}
