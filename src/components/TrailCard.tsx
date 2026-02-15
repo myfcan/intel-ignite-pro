@@ -24,10 +24,10 @@ const TRAIL_THEMES = [
   { accent: '#6366F1', label: 'Fundamentos' },
   { accent: '#3B82F6', label: 'Profissionais' },
   { accent: '#F59E0B', label: 'Avançado' },
-  { accent: '#8B5CF6', label: 'Negócios' },
+  { accent: '#10B981', label: 'Vibe Core' },
   { accent: '#7C3AED', label: 'Copyright' },
   { accent: '#D4A017', label: 'Renda Extra', isGold: true },
-  { accent: '#10B981', label: 'Vibe Core' },
+  { accent: '#8B5CF6', label: 'Negócios' },
   { accent: '#EC4899', label: 'Vendas' },
 ];
 
