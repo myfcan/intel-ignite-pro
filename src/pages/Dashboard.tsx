@@ -277,7 +277,7 @@ const Dashboard = () => {
     'IA para Profissionais': 'from-blue-500 to-blue-600',
     'Expert em vendas com IA': 'from-pink-500 to-pink-600',
     'Dominando as IAs Avançado': 'from-amber-500 to-orange-600',
-    'Vibe Core: Criando Apps com IA': 'from-emerald-500 to-teal-600',
+    'Vibe Code: Criando Apps com IA': 'from-emerald-500 to-teal-600',
   };
 
   // Find active trail for CourseProgressCard
