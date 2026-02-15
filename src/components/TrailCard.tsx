@@ -22,10 +22,10 @@ interface TrailCardProps {
 
 const TRAIL_THEMES = [
   { accent: '#6366F1', label: 'Fundamentos' },
+  { accent: '#3B82F6', label: 'Profissionais' },
   { accent: '#8B5CF6', label: 'Negócios' },
   { accent: '#7C3AED', label: 'Copyright' },
   { accent: '#D4A017', label: 'Renda Extra', isGold: true },
-  { accent: '#3B82F6', label: 'Profissionais' },
   { accent: '#EC4899', label: 'Vendas' },
 ];
 
