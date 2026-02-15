@@ -258,7 +258,7 @@ const Dashboard = () => {
     '🎓': GraduationCap,
     '📱': Zap,
     '💼': Target,
-    '💰': Rocket,
+    '💰': DollarSign,
   };
 
   const TRAIL_GRADIENTS: { [key: string]: string } = {
@@ -267,6 +267,7 @@ const Dashboard = () => {
     'Dominando Copyright Com IA': 'from-purple-500 to-purple-600',
     'Renda Extra com IA': 'from-yellow-500 to-yellow-600',
     'IA para Profissionais': 'from-blue-500 to-blue-600',
+    'Expert em vendas com IA': 'from-pink-500 to-pink-600',
   };
 
   // Find active trail for CourseProgressCard
@@ -284,6 +285,7 @@ const Dashboard = () => {
     3: 'Copyright',
     4: 'Renda Extra',
     5: 'Profissionais',
+    6: 'Vendas',
   };
 
   return (
@@ -606,61 +608,40 @@ const Dashboard = () => {
                   </div>
                 </motion.div>
 
-                {/* Curso Renda Extra - GOLD PREMIUM */}
+                {/* Desafios 21 Dias */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.2 }}
-                  onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
-                  className={`group rounded-2xl overflow-hidden transition-all duration-300 ${
-                    canAccessAdmin ? 'cursor-pointer hover:-translate-y-2' : 'cursor-not-allowed opacity-60'
-                  }`}
+                  className="cursor-pointer group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1.5"
                   style={{
-                    background: 'white',
                     border: '2px solid transparent',
-                    backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #F5D060, #D4A017, #B8860B, #D4A017, #F5D060)',
+                    backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899, #8B5CF6, #6366F1)',
                     backgroundOrigin: 'border-box',
                     backgroundClip: 'padding-box, border-box',
-                    boxShadow: '0 0 24px rgba(212, 160, 23, 0.2), 0 8px 32px -4px rgba(212, 160, 23, 0.15), 0 2px 8px rgba(0,0,0,0.04)',
+                    boxShadow: '0 0 24px rgba(99, 102, 241, 0.15), 0 8px 32px -4px rgba(139, 92, 246, 0.12), 0 2px 8px rgba(0,0,0,0.04)',
                   }}
                 >
                   <div
-                    className="h-36 sm:h-40 flex items-end justify-center pb-5 relative overflow-hidden"
-                    style={{ background: 'linear-gradient(160deg, #FDF8E8 0%, #F5EDCF 50%, #EDE0A8 100%)' }}
+                    className="h-36 sm:h-40 flex items-center justify-center relative overflow-hidden"
+                    style={{ background: 'linear-gradient(160deg, #EEF2FF 0%, #E0E7FF 50%, #C7D2FE 100%)' }}
                   >
-                    {/* Gold shimmer overlay */}
-                    <div
-                      className="absolute inset-0 opacity-30 pointer-events-none"
+                    <div className="absolute inset-0 opacity-20 pointer-events-none"
                       style={{
-                        backgroundImage: 'radial-gradient(circle at 30% 40%, rgba(212, 160, 23, 0.3) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(245, 208, 96, 0.25) 0%, transparent 50%)',
+                        backgroundImage: 'radial-gradient(circle at 30% 40%, rgba(99, 102, 241, 0.3) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(236, 72, 153, 0.2) 0%, transparent 50%)',
                       }}
                     />
-                    <div className="flex items-end gap-1.5 h-20 relative z-10">
-                      {[30, 45, 35, 55, 70, 60, 80].map((h, i) => (
-                        <div
-                          key={i}
-                          className="w-4 sm:w-5 rounded-t-md"
-                          style={{
-                            height: `${h}%`,
-                            background: `linear-gradient(180deg, rgba(245, 208, 96, ${0.6 + i * 0.05}), rgba(184, 134, 11, ${0.4 + i * 0.08}))`,
-                          }}
-                        />
-                      ))}
+                    <div className="relative z-10 flex flex-col items-center gap-2">
+                      <span className="text-5xl font-black" style={{ color: '#6366F1' }}>21</span>
+                      <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#8B5CF6' }}>DIAS</span>
                     </div>
                   </div>
                   <div className="p-5">
-                    <span
-                      className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 tracking-wide"
-                      style={{
-                        background: canAccessAdmin ? 'linear-gradient(135deg, #F5D060, #D4A017)' : '#E5E7EB',
-                        color: canAccessAdmin ? '#5C3D00' : '#9CA3AF',
-                        boxShadow: canAccessAdmin ? '0 2px 8px rgba(212, 160, 23, 0.2)' : 'none',
-                      }}
-                    >
-                      {canAccessAdmin ? '✦ PREMIUM' : 'BLOQUEADO'}
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 tracking-wide" style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: 'white' }}>
+                      🔥 DESAFIO
                     </span>
-                    <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-0.5">Curso Renda Extra</h3>
-                    <p className="text-gray-400 text-xs">R$ 10 mil a R$ 50 mil/mês com IA</p>
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-0.5">Desafios 21 Dias</h3>
+                    <p className="text-gray-400 text-xs">1 aula por dia. Transformação garantida.</p>
                   </div>
                 </motion.div>
               </div>
