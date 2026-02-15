@@ -58,6 +58,12 @@ const Dashboard = () => {
   // Estados para controle do scroll horizontal
   const [activeTrailIndex, setActiveTrailIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Paginação das trilhas (6 por página = 2 linhas de 3)
+  const [trailPage, setTrailPage] = useState(0);
+  const TRAILS_PER_PAGE = 6;
+  const totalTrailPages = Math.ceil(trails.length / TRAILS_PER_PAGE);
+  const visibleTrails = trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
 
   useEffect(() => {
     checkAuth();
@@ -524,30 +530,35 @@ const Dashboard = () => {
                 <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Suas Trilhas</h2>
                 <div className="flex items-center gap-2">
                   <button
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-all"
+                    onClick={() => setTrailPage(p => Math.max(0, p - 1))}
+                    disabled={trailPage === 0}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
                     style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
                   >
                     ‹
                   </button>
                   <button
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-all"
+                    onClick={() => setTrailPage(p => Math.min(totalTrailPages - 1, p + 1))}
+                    disabled={trailPage >= totalTrailPages - 1}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage >= totalTrailPages - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
                     style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
                   >
                     ›
                   </button>
-                  <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-white/80 font-medium cursor-pointer hover:text-white ml-1 transition-colors">
-                    Ver todas
+                  <span className="text-xs text-white/60 font-medium ml-1">
+                    {trailPage + 1}/{totalTrailPages}
                   </span>
                 </div>
               </div>
 
               {/* Trail cards grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {trails.map((trail, index) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {visibleTrails.map((trail, index) => {
+                  const globalIndex = trailPage * TRAILS_PER_PAGE + index;
                   const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                   const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
                   const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
-                  const previousTrail = trails[index - 1];
+                  const previousTrail = trails[globalIndex - 1];
                   const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
                   const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
 
