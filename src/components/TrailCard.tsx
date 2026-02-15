@@ -73,7 +73,7 @@ const TrailCard = ({
       {/* Aurora border glow effect */}
       {!isLocked && (
         <div
-          className="absolute -inset-[0.5px] rounded-2xl z-0 pointer-events-none"
+          className="absolute inset-0 rounded-2xl z-0 pointer-events-none"
           style={{
             background: isGold
               ? 'linear-gradient(135deg, #F5D060, #D4A017, #B8860B, #D4A017, #F5D060)'
@@ -84,7 +84,7 @@ const TrailCard = ({
         />
       )}
       {/* Inner card */}
-      <div className="relative z-10 bg-white rounded-[15px] overflow-hidden m-[1.5px]">
+      <div className="relative z-10 bg-white rounded-[14px] overflow-hidden m-[2px]">
       {/* Aurora ambient glow on hover */}
       {!isLocked && !isGold && (
         <div
