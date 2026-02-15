@@ -1,31 +1,30 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { registerSW } from 'virtual:pwa-register';
 import App from "./App.tsx";
 import "./index.css";
 
-// 🔄 PWA: Forçar atualização imediata do Service Worker
-const updateSW = registerSW({
-  onNeedRefresh() {
-    // Atualiza automaticamente sem perguntar ao usuário
-    console.log('[PWA] Nova versão disponível, atualizando...');
-    updateSW(true);
-  },
-  onOfflineReady() {
-    console.log('[PWA] App pronta para uso offline');
-  },
-  onRegisteredSW(swUrl, r) {
-    if (r) {
-      // Verificação imediata ao registrar
-      r.update();
-      // Verifica atualizações a cada 60 segundos
-      setInterval(() => {
-        console.log('[PWA] Verificando atualizações...');
-        r.update();
-      }, 60 * 1000);
-    }
-  },
-});
+// 🔄 PWA DESABILITADO: Removido para evitar problemas de cache com Service Worker
+// que causava exibição de versões antigas do dashboard
+// O SW será reativado quando o app estiver estável para produção
+
+// Limpar qualquer Service Worker antigo que ainda esteja registrado
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    registrations.forEach(registration => {
+      registration.unregister();
+      console.log('[PWA] Service Worker removido:', registration.scope);
+    });
+  });
+  // Limpar caches antigos
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      names.forEach(name => {
+        caches.delete(name);
+        console.log('[PWA] Cache removido:', name);
+      });
+    });
+  }
+}
 
 // 🧪 Disponibilizar testes no console (desenvolvimento)
 if (import.meta.env.DEV) {

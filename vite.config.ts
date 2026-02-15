@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { VitePWA } from 'vite-plugin-pwa';
+// PWA DESABILITADO temporariamente para evitar cache stale
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -13,56 +13,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'logo-ailiv.png'],
-      manifest: {
-        name: 'IA Academy - Aprenda Inteligência Artificial',
-        short_name: 'IA Academy',
-        description: 'Plataforma de ensino de IA especializada para adultos 38+',
-        theme_color: '#22d3ee',
-        background_color: '#ffffff',
-        display: 'standalone',
-        icons: [
-          {
-            src: '/logo-ailiv.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      },
-      workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        navigateFallback: '/index.html',
-        globPatterns: ['**/*.{html,ico,png,svg,woff,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /\.(?:js|css)$/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'static-assets',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 300,
-              },
-            },
-          },
-        ],
-      }
-    })
   ].filter(Boolean),
   optimizeDeps: {
     include: ["react", "react-dom", "@tanstack/react-query"],
