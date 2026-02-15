@@ -571,76 +571,97 @@ const Dashboard = () => {
                 <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todos</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* AI Playground */}
+                {/* AI Playground - Premium */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.1 }}
                   onClick={() => navigate('/ai-playground')}
-                  className="cursor-pointer group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1.5"
+                  className="cursor-pointer group rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2"
                   style={{
-                    border: '1px solid rgba(0,0,0,0.06)',
-                    boxShadow: '0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+                    background: 'white',
+                    border: '1px solid rgba(99, 102, 241, 0.12)',
+                    boxShadow: '0 8px 32px -4px rgba(99, 102, 241, 0.1), 0 2px 8px rgba(0,0,0,0.04)',
                   }}
                 >
                   <div
-                    className="h-36 sm:h-40 flex items-center justify-center"
-                    style={{ background: 'linear-gradient(160deg, #F0F0FF 0%, #E8E8FD 100%)' }}
+                    className="h-40 sm:h-44 flex items-center justify-center relative overflow-hidden"
+                    style={{ background: 'linear-gradient(145deg, #1E1B4B 0%, #312E81 40%, #4338CA 100%)' }}
                   >
-                    <div className="flex flex-col gap-2 w-3/4 max-w-[220px]">
-                      <div
-                        className="self-start rounded-xl rounded-bl-sm px-3.5 py-2"
-                        style={{ background: 'rgba(99,102,241,0.12)' }}
-                      >
-                        <span className="text-[11px] font-medium text-indigo-600">Crie um resumo...</span>
+                    {/* Glow orbs */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute w-32 h-32 rounded-full" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)', top: '-10%', left: '10%' }} />
+                      <div className="absolute w-24 h-24 rounded-full" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, transparent 70%)', bottom: '5%', right: '15%' }} />
+                    </div>
+                    {/* Chat illustration */}
+                    <div className="relative z-10 flex flex-col gap-2.5 w-4/5 max-w-[240px]">
+                      <div className="self-start rounded-2xl rounded-bl-md px-4 py-2.5" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <span className="text-[12px] font-medium text-white/90">Crie um resumo...</span>
                       </div>
-                      <div className="self-end bg-white rounded-xl rounded-br-sm px-3.5 py-2 shadow-sm">
-                        <span className="text-[11px] text-gray-500">Aqui está o resumo...</span>
+                      <div className="self-end rounded-2xl rounded-br-md px-4 py-2.5" style={{ background: 'rgba(255,255,255,0.95)', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
+                        <span className="text-[12px] font-medium text-gray-700">Aqui está o resumo...</span>
+                      </div>
+                      <div className="self-start flex items-center gap-1.5 px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                        <div className="w-1 h-1 rounded-full bg-indigo-300 animate-pulse" />
+                        <span className="text-[10px] text-indigo-200">IA digitando...</span>
                       </div>
                     </div>
                   </div>
                   <div className="p-5">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 tracking-wide" style={{ background: '#6366F10F', color: '#6366F1' }}>
-                      IA
-                    </span>
-                    <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-0.5">AI Playground</h3>
-                    <p className="text-gray-400 text-xs">Experimente IA em tempo real</p>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide" style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: 'white' }}>
+                        <Bot className="w-3 h-3" /> IA
+                      </span>
+                      <span className="text-[10px] font-medium text-green-500">● Online</span>
+                    </div>
+                    <h3 className="font-bold text-gray-900 text-base mb-0.5">AI Playground</h3>
+                    <p className="text-gray-400 text-xs">Converse com IA em tempo real e crie conteúdo</p>
                   </div>
                 </motion.div>
 
-                {/* Desafios 21 Dias */}
+                {/* Desafios 21 Dias - Premium */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.2 }}
-                  className="cursor-pointer group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1.5"
+                  className="cursor-pointer group rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2"
                   style={{
-                    border: '2px solid transparent',
-                    backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899, #8B5CF6, #6366F1)',
-                    backgroundOrigin: 'border-box',
-                    backgroundClip: 'padding-box, border-box',
-                    boxShadow: '0 0 24px rgba(99, 102, 241, 0.15), 0 8px 32px -4px rgba(139, 92, 246, 0.12), 0 2px 8px rgba(0,0,0,0.04)',
+                    background: 'white',
+                    border: '1px solid rgba(245, 158, 11, 0.15)',
+                    boxShadow: '0 8px 32px -4px rgba(245, 158, 11, 0.1), 0 2px 8px rgba(0,0,0,0.04)',
                   }}
                 >
                   <div
-                    className="h-36 sm:h-40 flex items-center justify-center relative overflow-hidden"
-                    style={{ background: 'linear-gradient(160deg, #EEF2FF 0%, #E0E7FF 50%, #C7D2FE 100%)' }}
+                    className="h-40 sm:h-44 flex items-center justify-center relative overflow-hidden"
+                    style={{ background: 'linear-gradient(145deg, #7C2D12 0%, #B45309 40%, #D97706 100%)' }}
                   >
-                    <div className="absolute inset-0 opacity-20 pointer-events-none"
-                      style={{
-                        backgroundImage: 'radial-gradient(circle at 30% 40%, rgba(99, 102, 241, 0.3) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(236, 72, 153, 0.2) 0%, transparent 50%)',
-                      }}
-                    />
-                    <div className="relative z-10 flex flex-col items-center gap-2">
-                      <span className="text-5xl font-black" style={{ color: '#6366F1' }}>21</span>
-                      <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#8B5CF6' }}>DIAS</span>
+                    {/* Glow orbs */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute w-36 h-36 rounded-full" style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.35) 0%, transparent 70%)', top: '-15%', right: '10%' }} />
+                      <div className="absolute w-28 h-28 rounded-full" style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.25) 0%, transparent 70%)', bottom: '0%', left: '15%' }} />
+                    </div>
+                    {/* 21 with flame */}
+                    <div className="relative z-10 flex flex-col items-center">
+                      <div className="flex items-baseline gap-1">
+                        <Flame className="w-8 h-8 text-amber-300 mb-1" />
+                      </div>
+                      <span className="text-7xl font-black text-white leading-none" style={{ textShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>21</span>
+                      <span className="text-sm font-bold uppercase tracking-[0.3em] text-amber-200/80 mt-1">DIAS</span>
+                      <div className="flex gap-1 mt-3">
+                        {Array.from({ length: 7 }).map((_, i) => (
+                          <div key={i} className="w-2 h-2 rounded-full" style={{ background: i < 3 ? '#FCD34D' : 'rgba(255,255,255,0.2)' }} />
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <div className="p-5">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 tracking-wide" style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: 'white' }}>
-                      🔥 DESAFIO
-                    </span>
-                    <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-0.5">Desafios 21 Dias</h3>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: 'white' }}>
+                        🔥 DESAFIO
+                      </span>
+                      <span className="text-[10px] font-medium text-amber-500">21 aulas</span>
+                    </div>
+                    <h3 className="font-bold text-gray-900 text-base mb-0.5">Desafios 21 Dias</h3>
                     <p className="text-gray-400 text-xs">1 aula por dia. Transformação garantida.</p>
                   </div>
                 </motion.div>
