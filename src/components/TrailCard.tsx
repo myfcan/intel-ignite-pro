@@ -84,7 +84,7 @@ const TrailCard = ({
         />
       )}
       {/* Inner card */}
-      <div className="relative z-10 bg-white rounded-[14px] overflow-hidden m-[2px]">
+      <div className="relative z-10 bg-white rounded-[14px] overflow-hidden m-[2px] flex flex-col h-[calc(100%-4px)]">
       {/* Aurora ambient glow on hover */}
       {!isLocked && !isGold && (
         <div
