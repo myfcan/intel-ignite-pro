@@ -542,7 +542,7 @@ const Dashboard = () => {
               </div>
 
               {/* Trail cards grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {trails.map((trail, index) => {
                   const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                   const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
