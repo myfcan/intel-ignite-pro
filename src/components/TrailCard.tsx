@@ -66,7 +66,7 @@ const TrailCard = ({
           ? '0 0 0 2px #D4A017, 0 0 24px rgba(212, 160, 23, 0.25), 0 8px 32px -4px rgba(212, 160, 23, 0.2), 0 2px 8px -2px rgba(0,0,0,0.05)'
           : isLocked
             ? '0 2px 8px rgba(0,0,0,0.03)'
-            : `0 8px 32px -4px rgba(16, 185, 129, 0.12), 0 4px 16px -2px rgba(6, 78, 59, 0.08), 0 0 0 1px rgba(16, 185, 129, 0.1)`,
+            : `0 8px 32px -4px rgba(99, 102, 241, 0.12), 0 4px 16px -2px rgba(139, 92, 246, 0.08), 0 0 0 1px rgba(99, 102, 241, 0.1)`,
       }}
     >
       {/* Aurora border glow effect */}
@@ -77,7 +77,7 @@ const TrailCard = ({
             padding: '1.5px',
             background: isGold
               ? 'linear-gradient(135deg, #F5D060, #D4A017, #B8860B, #D4A017, #F5D060)'
-              : 'linear-gradient(135deg, #10B981, #06B6D4, #8B5CF6, #10B981, #34D399)',
+              : 'linear-gradient(135deg, #6366F1, #8B5CF6, #06B6D4, #EC4899, #6366F1)',
             backgroundSize: '300% 300%',
             animation: isGold ? undefined : 'aurora-shift 6s ease infinite',
             mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -94,7 +94,7 @@ const TrailCard = ({
         <div
           className="absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl z-0"
           style={{
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.12), rgba(139,92,246,0.1), rgba(52,211,153,0.15))',
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.12), rgba(139,92,246,0.1), rgba(236,72,153,0.15))',
             backgroundSize: '300% 300%',
             animation: 'aurora-shift 6s ease infinite',
           }}
