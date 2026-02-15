@@ -66,15 +66,15 @@ export const AnimatedStatCard = ({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
-      className="rounded-2xl p-4 sm:p-5 transition-all duration-300"
+      className="rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:-translate-y-1"
       style={{
         background: isColored
           ? `linear-gradient(145deg, ${gradientFrom}, ${gradientTo})`
           : '#FFFFFF',
-        border: isColored ? 'none' : '1px solid rgba(0,0,0,0.04)',
+        border: isColored ? 'none' : '1px solid rgba(0,0,0,0.03)',
         boxShadow: isColored
-          ? `0 8px 32px ${gradientFrom}30`
-          : '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)',
+          ? `0 12px 40px ${gradientFrom}35, 0 4px 16px ${gradientFrom}20`
+          : '0 12px 40px -8px rgba(0,0,0,0.12), 0 4px 16px -4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02)',
       }}
     >
       <div className="flex items-center justify-between mb-3">
