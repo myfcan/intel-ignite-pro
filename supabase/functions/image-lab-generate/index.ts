@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   const openaiKey = Deno.env.get("OPENAI_API_KEY")!;
 
   try {
-    // === PARTE 1: Auth hardened via getClaims() ===
+    // === Auth via REST API (reliable in Deno edge runtime) ===
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ ok: false, error_code: "AUTH_MISSING", error_message: "No auth header" }), {
@@ -335,14 +335,14 @@ Deno.serve(async (req) => {
     // Compute file hash
     const fileHash = await sha256(new TextDecoder().decode(imageBytes).substring(0, 1000) + imageBytes.length);
 
-    // Create asset (store storage_path for on-demand signed URL generation)
+    // C12_STORAGE_PRIVACY: Store ONLY storage_path, never signed URLs in DB
     const { data: asset } = await supabase.from("image_assets").insert({
       job_id,
       attempt_id: attempt!.id,
       status: "completed",
       variation_index: 0,
       storage_path: storagePath,
-      public_url: signedUrl,
+      public_url: null,
       width: sizeInfo.w,
       height: sizeInfo.h,
       sha256_bytes: fileHash,

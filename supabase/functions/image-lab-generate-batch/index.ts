@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
   const lovableKey = Deno.env.get("LOVABLE_API_KEY")!;
 
   try {
-    // === Auth hardened via getClaims() ===
+    // === Auth via REST API (reliable in Deno edge runtime) ===
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ ok: false, error_code: "AUTH_MISSING" }), {
@@ -307,24 +307,19 @@ Deno.serve(async (req) => {
 
           if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
-          // Signed URL
-          const { data: signedData } = await supabase.storage
-            .from("image-lab")
-            .createSignedUrl(storagePath, 3600);
-
           // File hash
           const fileHash = await sha256(
             new TextDecoder().decode(imageBytes).substring(0, 1000) + imageBytes.length,
           );
 
-          // Create asset
+          // C12_STORAGE_PRIVACY: Store ONLY storage_path, never signed URLs in DB
           const { data: asset } = await supabase.from("image_assets").insert({
             job_id,
             attempt_id: attempt.id,
             status: "completed",
             variation_index: task.index,
             storage_path: storagePath,
-            public_url: signedData?.signedUrl || null,
+            public_url: null,
             width: sizeInfo.w,
             height: sizeInfo.h,
             sha256_bytes: fileHash,
