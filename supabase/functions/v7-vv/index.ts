@@ -5325,7 +5325,6 @@ function applyBoundaryFixGuard(
 }
 
 
-
 /**
  * ✅ FASE 6 FINAL: Calculate phase timings based on KEYWORDS in wordTimestamps
  *
@@ -6127,6 +6126,107 @@ Deno.serve(async (req) => {
       );
     } else {
       console.log('[V7-vv] Step 4: SKIPPED (preserve_structure mode - uses existing phases)');
+    }
+
+    // =========================================================================
+    // PASSO 4.9: IMAGE GENERATION VIA IMAGE LAB BRIDGE (NON-BLOCKING)
+    // Scans microVisuals type=image with content.promptScene but no url/storagePath.
+    // Calls image-lab-pipeline-bridge (service_role_key) to generate images.
+    // Fallback: if bridge fails, pipeline continues without images (warning only).
+    // =========================================================================
+    if (!preserveStructureMode) {
+      const imageScenesForBridge: Array<{ scene_id: string; prompt_scene: string; style_hints?: string; phaseIdx: number; mvIdx: number }> = [];
+
+      for (let pi = 0; pi < phases.length; pi++) {
+        const phase = phases[pi];
+        if (!phase.microVisuals) continue;
+        for (let mi = 0; mi < phase.microVisuals.length; mi++) {
+          const mv = phase.microVisuals[mi];
+          const content = mv.content as Record<string, unknown>;
+          if (
+            mv.type === 'image' &&
+            content.promptScene &&
+            typeof content.promptScene === 'string' &&
+            !content.url &&
+            !content.imageUrl &&
+            !content.storagePath
+          ) {
+            imageScenesForBridge.push({
+              scene_id: mv.id,
+              prompt_scene: content.promptScene as string,
+              style_hints: (content.styleHints as string) || undefined,
+              phaseIdx: pi,
+              mvIdx: mi,
+            });
+          }
+        }
+      }
+
+      if (imageScenesForBridge.length > 0) {
+        console.log(`[V7-vv] Step 4.9: IMAGE_LAB_BRIDGE — ${imageScenesForBridge.length} image(s) to generate`);
+        try {
+          const bridgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/image-lab-pipeline-bridge`;
+          const bridgeServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+          const bridgePayload = {
+            scenes: imageScenesForBridge.map(s => ({
+              scene_id: s.scene_id,
+              prompt_scene: s.prompt_scene,
+              style_hints: s.style_hints,
+            })),
+            preset_key: (input as any).image_preset_key || 'cinematic-01',
+            size: (input as any).image_size || '1536x1024',
+            provider: (input as any).image_provider || 'gemini',
+          };
+
+          const bridgeController = new AbortController();
+          const bridgeTimeout = setTimeout(() => bridgeController.abort(), 180_000);
+
+          let bridgeResp: Response;
+          try {
+            bridgeResp = await fetch(bridgeUrl, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${bridgeServiceKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(bridgePayload),
+              signal: bridgeController.signal,
+            });
+          } finally {
+            clearTimeout(bridgeTimeout);
+          }
+
+          if (bridgeResp.ok) {
+            const bridgeData = await bridgeResp.json();
+            const results = bridgeData.results || [];
+            let injected = 0;
+
+            for (const result of results) {
+              if (result.status !== 'failed' && result.storage_path) {
+                const match = imageScenesForBridge.find(s => s.scene_id === result.scene_id);
+                if (match) {
+                  const mv = phases[match.phaseIdx].microVisuals![match.mvIdx];
+                  (mv.content as Record<string, unknown>).storagePath = result.storage_path;
+                  (mv.content as Record<string, unknown>).assetId = result.asset_id;
+                  injected++;
+                }
+              }
+            }
+
+            console.log(`[V7-vv] Step 4.9: ✅ IMAGE_LAB_BRIDGE complete. Generated=${injected}, Failed=${imageScenesForBridge.length - injected}`);
+          } else {
+            const errText = await bridgeResp.text();
+            console.warn(`[V7-vv] Step 4.9: ⚠️ IMAGE_LAB_BRIDGE returned ${bridgeResp.status}: ${errText.substring(0, 300)}`);
+            console.warn('[V7-vv] Step 4.9: Pipeline continues without images (non-blocking fallback)');
+          }
+        } catch (bridgeErr: any) {
+          console.warn(`[V7-vv] Step 4.9: ⚠️ IMAGE_LAB_BRIDGE error: ${bridgeErr.message}`);
+          console.warn('[V7-vv] Step 4.9: Pipeline continues without images (non-blocking fallback)');
+        }
+      } else {
+        console.log('[V7-vv] Step 4.9: No image microVisuals with promptScene found — skipping');
+      }
     }
 
     // =========================================================================
