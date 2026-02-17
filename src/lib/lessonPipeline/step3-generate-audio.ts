@@ -337,7 +337,6 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   // Se TODOS os slides já têm imagens (upload manual), pular geração via API
   if (slidesNeedingImages.length === 0) {
     console.log(`   ✅ Todas as ${totalSlides} imagens já foram enviadas manualmente. Pulando geração via API.`);
-    console.log(`   🎉 Economia de tempo e custo com DALL-E!`);
 
     const elapsedTime = Date.now() - startTime;
     console.log(`✅ [V3] Áudio completo em ${elapsedTime}ms (imagens pré-carregadas)`);
@@ -346,255 +345,119 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
       ...input,
       audioUrl,
       wordTimestamps: audioData.word_timestamps,
-      v3Data: input.v3Data // Manter slides originais com imageUrl já preenchido
+      v3Data: input.v3Data
     };
   }
 
-  // Se ALGUNS slides já têm imagens, logar e continuar gerando apenas os faltantes
+  // Log de estado
   if (slidesWithImages.length > 0) {
     console.log(`   📋 ${slidesWithImages.length}/${totalSlides} slides já têm imagens (upload manual)`);
-    console.log(`   🖼️ Gerando ${slidesNeedingImages.length} imagens restantes via API...`);
+    console.log(`   🖼️ Gerando ${slidesNeedingImages.length} imagens restantes via Image Lab Bridge...`);
   } else {
-    console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3 - Landscape 1792x1024)...`);
+    console.log(`   🖼️ Gerando ${totalSlides} imagens via Image Lab Bridge (C12)...`);
   }
 
-  // DALL-E 3: ~30-45s por imagem. Com 2 imagens + delay: ~90s (< 150s limite edge function)
-  const BATCH_SIZE = 2; // 2 imagens por batch (DALL-E 3 é mais lento mas melhor)
-  const BATCH_TIMEOUT_MS = 180000; // 3 minutos por batch (margem de segurança)
+  // ============================================================================
+  // IMAGE LAB BRIDGE (C12) — substitui generate-slide-images legada
+  // ============================================================================
+  // A bridge processa todas as cenas de uma vez, com cache idempotente e audit trail.
+  // Retorna storage_path (bucket image-lab, privado) — precisamos gerar signed URLs.
+  // ============================================================================
 
-  // Preparar apenas slides que PRECISAM de imagem (não têm imageUrl)
-  // Criar mapeamento de índice (slidesInput → original slides array)
-  const slideIndexMap: { inputIndex: number; originalIndex: number }[] = [];
-  const slidesInput = slidesNeedingImages.map((slide, inputIdx) => {
-    // Encontrar índice original no array completo
-    const originalIdx = input.v3Data!.slides.findIndex(s => s.id === slide.id);
-    slideIndexMap.push({ inputIndex: inputIdx, originalIndex: originalIdx });
-    return {
-      id: slide.id,
-      slideNumber: slide.slideNumber,
-      contentIdea: slide.contentIdea
-    };
-  });
+  const scenes = slidesNeedingImages.map(slide => ({
+    scene_id: slide.id,
+    prompt_scene: slide.contentIdea,
+    style_hints: slide.imagePrompt || '',
+  }));
 
-  const slidesToGenerate = slidesInput.length;
-  const totalBatches = Math.ceil(slidesToGenerate / BATCH_SIZE);
-  console.log(`   📦 Processando ${slidesToGenerate} imagens em ${totalBatches} batches de ${BATCH_SIZE}`);
+  const BRIDGE_TIMEOUT_MS = 300000; // 5 minutos (batch pode ter muitas cenas)
 
-  let finalSlidesWithImages = [...input.v3Data!.slides]; // Cópia dos slides originais (preserva os que já têm imagem)
-  let completedCount = slidesWithImages.length; // Começar contando os que já têm imagem
+  let bridgeResults: Array<{
+    scene_id: string;
+    asset_id: string | null;
+    storage_path: string | null;
+    status: string;
+    error?: string;
+  }> = [];
 
-  // Processar cada batch sequencialmente
-  for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-    const batchNumber = batchIndex + 1;
+  try {
+    console.log(`   🌉 Chamando image-lab-pipeline-bridge com ${scenes.length} cenas...`);
 
-    // Delay de 2s entre batches para evitar rate limiting (exceto primeiro batch)
-    if (batchIndex > 0) {
-      console.log(`   ⏳ Aguardando 2s antes do batch ${batchNumber}...`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+    const bridgePromise = supabase.functions.invoke('image-lab-pipeline-bridge', {
+      body: {
+        scenes,
+        preset_key: 'cinematic-01',
+        size: '1536x1024',
+        provider: 'gemini',
+      }
+    });
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout na Image Lab Bridge (5min)')), BRIDGE_TIMEOUT_MS)
+    );
+
+    const { data: bridgeData, error: bridgeError } = await Promise.race([
+      bridgePromise,
+      timeoutPromise
+    ]) as any;
+
+    if (bridgeError) {
+      throw new Error(`Bridge error: ${bridgeError.message}`);
     }
 
-    console.log(`   🔄 Batch ${batchNumber}/${totalBatches}...`);
-
-    const invokeBatchWithTimeout = async () => {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout no batch ${batchIndex + 1}`)), BATCH_TIMEOUT_MS)
-      );
-
-      const invokePromise = supabase.functions.invoke('generate-slide-images', {
-        body: {
-          slides: slidesInput,
-          batchSize: BATCH_SIZE,
-          batchIndex: batchIndex
-        }
-      });
-
-      return Promise.race([invokePromise, timeoutPromise]);
-    };
-
-    // Retry logic com exponential backoff
-    const MAX_RETRIES = 3;
-    let batchData, batchError;
-    let lastError;
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        if (attempt > 0) {
-          const waitTime = Math.pow(2, attempt - 1) * 2000; // 2s, 4s, 8s
-          console.log(`   🔄 Tentativa ${attempt + 1}/${MAX_RETRIES + 1} após ${waitTime}ms...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        }
-
-        const result = await invokeBatchWithTimeout() as any;
-        batchData = result.data;
-        batchError = result.error;
-
-        // Se deu timeout, não tentar retry
-        if (!batchError) {
-          break; // Sucesso!
-        }
-
-        // Se deu erro mas não é de network, não retry
-        if (batchError && !batchError.message?.includes('Failed to send')) {
-          break; // Erro diferente, não retry
-        }
-
-        lastError = batchError;
-        console.warn(`   ⚠️ Erro no batch ${batchIndex + 1} (tentativa ${attempt + 1}): ${batchError.message}`);
-
-        // Se foi última tentativa, vai lançar erro fora do loop
-        if (attempt === MAX_RETRIES) {
-          break;
-        }
-
-      } catch (timeoutError: any) {
-        console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
-        
-        // Se não é o primeiro batch e já temos imagens, continuar
-        if (batchIndex > 0 && completedCount > 0) {
-          console.warn(`⚠️ [V3] Batch ${batchIndex + 1} deu timeout, mas ${completedCount} imagens já foram geradas. Continuando...`);
-          break; // Sair do loop de batches, continuar com o que temos
-        }
-        
-        throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). A geração está demorando muito. Tente novamente em alguns minutos.`);
-      }
+    if (!bridgeData || !bridgeData.results) {
+      throw new Error('Bridge retornou resposta sem results');
     }
 
-    if (batchError) {
-      console.error(`❌ [V3] Erro no batch ${batchIndex + 1}:`, batchError);
+    bridgeResults = bridgeData.results;
+    const successCount = bridgeResults.filter(r => r.status !== 'failed').length;
+    const failCount = bridgeResults.filter(r => r.status === 'failed').length;
 
-      // Se for o ÚLTIMO batch e já temos imagens geradas nos anteriores, apenas avisar
-      const isLastBatch = batchIndex === totalBatches - 1;
-      if (isLastBatch && completedCount > 0) {
-        console.warn(`⚠️ [V3] Último batch falhou, mas ${completedCount} imagens já foram geradas. Continuando...`);
-        break; // Sair do loop, continuar com o que temos
-      }
-      
-      // Se temos QUALQUER imagem já gerada, continuar
-      if (completedCount > 0) {
-        console.warn(`⚠️ [V3] Batch ${batchIndex + 1} falhou, mas ${completedCount} imagens já foram geradas. Continuando...`);
-        break; // Sair do loop, continuar com o que temos
-      }
-      
-      // Só falhar completamente se for o primeiro batch
-      throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
-    }
+    console.log(`   ✅ Bridge retornou: ${successCount} OK, ${failCount} falhas de ${scenes.length} cenas`);
 
-    if (!batchData || !batchData.slides) {
-      const isLastBatch = batchIndex === totalBatches - 1;
-      if (isLastBatch && completedCount > 0) {
-        console.warn(`⚠️ [V3] Último batch sem dados válidos, mas ${completedCount} imagens já geradas. Continuando...`);
-        break; // Sair do loop
-      }
-      
-      // Se temos QUALQUER imagem já gerada, continuar
-      if (completedCount > 0) {
-        console.warn(`⚠️ [V3] Batch ${batchIndex + 1} sem dados válidos, mas ${completedCount} imagens já geradas. Continuando...`);
-        break;
-      }
-      
-      console.error(`❌ [V3] Resposta inválida no batch ${batchIndex + 1}`);
-      throw new Error(`Resposta inválida: imagens não retornadas (batch ${batchIndex + 1})`);
-    }
-
-    // Atualizar slides com as imagens geradas neste batch
-    // Usar o mapeamento de índices para encontrar a posição correta no array original
-    const startIdx = batchIndex * BATCH_SIZE;
-    const endIdx = Math.min(startIdx + BATCH_SIZE, slidesInput.length);
-
-    for (let i = startIdx; i < endIdx; i++) {
-      const slideFromBatch = batchData.slides[i];
-      if (slideFromBatch && slideFromBatch.imageUrl) {
-        // Encontrar o índice original usando o mapeamento
-        const mapping = slideIndexMap.find(m => m.inputIndex === i);
-        if (mapping) {
-          const originalIndex = mapping.originalIndex;
-          finalSlidesWithImages[originalIndex] = {
-            ...finalSlidesWithImages[originalIndex],
-            imageUrl: slideFromBatch.imageUrl,
-            imagePrompt: slideFromBatch.imagePrompt || slideFromBatch.contentIdea
-          };
-        }
-      }
-    }
-
-    // Atualizar contador de progresso
-    const batchSuccess = batchData.stats?.success || 0;
-    completedCount += batchSuccess;
-    const progressPercent = Math.round((completedCount / totalSlides) * 100);
-
-    console.log(`   ✅ Batch ${batchNumber}/${totalBatches}: ${batchSuccess} imagens geradas`);
-    console.log(`   📊 Progresso: ${completedCount}/${totalSlides} imagens concluídas (${progressPercent}%)`);
+  } catch (bridgeErr: any) {
+    // Fallback não-bloqueante: pipeline continua sem imagens
+    console.error(`   ❌ Image Lab Bridge falhou: ${bridgeErr.message}`);
+    console.warn(`   ⚠️ Pipeline continuará sem imagens geradas. Admin pode gerar manualmente depois.`);
   }
 
-  const successfulImages = finalSlidesWithImages.filter(s => s.imageUrl && s.imageUrl !== '').length;
-  console.log(`   ✅ Total: ${successfulImages}/${slidesInput.length} imagens geradas com sucesso`);
-  
-  if (successfulImages < slidesInput.length) {
-    console.warn(`   ⚠️ ATENÇÃO: Apenas ${successfulImages} de ${slidesInput.length} imagens foram geradas. Slides sem imagem usarão placeholder.`);
-  } else {
-    console.log(`   🎉 Concluído: 100% das imagens processadas`);
-  }
+  // Montar slides finais com signed URLs do bucket image-lab
+  let finalSlides = [...input.v3Data!.slides];
 
-  // 3. Upload das imagens para Storage (converter data URLs em URLs públicas)
-  console.log('   📤 Fazendo upload das imagens para Supabase Storage...');
-  const slidesWithStorageUrls = [];
-
-  for (const slide of finalSlidesWithImages) {
-    if (!slide.imageUrl || slide.imageUrl === '') {
-      // Slide sem imagem (falhou geração)
-      slidesWithStorageUrls.push(slide);
+  for (const result of bridgeResults) {
+    if (result.status === 'failed' || !result.storage_path) {
+      console.warn(`   ⚠️ Cena ${result.scene_id}: falhou (${result.error || 'sem storage_path'})`);
       continue;
     }
 
-    // Se já é uma URL pública (não data URL), manter
-    if (!slide.imageUrl.startsWith('data:')) {
-      slidesWithStorageUrls.push(slide);
+    // Gerar signed URL (1h de validade) para o asset no bucket privado image-lab
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from('image-lab')
+      .createSignedUrl(result.storage_path, 3600); // 1 hora
+
+    if (signedError || !signedData?.signedUrl) {
+      console.warn(`   ⚠️ Cena ${result.scene_id}: signed URL falhou (${signedError?.message})`);
       continue;
     }
 
-    try {
-      // Converter data URL para buffer
-      const base64Data = slide.imageUrl.replace(/^data:image\/\w+;base64,/, '');
-      const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-
-      // Nome único para o arquivo
-      const imageFileName = `slide-${slide.id}-${Date.now()}.png`;
-
-      // Upload para Storage
-      const { error: uploadError } = await supabase.storage
-        .from('lesson-audios') // Mesmo bucket que áudios
-        .upload(imageFileName, imageBuffer, {
-          contentType: 'image/png',
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error(`   ❌ Erro ao fazer upload da imagem do slide ${slide.slideNumber}:`, uploadError);
-        // Manter data URL se upload falhar (fallback)
-        slidesWithStorageUrls.push(slide);
-        continue;
-      }
-
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('lesson-audios')
-        .getPublicUrl(imageFileName);
-
-      slidesWithStorageUrls.push({
-        ...slide,
-        imageUrl: publicUrl // Substituir data URL por URL pública
-      });
-
-      console.log(`   ✅ Slide ${slide.slideNumber} salvo: ${publicUrl.substring(0, 80)}...`);
-
-    } catch (uploadError) {
-      console.error(`   ❌ Erro ao processar upload do slide ${slide.slideNumber}:`, uploadError);
-      // Manter data URL se der erro (fallback)
-      slidesWithStorageUrls.push(slide);
+    // Encontrar e atualizar o slide correspondente
+    const slideIndex = finalSlides.findIndex(s => s.id === result.scene_id);
+    if (slideIndex !== -1) {
+      finalSlides[slideIndex] = {
+        ...finalSlides[slideIndex],
+        imageUrl: signedData.signedUrl,
+        imagePrompt: finalSlides[slideIndex].contentIdea,
+      };
+      console.log(`   ✅ Slide ${finalSlides[slideIndex].slideNumber}: imagem vinculada (asset ${result.asset_id})`);
     }
   }
 
-  console.log(`   ✅ ${slidesWithStorageUrls.filter(s => s.imageUrl && !s.imageUrl.startsWith('data:')).length}/${successfulImages} imagens salvas no Storage`);
+  const successfulImages = finalSlides.filter(s => s.imageUrl && s.imageUrl.trim() !== '').length;
+  console.log(`   📊 Total: ${successfulImages}/${totalSlides} slides com imagem`);
+
+  if (successfulImages < totalSlides) {
+    console.warn(`   ⚠️ ${totalSlides - successfulImages} slides sem imagem. Usarão placeholder.`);
+  }
 
   const elapsedTime = Date.now() - startTime;
   console.log(`✅ [V3] Áudio + imagens completos em ${elapsedTime}ms`);
@@ -605,7 +468,7 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     wordTimestamps: audioData.word_timestamps,
     v3Data: {
       ...input.v3Data,
-      slides: slidesWithStorageUrls
+      slides: finalSlides
     }
   };
 }
