@@ -54,21 +54,32 @@ async function generateFromProvider(
     }
 
     const data = await resp.json();
-    const content = data.choices?.[0]?.message?.content;
+    const message = data.choices?.[0]?.message;
+    const content = message?.content;
+    const images = message?.images;
     let b64Data: string | null = null;
 
-    if (Array.isArray(content)) {
+    // Gateway returns images in message.images array
+    if (Array.isArray(images) && images.length > 0) {
+      for (const img of images) {
+        const url = img.image_url?.url;
+        if (url?.startsWith("data:")) { b64Data = url.split(",")[1]; break; }
+      }
+    }
+
+    // Fallback: content array
+    if (!b64Data && Array.isArray(content)) {
       for (const part of content) {
-        if (part.type === "image_url" && part.image_url?.url) {
-          const url = part.image_url.url;
-          if (url.startsWith("data:")) { b64Data = url.split(",")[1]; break; }
+        if (part.type === "image_url" && part.image_url?.url?.startsWith("data:")) {
+          b64Data = part.image_url.url.split(",")[1]; break;
         } else if (part.inline_data?.data) {
           b64Data = part.inline_data.data; break;
-        } else if (part.type === "image" && part.data) {
-          b64Data = part.data; break;
         }
       }
-    } else if (typeof content === "string") {
+    }
+
+    // Fallback: content string
+    if (!b64Data && typeof content === "string") {
       const match = content.match(/data:image\/[^;]+;base64,([^\s"]+)/);
       if (match) b64Data = match[1];
     }
