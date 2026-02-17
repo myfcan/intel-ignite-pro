@@ -31,7 +31,8 @@ import {
   ArrowLeft,
   Copy,
   Bug,
-  FileBarChart
+  FileBarChart,
+  Shield
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -271,6 +272,15 @@ export default function AdminV7vv() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/admin/contracts')}
+              className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Contratos
+            </Button>
             <Button
               variant="outline"
               size="sm"
