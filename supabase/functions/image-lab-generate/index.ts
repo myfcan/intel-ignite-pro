@@ -225,27 +225,37 @@ Deno.serve(async (req) => {
         isArray: Array.isArray(geminiData.choices?.[0]?.message?.content),
       }));
 
-      const content = geminiData.choices?.[0]?.message?.content;
+      const message = geminiData.choices?.[0]?.message;
+      const content = message?.content;
+      const images = message?.images;
       let b64Data: string | null = null;
 
-      if (Array.isArray(content)) {
-        // Look for inline_data (Google's native format) or image_url
-        for (const part of content) {
-          if (part.type === "image_url" && part.image_url?.url) {
-            const url = part.image_url.url;
-            if (url.startsWith("data:")) {
-              b64Data = url.split(",")[1];
-              break;
-            }
-          } else if (part.inline_data?.data) {
-            b64Data = part.inline_data.data;
-            break;
-          } else if (part.type === "image" && part.data) {
-            b64Data = part.data;
+      // Gateway returns images in message.images array
+      if (Array.isArray(images) && images.length > 0) {
+        for (const img of images) {
+          const url = img.image_url?.url;
+          if (url?.startsWith("data:")) {
+            b64Data = url.split(",")[1];
             break;
           }
         }
-      } else if (typeof content === "string") {
+      }
+
+      // Fallback: check content array (inline_data format)
+      if (!b64Data && Array.isArray(content)) {
+        for (const part of content) {
+          if (part.type === "image_url" && part.image_url?.url?.startsWith("data:")) {
+            b64Data = part.image_url.url.split(",")[1];
+            break;
+          } else if (part.inline_data?.data) {
+            b64Data = part.inline_data.data;
+            break;
+          }
+        }
+      }
+
+      // Fallback: check content string for base64
+      if (!b64Data && typeof content === "string") {
         const match = content.match(/data:image\/[^;]+;base64,([^\s"]+)/);
         if (match) b64Data = match[1];
       }
