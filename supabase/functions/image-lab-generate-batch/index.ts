@@ -146,11 +146,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    const token = authHeader.replace("Bearer ", "");
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     if (userError || !user) {
       return new Response(JSON.stringify({ ok: false, error_code: "AUTH_INVALID" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },

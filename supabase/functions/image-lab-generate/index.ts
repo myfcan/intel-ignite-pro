@@ -39,13 +39,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    const token = authHeader.replace("Bearer ", "");
     const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     if (userError || !user) {
-      return new Response(JSON.stringify({ ok: false, error_code: "AUTH_INVALID", error_message: "Invalid JWT" }), {
+      return new Response(JSON.stringify({ ok: false, error_code: "AUTH_INVALID", error_message: `Invalid JWT: ${userError?.message || 'no user'}` }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
