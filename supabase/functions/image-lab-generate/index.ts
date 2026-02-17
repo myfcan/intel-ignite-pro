@@ -194,23 +194,32 @@ Deno.serve(async (req) => {
       const lovableKey = Deno.env.get("LOVABLE_API_KEY");
       if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
 
-      const geminiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${lovableKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash-image",
-          modalities: ["image", "text"],
-          messages: [
-            {
-              role: "user",
-              content: `Generate an image with the following description. Return ONLY the image, no text.\n\n${promptFinal}`,
-            },
-          ],
-        }),
-      });
+      // C12 FIX: AbortController with 120s timeout
+      const geminiController = new AbortController();
+      const geminiTimeout = setTimeout(() => geminiController.abort(), 120_000);
+      let geminiResp: Response;
+      try {
+        geminiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${lovableKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image",
+            modalities: ["image", "text"],
+            messages: [
+              {
+                role: "user",
+                content: `Generate an image with the following description. Return ONLY the image, no text.\n\n${promptFinal}`,
+              },
+            ],
+          }),
+          signal: geminiController.signal,
+        });
+      } finally {
+        clearTimeout(geminiTimeout);
+      }
 
       if (!geminiResp.ok) {
         const errText = await geminiResp.text();
@@ -286,14 +295,23 @@ Deno.serve(async (req) => {
         openaiBody.response_format = "b64_json";
       }
 
-      const openaiResp = await fetch("https://api.openai.com/v1/images/generations", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${openaiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(openaiBody),
-      });
+      // C12 FIX: AbortController with 120s timeout
+      const openaiController = new AbortController();
+      const openaiTimeout = setTimeout(() => openaiController.abort(), 120_000);
+      let openaiResp: Response;
+      try {
+        openaiResp = await fetch("https://api.openai.com/v1/images/generations", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${openaiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(openaiBody),
+          signal: openaiController.signal,
+        });
+      } finally {
+        clearTimeout(openaiTimeout);
+      }
 
       if (!openaiResp.ok) {
         const errText = await openaiResp.text();
@@ -343,7 +361,10 @@ Deno.serve(async (req) => {
     const signedUrl = signedError ? null : signedData?.signedUrl;
 
     // Compute file hash
-    const fileHash = await sha256(new TextDecoder().decode(imageBytes).substring(0, 1000) + imageBytes.length);
+    // C12 FIX: Binary-safe hash (no TextDecoder corruption)
+    const fileHashBuffer = await crypto.subtle.digest("SHA-256", imageBytes);
+    const fileHash = Array.from(new Uint8Array(fileHashBuffer))
+      .map(b => b.toString(16).padStart(2, "0")).join("");
 
     // C12_STORAGE_PRIVACY: Store ONLY storage_path, never signed URLs in DB
     const { data: asset } = await supabase.from("image_assets").insert({
