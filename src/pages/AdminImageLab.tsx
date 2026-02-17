@@ -551,7 +551,7 @@ const AdminImageLab = () => {
             Authorization: `Bearer ${session?.access_token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ job_id: jobId, provider: "openai", n: 1, size }),
+          body: JSON.stringify({ job_id: jobId, provider: jobs.find(j => j.id === jobId)?.provider || "openai", n: 1, size }),
         }
       );
       const result = await resp.json();

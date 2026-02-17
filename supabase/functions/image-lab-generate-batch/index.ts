@@ -30,23 +30,32 @@ async function generateFromProvider(
   lovableKey: string,
 ): Promise<Uint8Array> {
   if (provider === "gemini") {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        modalities: ["image", "text"],
-        messages: [
-          {
-            role: "user",
-            content: `Generate an image with the following description. Return ONLY the image, no text.\n\n${promptFinal}`,
-          },
-        ],
-      }),
-    });
+    // C12 FIX: AbortController with 120s timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120_000);
+    let resp: Response;
+    try {
+      resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-image",
+          modalities: ["image", "text"],
+          messages: [
+            {
+              role: "user",
+              content: `Generate an image with the following description. Return ONLY the image, no text.\n\n${promptFinal}`,
+            },
+          ],
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!resp.ok) {
       const errText = await resp.text();
@@ -105,14 +114,23 @@ async function generateFromProvider(
       openaiBody.response_format = "b64_json";
     }
 
-    const resp = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openaiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(openaiBody),
-    });
+    // C12 FIX: AbortController with 120s timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120_000);
+    let resp: Response;
+    try {
+      resp = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(openaiBody),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!resp.ok) {
       const errText = await resp.text();
@@ -319,9 +337,10 @@ Deno.serve(async (req) => {
           if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
           // File hash
-          const fileHash = await sha256(
-            new TextDecoder().decode(imageBytes).substring(0, 1000) + imageBytes.length,
-          );
+          // C12 FIX: Binary-safe hash (no TextDecoder corruption)
+          const fileHashBuffer = await crypto.subtle.digest("SHA-256", imageBytes);
+          const fileHash = Array.from(new Uint8Array(fileHashBuffer))
+            .map(b => b.toString(16).padStart(2, "0")).join("");
 
           // C12_STORAGE_PRIVACY: Store ONLY storage_path, never signed URLs in DB
           const { data: asset } = await supabase.from("image_assets").insert({
