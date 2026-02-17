@@ -37,7 +37,7 @@ async function generateFromProvider(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-pro-image-preview",
+        model: "google/gemini-2.5-flash-image",
         modalities: ["image", "text"],
         messages: [
           {
@@ -267,7 +267,7 @@ Deno.serve(async (req) => {
     // === Build flat task list ===
     const tasks: Array<{ provider: string; model: string; index: number }> = [];
     for (const item of plan) {
-      const { provider = "openai", model = provider === "gemini" ? "google/gemini-3-pro-image-preview" : "gpt-image-1", n = 1 } = item;
+      const { provider = "openai", model = provider === "gemini" ? "google/gemini-2.5-flash-image" : "gpt-image-1", n = 1 } = item;
       for (let i = 0; i < n; i++) {
         tasks.push({ provider, model, index: tasks.length });
       }
