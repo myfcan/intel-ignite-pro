@@ -6144,7 +6144,7 @@ Deno.serve(async (req) => {
           const mv = phase.microVisuals[mi];
           const content = mv.content as Record<string, unknown>;
           if (
-            mv.type === 'image' &&
+            (mv.type === 'image' || mv.type === 'image-flash') &&
             content.promptScene &&
             typeof content.promptScene === 'string' &&
             !content.url &&

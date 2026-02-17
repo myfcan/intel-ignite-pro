@@ -7,20 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Link2, Unlink, Check, Image as ImageIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-// Signed image using the shared hook pattern
-const useSignedUrl = (storagePath: string | null) => {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!storagePath) return;
-    let cancelled = false;
-    supabase.storage.from("image-lab").createSignedUrl(storagePath, 3600).then(({ data, error }) => {
-      if (!cancelled && !error && data?.signedUrl) setUrl(data.signedUrl);
-    });
-    return () => { cancelled = true; };
-  }, [storagePath]);
-  return url;
-};
+import { useSignedUrl } from "@/hooks/useSignedUrl";
 
 const SmallSignedImage = ({ storagePath, className }: { storagePath: string; className?: string }) => {
   const url = useSignedUrl(storagePath);
