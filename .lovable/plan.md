@@ -1,76 +1,62 @@
 
+# Reorganizacao: Guia de Modelos vs Contratos Ativos
 
-## Diagnóstico: Service Worker PWA Serve Código Antigo do Cache
+## Problema Atual
+A pagina `AdminModelos.tsx` mistura dois conceitos distintos:
+1. **Guias de Modelos** (templates JSON, MicroVisual Types, Interactive Scene Types, Visual Effects)
+2. **Contratos Ativos C01-C12** (regras do pipeline/runtime)
 
-### O Problema Real
+O usuario quer separar essas responsabilidades.
 
-O Workbox (via `vite-plugin-pwa`) faz **precache** de todos os arquivos do build -- incluindo os chunks JS lazy-loaded como o Dashboard. Quando o site é publicado:
+## Mudancas Planejadas
 
-1. O navegador carrega a pagina
-2. O Service Worker **antigo** (ainda controlando a pagina) serve os JS **do cache**
-3. O Dashboard renderiza com o **codigo do build anterior**
-4. Somente depois, o novo SW instala, ativa, e atualiza o cache
-5. O `onNeedRefresh` dispara e faz reload -- mas o usuario ja viu o design antigo
+### 1. AdminModelos.tsx — Limpar para ser APENAS Guias de Modelos
+Remover toda a secao de contratos (C01-C12, BoundaryFixGuard, Deprecated/Gaps) e manter apenas:
+- JSON Modelo Padrao (card de destaque com botao copiar)
+- MicroVisual Types (7 canonicos) — card expandido com documentacao detalhada, exemplos JSON de cada tipo
+- Interactive Scene Types — card expandido com mapeamentos e regras
+- Visual Effects — card com tipos suportados
+- Audit Gate Protocol (referencia)
+- Links rapidos
 
-### Solucao
+Cada card sera bem detalhado, com exemplos concretos de JSON para cada tipo.
 
-Adicionar `navigateFallback` e configurar o Workbox para **nao fazer precache dos chunks JS**, usando `NetworkFirst` para assets dinamicos. Isso garante que o navegador sempre busque os JS mais recentes do servidor.
+### 2. Nova pagina: AdminContracts.tsx
+Criar pagina dedicada `/admin/contracts` contendo:
+- Todos os contratos C01-C12 (ContractCard colapsavel)
+- BoundaryFixGuard
+- Deprecated & Known Gaps
+- Badges de versao (contract version, pipeline version, runtime version)
 
-### Mudancas Tecnicas
+### 3. AdminV7vv.tsx — Adicionar card de acesso aos Contratos
+Adicionar um card/botao na pagina de criacao V7-vv (`/admin/v7-vv`) que linka para `/admin/contracts`, para que os contratos fiquem acessiveis no contexto de criacao.
 
-**1. `vite.config.ts`** - Ajustar configuracao do Workbox:
-- Adicionar `globPatterns` restritivo para precache (apenas `index.html` e assets estaticos como fontes/imagens)
-- Adicionar `navigateFallback: '/index.html'` para SPA routing
-- Adicionar regra de `runtimeCaching` para arquivos `.js` e `.css` com estrategia `StaleWhileRevalidate` ou `NetworkFirst`
-- Isso faz com que os chunks JS do Dashboard sejam sempre buscados do servidor primeiro
+### 4. Admin.tsx — Atualizar navegacao
+- Card "Guia de Modelos" mantem descricao focada em templates e documentacao
+- Adicionar botao de acesso rapido para "Contratos Ativos"
 
-```
-workbox: {
-  skipWaiting: true,
-  clientsClaim: true,
-  maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-  navigateFallback: '/index.html',
-  globPatterns: ['**/*.{html,ico,png,svg,woff,woff2}'],
-  runtimeCaching: [
-    {
-      urlPattern: /\.(?:js|css)$/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'static-assets',
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24,
-        },
-      },
-    },
-    {
-      urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'supabase-cache',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 300,
-        },
-      },
-    },
-  ],
-},
-```
+### 5. App.tsx — Nova rota
+Registrar rota `/admin/contracts` apontando para `AdminContracts.tsx`.
 
-**2. `src/main.tsx`** - Melhorar o handler de update:
-- Adicionar verificacao de atualizacao imediata no `onRegisteredSW` (ao inves de esperar 1 hora)
-- Verificar atualizacoes a cada 60 segundos (em vez de 1 hora)
+---
 
-### Resultado Esperado
+## Detalhamento Tecnico
 
-Apos essa mudanca:
-- Arquivos JS/CSS serao sempre buscados do servidor primeiro (`NetworkFirst`)
-- Se o servidor estiver offline, o cache antigo serve como fallback
-- O precache fica restrito a `index.html` e assets estaticos (imagens, fontes)
-- O dashboard nunca mais mostra o design antigo apos um deploy
+### Arquivos modificados:
+| Arquivo | Acao |
+|---------|------|
+| `src/pages/AdminModelos.tsx` | Remover contratos C01-C12, expandir cards de modelos com exemplos JSON detalhados |
+| `src/pages/AdminContracts.tsx` | **NOVO** — Toda logica de contratos movida para ca |
+| `src/pages/AdminV7vv.tsx` | Adicionar card/link para `/admin/contracts` |
+| `src/pages/Admin.tsx` | Atualizar descricao do card Guia de Modelos, adicionar acesso rapido a Contratos |
+| `src/App.tsx` | Adicionar rota `/admin/contracts` |
 
-### Risco
+### AdminModelos.tsx — Cards detalhados (exemplo MicroVisual):
+Cada tipo canonico tera:
+- Nome e descricao
+- JSON de exemplo real (copiavel)
+- Regras de uso (max 1 por frase, anchorText obrigatorio, etc)
+- Mapeamento input -> output do pipeline
 
-Nenhum impacto funcional. O app continua funcionando offline com os assets cacheados. A unica diferenca e que JS/CSS sao buscados via rede primeiro (com fallback para cache), em vez de cache primeiro.
-
+### AdminContracts.tsx:
+Move todo o codigo existente de contratos (interface `ContractInfo`, array `CONTRACTS`, `ContractCard`, `BOUNDARY_FIX_GUARD`, secoes Active/Deprecated/Gaps) para este novo arquivo, sem alteracoes de logica.
