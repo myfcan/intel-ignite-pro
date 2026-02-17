@@ -35,11 +35,11 @@ const INITIAL_MONITOR: MonitorState = {
   jobId: null,
 };
 
-const makeSteps = (mode: 'single' | 'batch'): MonitorStep[] => [
+const makeSteps = (provider: 'openai' | 'gemini'): MonitorStep[] => [
   { id: 'create-job', label: 'Criando Job no banco', status: 'pending' },
   { id: 'auth', label: 'Autenticando sessão', status: 'pending' },
-  { id: 'call-api', label: mode === 'single' ? 'Chamando image-lab-generate' : 'Chamando image-lab-generate-batch', status: 'pending' },
-  { id: 'wait-response', label: mode === 'single' ? 'Aguardando resposta OpenAI' : 'Aguardando respostas (OpenAI + Gemini)', status: 'pending' },
+  { id: 'call-api', label: 'Chamando image-lab-generate', status: 'pending' },
+  { id: 'wait-response', label: provider === 'openai' ? 'Aguardando resposta GPT' : 'Aguardando resposta Gemini 🍌', status: 'pending' },
   { id: 'load-results', label: 'Carregando resultados', status: 'pending' },
 ];
 
@@ -401,7 +401,7 @@ const AdminImageLab = () => {
     setMonitor(prev => ({ ...prev, progress: value }));
   };
 
-  const createAndGenerate = async (mode: "single" | "batch") => {
+  const createAndGenerate = async (provider: "openai" | "gemini") => {
     if (!promptScene.trim()) {
       toast.error("Descreva a cena (prompt_scene)");
       return;
@@ -414,7 +414,7 @@ const AdminImageLab = () => {
     // Initialize monitor
     setMonitor({
       visible: true,
-      steps: makeSteps(mode),
+      steps: makeSteps(provider),
       error: null,
       progress: 0,
       jobId: null,
@@ -459,76 +459,39 @@ const AdminImageLab = () => {
       updateStep('call-api', 'running');
       setMonitorProgress(40);
 
-      if (mode === "single") {
-        const resp = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-lab-generate`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ job_id: job.id, provider: "openai", n: 1, size }),
-          }
-        );
-        
-        updateStep('call-api', 'done');
-        setMonitorProgress(60);
-
-        // Step 4: Parse response
-        updateStep('wait-response', 'running');
-        const result = await resp.json();
-        
-        if (!result.ok) {
-          updateStep('wait-response', 'error', result.error_code || 'FAILED');
-          throw new Error(result.error_message || "Generation failed");
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-lab-generate`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ job_id: job.id, provider, n: 1, size }),
         }
-        
-        updateStep('wait-response', 'done', result.cache_hit ? 'cache hit' : `${result.job?.latency_ms}ms`);
-        setMonitorProgress(80);
+      );
+      
+      updateStep('call-api', 'done');
+      setMonitorProgress(60);
 
-        toast.success(
-          result.cache_hit
-            ? "Cache hit! Imagem retornada do cache."
-            : `Imagem gerada em ${result.job?.latency_ms}ms`
-        );
-      } else {
-        const resp = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-lab-generate-batch`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              job_id: job.id,
-              plan: [
-                { provider: "openai", n: 2 },
-                { provider: "gemini", n: 2 },
-              ],
-              size,
-            }),
-          }
-        );
-        
-        updateStep('call-api', 'done');
-        setMonitorProgress(60);
-
-        updateStep('wait-response', 'running');
-        const result = await resp.json();
-        
-        if (!result.ok && result.total_generated === 0) {
-          updateStep('wait-response', 'error', `${result.total_failed || 0} falhas`);
-          throw new Error(result.error_message || "Batch failed");
-        }
-        
-        const detail = `${result.total_generated} ok, ${result.total_failed || 0} falhas, ${result.latency_ms}ms`;
-        updateStep('wait-response', 'done', detail);
-        setMonitorProgress(80);
-
-        toast.success(`${result.total_generated} imagens geradas (${result.latency_ms}ms). ${result.total_failed || 0} falhas.`);
+      // Step 4: Parse response
+      updateStep('wait-response', 'running');
+      const result = await resp.json();
+      
+      if (!result.ok) {
+        updateStep('wait-response', 'error', result.error_code || 'FAILED');
+        throw new Error(result.error_message || "Generation failed");
       }
+      
+      updateStep('wait-response', 'done', result.cache_hit ? 'cache hit' : `${result.job?.latency_ms}ms`);
+      setMonitorProgress(80);
+
+      const providerLabel = provider === 'openai' ? 'GPT' : 'Gemini 🍌';
+      toast.success(
+        result.cache_hit
+          ? "Cache hit! Imagem retornada do cache."
+          : `${providerLabel}: Imagem gerada em ${result.job?.latency_ms}ms`
+      );
 
       // Step 5: Load results
       updateStep('load-results', 'running');
@@ -682,13 +645,13 @@ const AdminImageLab = () => {
             </div>
 
             <div className="flex gap-3">
-              <Button onClick={() => createAndGenerate("single")} disabled={generating}>
+              <Button onClick={() => createAndGenerate("openai")} disabled={generating}>
                 {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
-                Generate 1 (OpenAI)
+                Generate (GPT)
               </Button>
-              <Button variant="outline" onClick={() => createAndGenerate("batch")} disabled={generating}>
+              <Button variant="outline" onClick={() => createAndGenerate("gemini")} disabled={generating}>
                 {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
-                Generate 4 (2 OAI + 2 Gemini)
+                Generate (Gemini 🍌)
               </Button>
             </div>
           </CardContent>
