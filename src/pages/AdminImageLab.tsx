@@ -10,6 +10,7 @@ import { ArrowLeft, Loader2, Check, X, RefreshCw, Image as ImageIcon, Zap, Check
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { V7SceneLinker } from "@/components/admin/V7SceneLinker";
 
 // === Processing Monitor Types ===
 interface MonitorStep {
@@ -733,6 +734,9 @@ const AdminImageLab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* === Fase 5: Vincular Assets a Cenas V7 === */}
+      <V7SceneLinker />
 
       {/* Processing Monitor */}
       <ProcessingMonitor monitor={monitor} onDismiss={() => setMonitor(INITIAL_MONITOR)} />
