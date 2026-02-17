@@ -46,6 +46,7 @@ interface ContractInfo {
   summary: string;
   invariants: string[];
   errorCodes?: string[];
+  reservedCodes?: string[];
   filePaths: string[];
 }
 
@@ -134,7 +135,7 @@ const CONTRACTS: ContractInfo[] = [
       'output_content_hash via SHA-256 (SQL RPC c05_compute_content_hash)',
       'Tabela pipeline_executions com input/output completo',
     ],
-    errorCodes: ['HASH_MISMATCH'],
+    reservedCodes: ['HASH_MISMATCH'],
     filePaths: [
       'supabase/functions/v7-vv/index.ts',
       'Tabela: pipeline_executions',
@@ -425,10 +426,23 @@ function ContractCard({ contract }: { contract: ContractInfo }) {
 
             {contract.errorCodes && contract.errorCodes.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Error Codes</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Error Codes (ativos)</p>
                 <div className="flex flex-wrap gap-1">
                   {contract.errorCodes.map((code) => (
                     <span key={code} className="text-[10px] font-mono bg-destructive/10 text-destructive px-1.5 py-0.5 rounded">
+                      {code}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {contract.reservedCodes && contract.reservedCodes.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Reserved Codes (futuro)</p>
+                <div className="flex flex-wrap gap-1">
+                  {contract.reservedCodes.map((code) => (
+                    <span key={code} className="text-[10px] font-mono bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">
                       {code}
                     </span>
                   ))}
