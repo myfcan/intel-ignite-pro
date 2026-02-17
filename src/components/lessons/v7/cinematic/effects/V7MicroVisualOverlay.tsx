@@ -12,6 +12,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useV7SoundEffects } from '../useV7SoundEffects';
 import { TIMING, EASING } from '../V7CinematicEffects';
+import { useSignedUrl } from '@/hooks/useSignedUrl';
 
 // Extended interface to support all JSON types
 interface MicroVisualData {
@@ -259,6 +260,66 @@ export const V7MicroVisualOverlay: React.FC<V7MicroVisualOverlayProps> = ({
   );
 };
 
+// ✅ Phase 4: ImageFlashContent extracted as component so useSignedUrl hook can be used
+const ImageFlashContent: React.FC<{ content: Record<string, any> }> = ({ content }) => {
+  // Resolve storagePath → signed URL (Image Lab C12 private bucket)
+  const signedUrl = useSignedUrl(content.storagePath || null);
+  const resolvedImageUrl = content.imageUrl || signedUrl;
+
+  return (
+    <div className="relative flex items-center justify-center">
+      {/* Cinematic flash overlay */}
+      <motion.div
+        className="absolute inset-0 rounded-3xl"
+        initial={{ opacity: 0.8 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          background: `radial-gradient(circle at center, ${content.color || 'rgba(255,255,255,0.5)'} 0%, transparent 70%)`,
+          width: '300px',
+          height: '200px',
+          margin: '-50px',
+        }}
+      />
+      {/* Actual image if provided (direct URL or signed URL from storagePath) */}
+      {resolvedImageUrl && (
+        <img
+          src={resolvedImageUrl}
+          alt=""
+          className="max-w-sm max-h-56 object-contain rounded-2xl"
+          style={{
+            boxShadow: '0 0 60px rgba(0,0,0,0.8), 0 0 100px rgba(255,255,255,0.2)'
+          }}
+        />
+      )}
+      {/* Emoji if provided (and no image) */}
+      {content.emoji && !resolvedImageUrl && (
+        <span
+          className="text-7xl md:text-8xl"
+          style={{
+            textShadow: '0 0 40px rgba(255,255,255,0.5), 0 0 80px rgba(255,255,255,0.3)',
+            filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.4))'
+          }}
+        >
+          {content.emoji}
+        </span>
+      )}
+      {/* Description fallback when no image/emoji */}
+      {!resolvedImageUrl && !content.emoji && content.description && (
+        <motion.div
+          className="bg-black/80 backdrop-blur-lg rounded-xl px-6 py-4 border border-white/20 shadow-2xl"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+        >
+          <p className="text-white text-lg md:text-xl font-medium text-center max-w-xs">
+            {content.description}
+          </p>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
 interface MicroVisualItemProps {
   microVisual: MicroVisualData;
   currentTime: number;
@@ -357,59 +418,9 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
 
     switch (type) {
       // IMAGE-FLASH: Cinematic flash effect with visual impact
+      // ✅ Phase 4: Supports storagePath from Image Lab C12 (resolved via signed URL)
       case 'image-flash':
-        return (
-          <div className="relative flex items-center justify-center">
-            {/* Cinematic flash overlay */}
-            <motion.div
-              className="absolute inset-0 rounded-3xl"
-              initial={{ opacity: 0.8 }}
-              animate={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              style={{
-                background: `radial-gradient(circle at center, ${content.color || 'rgba(255,255,255,0.5)'} 0%, transparent 70%)`,
-                width: '300px',
-                height: '200px',
-                margin: '-50px',
-              }}
-            />
-            {/* Actual image if provided */}
-            {content.imageUrl && (
-              <img
-                src={content.imageUrl}
-                alt=""
-                className="max-w-sm max-h-56 object-contain rounded-2xl"
-                style={{
-                  boxShadow: '0 0 60px rgba(0,0,0,0.8), 0 0 100px rgba(255,255,255,0.2)'
-                }}
-              />
-            )}
-            {/* Emoji if provided (and no image) */}
-            {content.emoji && !content.imageUrl && (
-              <span
-                className="text-7xl md:text-8xl"
-                style={{
-                  textShadow: '0 0 40px rgba(255,255,255,0.5), 0 0 80px rgba(255,255,255,0.3)',
-                  filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.4))'
-                }}
-              >
-                {content.emoji}
-              </span>
-            )}
-            {/* ✅ FIX: Description fallback when no image/emoji */}
-            {!content.imageUrl && !content.emoji && content.description && (
-              <motion.div 
-                className="bg-black/80 backdrop-blur-lg rounded-xl px-6 py-4 border border-white/20 shadow-2xl"
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-              >
-                <p className="text-white text-lg md:text-xl font-medium text-center max-w-xs">
-                  {content.description}
-                </p>
-              </motion.div>
-            )}
-          </div>
-        );
+        return <ImageFlashContent content={content} />;
 
       // TEXT-POP: Text with emoji pops in dramatically
       // ✅ V7-v25: Emoji centralizado, texto abaixo - layout vertical

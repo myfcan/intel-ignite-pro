@@ -176,6 +176,8 @@ export interface V7MicroVisual {
     // For image-flash
     description?: string;
     imageUrl?: string;
+    storagePath?: string;  // Image Lab C12: private bucket path → resolved via signed URL
+    assetId?: string;      // Image Lab C12: asset reference for audit trail
     // For text-pop
     text?: string;
     words?: string[];
