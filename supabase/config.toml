@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.image-lab-generate-batch]
 verify_jwt = false
+
+[functions.image-lab-pipeline-bridge]
+verify_jwt = false
