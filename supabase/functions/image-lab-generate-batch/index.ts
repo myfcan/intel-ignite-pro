@@ -147,17 +147,20 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const supabaseAuth = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
+    
+    // Auth via REST API (reliable in Deno edge runtime)
+    const authResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: anonKey },
     });
-
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
-    if (userError || !user) {
+    if (!authResp.ok) {
+      const errText = await authResp.text();
+      console.error("AUTH failed:", authResp.status, errText);
       return new Response(JSON.stringify({ ok: false, error_code: "AUTH_INVALID" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = user.id;
+    const authUser = await authResp.json();
+    const userId = authUser.id;
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
