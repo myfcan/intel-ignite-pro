@@ -588,7 +588,7 @@ const AdminImageLab = () => {
             <ImageIcon className="w-6 h-6 text-primary" />
             AI Image Lab
           </h1>
-          <p className="text-sm text-muted-foreground">Geração isolada • OpenAI + Gemini • Sem integração com Pipeline</p>
+          <p className="text-sm text-muted-foreground">Geração isolada • OpenAI + Gemini • Integrado com Pipeline V7 e V5</p>
         </div>
       </div>
 
@@ -838,6 +838,9 @@ const AdminImageLab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Fase 5: Vincular Assets a Cenas V7 */}
+      <V7SceneLinker />
     </div>
   );
 };
