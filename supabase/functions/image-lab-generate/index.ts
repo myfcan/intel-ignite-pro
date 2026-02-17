@@ -20,6 +20,133 @@ async function sha256(input: string): Promise<string> {
     .join("");
 }
 
+// === EXTRACTED GENERATION FUNCTIONS ===
+
+async function generateWithGemini(prompt: string): Promise<Uint8Array> {
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000);
+  let resp: Response;
+  try {
+    resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${lovableKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        modalities: ["image", "text"],
+        messages: [{ role: "user", content: `Generate an image with the following description. Return ONLY the image, no text.\n\n${prompt}` }],
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Gemini API error ${resp.status}: ${errText}`);
+  }
+
+  const data = await resp.json();
+  console.log("[image-lab-generate] Gemini response structure:", JSON.stringify({
+    hasChoices: !!data.choices,
+    choicesLength: data.choices?.length,
+    contentType: typeof data.choices?.[0]?.message?.content,
+    isArray: Array.isArray(data.choices?.[0]?.message?.content),
+  }));
+
+  const message = data.choices?.[0]?.message;
+  const content = message?.content;
+  const images = message?.images;
+  let b64Data: string | null = null;
+
+  // Gateway returns images in message.images array
+  if (Array.isArray(images) && images.length > 0) {
+    for (const img of images) {
+      const url = img.image_url?.url;
+      if (url?.startsWith("data:")) { b64Data = url.split(",")[1]; break; }
+    }
+  }
+
+  // Fallback: check content array (inline_data format)
+  if (!b64Data && Array.isArray(content)) {
+    for (const part of content) {
+      if (part.type === "image_url" && part.image_url?.url?.startsWith("data:")) {
+        b64Data = part.image_url.url.split(",")[1]; break;
+      } else if (part.inline_data?.data) {
+        b64Data = part.inline_data.data; break;
+      }
+    }
+  }
+
+  // Fallback: check content string for base64
+  if (!b64Data && typeof content === "string") {
+    const match = content.match(/data:image\/[^;]+;base64,([^\s"]+)/);
+    if (match) b64Data = match[1];
+  }
+
+  if (!b64Data) {
+    console.error("[image-lab-generate] Gemini: no image found. Content:", JSON.stringify(content)?.substring(0, 500));
+    throw new Error("No image data in Gemini response");
+  }
+
+  const binaryString = atob(b64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+  return bytes;
+}
+
+async function generateWithOpenAI(prompt: string, model: string, sizeApi: string): Promise<Uint8Array> {
+  const openaiKey = Deno.env.get("OPENAI_API_KEY")!;
+  const openaiBody: Record<string, unknown> = { model, prompt, n: 1, size: sizeApi };
+
+  // Only add response_format for dall-e models (not gpt-image-1)
+  if (!model.startsWith("gpt-image")) {
+    openaiBody.response_format = "b64_json";
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000);
+  let resp: Response;
+  try {
+    resp = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${openaiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(openaiBody),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`OpenAI API error ${resp.status}: ${errText}`);
+  }
+
+  const data = await resp.json();
+  const imageItem = data.data?.[0];
+
+  if (imageItem?.b64_json) {
+    const binaryString = atob(imageItem.b64_json);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+    return bytes;
+  } else if (imageItem?.url) {
+    const imgResp = await fetch(imageItem.url);
+    if (!imgResp.ok) throw new Error(`Failed to download image from OpenAI URL: ${imgResp.status}`);
+    return new Uint8Array(await imgResp.arrayBuffer());
+  }
+  throw new Error("No image data in OpenAI response");
+}
+
+// === MAIN HANDLER ===
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -27,7 +154,6 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const openaiKey = Deno.env.get("OPENAI_API_KEY")!;
 
   try {
     // === Auth via REST API (reliable in Deno edge runtime) ===
@@ -40,8 +166,7 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    
-    // Auth via REST API (reliable in Deno edge runtime)
+
     const authResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
       headers: { Authorization: `Bearer ${token}`, apikey: Deno.env.get("SUPABASE_ANON_KEY")! },
     });
@@ -187,163 +312,74 @@ Deno.serve(async (req) => {
     const startTime = Date.now();
     const sizeInfo = SIZE_MAP[actualSize] || SIZE_MAP["1024x1024"];
 
+    // === GENERATION WITH AUTOMATIC FALLBACK ===
+
     let imageBytes: Uint8Array;
+    let usedProvider = actualProvider;
+    let usedModel = actualModel;
+    let fallbackUsed = false;
+    let currentAttemptId = attempt!.id;
 
     if (actualProvider === "gemini") {
-      // Use Lovable AI Gateway for Gemini
-      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-      if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
-
-      // C12 FIX: AbortController with 120s timeout
-      const geminiController = new AbortController();
-      const geminiTimeout = setTimeout(() => geminiController.abort(), 120_000);
-      let geminiResp: Response;
       try {
-        geminiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${lovableKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash-image",
-            modalities: ["image", "text"],
-            messages: [
-              {
-                role: "user",
-                content: `Generate an image with the following description. Return ONLY the image, no text.\n\n${promptFinal}`,
-              },
-            ],
-          }),
-          signal: geminiController.signal,
-        });
-      } finally {
-        clearTimeout(geminiTimeout);
-      }
+        imageBytes = await generateWithGemini(promptFinal);
+      } catch (geminiError: any) {
+        const isTimeout = geminiError.name === "AbortError" ||
+          geminiError.message?.toLowerCase().includes("timeout") ||
+          geminiError.message?.includes("408");
 
-      if (!geminiResp.ok) {
-        const errText = await geminiResp.text();
-        throw new Error(`Gemini API error ${geminiResp.status}: ${errText}`);
-      }
+        if (isTimeout) {
+          console.warn(`[image-lab-generate] ⚠️ Gemini TIMEOUT for job ${job_id}. Falling back to OpenAI...`);
 
-      const geminiData = await geminiResp.json();
-      console.log("[image-lab-generate] Gemini response structure:", JSON.stringify({
-        hasChoices: !!geminiData.choices,
-        choicesLength: geminiData.choices?.length,
-        contentType: typeof geminiData.choices?.[0]?.message?.content,
-        isArray: Array.isArray(geminiData.choices?.[0]?.message?.content),
-      }));
+          // Mark original attempt as failed with TIMEOUT
+          const geminiLatency = Date.now() - startTime;
+          await supabase.from("image_attempts").update({
+            status: "failed",
+            error_code: "TIMEOUT",
+            error_message: "Gemini timeout – automatic fallback to OpenAI triggered",
+            latency_ms: geminiLatency,
+          }).eq("id", attempt!.id);
 
-      const message = geminiData.choices?.[0]?.message;
-      const content = message?.content;
-      const images = message?.images;
-      let b64Data: string | null = null;
+          // Create fallback attempt with OpenAI
+          const fallbackModel = "gpt-image-1";
+          const { data: fallbackAttempt } = await supabase.from("image_attempts").insert({
+            job_id,
+            provider: "openai",
+            model: fallbackModel,
+            status: "processing",
+            prompt_final: promptFinal,
+          }).select().single();
 
-      // Gateway returns images in message.images array
-      if (Array.isArray(images) && images.length > 0) {
-        for (const img of images) {
-          const url = img.image_url?.url;
-          if (url?.startsWith("data:")) {
-            b64Data = url.split(",")[1];
-            break;
-          }
+          // Update job provider/model to reflect fallback
+          await supabase.from("image_jobs").update({
+            provider: "openai",
+            model: fallbackModel,
+          }).eq("id", job_id);
+
+          currentAttemptId = fallbackAttempt!.id;
+          imageBytes = await generateWithOpenAI(promptFinal, fallbackModel, sizeInfo.api);
+          usedProvider = "openai";
+          usedModel = fallbackModel;
+          fallbackUsed = true;
+        } else {
+          // Non-timeout error: propagate normally
+          throw geminiError;
         }
-      }
-
-      // Fallback: check content array (inline_data format)
-      if (!b64Data && Array.isArray(content)) {
-        for (const part of content) {
-          if (part.type === "image_url" && part.image_url?.url?.startsWith("data:")) {
-            b64Data = part.image_url.url.split(",")[1];
-            break;
-          } else if (part.inline_data?.data) {
-            b64Data = part.inline_data.data;
-            break;
-          }
-        }
-      }
-
-      // Fallback: check content string for base64
-      if (!b64Data && typeof content === "string") {
-        const match = content.match(/data:image\/[^;]+;base64,([^\s"]+)/);
-        if (match) b64Data = match[1];
-      }
-
-      if (!b64Data) {
-        // Log the actual content for debugging
-        console.error("[image-lab-generate] Gemini: no image found. Content:", JSON.stringify(content)?.substring(0, 500));
-        throw new Error("No image data in Gemini response");
-      }
-
-      const binaryString = atob(b64Data);
-      imageBytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        imageBytes[i] = binaryString.charCodeAt(i);
       }
     } else {
-      // OpenAI - gpt-image-1 does NOT support response_format parameter
-      // It returns URLs by default
-      const openaiBody: Record<string, unknown> = {
-        model: actualModel,
-        prompt: promptFinal,
-        n: 1,
-        size: sizeInfo.api,
-      };
-
-      // Only add response_format for dall-e models (not gpt-image-1)
-      if (!actualModel.startsWith("gpt-image")) {
-        openaiBody.response_format = "b64_json";
-      }
-
-      // C12 FIX: AbortController with 120s timeout
-      const openaiController = new AbortController();
-      const openaiTimeout = setTimeout(() => openaiController.abort(), 120_000);
-      let openaiResp: Response;
-      try {
-        openaiResp = await fetch("https://api.openai.com/v1/images/generations", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${openaiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(openaiBody),
-          signal: openaiController.signal,
-        });
-      } finally {
-        clearTimeout(openaiTimeout);
-      }
-
-      if (!openaiResp.ok) {
-        const errText = await openaiResp.text();
-        throw new Error(`OpenAI API error ${openaiResp.status}: ${errText}`);
-      }
-
-      const openaiData = await openaiResp.json();
-      const imageItem = openaiData.data?.[0];
-
-      if (imageItem?.b64_json) {
-        // DALL-E style b64 response
-        const binaryString = atob(imageItem.b64_json);
-        imageBytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          imageBytes[i] = binaryString.charCodeAt(i);
-        }
-      } else if (imageItem?.url) {
-        // gpt-image-1 returns a URL - download it
-        const imgResp = await fetch(imageItem.url);
-        if (!imgResp.ok) throw new Error(`Failed to download image from OpenAI URL: ${imgResp.status}`);
-        imageBytes = new Uint8Array(await imgResp.arrayBuffer());
-      } else {
-        throw new Error("No image data in OpenAI response");
-      }
+      imageBytes = await generateWithOpenAI(promptFinal, actualModel, sizeInfo.api);
     }
 
     const latencyMs = Date.now() - startTime;
-    // === PARTE 4: bytes_out telemetry ===
+    if (fallbackUsed) {
+      console.log(`[image-lab-generate] ✅ Fallback OpenAI succeeded for job ${job_id} in ${latencyMs}ms`);
+    }
+
+    // === bytes_out telemetry ===
     const bytesOut = imageBytes.length;
 
     // Upload to storage
-    const storagePath = `${job_id}/${attempt!.id}/0.png`;
+    const storagePath = `${job_id}/${currentAttemptId}/0.png`;
     const { error: uploadError } = await supabase.storage
       .from("image-lab")
       .upload(storagePath, imageBytes, {
@@ -353,15 +389,14 @@ Deno.serve(async (req) => {
 
     if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
-    // === PARTE 3: Generate signed URL instead of public URL ===
+    // Generate signed URL for response
     const { data: signedData, error: signedError } = await supabase.storage
       .from("image-lab")
       .createSignedUrl(storagePath, 3600);
 
     const signedUrl = signedError ? null : signedData?.signedUrl;
 
-    // Compute file hash
-    // C12 FIX: Binary-safe hash (no TextDecoder corruption)
+    // Compute file hash (C12: Binary-safe)
     const fileHashBuffer = await crypto.subtle.digest("SHA-256", imageBytes);
     const fileHash = Array.from(new Uint8Array(fileHashBuffer))
       .map(b => b.toString(16).padStart(2, "0")).join("");
@@ -369,7 +404,7 @@ Deno.serve(async (req) => {
     // C12_STORAGE_PRIVACY: Store ONLY storage_path, never signed URLs in DB
     const { data: asset } = await supabase.from("image_assets").insert({
       job_id,
-      attempt_id: attempt!.id,
+      attempt_id: currentAttemptId,
       status: "completed",
       variation_index: 0,
       storage_path: storagePath,
@@ -380,23 +415,35 @@ Deno.serve(async (req) => {
       hash,
     }).select().single();
 
-    // === PARTE 4: Update attempt with latency + bytes_out ===
+    // Update attempt with latency + bytes_out
     await supabase.from("image_attempts").update({
       status: "completed",
       latency_ms: latencyMs,
       bytes_out: bytesOut,
-      cost_estimate: actualProvider === "openai" ? 0.02 : 0.01,
-    }).eq("id", attempt!.id);
+      cost_estimate: usedProvider === "openai" ? 0.02 : 0.01,
+    }).eq("id", currentAttemptId);
 
     // Update job
     await supabase.from("image_jobs").update({
       status: "completed",
       latency_ms: latencyMs,
+      provider: usedProvider,
+      model: usedModel,
     }).eq("id", job_id);
 
     return new Response(JSON.stringify({
       ok: true,
-      job: { id: job_id, status: "completed", latency_ms: latencyMs, prompt_final: promptFinal, hash, cache_hit: false },
+      job: {
+        id: job_id,
+        status: "completed",
+        latency_ms: latencyMs,
+        prompt_final: promptFinal,
+        hash,
+        cache_hit: false,
+        fallback_used: fallbackUsed,
+        provider: usedProvider,
+        model: usedModel,
+      },
       assets: [asset],
       cache_hit: false,
     }), {
@@ -411,11 +458,10 @@ Deno.serve(async (req) => {
       const supabase = createClient(supabaseUrl, serviceKey);
       const body = await req.clone().json().catch(() => ({}));
       if (body.job_id) {
-        // C12 normalized error classification
         const errorMsg = error.message?.substring(0, 500) || "Unknown error";
         let errorCode = "GENERATION_FAILED";
         if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("rate limit")) errorCode = "RATE_LIMIT";
-        else if (errorMsg.toLowerCase().includes("timeout") || errorMsg.includes("408")) errorCode = "TIMEOUT";
+        else if (errorMsg.toLowerCase().includes("timeout") || errorMsg.includes("408") || error.name === "AbortError") errorCode = "TIMEOUT";
         else if (errorMsg.toLowerCase().includes("content_policy") || errorMsg.toLowerCase().includes("safety")) errorCode = "CONTENT_POLICY";
         else if (errorMsg.match(/5\d\d/)) errorCode = "PROVIDER_5XX";
         else if (errorMsg.toLowerCase().includes("invalid") && errorMsg.toLowerCase().includes("prompt")) errorCode = "INVALID_PROMPT";
