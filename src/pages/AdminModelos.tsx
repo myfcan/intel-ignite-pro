@@ -645,20 +645,207 @@ export default function AdminModelos() {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* EXEMPLOS COMPLETOS */}
-            <Collapsible open={expandedEPPBlock === 'examples'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'examples' : null)}>
+            {/* PADRÃO OFICIAL — CENA COMPARAÇÃO DUAL MONITOR */}
+            <Collapsible open={expandedEPPBlock === 'dual-monitor'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'dual-monitor' : null)}>
               <CollapsibleTrigger className="w-full text-left">
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors">
-                  {expandedEPPBlock === 'examples' ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-amber-500" />}
-                  <span className="text-sm font-semibold">🎯 Exemplos Completos</span>
-                  <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px] ml-auto">2 PROMPTS</Badge>
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors">
+                  {expandedEPPBlock === 'dual-monitor' ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-amber-500" />}
+                  <span className="text-sm font-semibold">🖥️ Padrão Oficial — Cena "Resultado de Prompt Eficiente"</span>
+                  <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px] ml-auto">FRAMEWORK VISUAL FIXO</Badge>
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="mt-2 pl-4 space-y-4">
+
+                  {/* Estrutura Obrigatória */}
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-xs font-semibold text-amber-400 mb-3">📐 Estrutura Obrigatória — Toda Cena de Comparação</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="p-3 bg-red-500/5 rounded-lg border border-red-500/20">
+                        <p className="text-xs font-semibold text-red-400 mb-2">❌ Lado Esquerdo (Genérico)</p>
+                        <div className="space-y-1 text-[11px] text-muted-foreground">
+                          <p>• Layout fraco / flat</p>
+                          <p>• Texto sem proposta</p>
+                          <p>• Sem benefício</p>
+                          <p>• Sem CTA</p>
+                          <p>• Sem prova social</p>
+                          <p>• Cores desaturadas / baixo contraste</p>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
+                        <p className="text-xs font-semibold text-emerald-400 mb-2">✅ Lado Direito (Estruturado via Método)</p>
+                        <div className="space-y-1 text-[11px] text-muted-foreground">
+                          <p>• Headline estratégica</p>
+                          <p>• Subheadline com benefício</p>
+                          <p>• Prova social (estrelas ou selo)</p>
+                          <p>• Escassez OU garantia</p>
+                          <p>• CTA visível ("Comprar Agora")</p>
+                          <p>• Preço com ancoragem (De R$X por R$Y)</p>
+                          <p>• Hierarquia clara / alto contraste</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Padrão Cinematográfico */}
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-xs font-semibold text-cyan-400 mb-2">🎥 Padrão Cinematográfico Oficial</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] text-muted-foreground">
+                      <div className="bg-cyan-500/5 p-2 rounded border border-cyan-500/10">📷 Câmera frontal ortográfica</div>
+                      <div className="bg-cyan-500/5 p-2 rounded border border-cyan-500/10">🔭 85mm lens simulation</div>
+                      <div className="bg-cyan-500/5 p-2 rounded border border-cyan-500/10">📐 Sensor paralelo ao plano</div>
+                      <div className="bg-cyan-500/5 p-2 rounded border border-cyan-500/10">🚫 Sem distorção / keystone</div>
+                      <div className="bg-cyan-500/5 p-2 rounded border border-cyan-500/10">🪑 Mesa minimalista</div>
+                      <div className="bg-cyan-500/5 p-2 rounded border border-cyan-500/10">☀️ Luz quente lateral (tarde)</div>
+                      <div className="bg-cyan-500/5 p-2 rounded border border-cyan-500/10">🏞️ Fundo neutro bege</div>
+                      <div className="bg-cyan-500/5 p-2 rounded border border-cyan-500/10">🎞️ Film grain sutil</div>
+                    </div>
+                  </div>
+
+                  {/* Paleta Oficial */}
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-xs font-semibold text-yellow-400 mb-2">🎨 Paleta Oficial</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="p-2 bg-zinc-800/50 rounded border border-zinc-700/50">
+                        <p className="text-[11px] font-semibold text-zinc-400 mb-1">Genérico (Esquerdo)</p>
+                        <div className="flex gap-2 text-[10px] text-muted-foreground">
+                          <span className="bg-zinc-600 text-white px-2 py-0.5 rounded">Cinza claro</span>
+                          <span className="bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded">Baixo contraste</span>
+                          <span className="bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">Layout flat</span>
+                        </div>
+                      </div>
+                      <div className="p-2 bg-zinc-900/80 rounded border border-amber-500/30">
+                        <p className="text-[11px] font-semibold text-amber-400 mb-1">Profissional (Direito)</p>
+                        <div className="flex gap-2 text-[10px] text-muted-foreground">
+                          <span className="bg-zinc-950 text-white px-2 py-0.5 rounded border border-amber-500/30">Preto profundo</span>
+                          <span className="bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded">Dourado premium</span>
+                          <span className="bg-white/10 text-white px-2 py-0.5 rounded">Alto contraste + Glow</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Modelo Universal */}
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-xs font-semibold text-purple-400 mb-2">🧠 Modelo Universal — Template Adaptável</p>
+                    <p className="text-[11px] text-muted-foreground mb-2">Substitua o produto mantendo a estrutura visual:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Curso', 'SaaS', 'Consultoria', 'E-commerce', 'Landing Page', 'Email', 'Anúncio', 'Proposta Comercial'].map(item => (
+                        <span key={item} className="text-[10px] font-mono bg-purple-500/10 text-purple-400 px-2 py-1 rounded">{item}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Upgrade Premium */}
+                  <div className="p-3 bg-gradient-to-r from-amber-500/5 to-orange-500/5 rounded-lg border border-amber-500/20">
+                    <p className="text-xs font-semibold text-amber-400 mb-2">🔥 Upgrade Premium (Nível Avançado)</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] text-muted-foreground">
+                      <div className="bg-amber-500/10 p-2 rounded">✨ Crossfade transição</div>
+                      <div className="bg-amber-500/10 p-2 rounded">💰 Preço contando 1200→500</div>
+                      <div className="bg-amber-500/10 p-2 rounded">🏷️ Badge com glow sutil</div>
+                      <div className="bg-amber-500/10 p-2 rounded">🔘 CTA com micro pulse</div>
+                    </div>
+                  </div>
+
+                  {/* Prompt Completo Copiável */}
                   <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-emerald-400">🎯 Exemplo 1 — Detalhado</p>
+                      <p className="text-xs font-semibold text-orange-400">🎯 Prompt Completo — Dual Monitor Comparison</p>
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard(`Ultra realistic cinematic frontal shot, orthographic perspective, dual monitor setup perfectly parallel to camera sensor, no perspective distortion, no keystone, 85mm lens simulation, sensor aligned flat to screen plane.
+
+Scene: modern executive desk, warm natural side lighting (late afternoon), soft shadows, neutral beige wall background, minimal decor.
+
+Left monitor:
+Flat generic social media post mockup.
+Gray placeholder layout.
+Weak headline.
+No branding.
+No hierarchy.
+No CTA.
+Desaturated colors.
+Minimal contrast.
+
+Right monitor:
+Premium luxury watch campaign.
+Headline: "Relógio Executivo 2026"
+Subheadline: "Precisão Suíça • Garantia 2 anos • Frete Expresso"
+Price anchor glowing: "De R$1.200 por R$500"
+Five-star rating subtly visible.
+Small badge: "Últimas 12 unidades"
+Refined gold typography.
+Deep black background.
+High contrast.
+Professional layout grid.
+Visible CTA button: "Comprar Agora"
+
+A human hand in foreground pointing from left screen to right screen, sharp focus on right screen.
+
+Cinematic depth control:
+Foreground soft blur.
+Right screen razor sharp.
+Left screen slightly softer.
+Subtle film grain.
+Professional commercial photography.
+No watermarks.
+No random text.
+Clean typography.
+High-end brand aesthetic.`, 'Prompt Dual Monitor')}>
+                        <Copy className="w-3 h-3 mr-1" /> Copiar Prompt
+                      </Button>
+                    </div>
+                    <pre className="text-[10px] font-mono bg-background/50 p-2 rounded border border-border/30 whitespace-pre-wrap max-h-[300px] overflow-y-auto">{`Ultra realistic cinematic frontal shot, orthographic perspective,
+dual monitor setup perfectly parallel to camera sensor,
+no perspective distortion, no keystone, 85mm lens simulation,
+sensor aligned flat to screen plane.
+
+Scene: modern executive desk, warm natural side lighting (late afternoon),
+soft shadows, neutral beige wall background, minimal decor.
+
+Left monitor:
+Flat generic social media post mockup.
+Gray placeholder layout. Weak headline. No branding.
+No hierarchy. No CTA. Desaturated colors. Minimal contrast.
+
+Right monitor:
+Premium luxury watch campaign.
+Headline: "Relógio Executivo 2026"
+Subheadline: "Precisão Suíça • Garantia 2 anos • Frete Expresso"
+Price anchor glowing: "De R$1.200 por R$500"
+Five-star rating subtly visible.
+Small badge: "Últimas 12 unidades"
+Refined gold typography. Deep black background.
+High contrast. Professional layout grid.
+Visible CTA button: "Comprar Agora"
+
+A human hand in foreground pointing from left screen to right screen,
+sharp focus on right screen.
+
+Cinematic depth control:
+Foreground soft blur. Right screen razor sharp.
+Left screen slightly softer. Subtle film grain.
+Professional commercial photography.
+No watermarks. No random text.
+Clean typography. High-end brand aesthetic.`}</pre>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* EXEMPLOS EPP ORIGINAIS */}
+            <Collapsible open={expandedEPPBlock === 'examples'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'examples' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors">
+                  {expandedEPPBlock === 'examples' ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-amber-500" />}
+                  <span className="text-sm font-semibold">🎯 Exemplos EPP Clássicos</span>
+                  <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px] ml-auto">3 PROMPTS</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-4 space-y-4">
+                  {/* Exemplo 1 — Detalhado */}
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-emerald-400">🎯 Exemplo 1 — EPP Detalhado</p>
                       <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard('Pedagogical problem-solving moment.\n\nAdult male around 42 years old, natural face, subtle skin imperfections, realistic hair, slightly tired but focused expression.\n\nLeaning forward at a wooden desk, writing a short personal problem statement in a notebook.\nPen touching paper mid-sentence.\nOne word lightly crossed out.\nLaptop open on the right side with a minimal AI chat interface softly glowing.\nNo readable text on screen.\nHe pauses as if thinking before typing.\n\nWarm natural daylight coming from left window.\nSoft curtain diffusion.\n50mm lens.\nShallow depth of field.\nFocus on hand and notebook.\nBackground gently blurred.\nEditorial photography style.\nSubtle cinematic film grain.\nNatural color grading.\nBalanced exposure.\nRealistic skin tones.\nHigh tactile realism.\n\nNo sci-fi.\nNo neon blue glow.\nNo holograms.\nNo floating digital panels.\nNo visible interface text.\nNo corporate staged pose.\nNo stock photography smile.\nNo watermark.', 'Exemplo 1')}>
                         <Copy className="w-3 h-3 mr-1" /> Copiar
                       </Button>
@@ -684,6 +871,7 @@ No visible interface text. No corporate staged pose.
 No stock photography smile. No watermark.`}</pre>
                   </div>
 
+                  {/* Exemplo 2 — Dramático */}
                   <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-semibold text-red-400">🎯 Exemplo 2 — EPP Dramático</p>
@@ -712,6 +900,38 @@ Foreground sharp. Background darker and softly blurred.
 Cinematic tension. Quiet pressure. Serious focus. Subtle film grain.
 
 No sci-fi. No neon. No corporate stock pose. No watermark.`}</pre>
+                  </div>
+
+                  {/* Exemplo 3 — Dual Monitor (Novo) */}
+                  <div className="p-3 bg-muted/30 rounded-lg border border-amber-500/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-amber-400">🎯 Exemplo 3 — Dual Monitor Comparison (NOVO)</p>
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard(`Ultra realistic cinematic frontal shot, orthographic perspective, dual monitor setup perfectly parallel to camera sensor, no perspective distortion, no keystone, 85mm lens simulation, sensor aligned flat to screen plane.\n\nScene: modern executive desk, warm natural side lighting (late afternoon), soft shadows, neutral beige wall background, minimal decor.\n\nLeft monitor:\nFlat generic social media post mockup. Gray placeholder layout. Weak headline. No branding. No hierarchy. No CTA. Desaturated colors. Minimal contrast.\n\nRight monitor:\nPremium luxury watch campaign.\nHeadline: "Relógio Executivo 2026"\nSubheadline: "Precisão Suíça • Garantia 2 anos • Frete Expresso"\nPrice anchor glowing: "De R$1.200 por R$500"\nFive-star rating subtly visible. Small badge: "Últimas 12 unidades"\nRefined gold typography. Deep black background. High contrast.\nProfessional layout grid. Visible CTA button: "Comprar Agora"\n\nA human hand in foreground pointing from left screen to right screen, sharp focus on right screen.\n\nCinematic depth control: Foreground soft blur. Right screen razor sharp. Left screen slightly softer. Subtle film grain. Professional commercial photography. No watermarks. No random text. Clean typography. High-end brand aesthetic.`, 'Exemplo 3 - Dual Monitor')}>
+                        <Copy className="w-3 h-3 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <pre className="text-[10px] font-mono bg-background/50 p-2 rounded border border-amber-500/20 whitespace-pre-wrap max-h-[200px] overflow-y-auto">{`Ultra realistic cinematic frontal shot, orthographic perspective,
+dual monitor setup perfectly parallel to camera sensor,
+no perspective distortion, no keystone, 85mm lens simulation.
+
+Scene: modern executive desk, warm natural side lighting (late afternoon),
+soft shadows, neutral beige wall background, minimal decor.
+
+Left monitor:
+Flat generic social media post mockup. Gray placeholder layout.
+Weak headline. No branding. No hierarchy. No CTA.
+
+Right monitor:
+Premium luxury watch campaign.
+Headline: "Relógio Executivo 2026"
+Subheadline: "Precisão Suíça • Garantia 2 anos • Frete Expresso"
+Price anchor glowing: "De R$1.200 por R$500"
+Five-star rating. Badge: "Últimas 12 unidades"
+Refined gold typography. Deep black background.
+CTA button: "Comprar Agora"
+
+Human hand pointing left→right. Sharp focus on right screen.
+Foreground soft blur. Subtle film grain. No watermarks.`}</pre>
                   </div>
                 </div>
               </CollapsibleContent>
