@@ -12,6 +12,17 @@ const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
   "1024x1536": { w: 1024, h: 1536, api: "1024x1536" },
 };
 
+// === C12.1_SLO_CONFIG (was hardcoded 120_000 — BUG FIX) ===
+const SLO_CONFIG = {
+  OPENAI_TIMEOUT_MS: 20_000,
+  GEMINI_TIMEOUT_MS: 15_000,
+  MAX_TOTAL_WALL_MS: 25_000,
+};
+
+function getProviderTimeout(provider: string): number {
+  return provider === "gemini" ? SLO_CONFIG.GEMINI_TIMEOUT_MS : SLO_CONFIG.OPENAI_TIMEOUT_MS;
+}
+
 // === C12.1_CACHE: Prompt normalization for deterministic hashing ===
 function normalizePrompt(prompt: string): string {
   return prompt
@@ -39,11 +50,11 @@ async function generateFromProvider(
   sizeInfo: { w: number; h: number; api: string },
   openaiKey: string,
   lovableKey: string,
+  timeoutMs: number,
 ): Promise<Uint8Array> {
   if (provider === "gemini") {
-    // C12 FIX: AbortController with 120s timeout
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let resp: Response;
     try {
       resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -125,9 +136,8 @@ async function generateFromProvider(
       openaiBody.response_format = "b64_json";
     }
 
-    // C12 FIX: AbortController with 120s timeout
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let resp: Response;
     try {
       resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -164,6 +174,15 @@ async function generateFromProvider(
       throw new Error("No image data in OpenAI response");
     }
   }
+}
+
+function classifyError(err: any): string {
+  const msg = err.message?.toLowerCase() || "";
+  if (msg.includes("429") || msg.includes("rate limit")) return "RATE_LIMIT";
+  if (msg.includes("timeout") || msg.includes("408") || err.name === "AbortError") return "TIMEOUT";
+  if (msg.includes("content_policy") || msg.includes("safety")) return "CONTENT_POLICY";
+  if (msg.match(/5\d\d/)) return "PROVIDER_5XX";
+  return "GENERATION_FAILED";
 }
 
 Deno.serve(async (req) => {
@@ -259,7 +278,6 @@ Deno.serve(async (req) => {
     const sizeInfo = SIZE_MAP[actualSize] || SIZE_MAP["1024x1024"];
 
     // === Compute hash for idempotency (once for the job, not per task) ===
-    // Use job's primary provider/model for the hash
     const hashInput = `${job.provider}|${job.model}|${actualSize}|${preset.key}|${preset.version}|${normalizePrompt(promptFinal)}`;
     const hash = await sha256(hashInput);
 
@@ -319,6 +337,9 @@ Deno.serve(async (req) => {
     const results = await Promise.allSettled(
       tasks.map(async (task) => {
         const taskStart = Date.now();
+        // C12.1_SLO: Use provider-specific timeout instead of hardcoded 120s
+        const timeoutMs = getProviderTimeout(task.provider);
+        console.log(`[batch:C12.1_SLO] IMAGE_PROVIDER_START: provider=${task.provider}, jobId=${job_id}, timeoutMs=${timeoutMs}`);
 
         // Create individual attempt
         const { data: attempt } = await supabase.from("image_attempts").insert({
@@ -333,7 +354,7 @@ Deno.serve(async (req) => {
 
         try {
           const imageBytes = await generateFromProvider(
-            task.provider, task.model, promptFinal, sizeInfo, openaiKey, lovableKey,
+            task.provider, task.model, promptFinal, sizeInfo, openaiKey, lovableKey, timeoutMs,
           );
 
           const taskLatency = Date.now() - taskStart;
@@ -348,12 +369,10 @@ Deno.serve(async (req) => {
           if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
           // File hash
-          // C12 FIX: Binary-safe hash (no TextDecoder corruption)
           const fileHashBuffer = await crypto.subtle.digest("SHA-256", imageBytes);
           const fileHash = Array.from(new Uint8Array(fileHashBuffer))
             .map(b => b.toString(16).padStart(2, "0")).join("");
 
-          // C12_STORAGE_PRIVACY: Store ONLY storage_path, never signed URLs in DB
           const { data: asset } = await supabase.from("image_assets").insert({
             job_id,
             attempt_id: attempt.id,
@@ -377,19 +396,19 @@ Deno.serve(async (req) => {
 
           return { provider: task.provider, asset };
         } catch (err: any) {
-          // Update attempt to failed
+          const taskLatency = Date.now() - taskStart;
           const errMsg = err.message?.substring(0, 500) || "Unknown error";
-          let errorCode = "GENERATION_FAILED";
-          if (errMsg.includes("429") || errMsg.toLowerCase().includes("rate limit")) errorCode = "RATE_LIMIT";
-          else if (errMsg.toLowerCase().includes("timeout")) errorCode = "TIMEOUT";
-          else if (errMsg.toLowerCase().includes("content_policy") || errMsg.toLowerCase().includes("safety")) errorCode = "CONTENT_POLICY";
-          else if (errMsg.match(/5\d\d/)) errorCode = "PROVIDER_5XX";
+          const isSloTimeout = err.name === "AbortError" || taskLatency >= timeoutMs - 500;
+          let errorCode = isSloTimeout ? "SLO_TIMEOUT" : classifyError(err);
+          if (isSloTimeout) {
+            console.warn(`[batch:C12.1_SLO] IMAGE_PROVIDER_TIMEOUT: provider=${task.provider}, ms=${taskLatency}, jobId=${job_id}`);
+          }
 
           await supabase.from("image_attempts").update({
             status: "failed",
             error_code: errorCode,
             error_message: errMsg,
-            latency_ms: Date.now() - taskStart,
+            latency_ms: taskLatency,
           }).eq("id", attempt.id);
 
           throw err;
