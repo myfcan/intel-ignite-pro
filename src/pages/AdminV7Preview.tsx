@@ -326,7 +326,7 @@ export default function AdminV7Preview() {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
           <h2 className="text-xl font-bold text-white">Erro ao carregar lição</h2>
           <p className="text-white/70">{error}</p>
-          <Button onClick={() => navigate('/admin/v7/create')} variant="outline">
+          <Button onClick={() => navigate(-1)} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </Button>
@@ -345,7 +345,7 @@ export default function AdminV7Preview() {
       <div className="absolute top-4 left-4 z-50 flex gap-2">
         <Button
           variant="ghost"
-          onClick={() => navigate('/admin/v7/create')}
+          onClick={() => navigate(-1)}
           className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
