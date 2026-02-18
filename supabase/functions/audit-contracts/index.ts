@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
     // ========================================================================
     let metaMissing = 0;
     let metaMismatch = 0;
-    const expectedVersion = 'c10b-boundaryfix-execstate-c11-1.0';
+    const expectedVersion = 'c10b-boundaryfix-execstate-c11-c03-1.0';
     
     for (const run of (completedRuns || [])) {
       const cv = run.output_data?.meta?.contractVersion;
@@ -471,14 +471,36 @@ Deno.serve(async (req) => {
     });
 
     // ========================================================================
-    // KNOWN GAPS (informational)
+    // CHECK: C03 — Scenes Array Integrity
     // ========================================================================
+    let c03PhasesWithoutScenes = 0;
+    let c03BoundsViolations = 0;
+    let c03Details = '';
+
+    for (const run of (completedRuns || [])) {
+      const phases = run.output_data?.content?.phases || [];
+      for (const phase of phases) {
+        if (!phase.scenes || phase.scenes.length === 0) {
+          c03PhasesWithoutScenes++;
+          c03Details += `${phase.id} missing scenes[]; `;
+        }
+        for (const scene of (phase.scenes || [])) {
+          if (scene.startTime < phase.startTime || scene.endTime > phase.endTime) {
+            c03BoundsViolations++;
+            c03Details += `Scene ${scene.id} out of bounds in ${phase.id}; `;
+          }
+        }
+      }
+    }
+
     checks.push({
       contract_id: 'C03',
-      name: 'Scenes Array Population (KNOWN GAP)',
-      status: 'known_gap',
-      pass: true,
-      details: 'scenes[] currently empty. Renderer uses visual fallback. Deferred to future version.',
+      name: 'Scenes Array Integrity (scenes[] populated per phase)',
+      status: 'required',
+      pass: c03PhasesWithoutScenes === 0 && c03BoundsViolations === 0,
+      details: c03PhasesWithoutScenes === 0 && c03BoundsViolations === 0
+        ? 'All phases have scenes[] with valid bounds'
+        : `${c03PhasesWithoutScenes} phases without scenes[], ${c03BoundsViolations} bounds violations. ${c03Details.slice(0, 200)}`,
     });
 
     // ========================================================================
@@ -488,7 +510,7 @@ Deno.serve(async (req) => {
     const requiredFailed = requiredChecks.filter(c => !c.pass).length;
 
     const scorecard: AuditScorecard = {
-      audit_version: '2.0.0',
+      audit_version: '2.1.0',
       contract_version: expectedVersion,
       pipeline_version_filter: pipelineVersion,
       audited_at: new Date().toISOString(),
