@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Trash2, AlertTriangle, Bug, Wrench, FolderInput, Plus, Power, ChevronDown, ChevronRight, BookOpen, Layers, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, Bug, Wrench, FolderInput, Plus, Power, ChevronDown, ChevronRight, BookOpen, Layers, GraduationCap, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -328,6 +328,10 @@ export default function AdminManageLessons() {
           >
             <Power className="w-3 h-3 mr-1" />
             {activating === lesson.id ? '...' : lesson.is_active ? 'Off' : 'On'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/v7/preview/${lesson.id}`)}>
+            <Play className="w-3 h-3 mr-1" />
+            Assistir
           </Button>
           <Button variant="outline" size="sm" onClick={() => navigate(`/admin/pipeline/lesson-debug/${lesson.id}`)}>
             <Bug className="w-3 h-3" />
