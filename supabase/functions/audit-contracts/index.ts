@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
     // ========================================================================
     let metaMissing = 0;
     let metaMismatch = 0;
-    const expectedVersion = 'c10b-boundaryfix-execstate-1.0';
+    const expectedVersion = 'c10b-boundaryfix-execstate-c11-1.0';
     
     for (const run of (completedRuns || [])) {
       const cv = run.output_data?.meta?.contractVersion;
