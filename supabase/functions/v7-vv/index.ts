@@ -2464,6 +2464,10 @@ function executeDryRun(input: ScriptInput): DryRunResult {
                 if (!f.promptScene?.trim()) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.frames[${fi}].promptScene`, message: 'promptScene obrigatório' });
                 if (!f.durationMs || f.durationMs < 1000) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.frames[${fi}].durationMs`, message: `durationMs >= 1000 (tem ${f.durationMs})` });
                 totalDur += (f.durationMs || 0);
+                // C13 PREP: Optional cameraSpec validation (warning only, tolerant parsing)
+                if (f.cameraSpec !== undefined && f.cameraSpec !== null && typeof f.cameraSpec !== 'object') {
+                  issues.push({ severity: 'warning', scene: sceneId, field: `visual.content.frames[${fi}].cameraSpec`, message: `cameraSpec deve ser um objeto (recebeu ${typeof f.cameraSpec})` });
+                }
               });
               if (totalDur < 2000) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.frames', message: `Soma durationMs >= 2000 (tem ${totalDur})` });
             }

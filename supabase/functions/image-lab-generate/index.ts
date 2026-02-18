@@ -12,6 +12,28 @@ const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
   "1024x1536": { w: 1024, h: 1536, api: "1024x1536" },
 };
 
+// === C12.1_SLO_CONFIG ===
+const SLO_CONFIG = {
+  OPENAI_TIMEOUT_MS: 20_000,
+  GEMINI_TIMEOUT_MS: 15_000,
+  MAX_TOTAL_WALL_MS: 25_000,
+};
+
+function getProviderTimeout(provider: string): number {
+  return provider === "gemini" ? SLO_CONFIG.GEMINI_TIMEOUT_MS : SLO_CONFIG.OPENAI_TIMEOUT_MS;
+}
+
+// === C12.1_CACHE: Prompt normalization for deterministic hashing ===
+function normalizePrompt(prompt: string): string {
+  return prompt
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/\s*([,.])\s*/g, '$1')
+    .replace(/([.,!?]){2,}/g, '$1')
+    .replace(/\.\s*\./g, '.');
+}
+
 async function sha256(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
   const hash = await crypto.subtle.digest("SHA-256", data);
@@ -49,7 +71,6 @@ async function updateCircuitAfterAttempt(supabase: any, provider: string, succes
   const newTotalCount = circuit.total_count + 1;
   const newFailCount = success ? circuit.fail_count : circuit.fail_count + 1;
 
-  // Evaluate state transition based on rolling window of 20
   const windowSize = Math.min(newTotalCount, 20);
   const failRate = windowSize > 0 ? newFailCount / windowSize : 0;
 
@@ -60,20 +81,17 @@ async function updateCircuitAfterAttempt(supabase: any, provider: string, succes
 
   if (circuit.state === 'HALF_OPEN') {
     if (success) {
-      // Test passed → CLOSED
       newState = 'CLOSED';
       openedAt = null;
       cooldownUntil = null;
       console.log(`[C12.1_CIRCUIT] ${provider}: HALF_OPEN → CLOSED (test passed)`);
     } else {
-      // Test failed → OPEN again
       newState = 'OPEN';
       openedAt = new Date().toISOString();
       cooldownUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       console.log(`[C12.1_CIRCUIT] ${provider}: HALF_OPEN → OPEN (test failed, cooldown 10min)`);
     }
   } else if (circuit.state === 'CLOSED' && failRate > 0.4 && windowSize >= 5) {
-    // Too many failures → OPEN
     newState = 'OPEN';
     openedAt = new Date().toISOString();
     cooldownUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -99,12 +117,10 @@ function resolveProviderWithCircuit(circuit: CircuitState | null, requestedProvi
     const cooldown = circuit.cooldown_until ? new Date(circuit.cooldown_until) : null;
     
     if (cooldown && now >= cooldown) {
-      // Cooldown expired → HALF_OPEN (allow one test request)
       console.log(`[C12.1_CIRCUIT] ${requestedProvider}: OPEN → HALF_OPEN (cooldown expired)`);
-      return requestedProvider; // Allow test
+      return requestedProvider;
     }
     
-    // Still in cooldown → force fallback
     const fallback = requestedProvider === "openai" ? "gemini" : "openai";
     console.log(`[C12.1_CIRCUIT] ${requestedProvider}: OPEN (cooldown active) → forcing ${fallback}`);
     return fallback;
@@ -113,14 +129,16 @@ function resolveProviderWithCircuit(circuit: CircuitState | null, requestedProvi
   return requestedProvider;
 }
 
-// === EXTRACTED GENERATION FUNCTIONS ===
+// === EXTRACTED GENERATION FUNCTIONS (now with configurable timeout) ===
 
-async function generateWithGemini(prompt: string): Promise<Uint8Array> {
+async function generateWithGemini(prompt: string, timeoutMs: number): Promise<Uint8Array> {
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120_000);
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
   let resp: Response;
   try {
     resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -191,7 +209,7 @@ async function generateWithGemini(prompt: string): Promise<Uint8Array> {
   return bytes;
 }
 
-async function generateWithOpenAI(prompt: string, model: string, sizeApi: string): Promise<Uint8Array> {
+async function generateWithOpenAI(prompt: string, model: string, sizeApi: string, timeoutMs: number): Promise<Uint8Array> {
   const openaiKey = Deno.env.get("OPENAI_API_KEY")!;
   const openaiBody: Record<string, unknown> = { model, prompt, n: 1, size: sizeApi };
 
@@ -200,7 +218,9 @@ async function generateWithOpenAI(prompt: string, model: string, sizeApi: string
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120_000);
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
   let resp: Response;
   try {
     resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -234,7 +254,7 @@ async function generateWithOpenAI(prompt: string, model: string, sizeApi: string
   throw new Error("No image data in OpenAI response");
 }
 
-// === GENERATION WITH C12.1 RETRY POLICY ===
+// === GENERATION WITH C12.1 SLO-AWARE RETRY POLICY ===
 
 interface GenerationResult {
   imageBytes: Uint8Array;
@@ -258,124 +278,122 @@ async function generateWithRetryPolicy(
   let fallbackUsed = false;
   let currentProvider = requestedProvider;
   let currentModel = requestedModel;
+  const wallStart = Date.now();
 
-  // Attempt 1: original provider
+  // Helper: generate with provider using SLO timeout
+  async function tryGenerate(provider: string, model: string, timeoutMs: number): Promise<Uint8Array> {
+    console.log(`[C12.1_SLO] IMAGE_PROVIDER_START: provider=${provider}, jobId=${jobId}, timeoutMs=${timeoutMs}`);
+    if (provider === "gemini") {
+      return await generateWithGemini(promptFinal, timeoutMs);
+    } else {
+      return await generateWithOpenAI(promptFinal, model, sizeInfo.api, timeoutMs);
+    }
+  }
+
+  // Attempt 1: primary provider with SLO timeout
   {
     const { data: attempt } = await supabase.from("image_attempts").insert({
-      job_id: jobId,
-      provider: currentProvider,
-      model: currentModel,
-      status: "processing",
-      prompt_final: promptFinal,
+      job_id: jobId, provider: currentProvider, model: currentModel,
+      status: "processing", prompt_final: promptFinal,
     }).select("id").single();
     attemptIds.push(attempt!.id);
 
     const start = Date.now();
+    const providerTimeout = getProviderTimeout(currentProvider);
     try {
-      const bytes = currentProvider === "gemini"
-        ? await generateWithGemini(promptFinal)
-        : await generateWithOpenAI(promptFinal, currentModel, sizeInfo.api);
-
+      const bytes = await tryGenerate(currentProvider, currentModel, providerTimeout);
+      const latency = Date.now() - start;
       await supabase.from("image_attempts").update({
-        status: "completed", latency_ms: Date.now() - start, bytes_out: bytes.length,
+        status: "completed", latency_ms: latency, bytes_out: bytes.length,
         cost_estimate: currentProvider === "openai" ? 0.02 : 0.01,
       }).eq("id", attempt!.id);
-      
       await updateCircuitAfterAttempt(supabase, currentProvider, true);
-
       return { imageBytes: bytes, usedProvider: currentProvider, usedModel: currentModel, fallbackUsed, retryCount, attemptIds };
     } catch (err: any) {
       const latency = Date.now() - start;
-      const errorCode = classifyError(err);
+      const isSloTimeout = err.name === "AbortError" || latency >= providerTimeout - 500;
+      const errorCode = isSloTimeout ? "SLO_TIMEOUT" : classifyError(err);
+      if (isSloTimeout) {
+        console.warn(`[C12.1_SLO] IMAGE_PROVIDER_TIMEOUT: provider=${currentProvider}, ms=${latency}, jobId=${jobId}`);
+      }
       await supabase.from("image_attempts").update({
-        status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500),
-        latency_ms: latency,
+        status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500), latency_ms: latency,
       }).eq("id", attempt!.id);
-      
       await updateCircuitAfterAttempt(supabase, currentProvider, false);
-
       console.warn(`[C12.1_RETRY] Attempt 1 failed (${currentProvider}): ${errorCode}`);
     }
   }
 
-  // Attempt 2: retry SAME provider
+  // Attempt 2: retry SAME provider IF wall-clock allows
   retryCount = 1;
-  {
+  const wallElapsed = Date.now() - wallStart;
+  if (wallElapsed < SLO_CONFIG.MAX_TOTAL_WALL_MS) {
     const { data: attempt } = await supabase.from("image_attempts").insert({
-      job_id: jobId,
-      provider: currentProvider,
-      model: currentModel,
-      status: "processing",
-      prompt_final: promptFinal,
+      job_id: jobId, provider: currentProvider, model: currentModel,
+      status: "processing", prompt_final: promptFinal,
     }).select("id").single();
     attemptIds.push(attempt!.id);
 
     const start = Date.now();
+    const remainingWall = SLO_CONFIG.MAX_TOTAL_WALL_MS - (Date.now() - wallStart);
+    const providerTimeout = Math.min(getProviderTimeout(currentProvider), remainingWall);
     try {
-      const bytes = currentProvider === "gemini"
-        ? await generateWithGemini(promptFinal)
-        : await generateWithOpenAI(promptFinal, currentModel, sizeInfo.api);
-
+      const bytes = await tryGenerate(currentProvider, currentModel, providerTimeout);
+      const latency = Date.now() - start;
       await supabase.from("image_attempts").update({
-        status: "completed", latency_ms: Date.now() - start, bytes_out: bytes.length,
+        status: "completed", latency_ms: latency, bytes_out: bytes.length,
         cost_estimate: currentProvider === "openai" ? 0.02 : 0.01,
       }).eq("id", attempt!.id);
-      
       await updateCircuitAfterAttempt(supabase, currentProvider, true);
-
       return { imageBytes: bytes, usedProvider: currentProvider, usedModel: currentModel, fallbackUsed, retryCount, attemptIds };
     } catch (err: any) {
       const latency = Date.now() - start;
-      const errorCode = classifyError(err);
+      const isSloTimeout = err.name === "AbortError" || latency >= providerTimeout - 500;
+      const errorCode = isSloTimeout ? "SLO_TIMEOUT" : classifyError(err);
       await supabase.from("image_attempts").update({
-        status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500),
-        latency_ms: latency,
+        status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500), latency_ms: latency,
       }).eq("id", attempt!.id);
-      
       await updateCircuitAfterAttempt(supabase, currentProvider, false);
-
       console.warn(`[C12.1_RETRY] Attempt 2 failed (${currentProvider}): ${errorCode}`);
     }
+  } else {
+    console.warn(`[C12.1_SLO] Wall-clock exceeded (${wallElapsed}ms), skipping attempt 2 retry for ${currentProvider}`);
   }
 
   // Attempt 3: fallback to OTHER provider
   retryCount = 2;
   fallbackUsed = true;
-  currentProvider = requestedProvider === "openai" ? "gemini" : "openai";
-  currentModel = currentProvider === "gemini" ? "google/gemini-2.5-flash-image" : "gpt-image-1";
+  const fallbackProvider = requestedProvider === "openai" ? "gemini" : "openai";
+  const fallbackModel = fallbackProvider === "gemini" ? "google/gemini-2.5-flash-image" : "gpt-image-1";
+  console.log(`[C12.1_SLO] IMAGE_FALLBACK_TRIGGERED: from=${currentProvider}, to=${fallbackProvider}, jobId=${jobId}`);
+  currentProvider = fallbackProvider;
+  currentModel = fallbackModel;
 
   {
     const { data: attempt } = await supabase.from("image_attempts").insert({
-      job_id: jobId,
-      provider: currentProvider,
-      model: currentModel,
-      status: "processing",
-      prompt_final: promptFinal,
+      job_id: jobId, provider: currentProvider, model: currentModel,
+      status: "processing", prompt_final: promptFinal,
     }).select("id").single();
     attemptIds.push(attempt!.id);
 
     const start = Date.now();
+    const remainingWall = Math.max(SLO_CONFIG.MAX_TOTAL_WALL_MS - (Date.now() - wallStart), 5_000); // min 5s
+    const providerTimeout = Math.min(getProviderTimeout(currentProvider), remainingWall);
     try {
-      const bytes = currentProvider === "gemini"
-        ? await generateWithGemini(promptFinal)
-        : await generateWithOpenAI(promptFinal, currentModel, sizeInfo.api);
-
+      const bytes = await tryGenerate(currentProvider, currentModel, providerTimeout);
+      const latency = Date.now() - start;
       await supabase.from("image_attempts").update({
-        status: "completed", latency_ms: Date.now() - start, bytes_out: bytes.length,
+        status: "completed", latency_ms: latency, bytes_out: bytes.length,
         cost_estimate: currentProvider === "openai" ? 0.02 : 0.01,
       }).eq("id", attempt!.id);
-      
       await updateCircuitAfterAttempt(supabase, currentProvider, true);
-
       return { imageBytes: bytes, usedProvider: currentProvider, usedModel: currentModel, fallbackUsed, retryCount, attemptIds };
     } catch (err: any) {
       const latency = Date.now() - start;
       const errorCode = classifyError(err);
       await supabase.from("image_attempts").update({
-        status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500),
-        latency_ms: latency,
+        status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500), latency_ms: latency,
       }).eq("id", attempt!.id);
-      
       await updateCircuitAfterAttempt(supabase, currentProvider, false);
 
       // All 3 attempts exhausted
@@ -464,7 +482,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // C12_CONCURRENCY_LOCK: If processing, reject with LOCKED
+    // C12_CONCURRENCY_LOCK
     if (job.status === "processing") {
       return new Response(JSON.stringify({ ok: false, error_code: "LOCKED", error_message: "Job is already being processed (concurrency lock)" }), {
         status: 409,
@@ -472,7 +490,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // C12_JOB_STATE_MACHINE: Only queued, failed, rejected can start generation
+    // C12_JOB_STATE_MACHINE
     if (!["queued", "failed", "rejected"].includes(job.status)) {
       return new Response(JSON.stringify({ ok: false, error_code: "INVALID_STATUS", error_message: `Job status is ${job.status}, expected queued/failed/rejected` }), {
         status: 400,
@@ -480,7 +498,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // === C12.1_RETRY_POLICY: Check existing attempt count ===
+    // C12.1_RETRY_POLICY: Check existing attempt count
     const { count: existingAttempts } = await supabase
       .from("image_attempts")
       .select("id", { count: "exact", head: true })
@@ -528,11 +546,11 @@ Deno.serve(async (req) => {
       promptFinal = job.prompt_base + " " + promptFinal;
     }
 
-    // Compute hash
+    // Compute hash with NORMALIZED prompt (C12.1_CACHE)
     const requestedProvider = provider || job.provider || "openai";
     const requestedModel = job.model || "gpt-image-1";
     const actualSize = size || job.size || "1024x1024";
-    const hashInput = `${requestedProvider}|${requestedModel}|${actualSize}|${preset.key}|${preset.version}|${promptFinal}`;
+    const hashInput = `${requestedProvider}|${requestedModel}|${actualSize}|${preset.key}|${preset.version}|${normalizePrompt(promptFinal)}`;
     const hash = await sha256(hashInput);
 
     // Cache check (C12.1_CACHE_GUARD)
@@ -544,6 +562,7 @@ Deno.serve(async (req) => {
       .limit(1);
 
     if (cachedAssets && cachedAssets.length > 0) {
+      console.log(`[C12.1_SLO] IMAGE_CACHE_HIT: jobId=${job_id}, assetId=${cachedAssets[0].id}`);
       await supabase.from("image_jobs").update({
         status: "completed",
         cache_hit: true,
@@ -569,7 +588,6 @@ Deno.serve(async (req) => {
     const actualProvider = resolveProviderWithCircuit(circuit, requestedProvider);
     const actualModel = actualProvider === "gemini" ? "google/gemini-2.5-flash-image" : "gpt-image-1";
 
-    // If circuit forced a switch, transition to HALF_OPEN if cooldown expired
     if (circuit && circuit.state === 'OPEN' && actualProvider === requestedProvider) {
       await supabase.from("image_lab_circuit_state").update({
         state: 'HALF_OPEN',
@@ -592,7 +610,7 @@ Deno.serve(async (req) => {
     const startTime = Date.now();
     const sizeInfo = SIZE_MAP[actualSize] || SIZE_MAP["1024x1024"];
 
-    // === C12.1_RETRY_POLICY: Generate with retry + fallback ===
+    // === C12.1_RETRY_POLICY with SLO: Generate with retry + fallback ===
     const result = await generateWithRetryPolicy(
       supabase, job_id, actualProvider, actualModel, promptFinal, sizeInfo,
     );
@@ -655,7 +673,6 @@ Deno.serve(async (req) => {
       },
       assets: [asset],
       cache_hit: false,
-      // C12.1 metadata
       retry_count: result.retryCount,
       fallback_used: result.fallbackUsed,
       circuit_state: finalCircuit?.state || "UNKNOWN",
@@ -680,7 +697,6 @@ Deno.serve(async (req) => {
           error_message: errorMsg,
         }).eq("id", body.job_id);
 
-        // Update any processing attempts with error details
         await supabase.from("image_attempts").update({
           status: "failed",
           error_code: errorCode,

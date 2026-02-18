@@ -12,6 +12,17 @@ const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
   "1024x1536": { w: 1024, h: 1536, api: "1024x1536" },
 };
 
+// === C12.1_CACHE: Prompt normalization for deterministic hashing ===
+function normalizePrompt(prompt: string): string {
+  return prompt
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/\s*([,.])\s*/g, '$1')
+    .replace(/([.,!?]){2,}/g, '$1')
+    .replace(/\.\s*\./g, '.');
+}
+
 async function sha256(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
   const hash = await crypto.subtle.digest("SHA-256", data);
@@ -249,7 +260,7 @@ Deno.serve(async (req) => {
 
     // === Compute hash for idempotency (once for the job, not per task) ===
     // Use job's primary provider/model for the hash
-    const hashInput = `${job.provider}|${job.model}|${actualSize}|${preset.key}|${preset.version}|${promptFinal}`;
+    const hashInput = `${job.provider}|${job.model}|${actualSize}|${preset.key}|${preset.version}|${normalizePrompt(promptFinal)}`;
     const hash = await sha256(hashInput);
 
     // === Cache check ===
