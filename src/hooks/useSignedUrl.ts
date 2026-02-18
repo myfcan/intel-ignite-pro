@@ -21,6 +21,11 @@ export function useSignedUrl(
 
   useEffect(() => {
     if (!storagePath) return;
+    // ✅ P3/C13: Skip PENDING paths — renderer will show placeholder
+    if (storagePath.startsWith('PENDING:')) {
+      console.warn(`[useSignedUrl] Skipping PENDING storagePath: ${storagePath}`);
+      return;
+    }
     let cancelled = false;
 
     (async () => {

@@ -1207,6 +1207,16 @@ async function c05CompleteExecution(
     // ✅ ISOLAMENTO: Force test tracking
     forceTestBatchId?: string;
     forceTestRunTag?: string;
+    // ✅ C15: Image Lab Bridge traceability
+    imageLabBridge?: {
+      bridgeCalled: boolean;
+      scenesSubmitted: number;
+      scenesResolved: number;
+      scenesDegraded: number;
+      scenesFailedSanitization: number;
+      errors: string[];
+      bridgeHttpStatus?: number;
+    };
   }
 ): Promise<void> {
   console.log(`[C05.3] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
@@ -1244,6 +1254,8 @@ async function c05CompleteExecution(
       ],
       ...(meta?.forceTestBatchId ? { forceTestBatchId: meta.forceTestBatchId } : {}),
       ...(meta?.forceTestRunTag ? { forceTestRunTag: meta.forceTestRunTag } : {}),
+      // ✅ C15: Image Lab Bridge traceability
+      ...(meta?.imageLabBridge ? { imageLabBridge: meta.imageLabBridge } : {}),
     }
   };
   
@@ -6195,6 +6207,24 @@ Deno.serve(async (req) => {
     // Calls image-lab-pipeline-bridge (service_role_key) to generate images.
     // Fallback: if bridge fails, pipeline continues without images (warning only).
     // =========================================================================
+    // === C15: Bridge traceability report ===
+    const bridgeReport: {
+      bridgeCalled: boolean;
+      scenesSubmitted: number;
+      scenesResolved: number;
+      scenesDegraded: number;
+      scenesFailedSanitization: number;
+      errors: string[];
+      bridgeHttpStatus?: number;
+    } = {
+      bridgeCalled: false,
+      scenesSubmitted: 0,
+      scenesResolved: 0,
+      scenesDegraded: 0,
+      scenesFailedSanitization: 0,
+      errors: [],
+    };
+
     if (!preserveStructureMode) {
       const imageScenesForBridge: Array<{ scene_id: string; prompt_scene: string; style_hints?: string; phaseIdx: number; mvIdx: number }> = [];
       // Track image-sequence frames separately for injection
@@ -6261,6 +6291,7 @@ Deno.serve(async (req) => {
       ];
 
       if (allScenesForBridge.length > 0) {
+        bridgeReport.scenesSubmitted = allScenesForBridge.length;
         console.log(`[V7-vv] Step 4.9: IMAGE_LAB_BRIDGE — ${imageScenesForBridge.length} microVisual(s) + ${imageSequenceFrames.length} sequence frame(s) to generate`);
         try {
           const bridgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/image-lab-pipeline-bridge`;
@@ -6283,6 +6314,7 @@ Deno.serve(async (req) => {
           const bridgeTimeout = setTimeout(() => bridgeController.abort(), 180_000);
 
           let bridgeResp: Response;
+          bridgeReport.bridgeCalled = true;
           try {
             bridgeResp = await fetch(bridgeUrl, {
               method: 'POST',
@@ -6297,6 +6329,8 @@ Deno.serve(async (req) => {
             clearTimeout(bridgeTimeout);
           }
 
+          bridgeReport.bridgeHttpStatus = bridgeResp.status;
+
           if (bridgeResp.ok) {
             const bridgeData = await bridgeResp.json();
             const results = bridgeData.results || [];
@@ -6304,7 +6338,14 @@ Deno.serve(async (req) => {
             let injectedFrames = 0;
 
             for (const result of results) {
-              if (result.status !== 'failed' && result.storage_path) {
+              // ✅ P3 FIX: Handle degraded results explicitly
+              if (result.status === 'degraded' || !result.storage_path) {
+                bridgeReport.scenesDegraded++;
+                console.warn(`[V7-vv] Step 4.9: ⚠️ Scene ${result.scene_id} returned degraded — will sanitize storagePath`);
+                continue;
+              }
+
+              if (result.storage_path) {
                 // Try to match microVisual first
                 const mvMatch = imageScenesForBridge.find(s => s.scene_id === result.scene_id);
                 if (mvMatch) {
@@ -6325,15 +6366,58 @@ Deno.serve(async (req) => {
               }
             }
 
-            console.log(`[V7-vv] Step 4.9: ✅ IMAGE_LAB_BRIDGE complete. MicroVisuals=${injectedMv}, SequenceFrames=${injectedFrames}, Failed=${allScenesForBridge.length - injectedMv - injectedFrames}`);
+            bridgeReport.scenesResolved = injectedMv + injectedFrames;
+            console.log(`[V7-vv] Step 4.9: ✅ IMAGE_LAB_BRIDGE complete. MicroVisuals=${injectedMv}, SequenceFrames=${injectedFrames}, Degraded=${bridgeReport.scenesDegraded}`);
           } else {
             const errText = await bridgeResp.text();
+            bridgeReport.errors.push(`HTTP ${bridgeResp.status}: ${errText.substring(0, 300)}`);
             console.warn(`[V7-vv] Step 4.9: ⚠️ IMAGE_LAB_BRIDGE returned ${bridgeResp.status}: ${errText.substring(0, 300)}`);
             console.warn('[V7-vv] Step 4.9: Pipeline continues without images (non-blocking fallback)');
           }
         } catch (bridgeErr: any) {
+          bridgeReport.errors.push(bridgeErr.message);
           console.warn(`[V7-vv] Step 4.9: ⚠️ IMAGE_LAB_BRIDGE error: ${bridgeErr.message}`);
           console.warn('[V7-vv] Step 4.9: Pipeline continues without images (non-blocking fallback)');
+        }
+
+        // =====================================================================
+        // ✅ P3 FIX (C13): SANITIZE FICTITIOUS storagePaths POST-BRIDGE
+        // Any storagePath that doesn't match the valid format {uuid}/{uuid}/N.png
+        // is marked as PENDING:bridge-failed to prevent silent renderer failures.
+        // =====================================================================
+        const VALID_STORAGE_PATH_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/\d+\.png$/i;
+
+        for (const phase of phases) {
+          // Sanitize image-sequence frames
+          if (phase.visual?.type === 'image-sequence' && Array.isArray(phase.visual.frames)) {
+            for (const frame of phase.visual.frames) {
+              if (frame.storagePath && !VALID_STORAGE_PATH_RE.test(frame.storagePath)) {
+                console.warn(`[V7-vv] Step 4.9: C13_SANITIZE — Replacing fictitious storagePath: ${frame.storagePath}`);
+                frame.storagePath = `PENDING:bridge-failed:${frame.storagePath}`;
+                bridgeReport.scenesFailedSanitization++;
+              }
+            }
+          }
+          // Sanitize microVisuals
+          if (phase.microVisuals) {
+            for (const mv of phase.microVisuals) {
+              const content = mv.content as Record<string, unknown>;
+              if (
+                (mv.type === 'image' || mv.type === 'image-flash') &&
+                content.storagePath &&
+                typeof content.storagePath === 'string' &&
+                !VALID_STORAGE_PATH_RE.test(content.storagePath as string)
+              ) {
+                console.warn(`[V7-vv] Step 4.9: C13_SANITIZE — Replacing fictitious storagePath in microVisual: ${content.storagePath}`);
+                content.storagePath = `PENDING:bridge-failed:${content.storagePath}`;
+                bridgeReport.scenesFailedSanitization++;
+              }
+            }
+          }
+        }
+
+        if (bridgeReport.scenesFailedSanitization > 0) {
+          console.warn(`[V7-vv] Step 4.9: C13_SANITIZE — ${bridgeReport.scenesFailedSanitization} storagePath(s) replaced with PENDING marker`);
         }
       } else {
         console.log('[V7-vv] Step 4.9: No image microVisuals or sequence frames with promptScene found — skipping');
@@ -6352,7 +6436,7 @@ Deno.serve(async (req) => {
     if (!preserveStructureMode) {
       console.log('[V7-vv] Step 5: Building output...');
 
-      const totalDuration = phases.length > 0 ? phases[phases.length - 1].endTime : mainAudio.duration;
+      // ✅ P4 FIX: Removed duplicate totalDuration declaration (uses outer scope)
 
       // ✅ FASE 2 FIX: Calcular flags para metadata
       const hasInteractivePhases = phases.some(p => ['interaction', 'quiz'].includes(p.type));
@@ -6360,6 +6444,8 @@ Deno.serve(async (req) => {
       const hasPostLessonExercises = !!(input.postLessonExercises && input.postLessonExercises.length > 0);
 
       lessonData = {
+        // ✅ P5 FIX (C14): contentVersion no root do content JSON
+        contentVersion: 'v7-vv',
         // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
         schema: 'v7-vv',                           // Bug 7: era "model"
         version: '1.0.0',                          // Bug 8: formato correto
@@ -6935,6 +7021,8 @@ Deno.serve(async (req) => {
       hashComputedAfterGuards: true,
       forceTestBatchId: forceTestMeta?.batchId,
       forceTestRunTag: forceTestMeta?.runTag,
+      // ✅ C15: Image Lab Bridge traceability
+      imageLabBridge: bridgeReport,
     });
 
     // =========================================================================
