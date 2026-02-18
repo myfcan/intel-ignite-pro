@@ -34,6 +34,18 @@ interface V7ImageSequenceRendererProps {
   currentTime: number;
 }
 
+/** Preload hook — resolves signed URL and triggers browser cache */
+function usePreloadFrame(storagePath: string | null) {
+  const signedUrl = useSignedUrl(storagePath);
+  
+  useEffect(() => {
+    if (signedUrl) {
+      const img = new Image();
+      img.src = signedUrl;
+    }
+  }, [signedUrl]);
+}
+
 /** Single frame with signed URL resolution */
 function FrameImage({ storagePath, isActive, index }: { storagePath?: string; isActive: boolean; index: number }) {
   const signedUrl = useSignedUrl(storagePath || null);
@@ -130,15 +142,9 @@ export default function V7ImageSequenceRenderer({
     return () => clearTimeout(timer);
   }, [activeIndex, frames, phaseId, currentTime]);
 
-  // Preload next frame
-  useEffect(() => {
-    const nextFrame = frames[activeIndex + 1];
-    if (nextFrame?.storagePath) {
-      // Preload hint — actual URL resolution happens in FrameImage
-      const img = new Image();
-      img.src = ''; // Will be resolved by useSignedUrl in FrameImage
-    }
-  }, [activeIndex, frames]);
+  // Preload next frame with real signed URL
+  const nextFramePath = frames[activeIndex + 1]?.storagePath || null;
+  usePreloadFrame(nextFramePath);
 
   const moodClasses = effects?.mood === 'danger' ? 'border-destructive/20'
     : effects?.mood === 'success' ? 'border-green-500/20'
