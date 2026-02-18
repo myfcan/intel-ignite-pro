@@ -12,11 +12,11 @@ const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
   "1024x1536": { w: 1024, h: 1536, api: "1024x1536" },
 };
 
-// === C12.1_SLO_CONFIG (was hardcoded 120_000 — BUG FIX) ===
+// === C12.1_SLO_CONFIG (realistic timeouts based on observed latencies) ===
 const SLO_CONFIG = {
-  OPENAI_TIMEOUT_MS: 20_000,
-  GEMINI_TIMEOUT_MS: 15_000,
-  MAX_TOTAL_WALL_MS: 25_000,
+  OPENAI_TIMEOUT_MS: 55_000,
+  GEMINI_TIMEOUT_MS: 30_000,
+  MAX_TOTAL_WALL_MS: 90_000,
 };
 
 function getProviderTimeout(provider: string): number {
