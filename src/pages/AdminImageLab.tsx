@@ -268,7 +268,7 @@ const AdminImageLab = () => {
       .from("image_jobs")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(50) as any;
+      .limit(10) as any;
     if (data) setJobs(data);
   };
 
@@ -882,7 +882,7 @@ const AdminImageLab = () => {
       {/* Job History */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Histórico de Jobs (últimos 50)</CardTitle>
+          <CardTitle className="text-lg">Histórico de Jobs (últimos 10)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
