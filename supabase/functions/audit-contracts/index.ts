@@ -325,6 +325,133 @@ Deno.serve(async (req) => {
     });
 
     // ========================================================================
+    // CHECK 11: C12.1 — image-sequence frames validation
+    // ========================================================================
+    let c121Violations = 0;
+    let c121FramesChecked = 0;
+
+    for (const run of (completedRuns || [])) {
+      const phases = run.output_data?.content?.phases || [];
+      for (const phase of phases) {
+        if (phase.visual?.type !== 'image-sequence') continue;
+        const frames = phase.visual?.frames || [];
+        if (frames.length === 0) {
+          c121Violations++;
+          continue;
+        }
+        if (frames.length > 3) {
+          c121Violations++;
+        }
+        for (const frame of frames) {
+          c121FramesChecked++;
+          if (!frame.promptScene) c121Violations++;
+          if (!frame.durationMs || frame.durationMs < 1000) c121Violations++;
+        }
+        const totalDurationMs = frames.reduce((sum: number, f: any) => sum + (f.durationMs || 0), 0);
+        if (totalDurationMs < 2000) c121Violations++;
+      }
+    }
+
+    checks.push({
+      contract_id: 'C12.1',
+      name: 'image-sequence frames valid (max 3, promptScene, durationMs >= 1000, total >= 2000)',
+      status: 'required',
+      pass: c121Violations === 0,
+      details: `${c121FramesChecked} frames checked, ${c121Violations} violations`,
+    });
+
+    // ========================================================================
+    // CHECK 12: C13 — storagePath integrity (no fictitious paths)
+    // ========================================================================
+    let c13Violations = 0;
+    let c13PathsChecked = 0;
+    const fictitiousPattern = /^image-lab\/assets\/[a-f0-9]+\.png$/;
+    const pendingPattern = /^PENDING:/;
+
+    for (const run of (completedRuns || [])) {
+      const phases = run.output_data?.content?.phases || [];
+      for (const phase of phases) {
+        // Check frames
+        const frames = phase.visual?.frames || [];
+        for (const frame of frames) {
+          if (frame.storagePath) {
+            c13PathsChecked++;
+            if (fictitiousPattern.test(frame.storagePath) || pendingPattern.test(frame.storagePath)) {
+              c13Violations++;
+            }
+          }
+        }
+        // Check microVisuals
+        const mvs = phase.microVisuals || [];
+        for (const mv of mvs) {
+          if (mv.content?.storagePath) {
+            c13PathsChecked++;
+            if (fictitiousPattern.test(mv.content.storagePath) || pendingPattern.test(mv.content.storagePath)) {
+              c13Violations++;
+            }
+          }
+        }
+      }
+    }
+
+    checks.push({
+      contract_id: 'C13',
+      name: 'storagePath integrity (no fictitious or PENDING paths)',
+      status: 'optional',
+      pass: c13Violations === 0,
+      details: `${c13PathsChecked} paths checked, ${c13Violations} invalid`,
+    });
+
+    // ========================================================================
+    // CHECK 13: C14 — contentVersion at content root
+    // ========================================================================
+    let c14Missing = 0;
+
+    for (const run of (completedRuns || [])) {
+      const cv = run.output_data?.content?.contentVersion;
+      if (cv !== 'v7-vv') c14Missing++;
+    }
+
+    checks.push({
+      contract_id: 'C14',
+      name: 'contentVersion == "v7-vv" at content root',
+      status: 'required',
+      pass: c14Missing === 0,
+      details: `${c14Missing} runs missing contentVersion at root`,
+    });
+
+    // ========================================================================
+    // CHECK 14: C15 — Bridge traceability (imageLabBridge in meta)
+    // ========================================================================
+    let c15Missing = 0;
+    let c15HasImages = 0;
+
+    for (const run of (completedRuns || [])) {
+      const phases = run.output_data?.content?.phases || [];
+      const hasImageAssets = phases.some((p: any) => {
+        const hasFrames = (p.visual?.frames || []).length > 0;
+        const hasImageMvs = (p.microVisuals || []).some((mv: any) =>
+          mv.type === 'image' || mv.type === 'image-flash'
+        );
+        return hasFrames || hasImageMvs;
+      });
+
+      if (hasImageAssets) {
+        c15HasImages++;
+        const bridgeReport = run.output_data?.meta?.imageLabBridge;
+        if (!bridgeReport) c15Missing++;
+      }
+    }
+
+    checks.push({
+      contract_id: 'C15',
+      name: 'Bridge traceability (imageLabBridge report in meta)',
+      status: 'optional',
+      pass: c15Missing === 0,
+      details: `${c15HasImages} runs with image assets, ${c15Missing} missing bridge report`,
+    });
+
+    // ========================================================================
     // DEPRECATED CONTRACTS (informational)
     // ========================================================================
     checks.push({
@@ -361,7 +488,7 @@ Deno.serve(async (req) => {
     const requiredFailed = requiredChecks.filter(c => !c.pass).length;
 
     const scorecard: AuditScorecard = {
-      audit_version: '1.0.0',
+      audit_version: '2.0.0',
       contract_version: expectedVersion,
       pipeline_version_filter: pipelineVersion,
       audited_at: new Date().toISOString(),
