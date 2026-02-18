@@ -791,6 +791,45 @@ const AdminImageLab = () => {
                 Generate (Gemini 🍌)
               </Button>
             </div>
+
+            {/* === C13.1: Quick Templates (EPP) === */}
+            <div className="border-t pt-4 mt-2">
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Quick Templates (EPP)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  className="text-left border-2 border-primary/20 hover:border-primary/50 rounded-xl p-3 transition-colors bg-primary/5 hover:bg-primary/10"
+                  onClick={() => {
+                    const eppResult = presets.find(p => p.key === 'epp-result-01');
+                    if (eppResult) {
+                      setSelectedPresetId(eppResult.id);
+                      setSize(eppResult.default_size);
+                    }
+                    setStyleHints('warm editorial, 85mm, clean copy zone, no text');
+                    toast.success('Template EPP Result selecionado — preencha a cena (prompt_scene)');
+                  }}
+                >
+                  <p className="text-sm font-semibold text-foreground">📸 EPP Result (Overlay Copy Safe)</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Hero image com clean copy zone ~35%. Sem texto na imagem.</p>
+                </button>
+                <button
+                  type="button"
+                  className="text-left border-2 border-amber-500/20 hover:border-amber-500/50 rounded-xl p-3 transition-colors bg-amber-500/5 hover:bg-amber-500/10"
+                  onClick={() => {
+                    const eppCompare = presets.find(p => p.key === 'epp-compare-01');
+                    if (eppCompare) {
+                      setSelectedPresetId(eppCompare.id);
+                      setSize(eppCompare.default_size);
+                    }
+                    setStyleHints('frontal orthographic, 85mm, split screen, no text');
+                    toast.success('Template EPP Compare selecionado — preencha a cena (prompt_scene)');
+                  }}
+                >
+                  <p className="text-sm font-semibold text-foreground">⚖️ EPP Compare (Frontal)</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Split-screen antes vs depois. Frontal 85mm, zero keystone.</p>
+                </button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
