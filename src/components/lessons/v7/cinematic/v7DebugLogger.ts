@@ -5,10 +5,14 @@
  */
 
 // ============= RUNTIME CONTRACT METADATA =============
-export const V7_RUNTIME_CONTRACT_VERSION = 'v7-runtime-c11-1.0';
+export const V7_RUNTIME_CONTRACT_VERSION = 'v7-runtime-c12.1-1.0';
 export const V7_RUNTIME_CONTRACTS = [
   'C11_RUNTIME_ANCHOR_AUDIT',
   'C11_RAF_ANCHOR_TIMING',
+  'C12.1_IMAGE_SEQUENCE_START',
+  'C12.1_IMAGE_SEQUENCE_FRAME_RENDER',
+  'C12.1_IMAGE_SEQUENCE_END',
+  'C12.1_IMAGE_SEQUENCE_FALLBACK',
 ] as const;
 
 export interface V7DebugLogEntry {

@@ -1676,7 +1676,7 @@ const LEGACY_TYPE_WARNINGS: Record<string, string> = {
 const VALID_VISUAL_TYPES = [
   'number-reveal', 'text-reveal', 'split-screen', 'letter-reveal',
   'cards-reveal', 'quiz', 'quiz-feedback', 'playground', 'result', 'cta',
-  '3d-dual-monitors', '3d-abstract', '3d-number-reveal'
+  '3d-dual-monitors', '3d-abstract', '3d-number-reveal', 'image-sequence'
 ] as const;
 
 // Schema mínimo por visual.type
@@ -2445,6 +2445,32 @@ function executeDryRun(input: ScriptInput): DryRunResult {
           if (vType === '3d-dual-monitors') {
             if (!content.leftScreen) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.leftScreen', message: '"3d-dual-monitors" requer "leftScreen"' });
             if (!content.rightScreen) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.rightScreen', message: '"3d-dual-monitors" requer "rightScreen"' });
+          }
+
+          // C12.1: image-sequence validation
+          if (vType === 'image-sequence') {
+            if (scene.type !== 'narrative') {
+              issues.push({ severity: 'error', scene: sceneId, field: 'visual.type', message: 'image-sequence só é permitido em scene.type="narrative"' });
+            }
+            const frames = content?.frames;
+            if (!Array.isArray(frames) || frames.length === 0) {
+              issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.frames', message: 'image-sequence requer frames[] não vazio' });
+            } else {
+              if (frames.length > 3) {
+                issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.frames', message: `image-sequence permite máximo 3 frames (tem ${frames.length})` });
+              }
+              let totalDur = 0;
+              frames.forEach((f: any, fi: number) => {
+                if (!f.promptScene?.trim()) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.frames[${fi}].promptScene`, message: 'promptScene obrigatório' });
+                if (!f.durationMs || f.durationMs < 1000) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.frames[${fi}].durationMs`, message: `durationMs >= 1000 (tem ${f.durationMs})` });
+                totalDur += (f.durationMs || 0);
+              });
+              if (totalDur < 2000) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.frames', message: `Soma durationMs >= 2000 (tem ${totalDur})` });
+            }
+            // No coexistence with microVisual type="image"
+            if (scene.visual?.microVisuals?.some((mv: any) => mv.type === 'image')) {
+              issues.push({ severity: 'error', scene: sceneId, field: 'visual.microVisuals', message: 'image-sequence não coexiste com microVisual type="image"' });
+            }
           }
         }
       }
