@@ -467,15 +467,13 @@ export interface V7Phase {
   type: V7PhaseType;
   startTime: number;
   endTime: number;
-  visual: V7VisualContent;
+  visual: V7VisualContent;        // Compiled artifact (derived from scene[0])
+  scenes: V7Scene[];              // C03: Sub-scenes with granular timing (min 1 per phase)
   effects?: V7PhaseEffects;
   microVisuals?: V7MicroVisual[];
   anchorActions?: V7AnchorAction[];
   interaction?: V7Interaction;
-  audioBehavior?: {
-    onStart: 'pause' | 'fade' | 'continue';
-    onComplete: 'resume' | 'next-phase';
-  };
+  audioBehavior?: V7AudioBehavior;
   timeout?: V7TimeoutConfig;
 }
 
@@ -486,8 +484,10 @@ export interface V7Phase {
 export interface V7Scene {
   id: string;
   type: string;
-  startTime?: number;
-  duration?: number;
+  startTime: number;              // C03: Required (seconds)
+  endTime: number;                // C03: Required (seconds)
+  duration: number;               // C03: Required (endTime - startTime)
+  narration: string;              // C03: Narration text for this scene
   content: Record<string, unknown>;
   animation?: V7AnimationType;
 }

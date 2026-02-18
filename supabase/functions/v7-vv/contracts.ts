@@ -14,7 +14,7 @@
 // CONTRACT VERSION
 // ============================================================================
 
-export const CONTRACT_VERSION = 'c10b-boundaryfix-execstate-c11-1.0';
+export const CONTRACT_VERSION = 'c10b-boundaryfix-execstate-c11-c03-1.0';
 
 // ============================================================================
 // CONTRACT STATUS TYPES
@@ -74,15 +74,21 @@ export const CONTRACT_REGISTRY: ContractEntry[] = [
   },
   {
     id: 'C03',
-    name: 'Scenes Array Population',
-    status: 'known_gap',
-    description: 'Output should populate scenes[] array for per-scene timing. Currently empty; Renderer uses legacy visual object fallback.',
-    invariants: [],
+    name: 'Scenes Array Integrity',
+    status: 'required',
+    description: 'Every phase MUST contain scenes[] with at least 1 scene. scenes[] is the canonical input; phase.visual is a compiled artifact.',
+    invariants: [
+      'scenes[].length >= 1 per phase',
+      'scene.startTime >= phase.startTime',
+      'scene.endTime <= phase.endTime',
+      'scene.duration == scene.endTime - scene.startTime',
+      'Compat guard active until 2026-04-18 for legacy content',
+    ],
     error_code: null,
     evidence_paths: [
-      'output_data.content.scenes',
+      'output_data.content.phases[].scenes',
     ],
-    rationale: 'Renderer currently functions via visual fallback. Populating scenes[] is deferred to a future version. Will require MINOR version bump when implemented.',
+    rationale: 'CTO decision: scenes[] is canonical input. phase.visual is compiled artifact derived from scene[0]. Improves anchor scoping and audit granularity.',
     introduced_in: 'v7-vv-1.0.0',
   },
   {

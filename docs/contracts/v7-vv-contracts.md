@@ -1,6 +1,6 @@
 # V7-VV Pipeline Contracts Specification
 
-> **Contract Version**: `c10b-boundaryfix-execstate-1.0`
+> **Contract Version**: `c10b-boundaryfix-execstate-c11-c03-1.0`
 > **Pipeline Version**: `v7-vv-1.1.4+`
 > **Last Updated**: 2026-02-09
 > **Status**: FROZEN — Breaking changes require MAJOR version bump (1.x → 2.0)
@@ -458,6 +458,7 @@ Every pipeline execution persists:
 
 | ID | Invariant | Guard |
 |----|-----------|-------|
+| C03 | `scenes[].length >= 1` per phase | `audit-contracts C03 check` |
 | C10 | `pauseTime = wordTimestamps[match].end` | `PAUSE_ANCHOR_REQUIRED`, `PAUSE_ANCHOR_NOT_FOUND` |
 | C10B | `narrationAfterPause <= 1.5s` | `PAUSE_ANCHOR_NOT_AT_END` |
 | BOUNDARY_FIX | `duration > 0` ∧ `end[i] <= start[i+1]` | `BOUNDARY_FIX_GUARD_FAILED` |
@@ -473,6 +474,7 @@ Force Test → 12 runs → audit-contracts(batch_id) → HTTP 200 = PASS / HTTP 
 
 The audit gate checks:
 - C01: No duplicate run_ids
+- C03: All phases have scenes[] populated with valid bounds
 - EXEC_STATE: 0 stuck runs, canonical JSON errors, completed_at present
 - C05: output_content_hash present
 - C06: triggerContract == anchorActions
@@ -480,6 +482,27 @@ The audit gate checks:
 - C10: All interactive phases have pause anchorAction
 - C10B: All pauses within 1.5s of narration end
 - CONTRACT_META: contractVersion correct
+
+---
+
+## D — Scene Array Contract (C03)
+
+### Status: ACTIVE (was KNOWN_GAP)
+### Effective: 2026-02-18
+### Compat Deadline: 2026-04-18
+
+### Invariants
+1. Every `phase` MUST contain `scenes[]` with at least 1 scene
+2. `scene.startTime >= phase.startTime`
+3. `scene.endTime <= phase.endTime`
+4. `scene.narration` contains the narration text for audit scope
+5. Legacy phases without scenes[] are auto-converted (compat guard in preserveStructure mode)
+
+### Rationale (CTO Decision)
+- `scenes[]` is the canonical input format
+- `phase.visual` is a compiled artifact derived from `scene[0]`
+- Anchor scoping improves with per-scene narration boundaries
+- Audit trail gains granularity (anchor X belongs to scene Y of phase Z)
 
 ---
 

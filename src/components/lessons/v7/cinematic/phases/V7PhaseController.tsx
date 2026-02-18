@@ -435,8 +435,11 @@ export function usePhaseController({
 
   const currentPhase = script.phases[currentPhaseIndex] || null;
 
-  // ✅ V7-vv: Ensure scenes array exists (V7-vv pipeline may not include scenes)
-  const phaseScenes = currentPhase?.scenes || [];
+  // ✅ C03: scenes[] is now guaranteed by pipeline (1:1 with phase minimum)
+  const phaseScenes = currentPhase?.scenes ?? [];
+  if (phaseScenes.length === 0 && currentPhase) {
+    console.warn(`[C03] Phase ${currentPhase.id} has empty scenes[] — possible legacy content`);
+  }
 
   // Find current scene within phase based on time (uses effectiveTime for fallback support)
   const currentSceneIndex = useMemo(() => {

@@ -5208,6 +5208,17 @@ function generatePhases(
           ? { frames: (scene.visual as any).frames }
           : {}),
       },
+      // C03: Populate scenes[] — 1:1 with phase (single scene per phase)
+      scenes: [{
+        id: `${scene.id}-s1`,
+        type: scene.type,
+        startTime,
+        endTime,
+        duration: endTime - startTime,
+        narration: scene.narration || '',
+        content: scene.visual.content || {},
+        animation: scene.visual.effects?.particles ? 'particle-burst' : 'fade',
+      }],
       effects: scene.visual.effects,
       microVisuals: microVisuals.length > 0 ? microVisuals : undefined,
       anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
@@ -6762,10 +6773,31 @@ Deno.serve(async (req) => {
           c06Diff = c06Result.c06Diff;
           console.log(`[V7-vv] C06: Removed ${c06Stats.removedTriggerTimeCount} triggerTime, created ${c06Stats.showActionsCreated} show actions`);
           
+          // ✅ C03 COMPAT GUARD: Auto-convert legacy phases without scenes[]
+          const c03CompatPhases = c06Result.normalizedPhases.map((phase: any) => ({
+            ...phase,
+            scenes: phase.scenes?.length > 0 ? phase.scenes : [{
+              id: `${phase.id}-s1-auto`,
+              type: phase.type,
+              startTime: phase.startTime,
+              endTime: phase.endTime,
+              duration: phase.endTime - phase.startTime,
+              narration: '',
+              content: phase.visual?.content || {},
+              animation: 'fade',
+            }],
+          }));
+          const c03AutoConverted = c03CompatPhases.filter((p: any, i: number) => 
+            !c06Result.normalizedPhases[i]?.scenes?.length
+          ).length;
+          if (c03AutoConverted > 0) {
+            console.log(`[C03_COMPAT] Auto-converted ${c03AutoConverted} legacy phases without scenes[]`);
+          }
+
           // Preservar estrutura completa com correções C02 + C03 + C04 + C06
           finalLessonData = {
             ...oldContent,
-            phases: c06Result.normalizedPhases, // ← Usar phases normalizadas por C06
+            phases: c03CompatPhases, // ← Usar phases com C03 compat guard
             // Atualizar metadata
             metadata: {
               ...oldContent.metadata,
