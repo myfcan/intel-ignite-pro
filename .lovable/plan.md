@@ -1,288 +1,193 @@
 
-# Plano de Implementacao C12.1 — Hardening de Confiabilidade + Image Sequence
+# Plano de Evolucao C12.1 — SLO Fallback + Health + Cache + Base C13
 
-## Estado Atual Real (Dados do Banco e Codigo)
+## Contexto Tecnico Atual (Dados Reais do Codigo)
 
-### Violacoes Encontradas ANTES da Implementacao
+### Estado Atual dos Timeouts (Problema)
+- `image-lab-generate/index.ts` linha 123: Gemini usa `setTimeout(() => controller.abort(), 120_000)` — **120 segundos**
+- `image-lab-generate/index.ts` linha 203: OpenAI usa `setTimeout(() => controller.abort(), 120_000)` — **120 segundos**
+- `image-lab-pipeline-bridge/index.ts` linhas 57 e 129: ambos providers usam **120 segundos**
+- NAO existe SLO por provider. NAO existe wall-clock guard total por job.
+- NAO existe fallback por latencia (o fallback atual so ocorre quando o provider FALHA completamente, nao por lentidao).
 
-| Invariante | Status Atual | Evidencia |
-|---|---|---|
-| C12.1_RETRY_POLICY (max 3 attempts) | **VIOLADO** | Job `00d7eeb6` tem **5 attempts**, job `82317431` tem **4 attempts** |
-| C12.1_CIRCUIT_BREAKER | **NAO EXISTE** | Zero codigo ou tabela para rastrear circuit state |
-| C12.1_NO_STUCK_JOBS | **PARCIAL** | pg_cron ativo (`*/5 * * * *`), mas threshold eh 10min, nao 120s |
-| C12.1_SLO_GUARD | **NAO EXISTE** | pipeline-bridge nao verifica fail_rate nem latencia antes de gerar |
-| C12.1_CACHE_GUARD | **OK** | Hash SHA-256 + cache check funciona (0 cache_hits registrados, mas logica existe) |
-| image-sequence | **NAO EXISTE** | Zero referencias no codebase |
+### Estado Atual do Cache (Problema)
+- Hash input (linha 535): `${requestedProvider}|${requestedModel}|${actualSize}|${preset.key}|${preset.version}|${promptFinal}`
+- NAO existe normalizacao do prompt. Diferenca de espaco, maiuscula/minuscula gera hash diferente.
+- Dados reais: `cache_hit = 0` em todos os jobs recentes.
 
-### Codigo Atual Real
-
-**Fallback (image-lab-generate/index.ts linhas 323-371)**: Existe fallback Gemini->OpenAI apenas para TIMEOUT, mas SEM limite de attempts. Um job pode acumular attempts indefinidamente.
-
-**Cron (pg_cron)**: 2 jobs ativos rodando a cada 5 minutos chamando `cleanup_stale_image_attempts()` que limpa processing > 10min e queued > 30min.
-
-**Pipeline Bridge (image-lab-pipeline-bridge/index.ts)**: Nao tem retry, nao tem fallback, nao tem SLO check. Falha unica = failed definitivo.
+### Nao existe `_shared/` folder em `supabase/functions/`.
+### Nao existe edge function `image-lab-health`.
 
 ---
 
-## Parte 1 — Tabela `image_lab_circuit_state`
+## PARTE 1 — Fallback por Latencia (SLO Guard em Runtime)
 
-Nova tabela para rastrear circuit breaker por provider.
+### Arquivos Modificados
+1. **`supabase/functions/image-lab-generate/index.ts`**
+2. **`supabase/functions/image-lab-pipeline-bridge/index.ts`**
 
-```sql
-CREATE TABLE public.image_lab_circuit_state (
-  provider TEXT PRIMARY KEY,
-  state TEXT NOT NULL DEFAULT 'CLOSED' CHECK (state IN ('CLOSED','OPEN','HALF_OPEN')),
-  fail_count INTEGER NOT NULL DEFAULT 0,
-  total_count INTEGER NOT NULL DEFAULT 0,
-  last_failure_at TIMESTAMPTZ,
-  opened_at TIMESTAMPTZ,
-  cooldown_until TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+### Mudancas Tecnicas
 
-INSERT INTO image_lab_circuit_state (provider) VALUES ('openai'), ('gemini');
+#### 1A. Constantes SLO (image-lab-generate)
+Adicionar no topo do arquivo, apos `SIZE_MAP`:
+```
+const SLO_CONFIG = {
+  OPENAI_TIMEOUT_MS: 20_000,
+  GEMINI_TIMEOUT_MS: 15_000,
+  MAX_TOTAL_WALL_MS: 25_000,
+};
 ```
 
-RLS: admin-only (mesmo padrao das tabelas image_*).
+#### 1B. Refatorar `generateWithGemini` e `generateWithOpenAI`
+- Aceitar parametro `timeoutMs` em vez de hard-coded `120_000`
+- Quando `AbortError` ocorrer, o `classifyError` ja retorna `"TIMEOUT"` (linha 390 confirmada)
 
----
+#### 1C. Refatorar `generateWithRetryPolicy`
+Logica atual (3 attempts fixos com 120s cada): substituir por logica SLO-aware:
 
-## Parte 2 — Edge Function `image-lab-generate/index.ts`
+```
+Attempt 1: provider primario com seu timeout SLO
+  Se TIMEOUT → registrar attempt failed com error_code="SLO_TIMEOUT"
+  
+Attempt 2: retry mesmo provider (ja existe)
+  Agora COM wall-clock guard: se tempo total > MAX_TOTAL_WALL_MS, pular para attempt 3
 
-### 2.1 C12.1_RETRY_POLICY
-
-Antes de criar um novo attempt, contar attempts existentes:
-
-```typescript
-const { count } = await supabase
-  .from("image_attempts")
-  .select("id", { count: "exact", head: true })
-  .eq("job_id", job_id);
-
-if (count >= 3) {
-  return Response({ error_code: "MAX_ATTEMPTS_EXCEEDED" }, 429);
-}
+Attempt 3: fallback para provider alternativo
+  Timeout = min(provider_timeout, tempo_restante_do_wall_clock)
 ```
 
-Fluxo completo:
-1. Tentativa 1: provider original
-2. Se TIMEOUT -> Tentativa 2: retry no MESMO provider
-3. Se falhar novamente -> Tentativa 3: fallback para OUTRO provider
-4. Se falhar -> `status = 'failed'` definitivo
+- Adicionar novo error_code `"SLO_TIMEOUT"` no `classifyError` (distinguir de TIMEOUT generico via AbortError com mensagem customizada)
+- Logs adicionais no console (nao v7DebugLogger — este roda no browser, nao na edge function):
+  - `[C12.1_SLO] IMAGE_PROVIDER_START: provider=openai, jobId=xxx`
+  - `[C12.1_SLO] IMAGE_PROVIDER_TIMEOUT: provider=openai, ms=20001, jobId=xxx`
+  - `[C12.1_SLO] IMAGE_FALLBACK_TRIGGERED: from=openai, to=gemini, jobId=xxx`
 
-### 2.2 C12.1_CIRCUIT_BREAKER
-
-Antes de gerar, consultar `image_lab_circuit_state`:
-
-```typescript
-const { data: circuit } = await supabase
-  .from("image_lab_circuit_state")
-  .select("*")
-  .eq("provider", actualProvider)
-  .single();
-
-if (circuit.state === "OPEN" && new Date() < new Date(circuit.cooldown_until)) {
-  // Provider bloqueado — forcar fallback
-  actualProvider = actualProvider === "openai" ? "gemini" : "openai";
-}
-```
-
-Apos cada attempt (sucesso ou falha), atualizar contadores e avaliar transicao de estado:
-- `fail_count / total_count > 0.4` nos ultimos 20 -> OPEN (cooldown 10min)
-- Apos cooldown -> HALF_OPEN (1 request teste)
-- Se teste OK -> CLOSED
-- Se teste falha -> OPEN novamente
-
-### 2.3 Metadata expandido na resposta
-
-Adicionar ao response JSON:
+#### 1D. Pipeline Bridge: Degraded Response
+Na `image-lab-pipeline-bridge`, quando TODOS os providers falharem (retry exhausted), em vez de propagar o erro como `status: "failed"`, retornar:
 ```json
 {
-  "retry_count": 2,
-  "fallback_used": true,
-  "circuit_state": "CLOSED"
+  "scene_id": "xxx",
+  "status": "degraded",
+  "asset_id": null,
+  "storage_path": null,
+  "degraded": true,
+  "reason": "ALL_PROVIDERS_FAILED"
+}
+```
+E o `ok` da response geral permanece `true` (para a bridge nao retornar 5xx), permitindo que o player continue.
+
+O status HTTP 503 continua reservado SOMENTE para violacoes do SLO_GUARD sistemico (linhas 250-269 atuais).
+
+### Criterios de Aceite (Pass/Fail)
+- Se OpenAI > 20s: attempt registrado com `error_code="SLO_TIMEOUT"`, fallback para Gemini disparado
+- Se ambos falharem: job=failed, bridge retorna `degraded: true` (player nao trava)
+- Circuit breaker continua atualizando `image_lab_circuit_state` corretamente
+
+---
+
+## PARTE 2 — Health Endpoint
+
+### Arquivo Criado
+1. **`supabase/functions/image-lab-health/index.ts`** (novo)
+2. **`supabase/config.toml`** — adicionar `[functions.image-lab-health]` com `verify_jwt = false`
+
+### Implementacao
+- Auth: mesma logica REST `/auth/v1/user` + check `user_roles` para admin/supervisor
+- Queries:
+  - `image_lab_circuit_state` → estado dos providers
+  - Query agregada em `image_attempts` (last 24h) por provider: `avg(latency_ms)`, `count(*)`, `count(*) filter (where status='failed')`
+  - `image_jobs` where `status='processing'` → stuck count
+- `degraded_mode`: true se `(fail_rate_openai > 0.25 AND fail_rate_gemini > 0.50)` OU ambos `OPEN`
+- Retorno conforme modelo JSON especificado no prompt
+
+### Criterios de Aceite
+- curl com JWT admin → retorna `ok: true` com dados preenchidos
+- curl sem auth → 401 `AUTH_MISSING`
+
+---
+
+## PARTE 3 — Cache Normalizado
+
+### Arquivos Criados/Modificados
+1. **`supabase/functions/image-lab-generate/index.ts`** — adicionar funcao `normalizePrompt()` inline (nao ha folder `_shared` e cria-lo requer setup adicional; manter inline por simplicidade)
+2. **`supabase/functions/image-lab-pipeline-bridge/index.ts`** — mesma funcao `normalizePrompt()`
+3. **`supabase/functions/image-lab-generate-batch/index.ts`** — mesma funcao `normalizePrompt()`
+
+### Logica de `normalizePrompt(prompt)`
+```typescript
+function normalizePrompt(prompt: string): string {
+  return prompt
+    .trim()
+    .replace(/\s+/g, ' ')        // collapse whitespace
+    .toLowerCase()
+    .replace(/\s*([,.])\s*/g, '$1') // remove spaces around , and .
+    .replace(/([.,!?]){2,}/g, '$1') // collapse repeated punctuation
+    .replace(/\.\s*\./g, '.');      // remove ". ." style hints vazios
 }
 ```
 
----
-
-## Parte 3 — Edge Function `image-lab-pipeline-bridge/index.ts`
-
-### 3.1 C12.1_SLO_GUARD
-
-No inicio da bridge, antes de processar scenes[], consultar KPIs:
-
-```typescript
-const { data: kpis } = await supabase
-  .from("image_lab_kpis_last_7d")
-  .select("*")
-  .single();
-
-const { data: stuckJobs } = await supabase
-  .from("image_jobs")
-  .select("id", { count: "exact", head: true })
-  .eq("status", "processing");
-
-if (
-  kpis.first_pass_accept_rate < 75 || // fail_rate > 25%
-  (kpis.avg_latency_openai > 60000 && kpis.avg_latency_gemini > 60000) ||
-  stuckJobs > 0
-) {
-  return Response({ ok: false, reason: "SLO_VIOLATION", kpis }, 503);
-}
+### Hash Input Atualizado
+```
+hashInput = `${provider}|${model}|${size}|${preset_key}|${preset_version}|${normalizePrompt(promptFinal)}`
 ```
 
-### 3.2 Retry + Fallback na Bridge
+NAO sera feita migracao de hashes existentes. Novos jobs usam o novo hash. Assets antigos continuam acessiveis pela PK.
 
-Aplicar a mesma logica de retry (max 3 attempts) e circuit breaker que a funcao principal.
+### Criterios de Aceite
+- Duas geracoes com prompts identicos exceto espacos/maiusculas → segunda retorna `cache_hit: true`
+- Hash e deterministico (mesma entrada normalizada = mesmo hash)
 
 ---
 
-## Parte 4 — Cleanup Function Update
+## PARTE 4 — Base para Visual Avancado (Preparacao C13)
 
-Alterar `cleanup_stale_image_attempts()` para usar threshold de **120s** (2min) em vez de 10min:
+### Arquivo Modificado
+1. **`supabase/functions/v7-vv/index.ts`** — DryRun validation (linhas ~2450-2474)
 
-```sql
-WHERE status = 'processing'
-  AND created_at < now() - interval '2 minutes';
+### Mudancas
+- Adicionar tolerant parsing para campos futuros em `image-sequence`: ignorar campos desconhecidos sem rejeitar (ja e o comportamento padrao do JSON)
+- Adicionar validacao OPCIONAL de `cameraSpec` se presente no frame: se `cameraSpec` existir mas nao for um objeto, gerar warning (nao error)
+- Manter hard reject para `visual.type` invalido (ja existe, confirmado na linha 1679)
+- ZERO mudanca no renderer ou UI
+
+### Criterios de Aceite
+- DryRun PASS para aulas existentes com `image-sequence`
+- DryRun PASS para `image-sequence` com campo extra desconhecido (ex: `cameraSpec: {...}`)
+- DryRun FAIL para `visual.type` invalido (ex: `"image-sequence-3d"`)
+- Nenhuma mudanca de comportamento no player
+
+---
+
+## Resumo de Entregaveis
+
+| # | Arquivo | Acao | Descricao |
+|---|---------|------|-----------|
+| 1 | `supabase/functions/image-lab-generate/index.ts` | MODIFICAR | SLO timeouts, `normalizePrompt()`, wall-clock guard, `SLO_TIMEOUT` error code |
+| 2 | `supabase/functions/image-lab-pipeline-bridge/index.ts` | MODIFICAR | SLO timeouts, `normalizePrompt()`, resposta `degraded` em vez de 5xx |
+| 3 | `supabase/functions/image-lab-generate-batch/index.ts` | MODIFICAR | `normalizePrompt()` no hash |
+| 4 | `supabase/functions/image-lab-health/index.ts` | CRIAR | Health endpoint completo |
+| 5 | `supabase/config.toml` | ATUALIZAR (automatico) | Entrada para `image-lab-health` |
+| 6 | `supabase/functions/v7-vv/index.ts` | MODIFICAR | Tolerant parsing + warning para `cameraSpec` |
+| 7 | `src/lib/imageLabStateMachine.ts` | MODIFICAR | Adicionar `SLO_TIMEOUT` ao tipo `ImageLabErrorCode` |
+
+## Como Testar
+
+### Health endpoint
+```bash
+curl -X GET \
+  https://pspvppymcdjbwsudxzdx.supabase.co/functions/v1/image-lab-health \
+  -H "Authorization: Bearer <JWT_ADMIN>" \
+  -H "apikey: <ANON_KEY>"
 ```
 
----
+### Teste de cache_hit
+1. Gerar imagem com prompt "A futuristic city at night" via UI `/admin/image-lab`
+2. Gerar novamente com "A  Futuristic  City  At  Night" (espacos duplos, maiusculas)
+3. Segunda execucao deve retornar `cache_hit: true`
 
-## Parte 5 — Contrato C12.1_PIPELINE_IMAGE_SEQUENCE
+### Teste de SLO fallback
+- Observar nos logs da edge function se OpenAI > 20s dispara `SLO_TIMEOUT` e fallback para Gemini
+- Verificar `image_attempts` para o job: primeiro attempt `error_code="SLO_TIMEOUT"`, segundo attempt com provider diferente
 
-### 5.1 Schema Update (`src/types/V7ScriptInput.ts`)
-
-Adicionar `'image-sequence'` ao tipo `V7VisualType`:
-
-```typescript
-export type V7VisualType =
-  | 'number-reveal'
-  // ... existentes ...
-  | 'image-sequence';  // NOVO C12.1
-
-export interface V7ImageSequenceFrame {
-  id: string;
-  promptScene: string;
-  durationMs: number; // >= 1000
-  presetKey?: string;  // default "cinematic-01"
-}
-
-export interface V7ImageSequenceContent {
-  frames: V7ImageSequenceFrame[];
-}
-```
-
-### 5.2 Validacao no Input (`validateV7ScriptInput`)
-
-Adicionar regras:
-- `image-sequence` so permitido em `scene.type === "narrative"`
-- `frames[]` deve existir e ter 1-3 elementos
-- Cada frame: `promptScene` nao-vazio, `durationMs >= 1000`
-- Soma total `durationMs >= 2000`
-- Proibido coexistir com `microVisual.type === "image"` na mesma cena
-
-### 5.3 DryRun Update (`v7-vv/index.ts`)
-
-Na funcao `executeDryRun`, adicionar validacao de `image-sequence`:
-
-```typescript
-if (scene.visual?.type === "image-sequence") {
-  if (!["narrative"].includes(scene.type)) {
-    errors.push({ code: "VALIDATION_ERROR", message: "image-sequence only allowed in narrative scenes" });
-  }
-  const frames = scene.visual.frames || [];
-  if (frames.length === 0 || frames.length > 3) {
-    errors.push({ code: "VALIDATION_ERROR", message: "image-sequence requires 1-3 frames" });
-  }
-  // ... validar cada frame
-}
-```
-
-### 5.4 Novo Componente `ImageSequenceRenderer`
-
-Arquivo: `src/components/lessons/v7/cinematic/phases/V7ImageSequenceRenderer.tsx`
-
-Comportamento:
-- Recebe `frames[]` com `storagePath` (preenchido pelo Step 4.9 ou V7SceneLinker)
-- Usa `useSignedUrl` para resolver cada frame
-- Crossfade entre frames usando `framer-motion` (AnimatePresence)
-- Preload do proximo frame via `new Image().src`
-- Respeita `durationMs` por frame
-- Fallback: se imagem falhar, exibe placeholder neutro com gradiente
-- Debug logs: `IMAGE_SEQUENCE_START`, `IMAGE_SEQUENCE_FRAME_RENDER`, `IMAGE_SEQUENCE_END`
-
-### 5.5 Integracao no Renderer (`V7PhasePlayer.tsx`)
-
-Dentro do switch de `visual.type`, adicionar case para `image-sequence`:
-
-```typescript
-case 'image-sequence':
-  return <V7ImageSequenceRenderer
-    frames={visual.content.frames}
-    effects={visual.effects}
-    phaseId={phase.id}
-    currentTime={currentTime}
-  />;
-```
-
----
-
-## Parte 6 — Contrato Doc Update
-
-Criar `docs/contracts/C12_1_HARDENING.md` com todas as invariantes formais, error codes novos, e metricas.
-
-Error codes novos:
-- `MAX_ATTEMPTS_EXCEEDED` — job ja tem 3 attempts
-- `SLO_VIOLATION` — KPIs fora do threshold
-- `CIRCUIT_OPEN` — provider temporariamente bloqueado
-
----
-
-## Parte 7 — Debug Logs (v7DebugLogger)
-
-Adicionar tags ao `v7DebugLogger.ts`:
-
-```typescript
-pushV7DebugLog('IMAGE_SEQUENCE_START', { phaseId, frameCount, currentTime });
-pushV7DebugLog('IMAGE_SEQUENCE_FRAME_RENDER', { phaseId, frameId, frameIndex, currentTime });
-pushV7DebugLog('IMAGE_SEQUENCE_END', { phaseId, currentTime });
-```
-
----
-
-## Parte 8 — Backward Compatibility
-
-| Aspecto | Impacto |
-|---|---|
-| Cenas existentes (image-flash, icon, etc.) | **ZERO** — nenhuma alteracao |
-| V7SceneType | **ZERO** — image-sequence eh V7VisualType, nao SceneType |
-| Contratos C01-C11 | **ZERO** — nenhuma alteracao |
-| C12_AUTH_GATE | **ZERO** — mantido |
-| C12_STORAGE_PRIVACY | **ZERO** — mantido |
-| DryRun existente | **ADITIVO** — novas validacoes, nao remove nenhuma |
-
----
-
-## Sequencia de Implementacao
-
-1. Criar tabela `image_lab_circuit_state` (migration)
-2. Atualizar `cleanup_stale_image_attempts` (migration — threshold 120s)
-3. Atualizar `image-lab-generate/index.ts` (retry policy + circuit breaker)
-4. Atualizar `image-lab-pipeline-bridge/index.ts` (SLO guard + retry)
-5. Atualizar `src/types/V7ScriptInput.ts` (image-sequence types)
-6. Atualizar `supabase/functions/v7-vv/index.ts` (dry-run validation)
-7. Criar `V7ImageSequenceRenderer.tsx`
-8. Integrar no renderer (`V7PhasePlayer.tsx`)
-9. Atualizar `v7DebugLogger.ts` (novas tags)
-10. Criar `docs/contracts/C12_1_HARDENING.md`
-
----
-
-## Limites da Fase 1
-
-- Maximo 3 frames por cena
-- Sem geracao paralela de frames
-- Apenas preset `cinematic-01` ativo
-- Circuit breaker baseado em contagem simples (sem sliding window sofisticado)
-- image-sequence apenas em `scene.type="narrative"`
+## Nenhuma migracao SQL necessaria
+Todos os campos ja existem nas tabelas. O novo error code `SLO_TIMEOUT` e apenas um valor string no campo `error_code` existente.
