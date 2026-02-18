@@ -114,16 +114,17 @@ export const V7CinematicPlayer = ({
   const { trackEvent, trackMetric } = useV7Analytics(lesson.id);
 
   // Performance monitoring hook
+  const onLowPerformanceCallback = useCallback(() => {
+    console.log('[V7Player] Low performance detected, reducing effects');
+    setReducedMotion(true);
+  }, []);
   const { 
     metrics: performanceMetrics, 
     startMonitoring, 
     recordLoadingComplete,
     recordAudioLoadTime,
   } = useV7Performance({
-    onLowPerformance: () => {
-      console.log('[V7Player] Low performance detected, reducing effects');
-      setReducedMotion(true);
-    },
+    onLowPerformance: onLowPerformanceCallback,
     fpsThreshold: 25,
   });
 
