@@ -6,10 +6,15 @@
  * 
  * C12.1 HARDENING:
  * - SLO_GUARD: Checks KPIs before processing
- * - SLO timeouts per provider (OpenAI 20s, Gemini 15s, wall-clock 25s)
+ * - SLO timeouts per provider (OpenAI 70s, Gemini 35s, wall-clock 120s)
  * - RETRY_POLICY: Max 3 attempts per scene with fallback
  * - CIRCUIT_BREAKER: Respects provider circuit state
  * - Degraded response on ALL_PROVIDERS_FAILED (never 5xx for generation failures)
+ * 
+ * C12.1.x FAULT INJECTION:
+ * - Header x-image-lab-fault: openai_timeout | gemini_timeout | both_fail
+ * - Requires ALLOW_FAULT_INJECTION=true env var
+ * - Does NOT update circuit_state when fault injection is active
  * 
  * Input:  { scenes: [{ scene_id, prompt_scene, style_hints? }], preset_key?, size?, provider? }
  * Output: { results: [{ scene_id, asset_id, storage_path, status, error? }] }
@@ -20,7 +25,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-image-lab-fault",
 };
 
 const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
@@ -29,11 +34,11 @@ const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
   "1024x1536": { w: 1024, h: 1536, api: "1024x1536" },
 };
 
-// === C12.1_SLO_CONFIG ===
+// === C12.1_SLO_CONFIG (C12.1.x updated) ===
 const SLO_CONFIG = {
-  OPENAI_TIMEOUT_MS: 20_000,
-  GEMINI_TIMEOUT_MS: 15_000,
-  MAX_TOTAL_WALL_MS: 25_000,
+  OPENAI_TIMEOUT_MS: 70_000,
+  GEMINI_TIMEOUT_MS: 35_000,
+  MAX_TOTAL_WALL_MS: 120_000,
 };
 
 function getProviderTimeout(provider: string): number {
@@ -68,6 +73,34 @@ function classifyError(err: any): string {
   return "GENERATION_FAILED";
 }
 
+// === C12.1.x FAULT INJECTION ===
+interface FaultInjection {
+  active: boolean;
+  type: string | null;
+}
+
+function parseFaultInjection(req: Request): FaultInjection {
+  const allowFault = Deno.env.get("ALLOW_FAULT_INJECTION") === "true";
+  if (!allowFault) return { active: false, type: null };
+  
+  const faultHeader = req.headers.get("x-image-lab-fault");
+  if (!faultHeader) return { active: false, type: null };
+  
+  const validFaults = ["openai_timeout", "gemini_timeout", "both_fail"];
+  if (!validFaults.includes(faultHeader)) return { active: false, type: null };
+  
+  console.log(`[bridge:C12.1.x_FAULT] Fault injection ACTIVE: type=${faultHeader}`);
+  return { active: true, type: faultHeader };
+}
+
+function shouldSimulateFault(fault: FaultInjection, provider: string): boolean {
+  if (!fault.active) return false;
+  if (fault.type === "both_fail") return true;
+  if (fault.type === "openai_timeout" && provider === "openai") return true;
+  if (fault.type === "gemini_timeout" && provider === "gemini") return true;
+  return false;
+}
+
 async function generateFromProvider(
   provider: string,
   model: string,
@@ -76,7 +109,14 @@ async function generateFromProvider(
   openaiKey: string,
   lovableKey: string,
   timeoutMs: number,
+  fault: FaultInjection,
 ): Promise<Uint8Array> {
+  // C12.1.x: Fault injection — simulate failure
+  if (shouldSimulateFault(fault, provider)) {
+    console.log(`[bridge:C12.1.x_FAULT] Simulating SLO_TIMEOUT for provider=${provider}`);
+    throw Object.assign(new Error(`[FAULT_INJECTION] Simulated SLO_TIMEOUT for ${provider}`), { name: "AbortError" });
+  }
+
   if (provider === "gemini") {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -200,6 +240,7 @@ async function generateSceneWithRetry(
   sizeInfo: { w: number; h: number; api: string },
   openaiKey: string,
   lovableKey: string,
+  fault: FaultInjection,
 ): Promise<{ bytes: Uint8Array; attemptId: string; usedProvider: string; retryCount: number; fallbackUsed: boolean }> {
   const wallStart = Date.now();
   const fallbackProvider = provider === "openai" ? "gemini" : "openai";
@@ -239,7 +280,7 @@ async function generateSceneWithRetry(
     const providerTimeout = Math.min(getProviderTimeout(p), remainingWall);
 
     try {
-      const bytes = await generateFromProvider(p, m, promptFinal, sizeInfo, openaiKey, lovableKey, providerTimeout);
+      const bytes = await generateFromProvider(p, m, promptFinal, sizeInfo, openaiKey, lovableKey, providerTimeout, fault);
       const latency = Date.now() - start;
       await supabase.from("image_attempts").update({
         status: "completed", latency_ms: latency, bytes_out: bytes.length,
@@ -291,6 +332,9 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // C12.1.x: Parse fault injection (bridge is service-to-service, no user role check needed — env var is the guardrail)
+    const fault = parseFaultInjection(req);
+
     // === C12.1_SLO_GUARD ===
     const { data: kpis } = await supabase
       .from("image_lab_kpis_last_7d")
@@ -302,7 +346,8 @@ Deno.serve(async (req) => {
       .select("id", { count: "exact", head: true })
       .eq("status", "processing");
 
-    if (kpis) {
+    if (kpis && !fault.active) {
+      // Skip SLO_GUARD during fault injection tests
       const failRateViolation = kpis.first_pass_accept_rate !== null && kpis.first_pass_accept_rate < 75;
       const latencyViolation = (kpis.avg_latency_openai || 0) > 60000 && (kpis.avg_latency_gemini || 0) > 60000;
       const stuckViolation = (stuckCount || 0) > 0;
@@ -401,7 +446,7 @@ Deno.serve(async (req) => {
           hash,
           status: "processing",
           n: 1,
-          metadata: { pipeline_bridge: true, scene_id, style_hints },
+          metadata: { pipeline_bridge: true, scene_id, style_hints, fault_injection: fault.active ? fault.type : undefined },
         }).select("id").single();
 
         if (jobErr || !job) throw new Error(`Failed to create job: ${jobErr?.message}`);
@@ -409,7 +454,7 @@ Deno.serve(async (req) => {
         try {
           // C12.1: Generate with SLO-aware retry policy (max 3 attempts)
           const genResult = await generateSceneWithRetry(
-            supabase, job.id, provider, model, promptFinal, sizeInfo, openaiKey, lovableKey,
+            supabase, job.id, provider, model, promptFinal, sizeInfo, openaiKey, lovableKey, fault,
           );
 
           const storagePath = `${job.id}/${genResult.attemptId}/0.png`;
@@ -468,7 +513,7 @@ Deno.serve(async (req) => {
     const output = results.map((r, i) => {
       if (r.status === "fulfilled") return r.value;
       // C12.1: Return degraded placeholder instead of propagating error as 5xx
-      console.warn(`[bridge:C12.1_SLO] IMAGE_DEGRADED_PLACEHOLDER: scene=${scenes[i].scene_id}, reason=ALL_PROVIDERS_FAILED`);
+      console.warn(`[bridge:C12.1_SLO] IMAGE_LAB_DEGRADED_PLACEHOLDER_RETURNED: scene=${scenes[i].scene_id}, reason=ALL_PROVIDERS_FAILED`);
       return {
         scene_id: scenes[i].scene_id,
         asset_id: null,
@@ -481,13 +526,16 @@ Deno.serve(async (req) => {
     });
 
     const successCount = output.filter(o => o.status !== "degraded").length;
+    const degradedCount = output.filter(o => o.status === "degraded").length;
 
     return new Response(JSON.stringify({
       ok: true, // Always true at HTTP level — degraded scenes have status:"degraded"
       results: output,
       total: scenes.length,
       success: successCount,
-      degraded: output.filter(o => o.status === "degraded").length,
+      degraded: degradedCount,
+      degraded_mode: degradedCount > 0,
+      fault_injection: fault.active ? fault.type : undefined,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

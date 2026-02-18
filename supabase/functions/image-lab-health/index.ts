@@ -1,7 +1,7 @@
 /**
  * image-lab-health — Observability endpoint for AI Image Lab
  * 
- * Returns provider circuit states, 24h KPIs, and degraded_mode status.
+ * Returns provider circuit states, 24h KPIs, SLO config, and degraded_mode status.
  * Auth: admin or supervisor (via REST /auth/v1/user + user_roles check).
  */
 
@@ -11,6 +11,13 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+};
+
+// === C12.1_SLO_CONFIG (must match image-lab-generate and pipeline-bridge) ===
+const SLO_CONFIG = {
+  OPENAI_TIMEOUT_MS: 70_000,
+  GEMINI_TIMEOUT_MS: 35_000,
+  MAX_TOTAL_WALL_MS: 120_000,
 };
 
 Deno.serve(async (req) => {
@@ -117,6 +124,7 @@ Deno.serve(async (req) => {
       ok: true,
       timestamp: new Date().toISOString(),
       providers,
+      slo_config: SLO_CONFIG,
       kpis_24h: {
         avg_latency_openai_ms: avgLatencyOpenai,
         avg_latency_gemini_ms: avgLatencyGemini,
