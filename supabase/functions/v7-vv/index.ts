@@ -2153,6 +2153,27 @@ function executeDryRun(input: ScriptInput): DryRunResult {
   const autoFixes: DryRunAutoFix[] = [];
   const sceneAnalysis: DryRunSceneAnalysis[] = [];
 
+  // Guard: se não tem scenes, retornar erro imediato
+  if (!input.scenes || !Array.isArray(input.scenes) || input.scenes.length === 0) {
+    console.error('[V7-vv:DryRun] ❌ input.scenes está vazio ou undefined');
+    return {
+      valid: false,
+      errorCount: 1,
+      warningCount: 0,
+      issues: [{
+        severity: 'error',
+        scene: 'root',
+        field: 'scenes',
+        message: 'Input não contém "scenes[]". Pelo menos uma cena é obrigatória.',
+        suggestion: 'Adicione ao menos uma cena no array "scenes" do JSON de input.'
+      }],
+      autoFixes: [],
+      sceneAnalysis: [],
+      estimatedDuration: 0,
+      summary: 'Input inválido: scenes[] ausente ou vazio'
+    };
+  }
+
   // Taxa de narração: ~150 palavras por minuto (2.5 palavras/segundo)
   const WORDS_PER_SECOND = 2.5;
 
