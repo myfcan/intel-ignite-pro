@@ -13,10 +13,12 @@ const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
 };
 
 // === C12.1_SLO_CONFIG ===
+// Realistic timeouts based on observed provider latencies:
+// OpenAI gpt-image-1: p95 ~50s, Gemini flash-image: p95 ~25s
 const SLO_CONFIG = {
-  OPENAI_TIMEOUT_MS: 20_000,
-  GEMINI_TIMEOUT_MS: 15_000,
-  MAX_TOTAL_WALL_MS: 25_000,
+  OPENAI_TIMEOUT_MS: 55_000,
+  GEMINI_TIMEOUT_MS: 30_000,
+  MAX_TOTAL_WALL_MS: 90_000,
 };
 
 function getProviderTimeout(provider: string): number {
