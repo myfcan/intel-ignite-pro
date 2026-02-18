@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, x-image-lab-fault",
 };
 
 const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
@@ -12,13 +12,11 @@ const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
   "1024x1536": { w: 1024, h: 1536, api: "1024x1536" },
 };
 
-// === C12.1_SLO_CONFIG ===
-// Realistic timeouts based on observed provider latencies:
-// OpenAI gpt-image-1: p95 ~50s, Gemini flash-image: p95 ~25s
+// === C12.1_SLO_CONFIG (C12.1.x updated) ===
 const SLO_CONFIG = {
-  OPENAI_TIMEOUT_MS: 55_000,
-  GEMINI_TIMEOUT_MS: 30_000,
-  MAX_TOTAL_WALL_MS: 90_000,
+  OPENAI_TIMEOUT_MS: 70_000,
+  GEMINI_TIMEOUT_MS: 35_000,
+  MAX_TOTAL_WALL_MS: 120_000,
 };
 
 function getProviderTimeout(provider: string): number {
@@ -44,6 +42,34 @@ async function sha256(input: string): Promise<string> {
     .join("");
 }
 
+// === C12.1.x FAULT INJECTION ===
+interface FaultInjection {
+  active: boolean;
+  type: string | null; // "openai_timeout" | "gemini_timeout" | "both_fail"
+}
+
+function parseFaultInjection(req: Request, isAdmin: boolean): FaultInjection {
+  const allowFault = Deno.env.get("ALLOW_FAULT_INJECTION") === "true";
+  if (!allowFault || !isAdmin) return { active: false, type: null };
+  
+  const faultHeader = req.headers.get("x-image-lab-fault");
+  if (!faultHeader) return { active: false, type: null };
+  
+  const validFaults = ["openai_timeout", "gemini_timeout", "both_fail"];
+  if (!validFaults.includes(faultHeader)) return { active: false, type: null };
+  
+  console.log(`[C12.1.x_FAULT] Fault injection ACTIVE: type=${faultHeader}`);
+  return { active: true, type: faultHeader };
+}
+
+function shouldSimulateFault(fault: FaultInjection, provider: string): boolean {
+  if (!fault.active) return false;
+  if (fault.type === "both_fail") return true;
+  if (fault.type === "openai_timeout" && provider === "openai") return true;
+  if (fault.type === "gemini_timeout" && provider === "gemini") return true;
+  return false;
+}
+
 // === C12.1_CIRCUIT_BREAKER HELPERS ===
 
 interface CircuitState {
@@ -66,7 +92,13 @@ async function getCircuitState(supabase: any, provider: string): Promise<Circuit
   return data;
 }
 
-async function updateCircuitAfterAttempt(supabase: any, provider: string, success: boolean): Promise<void> {
+async function updateCircuitAfterAttempt(supabase: any, provider: string, success: boolean, skipCircuitUpdate: boolean): Promise<void> {
+  // C12.1.x: Fault injection NEVER updates circuit state
+  if (skipCircuitUpdate) {
+    console.log(`[C12.1.x_FAULT] Skipping circuit update for ${provider} (fault injection active)`);
+    return;
+  }
+
   const circuit = await getCircuitState(supabase, provider);
   if (!circuit) return;
 
@@ -274,6 +306,7 @@ async function generateWithRetryPolicy(
   requestedModel: string,
   promptFinal: string,
   sizeInfo: { w: number; h: number; api: string },
+  fault: FaultInjection,
 ): Promise<GenerationResult> {
   const attemptIds: string[] = [];
   let retryCount = 0;
@@ -281,9 +314,16 @@ async function generateWithRetryPolicy(
   let currentProvider = requestedProvider;
   let currentModel = requestedModel;
   const wallStart = Date.now();
+  const skipCircuit = fault.active;
 
   // Helper: generate with provider using SLO timeout
   async function tryGenerate(provider: string, model: string, timeoutMs: number): Promise<Uint8Array> {
+    // C12.1.x: Fault injection — simulate SLO_TIMEOUT
+    if (shouldSimulateFault(fault, provider)) {
+      console.log(`[C12.1.x_FAULT] Simulating SLO_TIMEOUT for provider=${provider}, jobId=${jobId}`);
+      throw Object.assign(new Error(`[FAULT_INJECTION] Simulated SLO_TIMEOUT for ${provider}`), { name: "AbortError" });
+    }
+    
     console.log(`[C12.1_SLO] IMAGE_PROVIDER_START: provider=${provider}, jobId=${jobId}, timeoutMs=${timeoutMs}`);
     if (provider === "gemini") {
       return await generateWithGemini(promptFinal, timeoutMs);
@@ -309,7 +349,7 @@ async function generateWithRetryPolicy(
         status: "completed", latency_ms: latency, bytes_out: bytes.length,
         cost_estimate: currentProvider === "openai" ? 0.02 : 0.01,
       }).eq("id", attempt!.id);
-      await updateCircuitAfterAttempt(supabase, currentProvider, true);
+      await updateCircuitAfterAttempt(supabase, currentProvider, true, skipCircuit);
       return { imageBytes: bytes, usedProvider: currentProvider, usedModel: currentModel, fallbackUsed, retryCount, attemptIds };
     } catch (err: any) {
       const latency = Date.now() - start;
@@ -321,7 +361,7 @@ async function generateWithRetryPolicy(
       await supabase.from("image_attempts").update({
         status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500), latency_ms: latency,
       }).eq("id", attempt!.id);
-      await updateCircuitAfterAttempt(supabase, currentProvider, false);
+      await updateCircuitAfterAttempt(supabase, currentProvider, false, skipCircuit);
       console.warn(`[C12.1_RETRY] Attempt 1 failed (${currentProvider}): ${errorCode}`);
     }
   }
@@ -346,7 +386,7 @@ async function generateWithRetryPolicy(
         status: "completed", latency_ms: latency, bytes_out: bytes.length,
         cost_estimate: currentProvider === "openai" ? 0.02 : 0.01,
       }).eq("id", attempt!.id);
-      await updateCircuitAfterAttempt(supabase, currentProvider, true);
+      await updateCircuitAfterAttempt(supabase, currentProvider, true, skipCircuit);
       return { imageBytes: bytes, usedProvider: currentProvider, usedModel: currentModel, fallbackUsed, retryCount, attemptIds };
     } catch (err: any) {
       const latency = Date.now() - start;
@@ -355,7 +395,7 @@ async function generateWithRetryPolicy(
       await supabase.from("image_attempts").update({
         status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500), latency_ms: latency,
       }).eq("id", attempt!.id);
-      await updateCircuitAfterAttempt(supabase, currentProvider, false);
+      await updateCircuitAfterAttempt(supabase, currentProvider, false, skipCircuit);
       console.warn(`[C12.1_RETRY] Attempt 2 failed (${currentProvider}): ${errorCode}`);
     }
   } else {
@@ -388,7 +428,7 @@ async function generateWithRetryPolicy(
         status: "completed", latency_ms: latency, bytes_out: bytes.length,
         cost_estimate: currentProvider === "openai" ? 0.02 : 0.01,
       }).eq("id", attempt!.id);
-      await updateCircuitAfterAttempt(supabase, currentProvider, true);
+      await updateCircuitAfterAttempt(supabase, currentProvider, true, skipCircuit);
       return { imageBytes: bytes, usedProvider: currentProvider, usedModel: currentModel, fallbackUsed, retryCount, attemptIds };
     } catch (err: any) {
       const latency = Date.now() - start;
@@ -396,7 +436,7 @@ async function generateWithRetryPolicy(
       await supabase.from("image_attempts").update({
         status: "failed", error_code: errorCode, error_message: err.message?.substring(0, 500), latency_ms: latency,
       }).eq("id", attempt!.id);
-      await updateCircuitAfterAttempt(supabase, currentProvider, false);
+      await updateCircuitAfterAttempt(supabase, currentProvider, false, skipCircuit);
 
       // All 3 attempts exhausted
       throw new Error(`C12.1_RETRY_EXHAUSTED: All 3 attempts failed. Last: ${errorCode} - ${err.message}`);
@@ -459,6 +499,10 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // C12.1.x: Parse fault injection header (admin-only guardrail)
+    const isAdmin = userRoles.includes("admin");
+    const fault = parseFaultInjection(req, isAdmin);
 
     const body = await req.json();
     const { job_id, provider = "openai", n = 1, size = "1024x1024" } = body;
@@ -614,7 +658,7 @@ Deno.serve(async (req) => {
 
     // === C12.1_RETRY_POLICY with SLO: Generate with retry + fallback ===
     const result = await generateWithRetryPolicy(
-      supabase, job_id, actualProvider, actualModel, promptFinal, sizeInfo,
+      supabase, job_id, actualProvider, actualModel, promptFinal, sizeInfo, fault,
     );
 
     const latencyMs = Date.now() - startTime;
@@ -659,6 +703,11 @@ Deno.serve(async (req) => {
       latency_ms: latencyMs,
       provider: result.usedProvider,
       model: result.usedModel,
+      metadata: {
+        ...(job.metadata as any || {}),
+        fallback_used: result.fallbackUsed,
+        fault_injection: fault.active ? fault.type : undefined,
+      },
     }).eq("id", job_id);
 
     return new Response(JSON.stringify({
@@ -678,6 +727,7 @@ Deno.serve(async (req) => {
       retry_count: result.retryCount,
       fallback_used: result.fallbackUsed,
       circuit_state: finalCircuit?.state || "UNKNOWN",
+      fault_injection: fault.active ? fault.type : undefined,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

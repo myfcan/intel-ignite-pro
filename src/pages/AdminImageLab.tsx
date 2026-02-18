@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Loader2, Check, X, RefreshCw, Image as ImageIcon, Zap, CheckCircle2, XCircle, Circle, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Loader2, Check, X, RefreshCw, Image as ImageIcon, Zap, CheckCircle2, XCircle, Circle, AlertTriangle, ChevronDown, ChevronUp, Shield, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -103,7 +103,6 @@ const ProcessingMonitor = ({ monitor, onDismiss }: { monitor: MonitorState; onDi
       </CardHeader>
       {!collapsed && (
         <CardContent className="pt-2 space-y-3">
-          {/* Steps */}
           <div className="space-y-1.5">
             {monitor.steps.map(step => (
               <div key={step.id} className={cn(
@@ -122,8 +121,6 @@ const ProcessingMonitor = ({ monitor, onDismiss }: { monitor: MonitorState; onDi
               </div>
             ))}
           </div>
-
-          {/* Error Panel */}
           {hasError && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
               <div className="flex items-start gap-2">
@@ -140,6 +137,7 @@ const ProcessingMonitor = ({ monitor, onDismiss }: { monitor: MonitorState; onDi
     </Card>
   );
 };
+
 interface Preset {
   id: string;
   key: string;
@@ -186,6 +184,7 @@ interface AttemptRow {
   latency_ms: number | null;
   bytes_out: number | null;
   status: string;
+  error_code?: string | null;
 }
 
 const SIZE_OPTIONS = [
@@ -350,6 +349,7 @@ const AdminImageLab = () => {
   const [currentAttempts, setCurrentAttempts] = useState<AttemptRow[]>([]);
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [kpis, setKpis] = useState<any>(null);
+  const [testingFault, setTestingFault] = useState<string | null>(null);
 
   useEffect(() => {
     loadPresets();
@@ -402,7 +402,7 @@ const AdminImageLab = () => {
     setMonitor(prev => ({ ...prev, progress: value }));
   };
 
-  const createAndGenerate = async (provider: "openai" | "gemini") => {
+  const createAndGenerate = async (provider: "openai" | "gemini", faultHeader?: string) => {
     if (!promptScene.trim()) {
       toast.error("Descreva a cena (prompt_scene)");
       return;
@@ -460,14 +460,20 @@ const AdminImageLab = () => {
       updateStep('call-api', 'running');
       setMonitorProgress(40);
 
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      // C12.1.x: Add fault injection header if provided
+      if (faultHeader) {
+        headers["x-image-lab-fault"] = faultHeader;
+      }
+
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-lab-generate`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers,
           body: JSON.stringify({ job_id: job.id, provider, n: 1, size }),
         }
       );
@@ -488,11 +494,16 @@ const AdminImageLab = () => {
       setMonitorProgress(80);
 
       const providerLabel = provider === 'openai' ? 'GPT' : 'Gemini 🍌';
-      toast.success(
-        result.cache_hit
-          ? "Cache hit! Imagem retornada do cache."
-          : `${providerLabel}: Imagem gerada em ${result.job?.latency_ms}ms`
-      );
+      
+      if (faultHeader) {
+        toast.success(`Fault injection test completed: fallback_used=${result.fallback_used}, provider=${result.job?.provider}`);
+      } else {
+        toast.success(
+          result.cache_hit
+            ? "Cache hit! Imagem retornada do cache."
+            : `${providerLabel}: Imagem gerada em ${result.job?.latency_ms}ms`
+        );
+      }
 
       // Step 5: Load results
       updateStep('load-results', 'running');
@@ -519,6 +530,131 @@ const AdminImageLab = () => {
       console.error("[ImageLab]", err);
     } finally {
       setGenerating(false);
+      setTestingFault(null);
+    }
+  };
+
+  // === C12.1.x: Fault Injection Test Handlers ===
+  const testFallback = async () => {
+    setTestingFault("openai_timeout");
+    if (!promptScene.trim()) {
+      setPromptScene("Test scene for fallback validation - cinematic landscape");
+    }
+    toast.info("🧪 Testing OpenAI→Gemini Fallback (fault injection: openai_timeout)");
+    await createAndGenerate("openai", "openai_timeout");
+  };
+
+  const testDegraded = async () => {
+    setTestingFault("both_fail");
+    toast.info("🧪 Testing Degraded Mode (fault injection: both_fail)");
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      toast.error("Sessão não encontrada");
+      setTestingFault(null);
+      return;
+    }
+
+    try {
+      // Call pipeline bridge directly to test degraded mode
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-lab-pipeline-bridge`,
+        {
+          method: "POST",
+          headers: {
+            // Bridge requires service_role_key — we call via edge function proxy approach
+            // For testing, we use the admin's own token to call generate with both_fail
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "x-image-lab-fault": "both_fail",
+          },
+          body: JSON.stringify({
+            job_id: "test-degraded",
+            provider: "openai",
+            n: 1,
+            size: "1024x1024",
+          }),
+        }
+      );
+
+      const result = await resp.json();
+      
+      if (resp.status === 403 || resp.status === 401) {
+        // Bridge requires service_role, so test via generate instead
+        if (!promptScene.trim()) {
+          setPromptScene("Test scene for degraded mode validation");
+        }
+        
+        // Create a job and test with both_fail through image-lab-generate
+        const preset = presets[0];
+        if (!preset) {
+          toast.error("Nenhum preset disponível");
+          setTestingFault(null);
+          return;
+        }
+        
+        const { data: job } = await supabase.from("image_jobs").insert({
+          preset_id: preset.id,
+          preset_key: preset.key,
+          preset_version: preset.version,
+          prompt_scene: promptScene || "Test degraded mode",
+          size: "1024x1024",
+          metadata: {},
+          status: "queued",
+        } as any).select().single() as any;
+
+        if (!job) {
+          toast.error("Falha ao criar job de teste");
+          setTestingFault(null);
+          return;
+        }
+
+        const genResp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-lab-generate`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              "x-image-lab-fault": "both_fail",
+            },
+            body: JSON.stringify({ job_id: job.id, provider: "openai", n: 1, size: "1024x1024" }),
+          }
+        );
+
+        const genResult = await genResp.json();
+        
+        if (!genResult.ok) {
+          // Expected: all providers failed → job failed
+          toast.success("✅ Degraded mode validated — all providers failed as expected (both_fail simulation)");
+          
+          // Verify circuit_state was NOT modified
+          const { data: circuits } = await supabase.from("image_lab_circuit_state").select("*") as any;
+          const allClosed = circuits?.every((c: any) => c.state === "CLOSED");
+          if (allClosed) {
+            toast.success("✅ Circuit state intact — CLOSED (fault injection did NOT alter circuit)");
+          } else {
+            toast.warning("⚠️ Circuit state may have changed — check manually");
+          }
+        } else {
+          toast.warning("Unexpected: generation succeeded despite both_fail injection");
+        }
+
+        await loadJobs();
+        await loadKpis();
+      } else {
+        // Direct bridge response
+        if (result.degraded_mode || result.degraded > 0) {
+          toast.success("✅ Degraded mode validated — bridge returned HTTP 200 with degraded placeholder");
+        } else {
+          toast.info(`Bridge response: ${JSON.stringify(result).substring(0, 200)}`);
+        }
+      }
+    } catch (err: any) {
+      toast.error(`Degraded test error: ${err.message}`);
+    } finally {
+      setTestingFault(null);
     }
   };
 
@@ -682,6 +818,81 @@ const AdminImageLab = () => {
         </Card>
       </div>
 
+      {/* === C12.1.x Fault Injection Testing Panel === */}
+      <Card className="border-2 border-amber-500/30 bg-amber-500/5">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Shield className="w-5 h-5 text-amber-500" />
+            C12.1.x — Fault Injection Tests
+            <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-500">Admin Only</Badge>
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">Testes controlados sem impacto em produção. Circuit state NÃO é alterado.</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Test Fallback */}
+            <div className="border rounded-xl p-4 space-y-3 bg-background">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-500" />
+                <h4 className="text-sm font-semibold">Test OpenAI→Gemini Fallback</h4>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Simula SLO_TIMEOUT no OpenAI. Esperado: attempt 1 falha (SLO_TIMEOUT), fallback para Gemini gera imagem.
+              </p>
+              <div className="text-[10px] font-mono text-muted-foreground space-y-0.5">
+                <p>• Header: x-image-lab-fault: openai_timeout</p>
+                <p>• Esperado: 2+ attempts, fallback_used=true</p>
+                <p>• Circuit state: NÃO alterado</p>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
+                onClick={testFallback}
+                disabled={generating || !!testingFault}
+              >
+                {testingFault === "openai_timeout" ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Zap className="w-4 h-4 mr-2" />
+                )}
+                Test Fallback (no risk)
+              </Button>
+            </div>
+
+            {/* Test Degraded */}
+            <div className="border rounded-xl p-4 space-y-3 bg-background">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-orange-500" />
+                <h4 className="text-sm font-semibold">Test Degraded Mode</h4>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Simula falha total (OpenAI + Gemini). Esperado: job=failed, degraded_mode=true.
+              </p>
+              <div className="text-[10px] font-mono text-muted-foreground space-y-0.5">
+                <p>• Header: x-image-lab-fault: both_fail</p>
+                <p>• Esperado: todos attempts falhados</p>
+                <p>• Circuit state: NÃO alterado</p>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full border-orange-500/30 text-orange-500 hover:bg-orange-500/10"
+                onClick={testDegraded}
+                disabled={generating || !!testingFault}
+              >
+                {testingFault === "both_fail" ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                )}
+                Test Degraded (no risk)
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* === V7 Aula 1 — Scene Blocks === */}
       <Card>
         <CardHeader>
@@ -735,7 +946,7 @@ const AdminImageLab = () => {
         </CardContent>
       </Card>
 
-      {/* === Fase 5: Vincular Assets a Cenas V7 === */}
+      {/* === Fase 5: Vincular Assets a Cenas V7 */}
       <V7SceneLinker />
 
       {/* Processing Monitor */}
