@@ -6,8 +6,10 @@
  * 
  * C12.1 HARDENING:
  * - SLO_GUARD: Checks KPIs before processing
+ * - SLO timeouts per provider (OpenAI 20s, Gemini 15s, wall-clock 25s)
  * - RETRY_POLICY: Max 3 attempts per scene with fallback
  * - CIRCUIT_BREAKER: Respects provider circuit state
+ * - Degraded response on ALL_PROVIDERS_FAILED (never 5xx for generation failures)
  * 
  * Input:  { scenes: [{ scene_id, prompt_scene, style_hints? }], preset_key?, size?, provider? }
  * Output: { results: [{ scene_id, asset_id, storage_path, status, error? }] }
@@ -26,6 +28,28 @@ const SIZE_MAP: Record<string, { w: number; h: number; api: string }> = {
   "1024x1024": { w: 1024, h: 1024, api: "1024x1024" },
   "1024x1536": { w: 1024, h: 1536, api: "1024x1536" },
 };
+
+// === C12.1_SLO_CONFIG ===
+const SLO_CONFIG = {
+  OPENAI_TIMEOUT_MS: 20_000,
+  GEMINI_TIMEOUT_MS: 15_000,
+  MAX_TOTAL_WALL_MS: 25_000,
+};
+
+function getProviderTimeout(provider: string): number {
+  return provider === "gemini" ? SLO_CONFIG.GEMINI_TIMEOUT_MS : SLO_CONFIG.OPENAI_TIMEOUT_MS;
+}
+
+// === C12.1_CACHE: Prompt normalization ===
+function normalizePrompt(prompt: string): string {
+  return prompt
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/\s*([,.])\s*/g, '$1')
+    .replace(/([.,!?]){2,}/g, '$1')
+    .replace(/\.\s*\./g, '.');
+}
 
 async function sha256(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
@@ -51,10 +75,11 @@ async function generateFromProvider(
   sizeInfo: { w: number; h: number; api: string },
   openaiKey: string,
   lovableKey: string,
+  timeoutMs: number,
 ): Promise<Uint8Array> {
   if (provider === "gemini") {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let resp: Response;
     try {
       resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -126,7 +151,7 @@ async function generateFromProvider(
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let resp: Response;
     try {
       resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -165,7 +190,7 @@ async function generateFromProvider(
   }
 }
 
-// === C12.1 RETRY for bridge scenes ===
+// === C12.1 SLO-AWARE RETRY for bridge scenes ===
 async function generateSceneWithRetry(
   supabase: any,
   jobId: string,
@@ -176,33 +201,63 @@ async function generateSceneWithRetry(
   openaiKey: string,
   lovableKey: string,
 ): Promise<{ bytes: Uint8Array; attemptId: string; usedProvider: string; retryCount: number; fallbackUsed: boolean }> {
+  const wallStart = Date.now();
+  const fallbackProvider = provider === "openai" ? "gemini" : "openai";
+  const fallbackModel = provider === "openai" ? "google/gemini-2.5-flash-image" : "gpt-image-1";
+
   const providers = [
     { p: provider, m: model },
     { p: provider, m: model }, // retry same
-    { p: provider === "openai" ? "gemini" : "openai", m: provider === "openai" ? "google/gemini-2.5-flash-image" : "gpt-image-1" }, // fallback
+    { p: fallbackProvider, m: fallbackModel }, // fallback
   ];
 
   for (let i = 0; i < providers.length; i++) {
     const { p, m } = providers[i];
+
+    // Wall-clock guard: skip attempt 2 if exceeded
+    if (i === 1) {
+      const wallElapsed = Date.now() - wallStart;
+      if (wallElapsed >= SLO_CONFIG.MAX_TOTAL_WALL_MS) {
+        console.warn(`[bridge:C12.1_SLO] Wall-clock exceeded (${wallElapsed}ms), skipping retry, going to fallback`);
+        continue;
+      }
+    }
+
+    if (i === 2) {
+      console.log(`[bridge:C12.1_SLO] IMAGE_FALLBACK_TRIGGERED: from=${provider}, to=${p}, jobId=${jobId}`);
+    }
+
+    console.log(`[bridge:C12.1_SLO] IMAGE_PROVIDER_START: provider=${p}, jobId=${jobId}, attempt=${i + 1}/3`);
+
     const { data: attempt } = await supabase.from("image_attempts").insert({
       job_id: jobId, provider: p, model: m, status: "processing", prompt_final: promptFinal,
     }).select("id").single();
     if (!attempt) throw new Error("Failed to create attempt");
 
     const start = Date.now();
+    const remainingWall = Math.max(SLO_CONFIG.MAX_TOTAL_WALL_MS - (Date.now() - wallStart), 5_000);
+    const providerTimeout = Math.min(getProviderTimeout(p), remainingWall);
+
     try {
-      const bytes = await generateFromProvider(p, m, promptFinal, sizeInfo, openaiKey, lovableKey);
+      const bytes = await generateFromProvider(p, m, promptFinal, sizeInfo, openaiKey, lovableKey, providerTimeout);
+      const latency = Date.now() - start;
       await supabase.from("image_attempts").update({
-        status: "completed", latency_ms: Date.now() - start, bytes_out: bytes.length,
+        status: "completed", latency_ms: latency, bytes_out: bytes.length,
         cost_estimate: p === "openai" ? 0.02 : 0.01,
       }).eq("id", attempt.id);
       return { bytes, attemptId: attempt.id, usedProvider: p, retryCount: i, fallbackUsed: i === 2 };
     } catch (err: any) {
+      const latency = Date.now() - start;
+      const isSloTimeout = err.name === "AbortError" || latency >= providerTimeout - 500;
+      const errorCode = isSloTimeout ? "SLO_TIMEOUT" : classifyError(err);
+      if (isSloTimeout) {
+        console.warn(`[bridge:C12.1_SLO] IMAGE_PROVIDER_TIMEOUT: provider=${p}, ms=${latency}, jobId=${jobId}`);
+      }
       await supabase.from("image_attempts").update({
-        status: "failed", error_code: classifyError(err),
-        error_message: err.message?.substring(0, 500), latency_ms: Date.now() - start,
+        status: "failed", error_code: errorCode,
+        error_message: err.message?.substring(0, 500), latency_ms: latency,
       }).eq("id", attempt.id);
-      console.warn(`[bridge:C12.1] Attempt ${i + 1}/3 failed for job ${jobId}: ${err.message?.substring(0, 100)}`);
+      console.warn(`[bridge:C12.1] Attempt ${i + 1}/3 failed for job ${jobId}: ${errorCode}`);
       if (i === 2) throw err; // Last attempt, propagate
     }
   }
@@ -302,7 +357,7 @@ Deno.serve(async (req) => {
     const sizeInfo = SIZE_MAP[size] || SIZE_MAP["1024x1024"];
     const model = provider === "gemini" ? "google/gemini-2.5-flash-image" : "gpt-image-1";
 
-    // === Process each scene with C12.1 retry ===
+    // === Process each scene with C12.1 SLO-aware retry ===
     const results = await Promise.allSettled(
       scenes.map(async (scene: { scene_id: string; prompt_scene: string; style_hints?: string }) => {
         const { scene_id, prompt_scene, style_hints = "" } = scene;
@@ -311,7 +366,8 @@ Deno.serve(async (req) => {
           .replace("{{SCENE}}", prompt_scene)
           .replace("{{STYLE_HINTS}}", style_hints);
 
-        const hashInput = `${provider}|${model}|${size}|${preset.key}|${preset.version}|${promptFinal}`;
+        // C12.1_CACHE: normalized prompt for hash
+        const hashInput = `${provider}|${model}|${size}|${preset.key}|${preset.version}|${normalizePrompt(promptFinal)}`;
         const hash = await sha256(hashInput);
 
         // Cache check
@@ -323,7 +379,7 @@ Deno.serve(async (req) => {
           .limit(1);
 
         if (cached && cached.length > 0) {
-          console.log(`[bridge] Cache hit for scene ${scene_id}`);
+          console.log(`[bridge] IMAGE_CACHE_HIT: scene=${scene_id}, assetId=${cached[0].id}`);
           return {
             scene_id,
             asset_id: cached[0].id,
@@ -351,7 +407,7 @@ Deno.serve(async (req) => {
         if (jobErr || !job) throw new Error(`Failed to create job: ${jobErr?.message}`);
 
         try {
-          // C12.1: Generate with retry policy (max 3 attempts)
+          // C12.1: Generate with SLO-aware retry policy (max 3 attempts)
           const genResult = await generateSceneWithRetry(
             supabase, job.id, provider, model, promptFinal, sizeInfo, openaiKey, lovableKey,
           );
@@ -386,7 +442,7 @@ Deno.serve(async (req) => {
           // Update job
           await supabase.from("image_jobs").update({
             status: "completed",
-            latency_ms: Date.now(), // approximate
+            latency_ms: Date.now(),
           }).eq("id", job.id);
 
           return {
@@ -408,26 +464,30 @@ Deno.serve(async (req) => {
       })
     );
 
-    // Aggregate
+    // Aggregate — C12.1: degraded response instead of failed for individual scenes
     const output = results.map((r, i) => {
       if (r.status === "fulfilled") return r.value;
+      // C12.1: Return degraded placeholder instead of propagating error as 5xx
+      console.warn(`[bridge:C12.1_SLO] IMAGE_DEGRADED_PLACEHOLDER: scene=${scenes[i].scene_id}, reason=ALL_PROVIDERS_FAILED`);
       return {
         scene_id: scenes[i].scene_id,
         asset_id: null,
         storage_path: null,
-        status: "failed" as const,
+        status: "degraded" as const,
+        degraded: true,
+        reason: "ALL_PROVIDERS_FAILED",
         error: r.reason?.message?.substring(0, 300),
       };
     });
 
-    const successCount = output.filter(o => o.status !== "failed").length;
+    const successCount = output.filter(o => o.status !== "degraded").length;
 
     return new Response(JSON.stringify({
-      ok: successCount > 0,
+      ok: true, // Always true at HTTP level — degraded scenes have status:"degraded"
       results: output,
       total: scenes.length,
       success: successCount,
-      failed: scenes.length - successCount,
+      degraded: output.filter(o => o.status === "degraded").length,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

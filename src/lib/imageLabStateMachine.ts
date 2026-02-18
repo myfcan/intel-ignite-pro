@@ -17,6 +17,7 @@ export type ImageLabErrorCode =
   | "LOCKED"
   | "RATE_LIMIT"
   | "TIMEOUT"
+  | "SLO_TIMEOUT"
   | "CONTENT_POLICY"
   | "PROVIDER_5XX"
   | "INVALID_PROMPT"

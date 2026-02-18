@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.image-lab-pipeline-bridge]
 verify_jwt = false
+
+[functions.image-lab-health]
+verify_jwt = false
