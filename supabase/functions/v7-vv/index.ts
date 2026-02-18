@@ -5480,6 +5480,23 @@ function applyBoundaryFixGuard(
     }
   }
 
+  // PASS 4: Sync scenes[] timing to match fixed phase bounds (C03 compliance)
+  for (const phase of fixedPhases) {
+    if (phase.scenes && phase.scenes.length > 0) {
+      for (const scene of phase.scenes) {
+        const oldStart = scene.startTime;
+        const oldEnd = scene.endTime;
+        scene.startTime = Math.max(scene.startTime, phase.startTime);
+        scene.endTime = Math.min(scene.endTime, phase.endTime);
+        scene.duration = scene.endTime - scene.startTime;
+        if (oldStart !== scene.startTime || oldEnd !== scene.endTime) {
+          boundaryFixesApplied++;
+          console.log(`[BOUNDARY_FIX_GUARD] 🔧 C03_SCENE_SYNC: ${scene.id} timing ${oldStart.toFixed(3)}-${oldEnd.toFixed(3)}s → ${scene.startTime.toFixed(3)}-${scene.endTime.toFixed(3)}s (clamped to phase ${phase.id})`);
+        }
+      }
+    }
+  }
+
   // Log resultado
   if (failedBoundaries.length === 0) {
     console.log(`[BOUNDARY_FIX_GUARD] ✅ Todas as fases passaram nas invariantes`);

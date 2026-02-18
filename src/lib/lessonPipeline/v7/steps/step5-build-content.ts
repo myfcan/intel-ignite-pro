@@ -93,7 +93,18 @@ function applyBoundaryFixGuard(
     }
   }
 
-  // PASS 3: Validação final - nenhuma duração pode ser <= 0
+  // PASS 3: Sync scenes[] timing to match fixed phase bounds (C03 compliance)
+  for (const phase of fixedPhases) {
+    if ((phase as any).scenes && (phase as any).scenes.length > 0) {
+      for (const scene of (phase as any).scenes) {
+        scene.startTime = Math.max(scene.startTime, phase.startTime);
+        scene.endTime = Math.min(scene.endTime, phase.endTime);
+        scene.duration = scene.endTime - scene.startTime;
+      }
+    }
+  }
+
+  // PASS 4: Validação final - nenhuma duração pode ser <= 0
   for (const phase of fixedPhases) {
     const duration = phase.endTime - phase.startTime;
     if (duration <= 0) {
