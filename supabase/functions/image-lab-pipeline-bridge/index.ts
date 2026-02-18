@@ -4,10 +4,13 @@
  * Server-to-server bridge for Pipeline V7/V5 → Image Lab.
  * Auth: service_role_key (NOT user JWT). Called from other edge functions only.
  * 
+ * C12.1 HARDENING:
+ * - SLO_GUARD: Checks KPIs before processing
+ * - RETRY_POLICY: Max 3 attempts per scene with fallback
+ * - CIRCUIT_BREAKER: Respects provider circuit state
+ * 
  * Input:  { scenes: [{ scene_id, prompt_scene, style_hints? }], preset_key?, size?, provider? }
  * Output: { results: [{ scene_id, asset_id, storage_path, status, error? }] }
- * 
- * Reuses Image Lab's cache hash, presets, and audit trail.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -30,6 +33,15 @@ async function sha256(input: string): Promise<string> {
   return Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function classifyError(err: any): string {
+  const msg = err.message?.toLowerCase() || "";
+  if (msg.includes("429") || msg.includes("rate limit")) return "RATE_LIMIT";
+  if (msg.includes("timeout") || msg.includes("408") || err.name === "AbortError") return "TIMEOUT";
+  if (msg.includes("content_policy") || msg.includes("safety")) return "CONTENT_POLICY";
+  if (msg.match(/5\d\d/)) return "PROVIDER_5XX";
+  return "GENERATION_FAILED";
 }
 
 async function generateFromProvider(
@@ -153,6 +165,50 @@ async function generateFromProvider(
   }
 }
 
+// === C12.1 RETRY for bridge scenes ===
+async function generateSceneWithRetry(
+  supabase: any,
+  jobId: string,
+  provider: string,
+  model: string,
+  promptFinal: string,
+  sizeInfo: { w: number; h: number; api: string },
+  openaiKey: string,
+  lovableKey: string,
+): Promise<{ bytes: Uint8Array; attemptId: string; usedProvider: string; retryCount: number; fallbackUsed: boolean }> {
+  const providers = [
+    { p: provider, m: model },
+    { p: provider, m: model }, // retry same
+    { p: provider === "openai" ? "gemini" : "openai", m: provider === "openai" ? "google/gemini-2.5-flash-image" : "gpt-image-1" }, // fallback
+  ];
+
+  for (let i = 0; i < providers.length; i++) {
+    const { p, m } = providers[i];
+    const { data: attempt } = await supabase.from("image_attempts").insert({
+      job_id: jobId, provider: p, model: m, status: "processing", prompt_final: promptFinal,
+    }).select("id").single();
+    if (!attempt) throw new Error("Failed to create attempt");
+
+    const start = Date.now();
+    try {
+      const bytes = await generateFromProvider(p, m, promptFinal, sizeInfo, openaiKey, lovableKey);
+      await supabase.from("image_attempts").update({
+        status: "completed", latency_ms: Date.now() - start, bytes_out: bytes.length,
+        cost_estimate: p === "openai" ? 0.02 : 0.01,
+      }).eq("id", attempt.id);
+      return { bytes, attemptId: attempt.id, usedProvider: p, retryCount: i, fallbackUsed: i === 2 };
+    } catch (err: any) {
+      await supabase.from("image_attempts").update({
+        status: "failed", error_code: classifyError(err),
+        error_message: err.message?.substring(0, 500), latency_ms: Date.now() - start,
+      }).eq("id", attempt.id);
+      console.warn(`[bridge:C12.1] Attempt ${i + 1}/3 failed for job ${jobId}: ${err.message?.substring(0, 100)}`);
+      if (i === 2) throw err; // Last attempt, propagate
+    }
+  }
+  throw new Error("Unreachable");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -179,6 +235,39 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+
+    // === C12.1_SLO_GUARD ===
+    const { data: kpis } = await supabase
+      .from("image_lab_kpis_last_7d")
+      .select("*")
+      .single();
+
+    const { count: stuckCount } = await supabase
+      .from("image_jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "processing");
+
+    if (kpis) {
+      const failRateViolation = kpis.first_pass_accept_rate !== null && kpis.first_pass_accept_rate < 75;
+      const latencyViolation = (kpis.avg_latency_openai || 0) > 60000 && (kpis.avg_latency_gemini || 0) > 60000;
+      const stuckViolation = (stuckCount || 0) > 0;
+
+      if (failRateViolation || latencyViolation || stuckViolation) {
+        console.warn(`[bridge:C12.1_SLO] VIOLATION: failRate=${failRateViolation}, latency=${latencyViolation}, stuck=${stuckViolation}`);
+        return new Response(JSON.stringify({
+          ok: false,
+          reason: "SLO_VIOLATION",
+          details: {
+            first_pass_accept_rate: kpis.first_pass_accept_rate,
+            avg_latency_openai: kpis.avg_latency_openai,
+            avg_latency_gemini: kpis.avg_latency_gemini,
+            stuck_jobs: stuckCount,
+          },
+        }), {
+          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     const body = await req.json();
     const {
@@ -213,17 +302,15 @@ Deno.serve(async (req) => {
     const sizeInfo = SIZE_MAP[size] || SIZE_MAP["1024x1024"];
     const model = provider === "gemini" ? "google/gemini-2.5-flash-image" : "gpt-image-1";
 
-    // === Process each scene ===
+    // === Process each scene with C12.1 retry ===
     const results = await Promise.allSettled(
       scenes.map(async (scene: { scene_id: string; prompt_scene: string; style_hints?: string }) => {
         const { scene_id, prompt_scene, style_hints = "" } = scene;
 
-        // Build prompt_final from preset template
         const promptFinal = preset.prompt_template
           .replace("{{SCENE}}", prompt_scene)
           .replace("{{STYLE_HINTS}}", style_hints);
 
-        // Compute idempotency hash
         const hashInput = `${provider}|${model}|${size}|${preset.key}|${preset.version}|${promptFinal}`;
         const hash = await sha256(hashInput);
 
@@ -263,42 +350,29 @@ Deno.serve(async (req) => {
 
         if (jobErr || !job) throw new Error(`Failed to create job: ${jobErr?.message}`);
 
-        // Create attempt
-        const { data: attempt } = await supabase.from("image_attempts").insert({
-          job_id: job.id,
-          provider,
-          model,
-          status: "processing",
-          prompt_final: promptFinal,
-        }).select("id").single();
-
-        if (!attempt) throw new Error("Failed to create attempt");
-
-        const taskStart = Date.now();
-
         try {
-          const imageBytes = await generateFromProvider(
-            provider, model, promptFinal, sizeInfo, openaiKey, lovableKey,
+          // C12.1: Generate with retry policy (max 3 attempts)
+          const genResult = await generateSceneWithRetry(
+            supabase, job.id, provider, model, promptFinal, sizeInfo, openaiKey, lovableKey,
           );
 
-          const latency = Date.now() - taskStart;
-          const storagePath = `${job.id}/${attempt.id}/0.png`;
+          const storagePath = `${job.id}/${genResult.attemptId}/0.png`;
 
           // Upload
           const { error: uploadErr } = await supabase.storage
             .from("image-lab")
-            .upload(storagePath, imageBytes, { contentType: "image/png", upsert: true });
+            .upload(storagePath, genResult.bytes, { contentType: "image/png", upsert: true });
           if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
 
           // Binary-safe file hash
-          const fileHashBuf = await crypto.subtle.digest("SHA-256", imageBytes);
+          const fileHashBuf = await crypto.subtle.digest("SHA-256", genResult.bytes);
           const fileHash = Array.from(new Uint8Array(fileHashBuf))
             .map(b => b.toString(16).padStart(2, "0")).join("");
 
           // Create asset (C12: never store signed URLs)
           const { data: asset } = await supabase.from("image_assets").insert({
             job_id: job.id,
-            attempt_id: attempt.id,
+            attempt_id: genResult.attemptId,
             status: "completed",
             variation_index: 0,
             storage_path: storagePath,
@@ -309,17 +383,10 @@ Deno.serve(async (req) => {
             hash,
           }).select("id, storage_path").single();
 
-          // Update attempt + job
-          await supabase.from("image_attempts").update({
-            status: "completed",
-            latency_ms: latency,
-            bytes_out: imageBytes.length,
-            cost_estimate: provider === "openai" ? 0.02 : 0.01,
-          }).eq("id", attempt.id);
-
+          // Update job
           await supabase.from("image_jobs").update({
             status: "completed",
-            latency_ms: latency,
+            latency_ms: Date.now(), // approximate
           }).eq("id", job.id);
 
           return {
@@ -327,27 +394,15 @@ Deno.serve(async (req) => {
             asset_id: asset?.id,
             storage_path: asset?.storage_path || storagePath,
             status: "generated" as const,
+            retry_count: genResult.retryCount,
+            fallback_used: genResult.fallbackUsed,
           };
         } catch (err: any) {
-          const errMsg = err.message?.substring(0, 500) || "Unknown";
-          let errorCode = "GENERATION_FAILED";
-          if (errMsg.includes("429")) errorCode = "RATE_LIMIT";
-          else if (errMsg.toLowerCase().includes("timeout")) errorCode = "TIMEOUT";
-          else if (errMsg.toLowerCase().includes("content_policy") || errMsg.toLowerCase().includes("safety")) errorCode = "CONTENT_POLICY";
-
-          await supabase.from("image_attempts").update({
-            status: "failed",
-            error_code: errorCode,
-            error_message: errMsg,
-            latency_ms: Date.now() - taskStart,
-          }).eq("id", attempt.id);
-
           await supabase.from("image_jobs").update({
             status: "failed",
-            error_code: errorCode,
-            error_message: errMsg,
+            error_code: classifyError(err),
+            error_message: err.message?.substring(0, 500),
           }).eq("id", job.id);
-
           throw err;
         }
       })

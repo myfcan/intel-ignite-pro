@@ -43,7 +43,8 @@ export type V7VisualType =
   | 'quiz-feedback'   // Feedback do quiz
   | 'playground'      // Comparação de prompts
   | 'result'          // Resultado/gamificação
-  | 'cta';            // Call-to-action
+  | 'cta'             // Call-to-action
+  | 'image-sequence'; // C12.1: Sequência de imagens cinematográficas
 
 /**
  * Mood para estilização visual
@@ -129,6 +130,28 @@ export interface V7CardsContent {
     text: string;
     icon?: string;
   }>;
+}
+
+// ============================================================================
+// C12.1: IMAGE SEQUENCE
+// ============================================================================
+
+export interface V7ImageSequenceFrame {
+  id: string;
+  /** Prompt descritivo para geração da imagem */
+  promptScene: string;
+  /** Duração em ms (>= 1000) */
+  durationMs: number;
+  /** Preset key (default: "cinematic-01") */
+  presetKey?: string;
+  /** Preenchido pelo pipeline/SceneLinker após geração */
+  storagePath?: string;
+  /** ID do asset aprovado */
+  assetId?: string;
+}
+
+export interface V7ImageSequenceContent {
+  frames: V7ImageSequenceFrame[];
 }
 
 // ============================================================================
@@ -233,6 +256,7 @@ export interface V7Visual {
     | V7ResultContent
     | V7PlaygroundContent
     | V7CardsContent
+    | V7ImageSequenceContent
     | Record<string, unknown>;
   effects?: V7VisualEffects;
   microVisuals?: V7MicroVisualInput[];
@@ -381,6 +405,73 @@ export function validateV7ScriptInput(input: V7ScriptInput): V7ValidationError[]
           scene: sceneId,
           field: 'interaction.options',
           message: `Quiz "${sceneId}" deve ter pelo menos uma opção.`
+        });
+      }
+    }
+
+    // C12.1_PIPELINE_IMAGE_SEQUENCE validation
+    if (scene.visual?.type === 'image-sequence') {
+      // Only allowed in narrative scenes
+      if (scene.type !== 'narrative') {
+        errors.push({
+          scene: sceneId,
+          field: 'visual.type',
+          message: `image-sequence só é permitido em scene.type="narrative". Cena "${sceneId}" é "${scene.type}".`
+        });
+      }
+
+      const content = scene.visual.content as V7ImageSequenceContent | undefined;
+      const frames = content?.frames;
+
+      if (!frames || !Array.isArray(frames) || frames.length === 0) {
+        errors.push({
+          scene: sceneId,
+          field: 'visual.content.frames',
+          message: `image-sequence requer frames[] não vazio.`
+        });
+      } else {
+        if (frames.length > 3) {
+          errors.push({
+            scene: sceneId,
+            field: 'visual.content.frames',
+            message: `image-sequence permite máximo 3 frames (tem ${frames.length}).`
+          });
+        }
+
+        let totalDurationMs = 0;
+        frames.forEach((frame, fi) => {
+          if (!frame.promptScene?.trim()) {
+            errors.push({
+              scene: sceneId,
+              field: `visual.content.frames[${fi}].promptScene`,
+              message: `Frame ${fi} requer promptScene não vazio.`
+            });
+          }
+          if (!frame.durationMs || frame.durationMs < 1000) {
+            errors.push({
+              scene: sceneId,
+              field: `visual.content.frames[${fi}].durationMs`,
+              message: `Frame ${fi} requer durationMs >= 1000 (tem ${frame.durationMs}).`
+            });
+          }
+          totalDurationMs += (frame.durationMs || 0);
+        });
+
+        if (totalDurationMs < 2000) {
+          errors.push({
+            scene: sceneId,
+            field: 'visual.content.frames',
+            message: `Soma total de durationMs deve ser >= 2000ms (tem ${totalDurationMs}ms).`
+          });
+        }
+      }
+
+      // Cannot coexist with microVisual type="image"
+      if (scene.visual.microVisuals?.some(mv => mv.type === 'image')) {
+        errors.push({
+          scene: sceneId,
+          field: 'visual.microVisuals',
+          message: `image-sequence não pode coexistir com microVisual type="image" na mesma cena.`
         });
       }
     }

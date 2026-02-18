@@ -422,6 +422,39 @@ export type Database = {
           },
         ]
       }
+      image_lab_circuit_state: {
+        Row: {
+          cooldown_until: string | null
+          fail_count: number
+          last_failure_at: string | null
+          opened_at: string | null
+          provider: string
+          state: string
+          total_count: number
+          updated_at: string
+        }
+        Insert: {
+          cooldown_until?: string | null
+          fail_count?: number
+          last_failure_at?: string | null
+          opened_at?: string | null
+          provider: string
+          state?: string
+          total_count?: number
+          updated_at?: string
+        }
+        Update: {
+          cooldown_until?: string | null
+          fail_count?: number
+          last_failure_at?: string | null
+          opened_at?: string | null
+          provider?: string
+          state?: string
+          total_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       image_presets: {
         Row: {
           created_at: string
