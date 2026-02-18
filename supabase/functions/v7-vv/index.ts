@@ -1461,8 +1461,19 @@ interface Phase {
   anchorActions?: AnchorAction[];
   interaction?: Record<string, unknown>;
   audioBehavior?: {
-    onStart: string;
-    onComplete: string;
+    onStart: 'pause' | 'fadeToBackground' | 'continue' | 'switch';
+    onComplete: 'resume' | 'next' | 'none';
+    duringInteraction: {
+      mainVolume: number;
+      ambientVolume: number;
+      contextualLoops?: Array<{
+        id: string;
+        url?: string;
+        type: string;
+        volume: number;
+        loop: boolean;
+      }>;
+    };
   };
 }
 
@@ -1731,6 +1742,81 @@ const SCENE_TO_PHASE_MAP: Record<string, string> = {
 // - Duração mínima de 5s
 // - audioBehavior: { onStart: 'pause', onComplete: 'resume' }
 const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal'] as const;
+
+// ============================================================================
+// AUDIO BEHAVIOR BUILDER (P2 FIX — duringInteraction completo)
+// ============================================================================
+// Gera audioBehavior completo baseado no tipo de interação da cena.
+// Alinhado com os defaults do renderer (useV7AudioManager.ts).
+// ============================================================================
+
+function buildAudioBehavior(scene: SceneInput): Phase['audioBehavior'] {
+  const interactionType = scene.interaction?.type;
+
+  // Quiz: pausa total, ambiente baixo para foco
+  if (interactionType === 'quiz') {
+    return {
+      onStart: 'pause',
+      onComplete: 'resume',
+      duringInteraction: {
+        mainVolume: 0,
+        ambientVolume: 0.3,
+        contextualLoops: [{
+          id: `quiz-ambient-${scene.id}`,
+          type: 'thinking-ambient',
+          volume: 0.15,
+          loop: true,
+        }],
+      },
+    };
+  }
+
+  // Playground: silêncio total para digitação
+  if (interactionType === 'playground') {
+    return {
+      onStart: 'pause',
+      onComplete: 'resume',
+      duringInteraction: {
+        mainVolume: 0,
+        ambientVolume: 0,
+      },
+    };
+  }
+
+  // Checkboxes: fade rápido, interação curta
+  if (interactionType === 'checkboxes') {
+    return {
+      onStart: 'fadeToBackground',
+      onComplete: 'resume',
+      duringInteraction: {
+        mainVolume: 0.2,
+        ambientVolume: 0.3,
+      },
+    };
+  }
+
+  // CTA / Button: continua narração, sem pausa
+  if (interactionType === 'button' || scene.type === 'secret-reveal') {
+    return {
+      onStart: 'fadeToBackground',
+      onComplete: 'resume',
+      duringInteraction: {
+        mainVolume: 0.3,
+        ambientVolume: 0.4,
+      },
+    };
+  }
+
+  // Default para qualquer interação não mapeada: pausa segura
+  return {
+    onStart: 'pause',
+    onComplete: 'resume',
+    duringInteraction: {
+      mainVolume: 0,
+      ambientVolume: 0.2,
+    },
+  };
+}
 
 function validateInput(input: ScriptInput): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -5125,10 +5211,7 @@ function generatePhases(
       effects: scene.visual.effects,
       microVisuals: microVisuals.length > 0 ? microVisuals : undefined,
       anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
-      audioBehavior: isInteractiveScene ? {
-        onStart: 'pause',
-        onComplete: 'resume',
-      } : undefined,
+      audioBehavior: isInteractiveScene ? buildAudioBehavior(scene) : undefined,
     };
 
     // Interação
