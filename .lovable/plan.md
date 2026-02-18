@@ -1,193 +1,152 @@
 
-# Plano de Evolucao C12.1 — SLO Fallback + Health + Cache + Base C13
 
-## Contexto Tecnico Atual (Dados Reais do Codigo)
+# C13.1 — Capacidade Visual Avancada: Presets EPP + Quick Templates
 
-### Estado Atual dos Timeouts (Problema)
-- `image-lab-generate/index.ts` linha 123: Gemini usa `setTimeout(() => controller.abort(), 120_000)` — **120 segundos**
-- `image-lab-generate/index.ts` linha 203: OpenAI usa `setTimeout(() => controller.abort(), 120_000)` — **120 segundos**
-- `image-lab-pipeline-bridge/index.ts` linhas 57 e 129: ambos providers usam **120 segundos**
-- NAO existe SLO por provider. NAO existe wall-clock guard total por job.
-- NAO existe fallback por latencia (o fallback atual so ocorre quando o provider FALHA completamente, nao por lentidao).
+## Resumo
 
-### Estado Atual do Cache (Problema)
-- Hash input (linha 535): `${requestedProvider}|${requestedModel}|${actualSize}|${preset.key}|${preset.version}|${promptFinal}`
-- NAO existe normalizacao do prompt. Diferenca de espaco, maiuscula/minuscula gera hash diferente.
-- Dados reais: `cache_hit = 0` em todos os jobs recentes.
-
-### Nao existe `_shared/` folder em `supabase/functions/`.
-### Nao existe edge function `image-lab-health`.
+Implementar 2 novos presets cinematograficos (EPP Result e EPP Compare) com prompt templates ultra-detalhados, adicionar Quick Templates no Admin UI para acesso rapido, e documentar a estrutura JSON de cena V7 com microVisuals overlay (sem texto na imagem).
 
 ---
 
-## PARTE 1 — Fallback por Latencia (SLO Guard em Runtime)
+## PARTE 1 — Seed dos 2 Novos Presets (DB Insert)
 
-### Arquivos Modificados
-1. **`supabase/functions/image-lab-generate/index.ts`**
-2. **`supabase/functions/image-lab-pipeline-bridge/index.ts`**
+Inserir 2 registros em `image_presets` via migration/insert:
 
-### Mudancas Tecnicas
-
-#### 1A. Constantes SLO (image-lab-generate)
-Adicionar no topo do arquivo, apos `SIZE_MAP`:
-```
-const SLO_CONFIG = {
-  OPENAI_TIMEOUT_MS: 20_000,
-  GEMINI_TIMEOUT_MS: 15_000,
-  MAX_TOTAL_WALL_MS: 25_000,
-};
-```
-
-#### 1B. Refatorar `generateWithGemini` e `generateWithOpenAI`
-- Aceitar parametro `timeoutMs` em vez de hard-coded `120_000`
-- Quando `AbortError` ocorrer, o `classifyError` ja retorna `"TIMEOUT"` (linha 390 confirmada)
-
-#### 1C. Refatorar `generateWithRetryPolicy`
-Logica atual (3 attempts fixos com 120s cada): substituir por logica SLO-aware:
+**A) epp-result-01@1.0**
+- key: `epp-result-01`
+- version: `1.0`
+- title: `EPP Result — Prompt Eficiente`
+- default_size: `1536x1024`
+- prompt_template:
 
 ```
-Attempt 1: provider primario com seu timeout SLO
-  Se TIMEOUT → registrar attempt failed com error_code="SLO_TIMEOUT"
-  
-Attempt 2: retry mesmo provider (ja existe)
-  Agora COM wall-clock guard: se tempo total > MAX_TOTAL_WALL_MS, pular para attempt 3
-
-Attempt 3: fallback para provider alternativo
-  Timeout = min(provider_timeout, tempo_restante_do_wall_clock)
+Ultra realistic editorial still frame. Adult professional (38-48 years old) at a modern minimalist desk, warm lateral window light casting soft shadows, natural skin texture with visible pores, subtle film grain, shallow depth of field with bokeh background. Minimalist laptop showing clean AI chat interface on screen (absolutely no readable text on any surface). A second object signaling premium result placed naturally on desk (luxury watch, premium leather notebook, or clean white mockup card). Composition must reserve a clean copy zone occupying approximately 35 percent of the frame — an empty uncluttered area with smooth soft-focus background suitable for text overlay placement. Camera: 85mm prime lens, sensor perfectly parallel to subject plane, frontal angle, zero keystone distortion, perfectly straight vertical and horizontal lines. Lighting: warm golden-hour key light from left side, soft fill from right, no harsh shadows. No text anywhere in image, no watermark, no logo, no neon, no hologram, no sci-fi elements. Scene context: {{SCENE}}. Style hints: {{STYLE_HINTS}}.
 ```
 
-- Adicionar novo error_code `"SLO_TIMEOUT"` no `classifyError` (distinguir de TIMEOUT generico via AbortError com mensagem customizada)
-- Logs adicionais no console (nao v7DebugLogger — este roda no browser, nao na edge function):
-  - `[C12.1_SLO] IMAGE_PROVIDER_START: provider=openai, jobId=xxx`
-  - `[C12.1_SLO] IMAGE_PROVIDER_TIMEOUT: provider=openai, ms=20001, jobId=xxx`
-  - `[C12.1_SLO] IMAGE_FALLBACK_TRIGGERED: from=openai, to=gemini, jobId=xxx`
+**B) epp-compare-01@1.0**
+- key: `epp-compare-01`
+- version: `1.0`
+- title: `EPP Compare — Antes vs Depois (Frontal)`
+- default_size: `1536x1024`
+- prompt_template:
 
-#### 1D. Pipeline Bridge: Degraded Response
-Na `image-lab-pipeline-bridge`, quando TODOS os providers falharem (retry exhausted), em vez de propagar o erro como `status: "failed"`, retornar:
+```
+Two computer displays side by side on a modern clean desk, perfectly frontal orthographic view. Left display shows a generic uninspiring result with flat gray tones, minimal shapes, dull layout, and washed out colors. Right display shows a premium professional result with vibrant high-contrast layout, rich dark tones with gold accents, luxurious aesthetic, and polished composition. A subtle hand gesture from the side naturally pointing toward the right display. Include a clean copy zone above or below the displays occupying approximately 30 percent of the frame area for overlay labels. Camera: 85mm prime lens, sensor perfectly parallel to the plane of the screens, straight-on orthographic feel, zero keystone distortion, perfectly aligned monitor edges with straight vertical and horizontal lines. Warm studio key light from upper left, soft ambient fill, editorial realism, subtle film grain, realistic skin texture on the hand. Absolutely no readable text on screens or anywhere in image, no watermark, no logos, no neon, no hologram. Scene context: {{SCENE}}. Style hints: {{STYLE_HINTS}}.
+```
+
+---
+
+## PARTE 2 — Admin UI: Quick Templates
+
+Adicionar uma secao "Quick Templates (EPP)" no `AdminImageLab.tsx`, posicionada entre o formulario de geracao e o painel de KPIs.
+
+### Comportamento
+- 2 botoes/cards clicaveis:
+  - **"EPP Result (Overlay Copy Safe)"** — seleciona preset `epp-result-01`, preenche `styleHints` com `warm editorial, 85mm, clean copy zone, no text`
+  - **"EPP Compare (Frontal)"** — seleciona preset `epp-compare-01`, preenche `styleHints` com `frontal orthographic, 85mm, split screen, no text`
+- O campo `promptScene` permanece editavel para o admin descrever a cena especifica
+- Toast informando qual template foi selecionado
+
+---
+
+## PARTE 3 — Exemplo de Cena JSON V7 (Documentacao/Referencia)
+
+Exemplo de cena V7 usando `epp-compare-01` com microVisuals overlay (NAO faz parte do codigo, serve como referencia para criacao de JSONs):
+
 ```json
 {
-  "scene_id": "xxx",
-  "status": "degraded",
-  "asset_id": null,
-  "storage_path": null,
-  "degraded": true,
-  "reason": "ALL_PROVIDERS_FAILED"
-}
-```
-E o `ok` da response geral permanece `true` (para a bridge nao retornar 5xx), permitindo que o player continue.
-
-O status HTTP 503 continua reservado SOMENTE para violacoes do SLO_GUARD sistemico (linhas 250-269 atuais).
-
-### Criterios de Aceite (Pass/Fail)
-- Se OpenAI > 20s: attempt registrado com `error_code="SLO_TIMEOUT"`, fallback para Gemini disparado
-- Se ambos falharem: job=failed, bridge retorna `degraded: true` (player nao trava)
-- Circuit breaker continua atualizando `image_lab_circuit_state` corretamente
-
----
-
-## PARTE 2 — Health Endpoint
-
-### Arquivo Criado
-1. **`supabase/functions/image-lab-health/index.ts`** (novo)
-2. **`supabase/config.toml`** — adicionar `[functions.image-lab-health]` com `verify_jwt = false`
-
-### Implementacao
-- Auth: mesma logica REST `/auth/v1/user` + check `user_roles` para admin/supervisor
-- Queries:
-  - `image_lab_circuit_state` → estado dos providers
-  - Query agregada em `image_attempts` (last 24h) por provider: `avg(latency_ms)`, `count(*)`, `count(*) filter (where status='failed')`
-  - `image_jobs` where `status='processing'` → stuck count
-- `degraded_mode`: true se `(fail_rate_openai > 0.25 AND fail_rate_gemini > 0.50)` OU ambos `OPEN`
-- Retorno conforme modelo JSON especificado no prompt
-
-### Criterios de Aceite
-- curl com JWT admin → retorna `ok: true` com dados preenchidos
-- curl sem auth → 401 `AUTH_MISSING`
-
----
-
-## PARTE 3 — Cache Normalizado
-
-### Arquivos Criados/Modificados
-1. **`supabase/functions/image-lab-generate/index.ts`** — adicionar funcao `normalizePrompt()` inline (nao ha folder `_shared` e cria-lo requer setup adicional; manter inline por simplicidade)
-2. **`supabase/functions/image-lab-pipeline-bridge/index.ts`** — mesma funcao `normalizePrompt()`
-3. **`supabase/functions/image-lab-generate-batch/index.ts`** — mesma funcao `normalizePrompt()`
-
-### Logica de `normalizePrompt(prompt)`
-```typescript
-function normalizePrompt(prompt: string): string {
-  return prompt
-    .trim()
-    .replace(/\s+/g, ' ')        // collapse whitespace
-    .toLowerCase()
-    .replace(/\s*([,.])\s*/g, '$1') // remove spaces around , and .
-    .replace(/([.,!?]){2,}/g, '$1') // collapse repeated punctuation
-    .replace(/\.\s*\./g, '.');      // remove ". ." style hints vazios
+  "id": "scene-compare-prompt",
+  "type": "comparison",
+  "visual": {
+    "type": "image-sequence",
+    "instruction": "Split screen frontal: generico vs profissional",
+    "frames": [
+      {
+        "promptScene": "Comparacao de landing page: lado esquerdo generico sem CTA, lado direito profissional com prova social",
+        "durationMs": 4000,
+        "storagePath": null
+      }
+    ]
+  },
+  "audio": {
+    "narration": "Olha a diferenca entre um prompt amador e um prompt profissional."
+  },
+  "microVisuals": [
+    {
+      "id": "mv-badge-antes",
+      "type": "badge",
+      "triggerWord": "amador",
+      "content": {
+        "cardId": "ANTES",
+        "position": "left"
+      }
+    },
+    {
+      "id": "mv-badge-depois",
+      "type": "badge",
+      "triggerWord": "profissional",
+      "content": {
+        "cardId": "DEPOIS",
+        "position": "right"
+      }
+    },
+    {
+      "id": "mv-headline",
+      "type": "text",
+      "triggerWord": "diferenca",
+      "content": {
+        "text": "Prompt muda tudo.",
+        "color": "#F59E0B",
+        "position": "top"
+      }
+    }
+  ]
 }
 ```
 
-### Hash Input Atualizado
-```
-hashInput = `${provider}|${model}|${size}|${preset_key}|${preset_version}|${normalizePrompt(promptFinal)}`
-```
-
-NAO sera feita migracao de hashes existentes. Novos jobs usam o novo hash. Assets antigos continuam acessiveis pela PK.
-
-### Criterios de Aceite
-- Duas geracoes com prompts identicos exceto espacos/maiusculas → segunda retorna `cache_hit: true`
-- Hash e deterministico (mesma entrada normalizada = mesmo hash)
+Principios aplicados:
+- Texto NAO esta na imagem gerada
+- Badges "ANTES"/"DEPOIS" sao overlays via `card-reveal` (tipo canonico `badge`)
+- Headline e overlay via `text-pop` (tipo canonico `text`)
+- Maximo 1 microVisual por frase/triggerWord
+- anchorText literal na narracao
 
 ---
 
-## PARTE 4 — Base para Visual Avancado (Preparacao C13)
+## PARTE 4 — Testes Reais (T1-T3)
 
-### Arquivo Modificado
-1. **`supabase/functions/v7-vv/index.ts`** — DryRun validation (linhas ~2450-2474)
+Os testes serao executados manualmente via Admin UI apos deploy:
 
-### Mudancas
-- Adicionar tolerant parsing para campos futuros em `image-sequence`: ignorar campos desconhecidos sem rejeitar (ja e o comportamento padrao do JSON)
-- Adicionar validacao OPCIONAL de `cameraSpec` se presente no frame: se `cameraSpec` existir mas nao for um objeto, gerar warning (nao error)
-- Manter hard reject para `visual.type` invalido (ja existe, confirmado na linha 1679)
-- ZERO mudanca no renderer ou UI
+| Teste | Descricao | Criterio PASS |
+|-------|-----------|---------------|
+| T1 | `epp-compare-01` gera frontal sem keystone em 3 execucoes | Linhas retas nos monitores, sem distorcao visivel |
+| T2 | `epp-result-01` gera clean copy zone em 3 execucoes | Area limpa (~35%) identificavel para overlay |
+| T3 | Overlay text-pop + badge aparece legivel e consistente | microVisuals renderizam corretamente sobre a imagem |
 
-### Criterios de Aceite
-- DryRun PASS para aulas existentes com `image-sequence`
-- DryRun PASS para `image-sequence` com campo extra desconhecido (ex: `cameraSpec: {...}`)
-- DryRun FAIL para `visual.type` invalido (ex: `"image-sequence-3d"`)
-- Nenhuma mudanca de comportamento no player
+- Resultados serao registrados nos `metadata` do job (`test_id: "T1"/"T2"/"T3"`, `pass: true/false`)
+- Evidencia: job IDs retornados apos execucao
 
 ---
 
-## Resumo de Entregaveis
+## Secao Tecnica — Arquivos Modificados
 
 | # | Arquivo | Acao | Descricao |
 |---|---------|------|-----------|
-| 1 | `supabase/functions/image-lab-generate/index.ts` | MODIFICAR | SLO timeouts, `normalizePrompt()`, wall-clock guard, `SLO_TIMEOUT` error code |
-| 2 | `supabase/functions/image-lab-pipeline-bridge/index.ts` | MODIFICAR | SLO timeouts, `normalizePrompt()`, resposta `degraded` em vez de 5xx |
-| 3 | `supabase/functions/image-lab-generate-batch/index.ts` | MODIFICAR | `normalizePrompt()` no hash |
-| 4 | `supabase/functions/image-lab-health/index.ts` | CRIAR | Health endpoint completo |
-| 5 | `supabase/config.toml` | ATUALIZAR (automatico) | Entrada para `image-lab-health` |
-| 6 | `supabase/functions/v7-vv/index.ts` | MODIFICAR | Tolerant parsing + warning para `cameraSpec` |
-| 7 | `src/lib/imageLabStateMachine.ts` | MODIFICAR | Adicionar `SLO_TIMEOUT` ao tipo `ImageLabErrorCode` |
+| 1 | DB (image_presets) | INSERT 2 rows | Presets epp-result-01 e epp-compare-01 |
+| 2 | `src/pages/AdminImageLab.tsx` | MODIFICAR | Adicionar secao Quick Templates EPP com 2 botoes |
 
-## Como Testar
+### Nenhuma mudanca em edge functions
+Os presets usam o mesmo fluxo `{{SCENE}}`/`{{STYLE_HINTS}}` ja suportado por `image-lab-generate`. Nenhuma alteracao no pipeline e necessaria.
 
-### Health endpoint
-```bash
-curl -X GET \
-  https://pspvppymcdjbwsudxzdx.supabase.co/functions/v1/image-lab-health \
-  -H "Authorization: Bearer <JWT_ADMIN>" \
-  -H "apikey: <ANON_KEY>"
-```
+### Nenhuma mudanca no renderer V7
+Os tipos `text-pop` e `card-reveal` (badge) ja estao implementados em `V7MicroVisualOverlay.tsx`. O renderer ja suporta `image-sequence` com `storagePath`.
 
-### Teste de cache_hit
-1. Gerar imagem com prompt "A futuristic city at night" via UI `/admin/image-lab`
-2. Gerar novamente com "A  Futuristic  City  At  Night" (espacos duplos, maiusculas)
-3. Segunda execucao deve retornar `cache_hit: true`
+---
 
-### Teste de SLO fallback
-- Observar nos logs da edge function se OpenAI > 20s dispara `SLO_TIMEOUT` e fallback para Gemini
-- Verificar `image_attempts` para o job: primeiro attempt `error_code="SLO_TIMEOUT"`, segundo attempt com provider diferente
+## Ordem de Execucao
 
-## Nenhuma migracao SQL necessaria
-Todos os campos ja existem nas tabelas. O novo error code `SLO_TIMEOUT` e apenas um valor string no campo `error_code` existente.
+1. Inserir 2 presets no banco (DB insert)
+2. Modificar `AdminImageLab.tsx` com Quick Templates
+3. Executar T1, T2, T3 via Admin UI
+4. Retornar IDs dos presets + job IDs dos testes
+
