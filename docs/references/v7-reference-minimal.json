@@ -1,0 +1,58 @@
+{
+  "$schema": "V7ScriptInput — Minimal Reference (1 scene)",
+  "_description": "JSON mínimo válido para o pipeline V7-vv. Satisfaz C03/C10/C10B/C14.",
+  "contentVersion": "v7-vv",
+  "title": "Introdução à IA Generativa",
+  "subtitle": "O que muda com a IA?",
+  "difficulty": "beginner",
+  "category": "fundamentos",
+  "tags": ["ia", "introdução", "renda-extra"],
+  "learningObjectives": [
+    "Entender o conceito básico de IA generativa"
+  ],
+  "scenes": [
+    {
+      "id": "scene-intro-001",
+      "type": "narrative",
+      "title": "O poder da IA",
+      "narration": "A inteligência artificial generativa está transformando o mercado de trabalho. Quem domina essas ferramentas sai na frente.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "IA Generativa",
+          "subtitle": "O mercado está mudando",
+          "items": [
+            { "icon": "🤖", "text": "Automatize tarefas repetitivas" },
+            { "icon": "💰", "text": "Gere renda extra com habilidades digitais" }
+          ],
+          "highlightWord": "frente",
+          "mood": "success"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "sparks"
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-intro-badge",
+          "type": "text-pop",
+          "anchorText": "ferramentas",
+          "duration": 2.5,
+          "content": {
+            "text": "ChatGPT, Midjourney, Cursor...",
+            "emoji": "🛠️",
+            "position": "bottom"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "frente",
+          "action": "transition",
+          "transitionAt": 0.85
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "$schema": "V7ScriptInput — Image Sequence Reference (3 frames)",
+  "_description": "JSON com image-sequence de 3 frames. Satisfaz C03/C10/C10B/C12.1/C13/C14.",
+  "contentVersion": "v7-vv",
+  "title": "Prompts que Vendem: Antes e Depois",
+  "subtitle": "A diferença entre amador e profissional",
+  "difficulty": "intermediate",
+  "category": "prompts",
+  "tags": ["prompts", "image-sequence", "epp", "renda-extra"],
+  "learningObjectives": [
+    "Identificar a diferença visual entre prompts amadores e profissionais",
+    "Aplicar técnicas de prompt engineering para resultados premium"
+  ],
+  "scenes": [
+    {
+      "id": "scene-hook-001",
+      "type": "dramatic",
+      "title": "O problema dos prompts genéricos",
+      "narration": "Noventa e oito por cento das pessoas usam prompts genéricos. Elas copiam e colam sem pensar. O resultado? Conteúdo medíocre que não vende.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "hookQuestion": "VOCÊ SABIA?",
+          "number": "98%",
+          "secondaryNumber": "2%",
+          "subtitle": "usam prompts genéricos",
+          "mood": "danger",
+          "countUp": true
+        },
+        "effects": {
+          "mood": "danger",
+          "particles": "ember",
+          "vignette": true
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-hook-text",
+          "type": "text-pop",
+          "anchorText": "medíocre",
+          "duration": 2.0,
+          "content": {
+            "text": "❌ Sem diferencial",
+            "position": "bottom"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "vende",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    },
+    {
+      "id": "scene-epp-sequence-001",
+      "type": "narrative",
+      "title": "A transformação visual",
+      "narration": "Observe a diferença. No primeiro cenário, temos um resultado genérico, sem identidade. No segundo, a execução começa a tomar forma. E no terceiro, o resultado premium aparece com clareza total.",
+      "visual": {
+        "type": "image-sequence",
+        "content": {
+          "frames": [
+            {
+              "id": "frame-tension-001",
+              "promptScene": "Professional product photography of a generic white-label coffee bag on a plain white table, flat lighting, no branding, no text, boring composition, 85mm lens frontal perspective, 4K",
+              "durationMs": 3000,
+              "presetKey": "epp-compare-01",
+              "storagePath": "image-lab/generated/a1b2c3d4-e5f6-7890-abcd-ef1234567890/f0e1d2c3-b4a5-6789-0abc-def123456789.png",
+              "assetId": "asset-frame-001"
+            },
+            {
+              "id": "frame-execution-001",
+              "promptScene": "Professional product photography of an artisan coffee bag with emerging brand elements, warm side lighting starting to define shadows, split composition showing transformation, 85mm lens frontal perspective, 4K",
+              "durationMs": 2500,
+              "presetKey": "epp-compare-01",
+              "storagePath": "image-lab/generated/b2c3d4e5-f6a7-8901-bcde-f12345678901/a1b2c3d4-e5f6-7890-abcd-ef1234567890.png",
+              "assetId": "asset-frame-002"
+            },
+            {
+              "id": "frame-premium-001",
+              "promptScene": "Premium product photography of a luxury artisan coffee bag with gold foil details, dramatic Rembrandt lighting, rich dark background with 35% clean copy zone on right side, 85mm lens frontal perspective, ultra high resolution 4K",
+              "durationMs": 3500,
+              "presetKey": "epp-compare-01",
+              "storagePath": "image-lab/generated/c3d4e5f6-a7b8-9012-cdef-123456789012/b2c3d4e5-f6a7-8901-bcde-f12345678901.png",
+              "assetId": "asset-frame-003"
+            }
+          ]
+        },
+        "effects": {
+          "mood": "dramatic",
+          "vignette": true
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-seq-badge-01",
+          "type": "text-pop",
+          "anchorText": "genérico",
+          "duration": 2.0,
+          "content": {
+            "text": "❌ Prompt amador",
+            "position": "top"
+          }
+        },
+        {
+          "id": "mv-seq-badge-02",
+          "type": "text-pop",
+          "anchorText": "premium",
+          "duration": 2.5,
+          "content": {
+            "text": "✅ Prompt profissional",
+            "emoji": "💎",
+            "position": "bottom"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "clareza",
+          "action": "transition",
+          "transitionAt": 0.85
+        }
+      ]
+    },
+    {
+      "id": "scene-cta-001",
+      "type": "narrative",
+      "title": "Aplique agora",
+      "narration": "Agora é sua vez. Na próxima etapa, você vai criar seu próprio prompt profissional e comparar com o resultado amador.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "Sua vez de praticar",
+          "subtitle": "Crie um prompt que vende",
+          "items": [
+            { "icon": "✍️", "text": "Escreva seu prompt profissional" },
+            { "icon": "🔍", "text": "Compare com o resultado amador" },
+            { "icon": "🏆", "text": "Veja a diferença na prática" }
+          ],
+          "mood": "success"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "confetti"
+        }
+      },
+      "microVisuals": [],
+      "anchorTexts": [
+        {
+          "keyword": "amador",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    }
+  ]
+}

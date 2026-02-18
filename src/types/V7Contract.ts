@@ -35,6 +35,7 @@ export type V7VisualType =
   | 'playground'         // Amateur vs professional prompt comparison
   | 'result'             // Result/gamification screen
   | 'cta'                // Call to action
+  | 'image-sequence'     // C12.1: Cinematic image sequence (up to 3 frames)
   // === 3D VISUAL TYPES ===
   | '3d-dual-monitors'   // Two 3D monitors with screen content
   | '3d-abstract'        // Cinematic abstract scene (background)
@@ -401,6 +402,31 @@ export interface V7CTAContent {
 }
 
 // ============================================================================
+// IMAGE SEQUENCE CONTENT (C12.1)
+// ============================================================================
+
+/**
+ * A single frame in a cinematic image sequence.
+ * Max 3 frames per sequence. Each frame >= 2000ms.
+ */
+export interface V7ImageSequenceFrame {
+  id: string;
+  promptScene: string;
+  durationMs: number;
+  presetKey?: string;
+  storagePath?: string;
+  assetId?: string;
+}
+
+/**
+ * Content for image-sequence visual type.
+ * Total duration must be >= 6000ms (3 frames × 2000ms min).
+ */
+export interface V7ImageSequenceContent {
+  frames: V7ImageSequenceFrame[];
+}
+
+// ============================================================================
 // 3D VISUAL CONTENT TYPES
 // ============================================================================
 
@@ -443,6 +469,7 @@ export type V7VisualContent =
   | { type: 'playground'; content: V7PlaygroundContent }
   | { type: 'result'; content: V7ResultContent }
   | { type: 'cta'; content: V7CTAContent }
+  | { type: 'image-sequence'; content: V7ImageSequenceContent }  // C12.1
   // === 3D Visual Types ===
   | { type: '3d-dual-monitors'; content: V73DDualMonitorsContent }
   | { type: '3d-abstract'; content: V73DAbstractContent }
