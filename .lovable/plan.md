@@ -1,230 +1,211 @@
 
-# AUDITORIA COMPLETA V7 — 100%
+# PLANO DE CORREÇÃO V7 — ENGENHARIA SENIOR
 
 **Data:** 2026-02-18
-**Escopo:** Pipeline (v7-vv/index.ts), Renderer (V7PhasePlayer.tsx), Contracts, Database, Diagnostic Engine, Image Lab Integration, Runtime
+**Auditor:** Claude (Engenheiro Sênior)
+**Base:** Auditoria forense 100% com evidências SQL reais
 
 ---
 
-## 1. PIPELINE (supabase/functions/v7-vv/index.ts — 7.255 linhas)
+## INVENTÁRIO COMPLETO — BUGS
 
-### 1.1 Status Geral
-- **Version:** v7-vv-1.1.4-forcetest-fix
-- **Contract Version:** c10b-boundaryfix-execstate-c11-1.0
-- **Contracts Active:** C01, C02, C04, C05, C06, C08, C10, C10B, BOUNDARY_FIX_GUARD, EXEC_STATE_CANONICAL_JSON, C11
-- **Contracts Deprecated:** C07 (by C10), C09 (by C10)
-- **Known Gaps:** C03 (scenes[] vazio)
+### BUG P1 — `scenes[]` Sempre Vazio (C03 Known Gap)
+- **Severidade:** MÉDIA-ALTA
+- **Camada:** Pipeline (`v7-vv/index.ts`, ~linha 5099)
+- **Evidência SQL:** `content->'phases'->0->'scenes'` retorna `NULL` para aula `ba50a2ba`
+- **Causa:** A construção da Phase gera `visual: { type, content, frames? }` mas nunca popula `scenes[]`
+- **Impacto:** currentScene = null, timing por cena não funciona, animações por cena ignoradas
+- **Contrato:** C03 registra como `known_gap` — renderer usa `phase.visual` como fallback
+- **Decisão necessária:** Implementar `scenes[]` OU oficializar `visual` como definitivo e remover código morto do renderer
 
-### 1.2 BUGS ENCONTRADOS
+### BUG P2 — `audioBehavior.duringInteraction` Nunca Gerado
+- **Severidade:** MÉDIA
+- **Camada:** Pipeline (`v7-vv/index.ts`, ~linha 5116)
+- **Evidência SQL:** `content->'phases'->0->'audioBehavior'` retorna `NULL`
+- **Causa:** Pipeline só gera `{ onStart, onComplete }`, nunca inclui `duringInteraction: { mainVolume, ambientVolume, contextualLoops }`
+- **Impacto:** Volumes de áudio não controlados durante interações; contextualLoops (whispers) nunca executam
+- **Fix:** Adicionar `duringInteraction` com defaults sensatos ao pipeline
 
-#### BUG P1 — `scenes[]` Sempre Vazio (KNOWN GAP C03 — Nunca Resolvido)
-**Severidade:** MEDIA-ALTA
-**Arquivo:** v7-vv/index.ts, linhas 5099-5120
-**Evidencia:** A construcao da Phase (linha 5099) gera `visual: { type, content, frames? }` mas NUNCA gera `scenes[]`. O contrato C03 documenta isso como "known_gap" e o renderer usa fallback (`phase.visual`), mas o V7PhaseController.tsx (linha 439) faz `const phaseScenes = currentPhase?.scenes || []` — retornando sempre array vazio.
-**Impacto:** 
-- Timing interno de cenas NAO funciona (sceneIndex sempre 0)
-- `currentScene` no V7PhasePlayer e sempre null ou o ultimo item
-- Animacoes por cena nao sao aplicadas
-**Observacao:** O contrato registra isso como gap aceito, mas prejudica fases que dependem de multiplas cenas (dramatic, narrative com scenes progressivos).
+### BUG P3 — `storagePath` Fictício Permanece Após Pipeline
+- **Severidade:** CRÍTICA
+- **Camada:** Pipeline/Image Lab Bridge
+- **Evidência SQL:** Frames de `ba50a2ba` apontam para `image-lab/assets/23972383.png` — formato INCORRETO (deveria ser `{job-id}/{attempt-id}/0.png`)
+- **Evidência Bridge:** `image_lab_bridge_report` no `output_data` retorna `NULL` — **a bridge NÃO foi chamada ou não registrou resultado**
+- **Evidência Logs:** Logs da edge function `image-lab-pipeline-bridge` estão VAZIOS para este run
+- **Causa raiz provável:** O Step 4.9 pode não ter sido deployado no momento do run, OU os frames não foram matchados no `allScenesForBridge`, OU a bridge retornou erro que foi silenciado
+- **Fix:** (1) Validar que Step 4.9 está deployado; (2) Adicionar log obrigatório de bridge call/response; (3) Marcar `storagePath` como `PENDING` se bridge falha (em vez de manter path fictício)
 
-#### BUG P2 — `audioBehavior` Incompleto para Fases Interativas
-**Severidade:** MEDIA
-**Arquivo:** v7-vv/index.ts, linhas 5116-5119
-**Evidencia:** O pipeline gera:
+### BUG P4 — Declaração Duplicada de `totalDuration`
+- **Severidade:** BAIXA
+- **Camada:** Pipeline (`v7-vv/index.ts`, ~linhas 6348/6355)
+- **Causa:** `totalDuration` declarado duas vezes (shadow variable)
+- **Fix:** Remover a declaração redundante
+
+### BUG P5 — `contentVersion` Ausente no Root do Content
+- **Severidade:** MÉDIA
+- **Camada:** Pipeline
+- **Evidência SQL:** `content->'contentVersion'` retorna `NULL` para `ba50a2ba`
+- **Causa:** O pipeline persiste `contentVersion` dentro de `metadata` ou `output_data.meta`, mas NÃO no root do `content` JSON
+- **Impacto:** Queries de busca por `content->>'contentVersion' = 'v7-vv'` retornam vazio. Impossível filtrar aulas V7 por versão via SQL direto no content
+- **Fix:** Adicionar `contentVersion: 'v7-vv'` no root do JSON de content no step de consolidação
+
+### BUG P6 — `anchorActions` NULL no Content Root
+- **Severidade:** MÉDIA
+- **Camada:** Pipeline
+- **Evidência SQL:** `jsonb_array_length(content->'anchorActions')` retorna `NULL` para `ba50a2ba` (1 fase, sem interação, então pode ser esperado para esta aula)
+- **Verificação necessária:** Confirmar se aulas com fases interativas TÊM `anchorActions` populado no content root
+
+### BUG R1 — `currentScene` Depende de `scenes[]` Inexistente
+- **Severidade:** MÉDIA
+- **Camada:** Renderer (`V7PhasePlayer.tsx`, ~linha 779)
+- **Causa:** Consequência direta de P1. `scenes || []` sempre retorna vazio
+- **Impacto:** `getCombinedSceneContent()` e `getSceneContent()` retornam `{}`
+- **Fix:** Vinculado a decisão de P1
+
+### BUG R2 — `V7VisualRenderer` Não Suporta `image-sequence`
+- **Severidade:** MÉDIA
+- **Camada:** Renderer (`V7VisualRenderer.tsx`)
+- **Impacto:** Não afeta o V7PhasePlayer (que trata image-sequence diretamente), mas afeta V7LessonPlayer (player legado)
+- **Fix:** Adicionar case `image-sequence` ao V7VisualRenderer OU deprecar V7LessonPlayer
+
+### BUG R3 — Dois Players V7 Distintos (Design Debt)
+- **Severidade:** INFORMATIVA
+- **Camada:** Renderer
+- **V7LessonPlayer.tsx:** 470 linhas, sem XState, sem image-sequence, sem anchor system
+- **V7PhasePlayer.tsx:** 2160 linhas, completo
+- **Fix:** Deprecar V7LessonPlayer oficialmente ou removê-lo
+
+---
+
+## INVENTÁRIO COMPLETO — CONTRATOS
+
+### Contratos ATIVOS (Funcionando)
+| Contrato | Nome | Status | Verificação |
+|----------|------|--------|-------------|
+| C01 | Idempotency | ✅ PASS | "1 runs, 0 duplicates" |
+| C02 | Phase Structure | ✅ PASS | Validado no audit gate |
+| C04 | Content Integrity | ✅ PASS | Validado no audit gate |
+| C05 | Traceability (SHA-256) | ✅ PASS | "1 completed, 0 missing hash" |
+| C06 | Single Trigger (anchorActions) | ✅ PASS | "0 runs with wrong triggerContract" |
+| C08 | Phase Drift Fix | ✅ PASS | Boundary alignment funcional |
+| C10 | Hard Pause Anchor | ✅ PASS | "0 interactive phases missing pause" |
+| C10B | Editorial Guardrail (1.5s) | ✅ PASS | "0 violations" |
+| BOUNDARY_FIX_GUARD | Timeline Monotonic | ✅ PASS | "1 phases checked, 0 violations" |
+| EXEC_STATE_CANONICAL_JSON | Error Format + State | ✅ PASS | Enforced (run 355bd8ab falhou por mismatch, corrigido em 53def5c0) |
+| C11 | Runtime Anchor Audit | ✅ REGISTRADO | RAF timing + causal chain |
+
+### Contratos DEPRECADOS
+| Contrato | Nome | Substituído por |
+|----------|------|----------------|
+| C07 | Pause Priority Rule | C10 |
+| C09 | Pause at Last Word | C10 |
+
+### Contratos com GAPS
+| Contrato | Nome | Gap |
+|----------|------|-----|
+| C03 | Scenes Array Population | `scenes[]` sempre vazio — aceito como known_gap, renderer usa fallback |
+
+### Contratos AUSENTES (Não Existem mas Deveriam)
+| ID Proposto | Nome | Justificativa |
+|-------------|------|---------------|
+| C12.1 | Image-Sequence Validation | Valida frames[], durationMs, max 3 frames — existe no DryRun mas NÃO no audit gate |
+| C13 | StoragePath Integrity | Valida que storagePaths apontam para assets reais OU estão marcados como PENDING |
+| C14 | ContentVersion Root | Garante `contentVersion` no root do content JSON |
+| C15 | Image Lab Bridge Traceability | Garante que bridge call/response é registrado no output_data |
+
+---
+
+## PLANO DE CORREÇÃO — 4 FASES
+
+### FASE 1: CRÍTICA — Resolver P3 (Image Lab Bridge) 
+**Objetivo:** Aulas C13.2 com imagens reais
+**Tarefas:**
+1. **Diagnosticar bridge:** Verificar se Step 4.9 foi deployado no momento do run `4ab1098d`. Redeploy se necessário
+2. **Adicionar logging obrigatório:** Step 4.9 deve registrar em `output_data.debugReport.imageLabBridge`:
+   - `bridgeCalled: boolean`
+   - `scenesSubmitted: number`
+   - `scenesResolved: number`
+   - `errors: string[]`
+3. **Fallback seguro:** Se bridge falha para um frame, marcar `storagePath: 'PENDING:bridge-failed'` em vez de manter path fictício. Renderer deve detectar prefix `PENDING:` e exibir placeholder neutro
+4. **Teste:** Reprocessar aula `ba50a2ba` e verificar se bridge é chamada e assets são gerados
+
+### FASE 2: ROBUSTEZ — Resolver P2, P4, P5
+**Objetivo:** Pipeline gera output completo e limpo
+**Tarefas:**
+1. **P2 — audioBehavior completo:**
+   ```typescript
+   audioBehavior: isInteractive ? {
+     onStart: 'pause',
+     duringInteraction: {
+       mainVolume: 0,
+       ambientVolume: 0.3,
+       contextualLoops: scene.interaction?.contextualLoops || [],
+     },
+     onComplete: 'resume',
+   } : undefined,
+   ```
+2. **P4 — Remover totalDuration duplicado:** Consolidar em uma única declaração
+3. **P5 — contentVersion no root:** Adicionar `contentVersion: 'v7-vv'` no root do content JSON no step de consolidação
+
+### FASE 3: CONTRATOS — Adicionar C12.1, C13, C14, C15 ao Audit Gate
+**Objetivo:** Audit gate cobre todas as invariantes críticas
+**Tarefas:**
+1. **C12.1 — Image-Sequence Validation no Audit Gate:**
+   - Fases com `visual.type === 'image-sequence'` DEVEM ter `frames[]` com 1-3 items
+   - Cada frame DEVE ter `durationMs >= 1000`
+   - Total `durationMs >= 2000`
+2. **C13 — StoragePath Integrity:**
+   - Todo `storagePath` em frames/microVisuals DEVE seguir formato `{uuid}/{uuid}/N.png` OU ser `PENDING:*`
+   - Paths com formato `image-lab/assets/*` são REJEITADOS (fictícios)
+3. **C14 — ContentVersion Root:**
+   - `content.contentVersion` DEVE existir e ser `'v7-vv'`
+4. **C15 — Image Lab Bridge Traceability:**
+   - Se aula tem visual do tipo `image` ou `image-sequence`, `output_data.debugReport.imageLabBridge` DEVE existir
+
+### FASE 4: DEBT TÉCNICO — Resolver P1/R1, R2, R3
+**Objetivo:** Código limpo, sem ambiguidades
+**Tarefas:**
+1. **P1/R1 — Decisão sobre scenes[]:**
+   - **Opção A:** Implementar `scenes[]` no pipeline a partir do `visual` (transformação `visual → scenes[{...}]`)
+   - **Opção B:** Oficializar `visual` como definitivo, remover todo código de `scenes[]` do renderer, atualizar C03 para `resolved:visual_is_canonical`
+   - **Recomendação:** Opção B — menos complexidade, alinhado com a realidade atual
+2. **R2 — V7VisualRenderer:**
+   - Adicionar case `image-sequence` ao switch OU deprecar V7LessonPlayer
+   - **Recomendação:** Deprecar V7LessonPlayer (R3 resolve ambos)
+3. **R3 — Remover V7LessonPlayer.tsx:**
+   - Verificar se alguma rota usa V7LessonPlayer
+   - Se não, remover arquivo e imports
+
+---
+
+## REGRAS DE EXECUÇÃO
+
+1. **Nenhuma alteração de código sem aprovação explícita do usuário**
+2. **Cada fase deve ter diagnóstico → proposta → aprovação → implementação → verificação**
+3. **Toda correção no pipeline DEVE ser verificada via reprocess + SQL forense**
+4. **Contratos novos DEVEM ser adicionados ao `contracts.ts` E ao `audit-contracts` edge function**
+5. **Deploy de edge functions DEVE ser verificado com curl antes de considerar "feito"**
+
+---
+
+## MATRIZ DE PRIORIDADE
+
 ```
-audioBehavior: { onStart: 'pause', onComplete: 'resume' }
+URGÊNCIA ↑
+│
+│  P3 (CRÍTICA)          
+│  ████████████████       
+│                         
+│  P5 (MÉDIA)   P2 (MÉDIA)
+│  ██████████   ██████████
+│                         
+│  C12-C15      P1/R1-R3
+│  ██████████   ██████████
+│  (Contratos)  (Debt)
+│                         
+│  P4 (BAIXA)            
+│  ████                   
+└────────────────────────→ COMPLEXIDADE
 ```
-Mas o V7PhaseController.tsx (linhas 140-148) define a interface completa com `duringInteraction` (mainVolume, ambientVolume, contextualLoops). O campo `duringInteraction` nunca e gerado.
-**Impacto:** Volumes de audio durante interacoes nao sao controlados. contextualLoops (whispers de dicas) nunca executam.
 
-#### BUG P3 — `storagePath` Ficticio nos Frames de Image-Sequence
-**Severidade:** CRITICA (para aulas C13.2)
-**Arquivo:** v7-vv/index.ts, Step 4.9 (linhas 6200-6340)
-**Evidencia Real (SQL):** A aula `ba50a2ba` tem:
-- `frame0_path: image-lab/assets/23972383.png`
-- `frame1_path: image-lab/assets/2d0f33f7.png`
-- `frame2_path: image-lab/assets/ec9c7c02.png`
-
-Esses paths NAO existem no bucket `image-lab`. O bucket usa formato `{job-id}/{attempt-id}/0.png`.
-**Causa raiz:** O Step 4.9 agora escaneia corretamente frames de image-sequence (apos fix recente), mas o JSON de input ORIGINAL ja tinha esses paths ficticios no campo `storagePath`. O pipeline precisa verificar se `storagePath` aponta para arquivo existente OU sempre gerar via bridge quando `promptScene` esta presente, ignorando paths pre-existentes.
-**Status da integracao Image Lab:** O codigo do Step 4.9 (linhas 6207-6223) agora escaneia `phase.visual.frames` e envia para a bridge. Porem, ele NAO verifica se o `storagePath` ja existente e valido antes de decidir gerar. Se o JSON de input traz `storagePath` preenchido (mesmo ficticio), o filtro `!content.storagePath` NAO se aplica a frames (apenas a microVisuals, linha 6236). Para frames, o codigo SEMPRE tenta gerar se `promptScene` existe (linha 6213) — isso e CORRETO. O problema ocorre se a bridge falha ou retorna sem resultados para esse frame.
-
-#### BUG P4 — Duas Declaracoes de `totalDuration`
-**Severidade:** BAIXA
-**Arquivo:** v7-vv/index.ts, linhas 6348 e 6355
-**Evidencia:** `totalDuration` e declarado duas vezes — na linha 6348 (fora do `if`) e 6355 (dentro do `if (!preserveStructureMode)`). A segunda declaracao faz shadow da primeira. Nao causa bug funcional porque ambas calculam o mesmo valor, mas e codigo sujo.
-
-### 1.3 PIPELINE — O QUE FUNCIONA CORRETAMENTE
-- Validacao de input (validateInput) com codigos de erro canonicos
-- Auto-geracao de pauseAt para fases interativas
-- Geracao de audio via ElevenLabs com word timestamps
-- Geracao de feedback audios para quiz
-- Calculo de timing baseado em palavras (findNarrationRange, calculateWordBasedTimings)
-- BoundaryFixGuard (monotonicidade, duracao minima)
-- C10/C10B: Hard Pause Anchor Contract com editorial guardrail (1.5s)
-- C05: Traceability com SHA-256 hash via SQL RPC
-- C06: Single Trigger Contract (anchorActions)
-- Audit Gate pos-execucao
-- Idempotencia via run_id
-- Dry-run mode
-- Reprocess mode (preserve_structure e regenerate)
-- Debug report automatico
-
----
-
-## 2. RENDERER (V7PhasePlayer.tsx — 2.160 linhas)
-
-### 2.1 Status Geral
-- **Runtime Contract:** v7-runtime-c12.1-1.0
-- **State Management:** XState via useV7PlayerAdapter
-- **Audio Engine:** useV7AudioManager com RAF-based polling
-
-### 2.2 BUGS ENCONTRADOS
-
-#### BUG R1 — Dependencia de `scenes[]` que Nunca Existem (Ligado a P1)
-**Severidade:** MEDIA
-**Arquivo:** V7PhasePlayer.tsx, linhas 779-813
-**Evidencia:** `currentScene` e calculado buscando em `currentPhase.scenes` mas `scenes` esta sempre vazio para aulas geradas pelo pipeline V7-vv. O fallback na linha 808 retorna `scenes[last]` — que tambem nao existe. O renderer funciona apesar disso porque usa `phase.visual` diretamente (linhas 1298-1314 para narrative/comparison), mas o code path principal (getCombinedSceneContent, getSceneContent) retorna `{}` para aulas V7-vv.
-
-#### BUG R2 — V7VisualRenderer NAO Suporta `image-sequence`
-**Severidade:** MEDIA
-**Arquivo:** V7VisualRenderer.tsx, linhas 46-134
-**Evidencia:** O V7VisualRenderer renderiza tipos: `number-reveal`, `text-reveal`, `split-screen`, `letter-reveal`, `cards-reveal`, `quiz`, `playground`, `result`, `3d-dual-monitors`, `3d-abstract`, `3d-number-reveal`. NAO tem `image-sequence`. Isso NAO causa bug porque o V7PhasePlayer.tsx trata `image-sequence` ANTES de chamar V7VisualRenderer (linhas 1300-1311), renderizando `V7ImageSequenceRenderer` diretamente. Porem, o V7LessonPlayer.tsx (player alternativo) usa V7VisualRenderer diretamente (linha 415) e NAO tem tratamento especial para image-sequence — resultando em tela vazia se usado.
-
-#### BUG R3 — V7LessonPlayer.tsx e V7PhasePlayer.tsx Sao Dois Players Distintos
-**Severidade:** INFORMATIVO (design debt)
-**Evidencia:** Existem DOIS players V7:
-1. `V7LessonPlayer.tsx` (470 linhas) — Player simples baseado em V7Contract.ts, usa V7VisualRenderer, NAO suporta image-sequence, NAO tem XState
-2. `V7PhasePlayer.tsx` (2160 linhas) — Player completo com XState, anchor system, scaling, support para todos os tipos
-
-O sistema real usa V7PhasePlayer. V7LessonPlayer parece ser um fallback/legado que pode causar confusao.
-
-### 2.3 RENDERER — O QUE FUNCIONA CORRETAMENTE
-- Image-sequence rendering via V7ImageSequenceRenderer (crossfade, preload, signed URLs)
-- Anchor crossing detection via RAF (C11 compliant)
-- Phase locking para fases interativas
-- Seek-back garantido no pause para evitar audio bleed
-- Runtime scaling quando audio duration difere do script
-- Feedback audio playback para quiz
-- C07.2 legacy fallback para JSON sem pause actions
-- MicroVisual overlay com crossing detection
-- Caption filtering por fase (anti-bleed via pause anchor)
-- Phase transition particles
-- Debug HUD e v7DebugLogger persistente
-
----
-
-## 3. IMAGE LAB INTEGRATION
-
-### 3.1 Pipeline Bridge (Step 4.9)
-**Status:** FUNCIONAL COM RESSALVA
-- Escaneia corretamente `microVisuals` tipo `image` e `image-flash` (linhas 6227-6246)
-- Escaneia corretamente `phase.visual.frames` para `image-sequence` (linhas 6207-6223) — fix recente
-- Combina ambos em `allScenesForBridge` e envia para `image-lab-pipeline-bridge`
-- Injeta `storagePath` e `assetId` de volta nos frames/microVisuals
-- **Ressalva:** Se a bridge falha ou retorna sem match para um frame, o `storagePath` original (possivelmente ficticio) permanece, causando fallback no renderer
-
-### 3.2 Renderer (useSignedUrl)
-**Status:** FUNCIONAL
-- Gera signed URLs a partir do bucket privado `image-lab`
-- Validade de 1h
-- Usado por V7ImageSequenceRenderer e V7MicroVisualOverlay
-
-### 3.3 Problema Atual da Aula C13.2 (ba50a2ba)
-O pipeline run `4ab1098d` completou com sucesso (audit gate passed), mas os frames mantem paths ficticios do JSON de input original. A bridge provavelmente nao conseguiu gerar as imagens (timeout, provider failure, ou os frames nao foram matchados pelo scene_id no resultado da bridge).
-
-**Verificacao necessaria:** Logs da edge function `image-lab-pipeline-bridge` para o run `4ab1098d` para confirmar se a bridge foi chamada e qual foi o resultado.
-
----
-
-## 4. DATABASE
-
-### 4.1 Tabela `lessons`
-- Aula C13.2 (`ba50a2ba`): frames[] persistidos corretamente (3 frames), schema v7-vv, status rascunho, is_active false
-- `audio_url` presente, `word_timestamps` implicito via content
-
-### 4.2 Tabela `pipeline_executions`
-- 5 runs para C13.2: 2 dry_run (completed), 2 create (completed, 1 com audit gate passed, 1 com audit gate failed por contractVersion mismatch), 1 create failed (AUDIT_GATE_FAILED)
-- Rastreabilidade completa: input_data, output_data, run_id, hashes
-
-### 4.3 Tabela `lesson_migrations_audit`
-- Usada corretamente para reprocess mode
-- Diff summary com C02, C03, C04, C06 stats
-
----
-
-## 5. CONTRACTS SYSTEM
-
-### 5.1 contracts.ts (Source of Truth)
-**Status:** SOLIDO
-- 14 contratos registrados com status, invariantes, error codes
-- enforceContractMeta() e enforceBoundaryInvariants() como guards
-- CONTRACT_VERSION: `c10b-boundaryfix-execstate-c11-1.0`
-
-### 5.2 Audit Gate
-**Status:** FUNCIONAL
-- Chama `audit-contracts` edge function apos persist
-- HARD FAIL: reverte status para failed se gate nao passa
-- FAIL SAFE: bloqueia se audit-contracts esta inacessivel
-- Persiste `auditGate` stamp com scorecardHash
-
-### 5.3 Gap Identificado
-O contrato `EXEC_STATE_CANONICAL_JSON` espera `contractVersion` no output_data.meta, mas o run `355bd8ab` falhou com "mismatch=1" — indicando que o `contractVersion` no meta da aula nao bate com o esperado. Isso foi corrigido no run seguinte (`53def5c0`), mas mostra que o enforcement esta funcionando.
-
----
-
-## 6. DIAGNOSTIC ENGINE
-
-### 6.1 Status
-**FUNCIONAL** — 8 modulos de analise:
-1. anchorCrossRef (anchor cross-reference validation)
-2. phaseTiming (overlap, gaps, durations)
-3. microVisualValidation
-4. interactionRequirements
-5. audioIntegrity
-6. jsonStructure
-7. contentTypes
-8. feedbackAudio
-
-### 6.2 Limitacao
-O Diagnostic Engine opera no frontend (via Supabase client) e analisa o conteudo JA PERSISTIDO no banco. Ele NAO analisa o output ANTES do persist (isso e feito pelo debug report do pipeline). Ambos os sistemas sao complementares.
-
----
-
-## 7. RUNTIME (CI/CD)
-
-### 7.1 v7-runtime-contract.yml
-**Status:** CONFIGURADO
-- Unit tests: validator + crossing detector via Vitest
-- E2E: Audit replay via Playwright com aula benchmark
-- Artefatos: v7-debug-logs, playwright-report
-- Concurrency: cancel-in-progress
-
----
-
-## 8. RESUMO DE TODOS OS BUGS
-
-| # | Bug | Severidade | Camada | Status |
-|---|-----|-----------|--------|--------|
-| P1 | scenes[] sempre vazio | MEDIA-ALTA | Pipeline | Known Gap (C03) |
-| P2 | audioBehavior.duringInteraction nunca gerado | MEDIA | Pipeline | Nao corrigido |
-| P3 | storagePath ficticio permanece se bridge falha | CRITICA | Pipeline/Image Lab | Parcialmente corrigido (bridge chamada, mas fallback insuficiente) |
-| P4 | Declaracao duplicada totalDuration | BAIXA | Pipeline | Code smell |
-| R1 | currentScene depende de scenes[] inexistente | MEDIA | Renderer | Mitigado por fallback visual |
-| R2 | V7VisualRenderer nao suporta image-sequence | MEDIA | Renderer (V7LessonPlayer) | Mitigado no V7PhasePlayer |
-| R3 | Dois players V7 distintos | INFO | Renderer | Design debt |
-
----
-
-## 9. PRIORIDADES DE CORRECAO
-
-### Fase 1: Critica (para C13.2 funcionar)
-1. **P3:** Verificar logs da bridge para run `4ab1098d`. Se a bridge nao gerou, gerar manualmente via Image Lab e vincular os `storagePath` reais na aula `ba50a2ba`
-
-### Fase 2: Robustez do Pipeline
-2. **P2:** Adicionar `duringInteraction` completo ao `audioBehavior`
-3. **P4:** Remover declaracao duplicada de `totalDuration`
-
-### Fase 3: Debt Tecnico
-4. **P1/R1:** Decidir se `scenes[]` sera implementado ou se o fallback via `visual` e definitivo (atualizar contrato C03)
-5. **R3:** Decidir se V7LessonPlayer.tsx deve ser removido ou mantido como fallback
+**Sequência recomendada:** P3 → P5 → P2 → P4 → C12.1/C13/C14/C15 → P1/R1 → R2/R3
