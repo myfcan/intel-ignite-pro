@@ -1437,6 +1437,12 @@ interface Phase {
   visual: {
     type: string;
     content: Record<string, unknown>;
+    frames?: Array<{
+      frameId: string;
+      durationMs: number;
+      storagePath?: string;
+      promptScene?: string;
+    }>;
   };
   effects?: Record<string, unknown>;
   microVisuals?: MicroVisual[];
@@ -5098,7 +5104,11 @@ function generatePhases(
       endTime,
       visual: {
         type: scene.visual.type,
-        content: scene.visual.content,
+        content: scene.visual.content || {},
+        // C12.1: Preserve frames[] for image-sequence visuals
+        ...(scene.visual.type === 'image-sequence' && (scene.visual as any).frames?.length > 0
+          ? { frames: (scene.visual as any).frames }
+          : {}),
       },
       effects: scene.visual.effects,
       microVisuals: microVisuals.length > 0 ? microVisuals : undefined,
