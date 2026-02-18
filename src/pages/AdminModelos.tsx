@@ -14,7 +14,11 @@ import {
   Zap,
   Database,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  Camera,
+  Eye,
+  Palette
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -180,6 +184,8 @@ export default function AdminModelos() {
   const [copied, setCopied] = useState(false);
   const [expandedMV, setExpandedMV] = useState<string | null>(null);
   const [expandedScene, setExpandedScene] = useState<string | null>(null);
+  const [expandedVisualSection, setExpandedVisualSection] = useState<string | null>('microvisuals');
+  const [expandedEPPBlock, setExpandedEPPBlock] = useState<string | null>(null);
 
   const copyJsonToClipboard = async () => {
     try {
@@ -265,139 +271,514 @@ export default function AdminModelos() {
           </CardContent>
         </Card>
 
-        {/* MICRO VISUAL TYPES — EXPANDIDO */}
+        {/* ============================================================ */}
+        {/* EFEITOS VISUAIS — Card Unificado */}
+        {/* ============================================================ */}
         <Card className="border-2 border-amber-500/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="w-6 h-6 text-amber-500" />
-              MicroVisual Types (7 canônicos)
-              <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px]">APENAS ESTES</Badge>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Sparkles className="w-7 h-7 text-amber-500" />
+              Efeitos Visuais
+              <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px]">COMPLETO</Badge>
             </CardTitle>
             <CardDescription>
-              Tipos visuais permitidos no JSON. Qualquer outro tipo será rejeitado pelo pipeline.
+              Todos os modelos visuais do sistema V7: MicroVisuals, Scene Types, Visual Effects, Animations e Transitions
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs text-muted-foreground mb-3 space-y-1">
-              <p>⚠️ Máximo <strong>1 microVisual por frase</strong> na narração</p>
-              <p>⚠️ <strong>anchorText obrigatório</strong> — deve existir literalmente na narração</p>
-              <p>⛔ <strong>icon</strong> é REJEITADO — use image ou badge</p>
-            </div>
-            {MICRO_VISUAL_TYPES.map(mv => (
-              <Collapsible key={mv.input} open={expandedMV === mv.input} onOpenChange={(open) => setExpandedMV(open ? mv.input : null)}>
-                <CollapsibleTrigger className="w-full text-left">
-                  <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
-                    {expandedMV === mv.input ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                    <span className="text-sm font-mono text-emerald-500 font-bold">{mv.input}</span>
-                    <span className="text-xs text-muted-foreground">→ {mv.output}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">{mv.desc}</span>
+          <CardContent className="space-y-4">
+
+            {/* SUB: MicroVisual Types */}
+            <Collapsible open={expandedVisualSection === 'microvisuals'} onOpenChange={(open) => setExpandedVisualSection(open ? 'microvisuals' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors">
+                  {expandedVisualSection === 'microvisuals' ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-amber-500" />}
+                  <FileText className="w-5 h-5 text-amber-500" />
+                  <span className="text-sm font-semibold">MicroVisual Types (7 canônicos)</span>
+                  <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px] ml-auto">APENAS ESTES</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 space-y-2 pl-2">
+                  <div className="text-xs text-muted-foreground mb-3 space-y-1">
+                    <p>⚠️ Máximo <strong>1 microVisual por frase</strong> na narração</p>
+                    <p>⚠️ <strong>anchorText obrigatório</strong> — deve existir literalmente na narração</p>
+                    <p>⛔ <strong>icon</strong> é REJEITADO — use image ou badge</p>
                   </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="ml-5 p-3 bg-muted/30 rounded-lg space-y-2 border border-border/50">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Regras:</p>
-                      {mv.rules.map((r, i) => (
-                        <p key={i} className="text-xs text-muted-foreground">• {r}</p>
+                  {MICRO_VISUAL_TYPES.map(mv => (
+                    <Collapsible key={mv.input} open={expandedMV === mv.input} onOpenChange={(open) => setExpandedMV(open ? mv.input : null)}>
+                      <CollapsibleTrigger className="w-full text-left">
+                        <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
+                          {expandedMV === mv.input ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                          <span className="text-sm font-mono text-emerald-500 font-bold">{mv.input}</span>
+                          <span className="text-xs text-muted-foreground">→ {mv.output}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">{mv.desc}</span>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="ml-5 p-3 bg-muted/30 rounded-lg space-y-2 border border-border/50">
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Regras:</p>
+                            {mv.rules.map((r, i) => (
+                              <p key={i} className="text-xs text-muted-foreground">• {r}</p>
+                            ))}
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-xs font-medium text-muted-foreground">Exemplo JSON:</p>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard(mv.example, mv.input)}>
+                                <Copy className="w-3 h-3 mr-1" /> Copiar
+                              </Button>
+                            </div>
+                            <pre className="text-[11px] font-mono bg-background/50 p-2 rounded overflow-x-auto border border-border/30">
+                              {JSON.stringify(mv.example, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* SUB: Interactive Scene Types */}
+            <Collapsible open={expandedVisualSection === 'scenes'} onOpenChange={(open) => setExpandedVisualSection(open ? 'scenes' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-500/5 border border-purple-500/20 hover:bg-purple-500/10 transition-colors">
+                  {expandedVisualSection === 'scenes' ? <ChevronDown className="w-4 h-4 text-purple-500" /> : <ChevronRight className="w-4 h-4 text-purple-500" />}
+                  <Code className="w-5 h-5 text-purple-500" />
+                  <span className="text-sm font-semibold">Interactive Scene Types</span>
+                  <Badge variant="outline" className="border-purple-500/50 text-purple-400 text-[10px] ml-auto">4 TIPOS</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 space-y-2 pl-2">
+                  <div className="text-xs text-muted-foreground mb-3 space-y-1">
+                    <p>⚠️ CTA = <code className="bg-muted px-1 rounded">scene.type="narrative"</code> + <code className="bg-muted px-1 rounded">visual.type="cta"</code> (NÃO é interativo)</p>
+                    <p>⚠️ pauseAt deve ser a <strong>última palavra relevante</strong> da narração (C10B: máx 1.5s do fim)</p>
+                  </div>
+                  {INTERACTIVE_SCENE_TYPES.map(s => (
+                    <Collapsible key={s.type} open={expandedScene === s.type} onOpenChange={(open) => setExpandedScene(open ? s.type : null)}>
+                      <CollapsibleTrigger className="w-full text-left">
+                        <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
+                          {expandedScene === s.type ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                          <span className={`text-sm font-mono font-bold ${s.requiresPauseAt ? 'text-emerald-500' : 'text-yellow-500'}`}>
+                            {s.type}
+                          </span>
+                          <span className="text-xs text-muted-foreground">→ {s.mapsTo}</span>
+                          <span className="text-xs ml-auto">{s.requiresPauseAt ? '✅ pauseAt' : '❌ no pause'}</span>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="ml-5 p-3 bg-muted/30 rounded-lg space-y-2 border border-border/50">
+                          <p className="text-xs text-muted-foreground">{s.desc}</p>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-xs font-medium text-muted-foreground">Exemplo JSON:</p>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard(s.example, s.type)}>
+                                <Copy className="w-3 h-3 mr-1" /> Copiar
+                              </Button>
+                            </div>
+                            <pre className="text-[11px] font-mono bg-background/50 p-2 rounded overflow-x-auto border border-border/30">
+                              {JSON.stringify(s.example, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* SUB: Visual Effects */}
+            <Collapsible open={expandedVisualSection === 'effects'} onOpenChange={(open) => setExpandedVisualSection(open ? 'effects' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20 hover:bg-cyan-500/10 transition-colors">
+                  {expandedVisualSection === 'effects' ? <ChevronDown className="w-4 h-4 text-cyan-500" /> : <ChevronRight className="w-4 h-4 text-cyan-500" />}
+                  <Zap className="w-5 h-5 text-cyan-500" />
+                  <span className="text-sm font-semibold">Visual Effects</span>
+                  <Badge variant="outline" className="border-cyan-500/50 text-cyan-400 text-[10px] ml-auto">ATMOSFERA</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-2 space-y-3">
+                  {VISUAL_EFFECTS.map(vf => (
+                    <div key={vf.name} className="flex items-start gap-3">
+                      <span className="text-sm font-mono text-cyan-500 font-bold min-w-[80px]">{vf.name}</span>
+                      <div>
+                        <p className="text-xs text-muted-foreground">{vf.desc}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {vf.values.map(v => (
+                            <span key={v} className="text-[10px] font-mono bg-cyan-500/10 text-cyan-400 px-1.5 py-0.5 rounded">{v}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* SUB: V7 Visual Types (Player) */}
+            <Collapsible open={expandedVisualSection === 'vtypes'} onOpenChange={(open) => setExpandedVisualSection(open ? 'vtypes' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10 transition-colors">
+                  {expandedVisualSection === 'vtypes' ? <ChevronDown className="w-4 h-4 text-blue-500" /> : <ChevronRight className="w-4 h-4 text-blue-500" />}
+                  <Eye className="w-5 h-5 text-blue-500" />
+                  <span className="text-sm font-semibold">V7 Visual Types (Player)</span>
+                  <Badge variant="outline" className="border-blue-500/50 text-blue-400 text-[10px] ml-auto">13 TIPOS</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-2 space-y-2">
+                  <p className="text-xs text-muted-foreground mb-2">Tipos visuais que o Player renderiza (V7Contract.ts):</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {['number-reveal', 'text-reveal', 'split-screen', 'letter-reveal', 'cards-reveal', 'quiz', 'quiz-feedback', 'playground', 'result', 'cta', '3d-dual-monitors', '3d-abstract', '3d-number-reveal'].map(t => (
+                      <div key={t} className="text-[11px] font-mono bg-blue-500/10 text-blue-400 px-2 py-1.5 rounded border border-blue-500/20">{t}</div>
+                    ))}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* SUB: Animations, Moods & Transitions */}
+            <Collapsible open={expandedVisualSection === 'animations'} onOpenChange={(open) => setExpandedVisualSection(open ? 'animations' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-pink-500/5 border border-pink-500/20 hover:bg-pink-500/10 transition-colors">
+                  {expandedVisualSection === 'animations' ? <ChevronDown className="w-4 h-4 text-pink-500" /> : <ChevronRight className="w-4 h-4 text-pink-500" />}
+                  <Palette className="w-5 h-5 text-pink-500" />
+                  <span className="text-sm font-semibold">Animations, Moods & Transitions</span>
+                  <Badge variant="outline" className="border-pink-500/50 text-pink-400 text-[10px] ml-auto">CINEMA</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-2 space-y-4">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Animation Types:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['fade', 'slide-up', 'slide-left', 'slide-right', 'explode', 'count-up', 'letter-by-letter', 'scale-up', 'particle-burst', 'zoom-in', 'letterbox', 'glitch'].map(a => (
+                        <span key={a} className="text-[10px] font-mono bg-pink-500/10 text-pink-400 px-1.5 py-0.5 rounded">{a}</span>
                       ))}
                     </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-medium text-muted-foreground">Exemplo JSON:</p>
-                        <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard(mv.example, mv.input)}>
-                          <Copy className="w-3 h-3 mr-1" /> Copiar
-                        </Button>
-                      </div>
-                      <pre className="text-[11px] font-mono bg-background/50 p-2 rounded overflow-x-auto border border-border/30">
-                        {JSON.stringify(mv.example, null, 2)}
-                      </pre>
-                    </div>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* INTERACTIVE SCENE TYPES — EXPANDIDO */}
-        <Card className="border-2 border-purple-500/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Code className="w-6 h-6 text-purple-500" />
-              Interactive Scene Types
-              <Badge variant="outline" className="border-purple-500/50 text-purple-400 text-[10px]">4 TIPOS</Badge>
-            </CardTitle>
-            <CardDescription>
-              Tipos de cena que controlam pausa de áudio e interatividade. Apenas 3 exigem pauseAt.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs text-muted-foreground mb-3 space-y-1">
-              <p>⚠️ CTA = <code className="bg-muted px-1 rounded">scene.type="narrative"</code> + <code className="bg-muted px-1 rounded">visual.type="cta"</code> (NÃO é interativo)</p>
-              <p>⚠️ pauseAt deve ser a <strong>última palavra relevante</strong> da narração (C10B: máx 1.5s do fim)</p>
-            </div>
-            {INTERACTIVE_SCENE_TYPES.map(s => (
-              <Collapsible key={s.type} open={expandedScene === s.type} onOpenChange={(open) => setExpandedScene(open ? s.type : null)}>
-                <CollapsibleTrigger className="w-full text-left">
-                  <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
-                    {expandedScene === s.type ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                    <span className={`text-sm font-mono font-bold ${s.requiresPauseAt ? 'text-emerald-500' : 'text-yellow-500'}`}>
-                      {s.type}
-                    </span>
-                    <span className="text-xs text-muted-foreground">→ {s.mapsTo}</span>
-                    <span className="text-xs ml-auto">{s.requiresPauseAt ? '✅ pauseAt' : '❌ no pause'}</span>
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="ml-5 p-3 bg-muted/30 rounded-lg space-y-2 border border-border/50">
-                    <p className="text-xs text-muted-foreground">{s.desc}</p>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-medium text-muted-foreground">Exemplo JSON:</p>
-                        <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard(s.example, s.type)}>
-                          <Copy className="w-3 h-3 mr-1" /> Copiar
-                        </Button>
-                      </div>
-                      <pre className="text-[11px] font-mono bg-background/50 p-2 rounded overflow-x-auto border border-border/30">
-                        {JSON.stringify(s.example, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* VISUAL EFFECTS */}
-        <Card className="border-2 border-cyan-500/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Zap className="w-6 h-6 text-cyan-500" />
-              Visual Effects
-            </CardTitle>
-            <CardDescription>
-              Efeitos visuais aplicáveis às cenas para criar atmosfera cinematográfica.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {VISUAL_EFFECTS.map(vf => (
-                <div key={vf.name} className="flex items-start gap-3">
-                  <span className="text-sm font-mono text-cyan-500 font-bold min-w-[80px]">{vf.name}</span>
                   <div>
-                    <p className="text-xs text-muted-foreground">{vf.desc}</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {vf.values.map(v => (
-                        <span key={v} className="text-[10px] font-mono bg-cyan-500/10 text-cyan-400 px-1.5 py-0.5 rounded">
-                          {v}
-                        </span>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Mood Types:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['danger', 'success', 'neutral', 'warning', 'dramatic', 'mysterious'].map(m => (
+                        <span key={m} className="text-[10px] font-mono bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded">{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Transition Types:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['fadeFromBlack', 'fadeToBlack', 'fadeToNext', 'slideLeft', 'slideRight', 'zoomIn', 'zoomOut', 'dissolve'].map(tr => (
+                        <span key={tr} className="text-[10px] font-mono bg-violet-500/10 text-violet-400 px-1.5 py-0.5 rounded">{tr}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Particles:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['confetti', 'sparks', 'ember', 'stars', 'snow', 'none'].map(p => (
+                        <span key={p} className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">{p}</span>
                       ))}
                     </div>
                   </div>
                 </div>
-              ))}
+              </CollapsibleContent>
+            </Collapsible>
+
+          </CardContent>
+        </Card>
+
+        {/* ============================================================ */}
+        {/* PROMPT CINEMATOGRÁFICO EPP */}
+        {/* ============================================================ */}
+        <Card className="border-2 border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-amber-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Camera className="w-7 h-7 text-orange-500" />
+              🎬 Prompt Cinematográfico EPP
+              <Badge variant="outline" className="border-orange-500/50 text-orange-400 text-[10px]">SISTEMA MODULAR</Badge>
+            </CardTitle>
+            <CardDescription>
+              Sistema em 5 blocos para geração de imagens cinematográficas EPP (adulto 38+)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+
+            {/* Estrutura Geral */}
+            <div className="p-3 bg-orange-500/5 rounded-lg border border-orange-500/20">
+              <p className="text-xs font-semibold text-orange-400 mb-2">📐 Estrutura em 5 Blocos:</p>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-2 text-[11px]">
+                <div className="bg-muted/30 p-2 rounded text-center"><strong className="text-emerald-400">[1]</strong> Contexto Pedagógico <span className="text-muted-foreground">(variável)</span></div>
+                <div className="bg-muted/30 p-2 rounded text-center"><strong className="text-blue-400">[2]</strong> Personagem <span className="text-muted-foreground">(semi-var)</span></div>
+                <div className="bg-muted/30 p-2 rounded text-center"><strong className="text-purple-400">[3]</strong> Ação Específica <span className="text-muted-foreground">(variável)</span></div>
+                <div className="bg-muted/30 p-2 rounded text-center"><strong className="text-cyan-400">[4]</strong> Dir. Cinematográfica <span className="text-muted-foreground">(fixo)</span></div>
+                <div className="bg-muted/30 p-2 rounded text-center"><strong className="text-red-400">[5]</strong> Restrições <span className="text-muted-foreground">(obrigatório)</span></div>
+              </div>
             </div>
+
+            {/* BLOCO 1 */}
+            <Collapsible open={expandedEPPBlock === 'b1'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'b1' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500/10 transition-colors">
+                  {expandedEPPBlock === 'b1' ? <ChevronDown className="w-4 h-4 text-emerald-500" /> : <ChevronRight className="w-4 h-4 text-emerald-500" />}
+                  <span className="text-sm font-semibold">🔹 Bloco 1 — Contexto Pedagógico</span>
+                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-400 text-[10px] ml-auto">VARIÁVEL</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-4 space-y-3">
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-xs text-muted-foreground mb-2">Define o problema real da cena.</p>
+                    <p className="text-xs font-medium mb-2">Formato:</p>
+                    <pre className="text-[11px] font-mono bg-background/50 p-2 rounded border border-border/30 whitespace-pre-wrap">{`Scene context: adult learner facing [PROBLEMA REAL],\nemotional tone: [EMOÇÃO SUTIL],\nmoment of reflection before taking action`}</pre>
+                    <p className="text-xs font-medium mt-3 mb-1">Exemplos:</p>
+                    <div className="space-y-1">
+                      {['facing procrastination at the end of the day', 'overwhelmed by too many unread messages', 'stuck starting an important task', 'struggling to define a clear goal', 'feeling mental clutter before planning'].map((ex, i) => (
+                        <p key={i} className="text-[11px] text-muted-foreground font-mono">• {ex}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* BLOCO 2 */}
+            <Collapsible open={expandedEPPBlock === 'b2'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'b2' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10 transition-colors">
+                  {expandedEPPBlock === 'b2' ? <ChevronDown className="w-4 h-4 text-blue-500" /> : <ChevronRight className="w-4 h-4 text-blue-500" />}
+                  <span className="text-sm font-semibold">🔹 Bloco 2 — Personagem</span>
+                  <Badge variant="outline" className="border-blue-500/50 text-blue-400 text-[10px] ml-auto">SEMI-VARIÁVEL</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-4 space-y-3">
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-xs text-muted-foreground mb-2">Mantém consistência com persona 38+.</p>
+                    <pre className="text-[11px] font-mono bg-background/50 p-2 rounded border border-border/30 whitespace-pre-wrap">{`Adult [gender optional] 38-48 years old,\nnatural appearance, subtle realism,\nno exaggerated expressions, focused but human`}</pre>
+                    <p className="text-xs font-medium mt-3 mb-1">Variações de expressão:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['thoughtful expression', 'slightly tired eyes', 'calm determination', 'mild tension in posture'].map(v => (
+                        <span key={v} className="text-[10px] font-mono bg-blue-500/10 text-blue-400 px-2 py-1 rounded">{v}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* BLOCO 3 */}
+            <Collapsible open={expandedEPPBlock === 'b3'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'b3' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-500/5 border border-purple-500/20 hover:bg-purple-500/10 transition-colors">
+                  {expandedEPPBlock === 'b3' ? <ChevronDown className="w-4 h-4 text-purple-500" /> : <ChevronRight className="w-4 h-4 text-purple-500" />}
+                  <span className="text-sm font-semibold">🔹 Bloco 3 — Ação Específica</span>
+                  <Badge variant="outline" className="border-purple-500/50 text-purple-400 text-[10px] ml-auto">FUNDAMENTAL</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-4 space-y-3">
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-xs text-muted-foreground mb-2">⚡ O que evita banco de imagens. Sempre descreva uma <strong>micro-ação concreta</strong>.</p>
+                    <pre className="text-[11px] font-mono bg-background/50 p-2 rounded border border-border/30 whitespace-pre-wrap">{`Writing a short problem statement in a notebook,\npen touching paper mid-sentence,\nlaptop open beside with minimalist AI chat interface softly glowing,\nno readable text on screen,\nproblem-solving moment`}</pre>
+                    <p className="text-xs font-medium mt-3 mb-1">Variações:</p>
+                    <div className="space-y-1">
+                      {['pausing before typing into AI interface', 'reviewing a handwritten sentence and underlining a word', 'closing messaging apps and opening notebook', 'looking at AI response while holding pen', 'crossing out a vague sentence and rewriting it more clearly'].map((ex, i) => (
+                        <p key={i} className="text-[11px] text-muted-foreground font-mono">• {ex}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* BLOCO 4 */}
+            <Collapsible open={expandedEPPBlock === 'b4'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'b4' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20 hover:bg-cyan-500/10 transition-colors">
+                  {expandedEPPBlock === 'b4' ? <ChevronDown className="w-4 h-4 text-cyan-500" /> : <ChevronRight className="w-4 h-4 text-cyan-500" />}
+                  <span className="text-sm font-semibold">🔹 Bloco 4 — Direção Cinematográfica</span>
+                  <Badge variant="outline" className="border-cyan-500/50 text-cyan-400 text-[10px] ml-auto">PADRÃO FIXO</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-4 space-y-3">
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-xs text-muted-foreground mb-2">🎥 DNA visual oficial.</p>
+                    <pre className="text-[11px] font-mono bg-background/50 p-2 rounded border border-border/30 whitespace-pre-wrap">{`Warm natural side lighting from window,\nsoft shadows,\neditorial photography,\n35mm or 50mm lens,\nshallow depth of field,\nrealistic skin texture,\nsubtle film grain,\ncinematic realism,\nadult learning environment,\nminimalist desk,\nno futuristic holograms,\nnatural color grading,\nhigh detail, tactile realism`}</pre>
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] mt-2" onClick={() => copyToClipboard('Warm natural side lighting from window, soft shadows, editorial photography, 35mm or 50mm lens, shallow depth of field, realistic skin texture, subtle film grain, cinematic realism, adult learning environment, minimalist desk, no futuristic holograms, natural color grading, high detail, tactile realism', 'Bloco 4')}>
+                      <Copy className="w-3 h-3 mr-1" /> Copiar Bloco 4
+                    </Button>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* BLOCO 5 */}
+            <Collapsible open={expandedEPPBlock === 'b5'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'b5' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20 hover:bg-red-500/10 transition-colors">
+                  {expandedEPPBlock === 'b5' ? <ChevronDown className="w-4 h-4 text-red-500" /> : <ChevronRight className="w-4 h-4 text-red-500" />}
+                  <span className="text-sm font-semibold">🔹 Bloco 5 — Restrições Negativas</span>
+                  <Badge variant="outline" className="border-red-500/50 text-red-400 text-[10px] ml-auto">OBRIGATÓRIO</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-4 space-y-3">
+                  <div className="p-3 bg-red-500/5 rounded-lg border border-red-500/20">
+                    <p className="text-xs text-muted-foreground mb-2">🚫 Sempre incluir no prompt.</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['No sci-fi', 'No neon blue glow', 'No holograms', 'No floating digital panels', 'No visible interface text', 'No corporate staged pose', 'No stock photography smile', 'No watermark'].map(neg => (
+                        <div key={neg} className="text-[11px] font-mono bg-red-500/10 text-red-400 px-2 py-1 rounded">🚫 {neg}</div>
+                      ))}
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] mt-2" onClick={() => copyToClipboard('No sci-fi. No neon blue glow. No holograms. No floating digital panels. No visible interface text. No corporate staged pose. No stock photography smile. No watermark.', 'Bloco 5')}>
+                      <Copy className="w-3 h-3 mr-1" /> Copiar Bloco 5
+                    </Button>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* EXEMPLOS COMPLETOS */}
+            <Collapsible open={expandedEPPBlock === 'examples'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'examples' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors">
+                  {expandedEPPBlock === 'examples' ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-amber-500" />}
+                  <span className="text-sm font-semibold">🎯 Exemplos Completos</span>
+                  <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px] ml-auto">2 PROMPTS</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-4 space-y-4">
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-emerald-400">🎯 Exemplo 1 — Detalhado</p>
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard('Pedagogical problem-solving moment.\n\nAdult male around 42 years old, natural face, subtle skin imperfections, realistic hair, slightly tired but focused expression.\n\nLeaning forward at a wooden desk, writing a short personal problem statement in a notebook.\nPen touching paper mid-sentence.\nOne word lightly crossed out.\nLaptop open on the right side with a minimal AI chat interface softly glowing.\nNo readable text on screen.\nHe pauses as if thinking before typing.\n\nWarm natural daylight coming from left window.\nSoft curtain diffusion.\n50mm lens.\nShallow depth of field.\nFocus on hand and notebook.\nBackground gently blurred.\nEditorial photography style.\nSubtle cinematic film grain.\nNatural color grading.\nBalanced exposure.\nRealistic skin tones.\nHigh tactile realism.\n\nNo sci-fi.\nNo neon blue glow.\nNo holograms.\nNo floating digital panels.\nNo visible interface text.\nNo corporate staged pose.\nNo stock photography smile.\nNo watermark.', 'Exemplo 1')}>
+                        <Copy className="w-3 h-3 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <pre className="text-[10px] font-mono bg-background/50 p-2 rounded border border-border/30 whitespace-pre-wrap max-h-[200px] overflow-y-auto">{`Pedagogical problem-solving moment.
+
+Adult male around 42 years old, natural face, subtle skin imperfections,
+realistic hair, slightly tired but focused expression.
+
+Leaning forward at a wooden desk, writing a short personal problem statement in a notebook.
+Pen touching paper mid-sentence. One word lightly crossed out.
+Laptop open on the right side with a minimal AI chat interface softly glowing.
+No readable text on screen. He pauses as if thinking before typing.
+
+Warm natural daylight coming from left window. Soft curtain diffusion.
+50mm lens. Shallow depth of field. Focus on hand and notebook.
+Background gently blurred. Editorial photography style.
+Subtle cinematic film grain. Natural color grading.
+Balanced exposure. Realistic skin tones. High tactile realism.
+
+No sci-fi. No neon blue glow. No holograms. No floating digital panels.
+No visible interface text. No corporate staged pose.
+No stock photography smile. No watermark.`}</pre>
+                  </div>
+
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-red-400">🎯 Exemplo 2 — EPP Dramático</p>
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyToClipboard('Pedagogical tension moment before action.\n\nAdult learner around 40–45 years old.\nNatural face with subtle skin texture.\nSlight tension in jaw. Focused eyes.\nSerious but not exaggerated expression.\n\nLeaning forward over a wooden desk.\nWriting a real problem statement in a notebook.\nOne word scratched out. Pen pressing slightly harder on paper.\nLaptop open with minimal AI interface softly glowing.\nNo readable text.\n\nStrong lateral natural light from one side.\nOpposite side in soft shadow.\nHigher contrast. Dramatic but realistic. No artificial lighting.\n\n85mm lens. Shallow depth of field.\nForeground sharp. Background darker and softly blurred.\n\nCinematic tension. Quiet pressure. Serious focus.\nSubtle film grain.\n\nNo sci-fi. No neon. No corporate stock pose. No watermark.', 'Exemplo 2')}>
+                        <Copy className="w-3 h-3 mr-1" /> Copiar
+                      </Button>
+                    </div>
+                    <pre className="text-[10px] font-mono bg-background/50 p-2 rounded border border-border/30 whitespace-pre-wrap max-h-[200px] overflow-y-auto">{`Pedagogical tension moment before action.
+
+Adult learner around 40–45 years old.
+Natural face with subtle skin texture.
+Slight tension in jaw. Focused eyes.
+Serious but not exaggerated expression.
+
+Leaning forward over a wooden desk.
+Writing a real problem statement in a notebook.
+One word scratched out. Pen pressing slightly harder on paper.
+Laptop open with minimal AI interface softly glowing. No readable text.
+
+Strong lateral natural light from one side. Opposite side in soft shadow.
+Higher contrast. Dramatic but realistic. No artificial lighting.
+
+85mm lens. Shallow depth of field.
+Foreground sharp. Background darker and softly blurred.
+
+Cinematic tension. Quiet pressure. Serious focus. Subtle film grain.
+
+No sci-fi. No neon. No corporate stock pose. No watermark.`}</pre>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* VISUAL DNA */}
+            <Collapsible open={expandedEPPBlock === 'dna'} onOpenChange={(open) => setExpandedEPPBlock(open ? 'dna' : null)}>
+              <CollapsibleTrigger className="w-full text-left">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-violet-500/5 border border-violet-500/20 hover:bg-violet-500/10 transition-colors">
+                  {expandedEPPBlock === 'dna' ? <ChevronDown className="w-4 h-4 text-violet-500" /> : <ChevronRight className="w-4 h-4 text-violet-500" />}
+                  <span className="text-sm font-semibold">🧬 Visual DNA Oficial — EPP Adulto 38+</span>
+                  <Badge variant="outline" className="border-violet-500/50 text-violet-400 text-[10px] ml-auto">REFERÊNCIA</Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 pl-4 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                      <p className="text-xs font-semibold text-cyan-400 mb-2">🎥 Fotografia</p>
+                      <div className="space-y-1 text-[11px] text-muted-foreground">
+                        <p>• Lente padrão: <strong className="text-foreground">50mm</strong></p>
+                        <p>• Lente tensão: <strong className="text-foreground">85mm</strong></p>
+                        <p>• Ação dinâmica: <strong className="text-foreground">35mm</strong></p>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                      <p className="text-xs font-semibold text-yellow-400 mb-2">🌤 Luz</p>
+                      <div className="space-y-1 text-[11px] text-muted-foreground">
+                        <p>• Sempre <strong className="text-foreground">natural</strong> e <strong className="text-foreground">lateral</strong></p>
+                        <p>• Nunca frontal dura</p>
+                        <p>• Temperatura: <strong className="text-foreground">3900K–4800K</strong></p>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                      <p className="text-xs font-semibold text-amber-400 mb-2">🎨 Paleta</p>
+                      <div className="space-y-1 text-[11px] text-muted-foreground">
+                        <p>• Tons quentes suaves • Madeira natural</p>
+                        <p>• Cinza neutro • Azul apenas no brilho da tela</p>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                      <p className="text-xs font-semibold text-emerald-400 mb-2">🧬 Elementos Recorrentes</p>
+                      <div className="space-y-1 text-[11px] text-muted-foreground">
+                        <p>• Notebook físico • Caneta real</p>
+                        <p>• Laptop minimalista • Textura de pele real • Film grain</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-red-500/5 rounded-lg border border-red-500/20">
+                    <p className="text-xs font-semibold text-red-400 mb-2">🚫 Proibições Permanentes</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Hologramas', 'Neon', 'Interface futurista', 'Pessoas sorrindo p/ câmera', 'Fundo corporativo', 'Tela com texto legível'].map(p => (
+                        <span key={p} className="text-[10px] font-mono bg-red-500/10 text-red-400 px-2 py-1 rounded">🚫 {p}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-violet-500/5 rounded-lg border border-violet-500/20">
+                    <p className="text-xs font-semibold text-violet-400 mb-2">🔁 Consistência Entre Aulas</p>
+                    <pre className="text-[11px] font-mono bg-background/50 p-2 rounded border border-border/30">{`globalVisualStyle: "EPP_realistic_editorial_v1"`}</pre>
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] mt-2" onClick={() => copyToClipboard({ globalVisualStyle: 'EPP_realistic_editorial_v1' }, 'globalVisualStyle')}>
+                      <Copy className="w-3 h-3 mr-1" /> Copiar
+                    </Button>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
           </CardContent>
         </Card>
 
