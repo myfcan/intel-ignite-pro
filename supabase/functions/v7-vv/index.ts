@@ -6197,9 +6197,32 @@ Deno.serve(async (req) => {
     // =========================================================================
     if (!preserveStructureMode) {
       const imageScenesForBridge: Array<{ scene_id: string; prompt_scene: string; style_hints?: string; phaseIdx: number; mvIdx: number }> = [];
+      // Track image-sequence frames separately for injection
+      const imageSequenceFrames: Array<{ frameId: string; prompt_scene: string; phaseIdx: number; frameIdx: number }> = [];
 
       for (let pi = 0; pi < phases.length; pi++) {
         const phase = phases[pi];
+        
+        // ✅ C12.1: Scan image-sequence frames for bridge generation
+        if (phase.visual?.type === 'image-sequence' && Array.isArray(phase.visual.frames)) {
+          for (let fi = 0; fi < phase.visual.frames.length; fi++) {
+            const frame = phase.visual.frames[fi];
+            if (
+              frame.promptScene &&
+              typeof frame.promptScene === 'string'
+              // Always generate — the bridge has cache dedup via prompt hash
+            ) {
+              imageSequenceFrames.push({
+                frameId: frame.frameId || `frame-${fi}`,
+                prompt_scene: frame.promptScene,
+                phaseIdx: pi,
+                frameIdx: fi,
+              });
+            }
+          }
+        }
+        
+        // Original: Scan microVisuals
         if (!phase.microVisuals) continue;
         for (let mi = 0; mi < phase.microVisuals.length; mi++) {
           const mv = phase.microVisuals[mi];
@@ -6223,19 +6246,35 @@ Deno.serve(async (req) => {
         }
       }
 
-      if (imageScenesForBridge.length > 0) {
-        console.log(`[V7-vv] Step 4.9: IMAGE_LAB_BRIDGE — ${imageScenesForBridge.length} image(s) to generate`);
+      // Combine both sources for bridge call
+      const allScenesForBridge = [
+        ...imageScenesForBridge.map(s => ({
+          scene_id: s.scene_id,
+          prompt_scene: s.prompt_scene,
+          style_hints: s.style_hints,
+        })),
+        ...imageSequenceFrames.map(f => ({
+          scene_id: f.frameId,
+          prompt_scene: f.prompt_scene,
+          style_hints: undefined as string | undefined,
+        })),
+      ];
+
+      if (allScenesForBridge.length > 0) {
+        console.log(`[V7-vv] Step 4.9: IMAGE_LAB_BRIDGE — ${imageScenesForBridge.length} microVisual(s) + ${imageSequenceFrames.length} sequence frame(s) to generate`);
         try {
           const bridgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/image-lab-pipeline-bridge`;
           const bridgeServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+          // Use preset from input or from the first scene's visual
+          const firstSequencePhase = phases.find(p => p.visual?.type === 'image-sequence');
+          const presetKey = (input as any).image_preset_key 
+            || (firstSequencePhase?.visual as any)?.presetKey 
+            || 'cinematic-01';
+
           const bridgePayload = {
-            scenes: imageScenesForBridge.map(s => ({
-              scene_id: s.scene_id,
-              prompt_scene: s.prompt_scene,
-              style_hints: s.style_hints,
-            })),
-            preset_key: (input as any).image_preset_key || 'cinematic-01',
+            scenes: allScenesForBridge,
+            preset_key: presetKey,
             size: (input as any).image_size || '1536x1024',
             provider: (input as any).image_provider || 'gemini',
           };
@@ -6261,21 +6300,32 @@ Deno.serve(async (req) => {
           if (bridgeResp.ok) {
             const bridgeData = await bridgeResp.json();
             const results = bridgeData.results || [];
-            let injected = 0;
+            let injectedMv = 0;
+            let injectedFrames = 0;
 
             for (const result of results) {
               if (result.status !== 'failed' && result.storage_path) {
-                const match = imageScenesForBridge.find(s => s.scene_id === result.scene_id);
-                if (match) {
-                  const mv = phases[match.phaseIdx].microVisuals![match.mvIdx];
+                // Try to match microVisual first
+                const mvMatch = imageScenesForBridge.find(s => s.scene_id === result.scene_id);
+                if (mvMatch) {
+                  const mv = phases[mvMatch.phaseIdx].microVisuals![mvMatch.mvIdx];
                   (mv.content as Record<string, unknown>).storagePath = result.storage_path;
                   (mv.content as Record<string, unknown>).assetId = result.asset_id;
-                  injected++;
+                  injectedMv++;
+                  continue;
+                }
+
+                // Try to match image-sequence frame
+                const frameMatch = imageSequenceFrames.find(f => f.frameId === result.scene_id);
+                if (frameMatch && phases[frameMatch.phaseIdx].visual?.frames) {
+                  const frame = phases[frameMatch.phaseIdx].visual.frames![frameMatch.frameIdx];
+                  frame.storagePath = result.storage_path;
+                  injectedFrames++;
                 }
               }
             }
 
-            console.log(`[V7-vv] Step 4.9: ✅ IMAGE_LAB_BRIDGE complete. Generated=${injected}, Failed=${imageScenesForBridge.length - injected}`);
+            console.log(`[V7-vv] Step 4.9: ✅ IMAGE_LAB_BRIDGE complete. MicroVisuals=${injectedMv}, SequenceFrames=${injectedFrames}, Failed=${allScenesForBridge.length - injectedMv - injectedFrames}`);
           } else {
             const errText = await bridgeResp.text();
             console.warn(`[V7-vv] Step 4.9: ⚠️ IMAGE_LAB_BRIDGE returned ${bridgeResp.status}: ${errText.substring(0, 300)}`);
@@ -6286,7 +6336,7 @@ Deno.serve(async (req) => {
           console.warn('[V7-vv] Step 4.9: Pipeline continues without images (non-blocking fallback)');
         }
       } else {
-        console.log('[V7-vv] Step 4.9: No image microVisuals with promptScene found — skipping');
+        console.log('[V7-vv] Step 4.9: No image microVisuals or sequence frames with promptScene found — skipping');
       }
     }
 
