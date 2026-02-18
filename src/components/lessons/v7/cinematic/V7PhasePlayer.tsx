@@ -28,6 +28,7 @@ import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
 import V7PhasePERFEITOSynced from './phases/V7PhasePERFEITOSynced';
 import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
 import V7PhaseMethodReveal from './phases/V7PhaseMethodReveal';
+import V7ImageSequenceRenderer from './phases/V7ImageSequenceRenderer';
 import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
 import { V7NarrativeVisualOverlay } from './effects/V7NarrativeVisualOverlay';
@@ -1296,6 +1297,19 @@ export const V7PhasePlayer = ({
 
       case 'narrative':
       case 'comparison': {
+        // ✅ C12.1: Check for image-sequence visual type FIRST
+        const narrativeVisual = (currentPhase as any).visual;
+        if (narrativeVisual?.type === 'image-sequence' && narrativeVisual?.frames?.length > 0) {
+          return (
+            <V7ImageSequenceRenderer
+              frames={narrativeVisual.frames}
+              effects={narrativeVisual.effects}
+              phaseId={currentPhase.id}
+              currentTime={hasAudio ? audio.currentTime : internalTime}
+            />
+          );
+        }
+
         // ✅ V7-vv FIX: Extract data from phase.visual.content (not scenes!)
         const compVisualContent = (currentPhase as any).visual?.content || {};
         const compLeft = compVisualContent.left || {};
