@@ -10,7 +10,7 @@ import {
   PenTool, Workflow
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import dashboardMockup from "@/assets/dashboard-mockup.jpg";
 import lessonMockup from "@/assets/lesson-mockup.jpg";
@@ -27,6 +27,15 @@ const Index = () => {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState("pro");
   
+  // Redireciona usuários logados para o dashboard
+  useEffect(() => {
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) navigate("/dashboard", { replace: true });
+      });
+    });
+  }, [navigate]);
+
   // Prefetch Dashboard, Onboarding and TrailDetail in background
   usePrefetchMainPages();
   return (
