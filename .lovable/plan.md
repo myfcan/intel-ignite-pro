@@ -1,117 +1,120 @@
 
-## Novos Tipos de Micro-Visuais — Expansão Cinematográfica
+## Diagnóstico: Auto-Geração de `stat` e `step` no Pipeline
 
-### Contexto atual
+### Resposta Direta: NÃO, isso ainda não foi feito.
 
-O sistema atual tem 7 tipos funcionais (`text/text-pop`, `badge/card-reveal`, `image-flash`, `number-count`, `text-highlight`, `highlight`) e 1 bugado (`letter-reveal` retorna `null`). Todos usam Framer Motion com física de mola e glassmorphism.
+A análise completa do codebase confirma:
 
-O problema é que esses tipos são genéricos demais para as situações pedagógicas do AIliv: revelar métricas de renda, mostrar passos numerados de um método, citar frases de impacto, comparar itens lado a lado, etc.
+**O que existe hoje:**
+- Os tipos `stat` e `step` estão definidos no contrato de tipos (`V7Contract.ts`) como opções válidas de `V7MicroVisualType`
+- O renderer (`V7MicroVisualOverlay.tsx`) sabe renderizar esses tipos
+- O pipeline processa os `microVisuals` definidos manualmente no JSON de entrada, calculando seus timestamps via `anchorText`
 
----
-
-### Novos Tipos Propostos (6 novos + 1 fix)
-
-**1. `stat` — Métrica de Impacto com Label**
-- Uso: revelar `R$ 50.000/mês`, `98% de taxa`, `3h por dia`
-- Visual: número enorme com gradiente verde/ciano, label pequeno embaixo, glow pulsante
-- Animação: spring explode do centro, count-up automático se `content.from` e `content.to` presentes
-- Som: `count-up`
-
-**2. `step` — Passo Numerado Sequencial**
-- Uso: revelar etapas de método (ex: "Passo 1 — Defina o output")
-- Visual: pill horizontal com número circulado à esquerda (accent colorido), texto à direita, borda esquerda colorida tipo "timeline"
-- Animação: slide-right staggered com `delay = index * 0.15s`
-- Som: `click-soft`
-
-**3. `quote` — Citação Editorial de Impacto**
-- Uso: revelar frases poderosas, promessas de transformação
-- Visual: aspas grandes (decorativas, 120px, cor accent), fonte maior, fundo translúcido com borda esquerda vertical colorida (4px), sem borda top/right/bottom
-- Animação: fade + slide-up com efeito de "typewriter" nas palavras (stagger de 0.04s por palavra)
-- Som: `reveal`
-
-**4. `pill-tag` — Tag/Etiqueta Contextual**
-- Uso: identificar conceitos, categorias, palavras-chave durante narração ("Prompt Engineering", "ChatGPT", "IA Generativa")
-- Visual: pill pequeno e compacto com dot colorido à esquerda, background semitransparente, borda sutil
-- Animação: pop com bounce spring (stiffness: 500, damping: 20)
-- Som: `click-soft`
-
-**5. `comparison-bar` — Barra de Comparação Visual**
-- Uso: mostrar diferença entre amador vs profissional, antes vs depois
-- Visual: duas barras horizontais sobrepostas com labels e porcentagens, a barra cresce animada da esquerda para direita
-- Animação: `scaleX` de 0 a valor-alvo com ease dramatic, segunda barra com delay de 0.3s
-- Som: `progress-tick`
-
-**6. `alert` — Alerta/Aviso Urgente**
-- Uso: pontuar erros comuns, armadilhas, avisos críticos durante narração
-- Visual: fundo vermelho escuro com borda vermelha brilhante, ícone de exclamação à esquerda, texto em branco, shake animation na entrada
-- Animação: entrada com `x: [-8, 8, -6, 6, 0]` (shake físico) + glow vermelho pulsante
-- Som: `error` ou `transition-whoosh`
-
-**7. `letter-reveal` FIX**
-- Atualmente retorna `null` — corrigir para renderizar a letra do acrônimo com rotateY 3D flip
-- Visual: letra única grande (8xl) com cor accent, fundo escuro com borda, efeito flip cinematográfico
-- Animação: `rotateY: -90 → 0` com spring
+**O que NÃO existe (gap confirmado):**
+- Nenhuma lógica de inferência automática de micro-visuais no pipeline
+- O pipeline é 100% passivo: ele só processa os `microVisuals` que o autor do JSON já declarou explicitamente em `scene.visual.microVisuals[]`
+- Não existe nenhum step de "auto-enrich" que analise a narração e gere micro-visuais `stat` ou `step` automaticamente
 
 ---
 
-### Mudanças no Contrato de Tipos (`V7Contract.ts`)
+### Onde a Auto-Geração Deve Ser Implementada
 
-Adicionar os novos tipos ao union `V7MicroVisualType`:
+O pipeline real que executa em produção é a edge function em `supabase/functions/v7-vv/index.ts` (7.755 linhas). É nele que a lógica deve viver — conforme o padrão arquitetural permanente do projeto (memória: integridade-entrypoint-pipeline).
+
+O Step 3 do pipeline (após gerar o áudio e wordTimestamps, antes de calcular os anchors) é o momento ideal para um novo Step 3.5 de "MicroVisual Enrichment", pois:
+- Os wordTimestamps já existem → sabemos onde cada palavra ocorre
+- Os anchors ainda não foram calculados → podemos adicionar novos microVisuals antes desse cálculo
+- A narração completa está disponível por cena
+
+---
+
+### Design da Solução: Step 3.5 — MicroVisual Auto-Enrichment
+
+**Estratégia: Pattern Matching Determinístico na Narração**
+
+O sistema analisa cada narração de cena buscando padrões textuais específicos e injeta `microVisuals` automáticos quando detecta esses padrões — desde que o autor do JSON não tenha declarado um microVisual com o mesmo `anchorText` (regra de não-duplicação).
+
+**Padrões para `stat`:**
+Detectar números monetários, percentuais e métricas na narração:
 ```
-| 'stat'           // Métrica grande com label
-| 'step'           // Passo numerado  
-| 'quote'          // Citação editorial
-| 'pill-tag'       // Tag contextual
-| 'comparison-bar' // Barra de comparação
-| 'alert'          // Alerta urgente
+R\$\s*[\d.,]+\w*          → R$ 50.000, R$ 3k
+\d+\s*%                    → 98%, 30%
+[\d.,]+\s*(mil|reais|k|M)  → 10 mil, 3k
+```
+A palavra mais próxima ao número na narração vira o `anchorText`.
+
+**Padrões para `step`:**
+Detectar marcadores de passos numerados:
+```
+Passo\s+\d+                → "Passo 1", "Passo 2"
+\d+\.\s+[A-Z]              → "1. Defina", "2. Execute"
+Etapa\s+\d+               → "Etapa 1"
+Primeiro[,:]|Segundo[,:]  → "Primeiro," "Segundo,"
 ```
 
-E expandir `V7MicroVisual.content` com os campos necessários:
-- `stat`: `value`, `label`, `from`, `to`, `prefix`, `suffix`, `color`
-- `step`: `stepNumber`, `text`, `color`, `totalSteps`
-- `quote`: `quote`, `author`, `color`
-- `pill-tag`: `tag`, `color`, `dot`
-- `comparison-bar`: `leftLabel`, `leftValue`, `rightLabel`, `rightValue`, `leftColor`, `rightColor`
-- `alert`: `text`, `icon`
+**Regras de Governança:**
+1. Máximo 1 auto-microVisual por parágrafo/frase (evitar sobrecarga visual)
+2. Respeitar `scene.visual.microVisuals[]` existentes — não duplicar anchorText
+3. Apenas em cenas do tipo `narrative`, `dramatic`, `comparison` — nunca em cenas interativas
+4. Log explícito de cada microVisual injetado automaticamente para rastreabilidade
 
 ---
 
-### Mudanças no `V7MicroVisualOverlay.tsx`
+### Arquivos a Alterar
 
-**A. `getAnimationVariants`** — adicionar variants para:
-- `stat`: scale explode idêntico ao `number-count` mas com spring mais agressivo
-- `step`: slide-right com delay via `content.stepNumber`
-- `quote`: fade + y suave (não spring — mais editorial)
-- `pill-tag`: pop bounce com spring 500/20
-- `comparison-bar`: fade simples (as barras animam internamente via `scaleX`)
-- `alert`: shake físico `x: [-8,8,-6,6,0]` no animate
+| Arquivo | Operação | Detalhe |
+|---|---|---|
+| `supabase/functions/v7-vv/index.ts` | Adicionar Step 3.5 | Nova função `enrichMicroVisualsFromNarration()` inserida entre a geração de áudio (Step 3) e o cálculo de anchors (Step 4). Modifica `inputScenes[].visual.microVisuals` in-place. |
 
-**B. `getMicroVisualSound`** — adicionar mapeamentos
-
-**C. `getPosition`** — posições default:
-- `stat` → `center`
-- `step` → `center` (ou respeita `content.position`)
-- `quote` → `center`
-- `pill-tag` → `top`
-- `comparison-bar` → `center`
-- `alert` → `top`
-
-**D. `renderContent` switch** — adicionar 6 novos cases + fix do `letter-reveal`
-
-**E. Novo sub-componente `AnimatedBar`** (interno) para `comparison-bar`:
-- Recebe `label`, `value` (0-100), `color`, `delay`
-- Usa `motion.div` com `scaleX` animado via `useEffect` + `animate`
+**Nenhum outro arquivo precisa ser alterado** — os tipos já estão no contrato (`V7Contract.ts`), o renderer já suporta (`V7MicroVisualOverlay.tsx`), e o Step 4 de cálculo de anchors já processa qualquer microVisual presente no array, independente de ter vindo do autor ou do enriquecimento automático.
 
 ---
 
-### Arquivos Alterados
+### Estrutura da Função `enrichMicroVisualsFromNarration`
 
-| Arquivo | Operação |
-|---|---|
-| `src/types/V7Contract.ts` | Expandir `V7MicroVisualType` union + campos de `content` |
-| `src/components/lessons/v7/cinematic/effects/V7MicroVisualOverlay.tsx` | Adicionar 6 novos renderers + fix letter-reveal + variants + sounds + positions |
+```
+Para cada cena em inputScenes:
+  Se cena é interativa (quiz/playground) → skip
+  
+  Para cada frase/parágrafo da narração:
+    1. Detectar padrões de STAT (R$, %, mil, k, M)
+       → Se encontrado E sem duplicata:
+          Criar microVisual tipo 'stat' com:
+            anchorText: palavra mais próxima ao número (ex: "reais", "mil", o próprio número)
+            content.value: número extraído
+            content.prefix: "R$" se monetário
+            content.suffix: "%" se percentual
+            content.color: "green" por padrão
+            duration: 3.0
+    
+    2. Detectar padrões de STEP ("Passo N", "Etapa N", "N. Texto")
+       → Se encontrado E sem duplicata:
+          Criar microVisual tipo 'step' com:
+            anchorText: "Passo" ou "Etapa" ou a palavra anterior ao número
+            content.stepNumber: N extraído
+            content.text: frase resumida após o marcador (até 6 palavras)
+            duration: 3.5
+    
+    Máximo 1 auto-microVisual por período gramatical (.)
+  
+  Adicionar ao scene.visual.microVisuals[]
+  Logar: [ENRICH] Cena X: +N microVisuais injetados (stat: A, step: B)
+```
 
 ---
 
-### Sem mudanças no banco de dados
-Os micro-visuais são definidos no JSON EPP da aula e consumidos pelo player — nenhuma migração necessária.
+### Garantias de Segurança (Non-Breaking)
+
+- Se o regex não encontrar nenhum padrão, a cena não é modificada — pipeline continua idêntico ao atual
+- Qualquer exceção dentro do enriquecimento é capturada com try/catch, logada como warning, e o pipeline continua sem o enriquecimento (degraded mode graceful)
+- O Step 4 (calculateAnchors) não sabe se o microVisual veio do autor ou do enrichment — trata todos igualmente, o que garante que a lógica de anchorText existente funciona sem modificação
+- O log indica claramente `[ENRICH]` vs `[MANUAL]` para auditoria
+
+---
+
+### O Que Não Muda
+
+- Contratos C10, C10B, Boundary Fix Guard, C03, C06 — nenhum é afetado
+- O formato de `V7MicroVisual` no banco — idêntico
+- O renderer — já suporta os tipos
+- O input JSON do autor — continua funcionando igual, com ou sem microVisuals declarados
