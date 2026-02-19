@@ -274,7 +274,8 @@ export const VALID_VISUAL_TYPES = [
   'loading',
   'image',
   'video',
-  'effects-only'
+  'effects-only',
+  'image-sequence'
 ] as const;
 
 export const VALID_MICROVISUAL_TYPES = [
