@@ -116,6 +116,20 @@
           }
         }
       ],
+      "anchorActions": [
+        {
+          "id": "trigger-frame-1",
+          "keyword": "genérico",
+          "type": "trigger",
+          "payload": { "frameIndex": 1 }
+        },
+        {
+          "id": "trigger-frame-2",
+          "keyword": "premium",
+          "type": "trigger",
+          "payload": { "frameIndex": 2 }
+        }
+      ],
       "anchorTexts": [
         {
           "keyword": "clareza",
