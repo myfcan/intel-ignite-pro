@@ -1713,7 +1713,8 @@ const LEGACY_TYPE_WARNINGS: Record<string, string> = {
 const VALID_VISUAL_TYPES = [
   'number-reveal', 'text-reveal', 'split-screen', 'letter-reveal',
   'cards-reveal', 'quiz', 'quiz-feedback', 'playground', 'result', 'cta',
-  '3d-dual-monitors', '3d-abstract', '3d-number-reveal', 'image-sequence'
+  '3d-dual-monitors', '3d-abstract', '3d-number-reveal', 'image-sequence',
+  'effects-only'
 ] as const;
 
 // Schema mínimo por visual.type
@@ -1730,7 +1731,9 @@ const VISUAL_CONTENT_SCHEMA: Record<string, { required: string[], optional: stri
   'cta': { required: ['buttonText'], optional: ['title', 'subtitle'] },
   '3d-dual-monitors': { required: ['leftScreen', 'rightScreen'], optional: [] },
   '3d-abstract': { required: [], optional: ['variant', 'intensity'] },
-  '3d-number-reveal': { required: ['number'], optional: ['subtitle'] }
+  '3d-number-reveal': { required: ['number'], optional: ['subtitle'] },
+  'effects-only': { required: [], optional: ['instruction', 'effects', 'microVisuals'] },
+  'image-sequence': { required: [], optional: ['frames', 'displayMode', 'presetKey', 'presetVersion', 'instruction', 'effects', 'microVisuals'] }
 };
 
 // ============================================================================

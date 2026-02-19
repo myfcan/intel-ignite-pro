@@ -1432,8 +1432,14 @@ export const V7PhasePlayer = ({
 
       case 'narrative':
       case 'comparison': {
-        // ✅ C12.1: Check for image-sequence visual type FIRST
         const narrativeVisual = (currentPhase as any).visual;
+
+        // ✅ effects-only: background canvas + microVisuals overlay handle everything
+        if (narrativeVisual?.type === 'effects-only') {
+          return null;
+        }
+
+        // ✅ C12.1: Check for image-sequence visual type FIRST
         if (narrativeVisual?.type === 'image-sequence' && narrativeVisual?.frames?.length > 0) {
           return (
             <V7ImageSequenceRenderer
