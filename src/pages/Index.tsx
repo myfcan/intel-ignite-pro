@@ -26,15 +26,32 @@ import logoAiliv from "@/assets/ailiv-logo-new.png";
 const Index = () => {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState("pro");
+  const [checkingSession, setCheckingSession] = useState(true);
   
-  // Redireciona usuários logados para o dashboard
+  // Redireciona usuários logados para o dashboard — bloqueia render até confirmar
   useEffect(() => {
     import("@/integrations/supabase/client").then(({ supabase }) => {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) navigate("/dashboard", { replace: true });
+        if (session) {
+          navigate("/dashboard", { replace: true });
+        } else {
+          setCheckingSession(false);
+        }
       });
     });
   }, [navigate]);
+
+  // Enquanto verifica sessão, não renderiza a landing (evita flash do conteúdo antigo)
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="relative w-12 h-12">
+          <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
+          <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   // Prefetch Dashboard, Onboarding and TrailDetail in background
   usePrefetchMainPages();
