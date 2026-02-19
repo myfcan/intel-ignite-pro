@@ -619,8 +619,41 @@ export const V7PhasePlayer = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPhase?.id]);
 
-  // ✅ C12.1: SEEK RESYNC — deterministic frame recalculation on seek/jump
-  // Guarantees the displayed frame matches the audio position regardless of onTrigger order
+  /**
+   * ─────────────────────────────────────────────────────────────────────────────
+   * C12.1 — Image Sequence Anchor Synchronization (ARCHITECTURAL CONTRACT)
+   *
+   * SOURCE OF TRUTH:
+   * Frame state is derived from AnchorText resolution using canonical `keywordTime`
+   * (produced during pipeline anchor resolution and consumed by useAnchorText).
+   *
+   * DO NOT:
+   * - Derive frame timing from durationMs (timer is fallback only for legacy content).
+   * - Introduce independent timing logic inside the renderer.
+   * - Replace keywordTime with arbitrary timestamps.
+   *
+   * SEEK BEHAVIOR:
+   * Frame index MUST be recomputed deterministically from audio.currentTime
+   * by selecting the highest frameIndex whose triggerTime <= currentTime.
+   *
+   * This guarantees:
+   * - Determinism on seek-back / seek-forward
+   * - Immunity to React batching order
+   * - Consistency with useAnchorText crossing engine
+   *
+   * CRITICAL DEPENDENCY:
+   * This logic depends on:
+   *   1) keywordTime being correctly populated by the pipeline
+   *   2) audio.currentTime triggering React updates
+   *
+   * Any change in audio engine or anchor resolution MUST preserve this contract.
+   *
+   * If modifying audio manager or anchor engine:
+   * - Re-run C12.1 test matrix (T1–T10)
+   * - Validate deterministic resync on seek
+   *
+   * ─────────────────────────────────────────────────────────────────────────────
+   */
   useEffect(() => {
     if (imageSequenceFrameIndex === null) return; // timer mode, skip
     if (!currentPhase?.anchorActions?.length) return;
