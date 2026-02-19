@@ -151,6 +151,7 @@ export const V7PhasePlayer = ({
   // ✅ C12.1: Image sequence frame control (anchor mode vs timer fallback)
   const [imageSequenceFrameIndex, setImageSequenceFrameIndex] = useState<number | null>(null);
   const [imageSequenceTimerFallback, setImageSequenceTimerFallback] = useState(false);
+  const isResyncingRef = useRef(false);
 
   // ✅ DETERMINISTIC LOGS: Mount/unmount tracking + C11 SESSION_INIT
   useEffect(() => {
@@ -530,6 +531,11 @@ export const V7PhasePlayer = ({
     // ✅ C12.1: Handle frame triggers from anchor actions
     onTrigger: (action: AnchorAction) => {
       if (isFrameTriggerPayload(action.payload)) {
+        // ✅ M2: Gate anti-flicker — ignore triggers during seek resync window
+        if (isResyncingRef.current) {
+          console.log(`[V7PhasePlayer] IMAGE_SEQ FRAME TRIGGER IGNORED (resync in progress): frame=${action.payload.frameIndex}`);
+          return;
+        }
         setImageSequenceFrameIndex(action.payload.frameIndex);
         pushV7DebugLog('C12.1_IMAGE_SEQUENCE_FRAME_TRIGGER', {
           phaseId: currentPhase?.id,
@@ -638,6 +644,8 @@ export const V7PhasePlayer = ({
 
     // Guard anti-loop: only update if different
     if (correctFrame !== imageSequenceFrameIndex) {
+      // ✅ M2: Gate anti-flicker — block onTrigger during resync window (250ms)
+      isResyncingRef.current = true;
       setImageSequenceFrameIndex(correctFrame);
       pushV7DebugLog('C12.1_IMAGE_SEQUENCE_SEEK_RESYNC', {
         phaseId: currentPhase.id,
@@ -645,6 +653,7 @@ export const V7PhasePlayer = ({
         toFrame: correctFrame,
         currentTime: audio.currentTime,
       });
+      setTimeout(() => { isResyncingRef.current = false; }, 250);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audio.currentTime, imageSequenceFrameIndex, currentPhase?.id]);
@@ -1395,6 +1404,7 @@ export const V7PhasePlayer = ({
         if (narrativeVisual?.type === 'image-sequence' && narrativeVisual?.frames?.length > 0) {
           return (
             <V7ImageSequenceRenderer
+              key={currentPhase.id}
               frames={narrativeVisual.frames}
               activeFrameIndex={imageSequenceFrameIndex}
               displayMode={narrativeVisual.displayMode ?? 'fullscreen'}
