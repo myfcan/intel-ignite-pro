@@ -7146,30 +7146,92 @@ Deno.serve(async (req) => {
         console.log(`[V7-vv] C07: FINAL GUARD (INSERT) applied - inserted ${c07Result.c07Stats.pausesInserted} auto-pause actions`);
       }
       
+      // =====================================================================
+      // PERSISTENCE GUARD: Validate trail_id and order_index before INSERT
+      // =====================================================================
+      const insertTrailId = (input as any).trail_id || null;
+      const insertOrderIndex = (input as any).order_index ?? 0;
+      
+      if (!insertTrailId) {
+        console.warn('[V7-vv] ⚠️ PERSISTENCE_GUARD: trail_id is NULL. Lesson will be standalone (no trail association).');
+      }
+      
+      console.log(`[V7-vv] PERSISTENCE_GUARD: trail_id=${insertTrailId}, order_index=${insertOrderIndex}`);
+      
+      // Check for order_index conflict BEFORE insert
+      if (insertTrailId) {
+        const { data: existing } = await supabase
+          .from('lessons')
+          .select('id, title')
+          .eq('trail_id', insertTrailId)
+          .eq('order_index', insertOrderIndex)
+          .maybeSingle();
+        
+        if (existing) {
+          const conflictMsg = `order_index ${insertOrderIndex} already exists in trail ${insertTrailId} (lesson: ${existing.title}, id: ${existing.id}). Use a different order_index.`;
+          console.error(`[V7-vv] ❌ PERSISTENCE_GUARD: CONFLICT - ${conflictMsg}`);
+          throw new Error(`Persistence blocked: ${conflictMsg}`);
+        }
+      }
+
+      const insertPayload = {
+        title: input.title,
+        description: input.subtitle || `Aula V7 Cinematográfica: ${input.title}`,
+        trail_id: insertTrailId,
+        order_index: insertOrderIndex,
+        model: 'v7',
+        lesson_type: 'v7-cinematic',
+        content: lessonData,
+        audio_url: mainAudio.url || null,
+        word_timestamps: mainAudio.wordTimestamps.length > 0 ? mainAudio.wordTimestamps : null,
+        estimated_time: Math.ceil(totalDuration / 60),
+        difficulty_level: input.difficulty,
+        is_active: false,
+        status: 'rascunho',
+      };
+      
+      console.log('[V7-vv] INSERT payload keys:', Object.keys(insertPayload));
+      console.log('[V7-vv] INSERT payload meta:', JSON.stringify({
+        title: insertPayload.title,
+        trail_id: insertPayload.trail_id,
+        order_index: insertPayload.order_index,
+        model: insertPayload.model,
+        difficulty_level: insertPayload.difficulty_level,
+        has_audio: !!insertPayload.audio_url,
+        has_timestamps: !!insertPayload.word_timestamps,
+      }));
+
       const { data: lesson, error: lessonError } = await supabase
         .from('lessons')
-        .insert({
-          title: input.title,
-          description: input.subtitle || `Aula V7 Cinematográfica: ${input.title}`,
-          trail_id: (input as any).trail_id || null,
-          order_index: (input as any).order_index || 0,
-          model: 'v7',
-          lesson_type: 'v7-cinematic',
-          content: lessonData,
-          audio_url: mainAudio.url || null,
-          word_timestamps: mainAudio.wordTimestamps.length > 0 ? mainAudio.wordTimestamps : null,
-          estimated_time: Math.ceil(totalDuration / 60),
-          difficulty_level: input.difficulty,
-          is_active: false,
-          status: 'rascunho',
-        })
+        .insert(insertPayload)
         .select('id')
         .single();
 
+      console.log('[V7-vv] INSERT result:', JSON.stringify({ data: lesson, error: lessonError }));
+
       if (lessonError) {
-        console.error('[V7-vv] Database error:', lessonError);
-        throw new Error(`Failed to save lesson: ${lessonError.message}`);
+        console.error('[V7-vv] ❌ Database INSERT error:', JSON.stringify(lessonError));
+        throw new Error(`Failed to save lesson: ${lessonError.message} (code: ${lessonError.code}, details: ${lessonError.details})`);
       }
+
+      if (!lesson || !lesson.id) {
+        console.error('[V7-vv] ❌ INSERT returned no ID. Full response:', JSON.stringify(lesson));
+        throw new Error('Failed to save lesson: INSERT returned no ID');
+      }
+
+      // POST-INSERT VERIFICATION: Confirm the row actually persisted
+      const { data: verifyRow, error: verifyError } = await supabase
+        .from('lessons')
+        .select('id, title, trail_id, order_index')
+        .eq('id', lesson.id)
+        .single();
+      
+      if (verifyError || !verifyRow) {
+        console.error('[V7-vv] ❌ POST-INSERT VERIFICATION FAILED:', JSON.stringify({ verifyError, verifyRow }));
+        throw new Error(`Lesson INSERT appeared successful (id: ${lesson.id}) but row not found on verification. Possible silent rollback.`);
+      }
+      
+      console.log('[V7-vv] ✅ POST-INSERT VERIFIED:', JSON.stringify(verifyRow));
 
       lessonId = lesson.id;
       // C05.2: Salvar referência do content persistido para hash
