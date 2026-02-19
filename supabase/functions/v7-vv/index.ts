@@ -5273,6 +5273,10 @@ function generatePhases(
       visual: {
         type: scene.visual.type,
         content: scene.visual.content || {},
+        // C12.1: Propagate displayMode from input to output
+        ...((scene.visual as any).displayMode ? { displayMode: (scene.visual as any).displayMode } : {}),
+        // C12.1: Propagate presetKey from input to output
+        ...((scene.visual as any).presetKey ? { presetKey: (scene.visual as any).presetKey } : {}),
         // C12.1: Preserve frames[] for image-sequence visuals
         // Check both visual.frames (hoisted) and visual.content.frames (nested input)
         ...(scene.visual.type === 'image-sequence' 
