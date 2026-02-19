@@ -280,7 +280,8 @@ function CardReveal({ content }: { content: any }) {
 
 function LetterReveal({ content }: { content: any }) {
   const index = content.index ?? 0;
-  const letter = content.letter || String.fromCharCode(65 + index);
+  // 'text' field used in sandbox; fallback to char code
+  const letter = content.text || content.letter || String.fromCharCode(65 + index);
   const accentColor = content.color || '#22D3EE';
 
   return (

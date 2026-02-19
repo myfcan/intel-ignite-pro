@@ -19,7 +19,8 @@ import {
   FlaskConical,
   FolderOpen,
   ClipboardCheck,
-  ImageIcon
+  ImageIcon,
+  Layers
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -298,6 +299,38 @@ export default function Admin() {
               >
                 <ImageIcon className="w-4 h-4 mr-2" />
                 Abrir Image Lab
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* MICRO VISUAL SANDBOX */}
+          <Card className="border-2 border-pink-500/20 bg-pink-500/5 hover:border-pink-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/micro-visual')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layers className="w-6 h-6 text-pink-500" />
+                Micro Visual
+                <span className="text-xs bg-pink-600 text-white px-2 py-0.5 rounded-full">SANDBOX</span>
+              </CardTitle>
+              <CardDescription>
+                Preview interativo dos 13 tipos de micro-visuais
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm space-y-1 text-muted-foreground">
+                <p>✨ 6 novos tipos (stat, step, quote…)</p>
+                <p>🎬 Stage cinematográfico ao vivo</p>
+                <p>🔧 Fix letter-reveal 3D flip</p>
+                <p>📋 JSON de exemplo por tipo</p>
+              </div>
+              <Button
+                className="w-full bg-pink-600 hover:bg-pink-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/micro-visual');
+                }}
+              >
+                <Layers className="w-4 h-4 mr-2" />
+                Abrir Sandbox
               </Button>
             </CardContent>
           </Card>

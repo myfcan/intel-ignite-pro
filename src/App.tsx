@@ -58,6 +58,7 @@ const AdminCreateLessonV3 = lazy(() => import("./pages/AdminCreateLessonV3"));
 const AdminTestImageGeneration = lazy(() => import("./pages/AdminTestImageGeneration"));
 const AdminPipelineCreateSingle = lazy(() => import("./pages/AdminPipelineCreateSingle"));
 const AdminPipelineCreateBatch = lazy(() => import("./pages/AdminPipelineCreateBatch"));
+const AdminMicroVisualSandbox = lazy(() => import("./pages/AdminMicroVisualSandbox"));
 const AdminPipelineMonitor = lazy(() => import("./pages/AdminPipelineMonitor"));
 const AdminManageLessons = lazy(() => import("./pages/AdminManageLessons"));
 const AdminLessonDebug = lazy(() => import("./pages/AdminLessonDebug"));
@@ -223,6 +224,7 @@ const App = () => (
                 <Route path="/admin/contracts" element={<AdminRoute><AdminContracts /></AdminRoute>} />
                 <Route path="/admin/c10-report" element={<AdminRoute><C10Report /></AdminRoute>} />
                 <Route path="/admin/image-lab" element={<AdminRoute><AdminImageLab /></AdminRoute>} />
+                <Route path="/admin/micro-visual" element={<AdminRoute><AdminMicroVisualSandbox /></AdminRoute>} />
                 {/* NEW FEATURES ROUTES */}
                 <Route path="/guides" element={<Guides />} />
                 <Route path="/guides/:guideId" element={<GuideDetail />} />
