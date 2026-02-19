@@ -424,6 +424,13 @@ export interface V7ImageSequenceFrame {
  */
 export interface V7ImageSequenceContent {
   frames: V7ImageSequenceFrame[];
+  /**
+   * CANONICAL: lives at visual root level (alongside frames).
+   * NOT inside visual.content. Same pattern as frames[].
+   * - fullscreen: object-cover, aspect-video (default, legacy compat)
+   * - mockup: device frame with object-contain, 65/35 grid on desktop
+   */
+  displayMode?: 'fullscreen' | 'mockup';
 }
 
 // ============================================================================

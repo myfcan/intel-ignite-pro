@@ -119,6 +119,16 @@ function scaleScriptToAudioDuration(script: V7LessonScript, actualAudioDuration:
   };
 }
 
+// ✅ C12.1: Type guard for frame trigger payloads (eliminates unsafe `as any` casts)
+function isFrameTriggerPayload(payload: unknown): payload is { frameIndex: number } {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'frameIndex' in payload &&
+    typeof (payload as { frameIndex: unknown }).frameIndex === 'number'
+  );
+}
+
 export const V7PhasePlayer = ({
   script,
   audioUrl,
@@ -137,6 +147,10 @@ export const V7PhasePlayer = ({
   // ✅ V7 DEBUG HUD: Track quiz state for debugging
   const [debugQuizEnabled, setDebugQuizEnabled] = useState(false);
   const [debugQuizReason, setDebugQuizReason] = useState('initial');
+
+  // ✅ C12.1: Image sequence frame control (anchor mode vs timer fallback)
+  const [imageSequenceFrameIndex, setImageSequenceFrameIndex] = useState<number | null>(null);
+  const [imageSequenceTimerFallback, setImageSequenceTimerFallback] = useState(false);
 
   // ✅ DETERMINISTIC LOGS: Mount/unmount tracking + C11 SESSION_INIT
   useEffect(() => {
@@ -513,6 +527,19 @@ export const V7PhasePlayer = ({
       // visibleElements state is already updated by useAnchorText internally
       // This callback is for logging and any additional side effects
     },
+    // ✅ C12.1: Handle frame triggers from anchor actions
+    onTrigger: (action: AnchorAction) => {
+      if (isFrameTriggerPayload(action.payload)) {
+        setImageSequenceFrameIndex(action.payload.frameIndex);
+        pushV7DebugLog('C12.1_IMAGE_SEQUENCE_FRAME_TRIGGER', {
+          phaseId: currentPhase?.id,
+          frameIndex: action.payload.frameIndex,
+          keyword: action.keyword,
+          currentTime: audio.currentTime,
+        });
+        console.log(`[V7PhasePlayer] IMAGE_SEQ FRAME TRIGGER: frame=${action.payload.frameIndex} keyword="${action.keyword}" @ ${audio.currentTime.toFixed(3)}s`);
+      }
+    },
   });
 
   // ✅ V7-v30 FIX: Lock interactive phases IMMEDIATELY ao entrar
@@ -555,6 +582,72 @@ export const V7PhasePlayer = ({
       console.log(`[V7PhasePlayer] 🛡️ Phase "${currentPhase?.id}" is BLOCKING - audio.onEnded will NOT end lesson`);
     }
   }, [currentPhase?.type, currentPhase?.id, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
+
+  // ✅ C12.1: Init/reset image sequence mode when phase changes
+  useEffect(() => {
+    if (!currentPhase) return;
+    const narrativeVisual = (currentPhase as any).visual;
+    if (narrativeVisual?.type !== 'image-sequence') {
+      if (imageSequenceFrameIndex !== null) {
+        setImageSequenceFrameIndex(null);
+        setImageSequenceTimerFallback(false);
+      }
+      return;
+    }
+    const hasFrameTriggers = currentPhase.anchorActions?.some(
+      (a: any) => a.type === 'trigger' && isFrameTriggerPayload(a.payload)
+    );
+    if (hasFrameTriggers) {
+      setImageSequenceFrameIndex(0);
+      setImageSequenceTimerFallback(false);
+      pushV7DebugLog('C12.1_IMAGE_SEQUENCE_MODE_INIT', {
+        phaseId: currentPhase.id, mode: 'anchor', currentTime: audio.currentTime,
+      });
+    } else {
+      setImageSequenceFrameIndex(null);
+      setImageSequenceTimerFallback(true);
+      pushV7DebugLog('C12.1_IMAGE_SEQUENCE_MODE_INIT', {
+        phaseId: currentPhase.id, mode: 'timer', currentTime: audio.currentTime,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPhase?.id]);
+
+  // ✅ C12.1: SEEK RESYNC — deterministic frame recalculation on seek/jump
+  // Guarantees the displayed frame matches the audio position regardless of onTrigger order
+  useEffect(() => {
+    if (imageSequenceFrameIndex === null) return; // timer mode, skip
+    if (!currentPhase?.anchorActions?.length) return;
+
+    const frameTriggers = currentPhase.anchorActions
+      .filter((a: any) => a.type === 'trigger' && isFrameTriggerPayload(a.payload))
+      .map((a: any) => ({
+        frameIndex: (a.payload as { frameIndex: number }).frameIndex,
+        triggerTime: a.keywordTime ?? 0,
+      }))
+      .sort((a: { triggerTime: number }, b: { triggerTime: number }) => a.triggerTime - b.triggerTime);
+
+    if (!frameTriggers.length) return;
+
+    let correctFrame = 0;
+    for (const ft of frameTriggers) {
+      if (ft.triggerTime <= audio.currentTime) {
+        correctFrame = ft.frameIndex;
+      }
+    }
+
+    // Guard anti-loop: only update if different
+    if (correctFrame !== imageSequenceFrameIndex) {
+      setImageSequenceFrameIndex(correctFrame);
+      pushV7DebugLog('C12.1_IMAGE_SEQUENCE_SEEK_RESYNC', {
+        phaseId: currentPhase.id,
+        fromFrame: imageSequenceFrameIndex,
+        toFrame: correctFrame,
+        currentTime: audio.currentTime,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio.currentTime, imageSequenceFrameIndex, currentPhase?.id]);
 
   // ✅ C07.2 LEGACY FALLBACK: For interactive phases without pause action in JSON
   // NÃO é "auto-pause 300ms" - é fallback para JSON legado que não tem pause
@@ -1303,9 +1396,14 @@ export const V7PhasePlayer = ({
           return (
             <V7ImageSequenceRenderer
               frames={narrativeVisual.frames}
+              activeFrameIndex={imageSequenceFrameIndex}
+              displayMode={narrativeVisual.displayMode ?? 'fullscreen'}
+              enableTimerFallback={imageSequenceTimerFallback}
+              fadeMs={800}
               effects={narrativeVisual.effects}
               phaseId={currentPhase.id}
               currentTime={hasAudio ? audio.currentTime : internalTime}
+              phaseTitle={currentPhase.title}
             />
           );
         }

@@ -2579,6 +2579,39 @@ function executeDryRun(input: ScriptInput): DryRunResult {
             if (scene.visual?.microVisuals?.some((mv: any) => mv.type === 'image')) {
               issues.push({ severity: 'error', scene: sceneId, field: 'visual.microVisuals', message: 'image-sequence não coexiste com microVisual type="image"' });
             }
+
+            // C12.1 WARNING: image-sequence with 2+ frames but no frame triggers (regresses to timer fallback)
+            if (Array.isArray(frames) && frames.length >= 2) {
+              const sceneAnchorActions = scene.anchorActions || [];
+              const hasFrameTriggers = sceneAnchorActions.some(
+                (a: any) => a.type === 'trigger' && typeof a.payload?.frameIndex === 'number'
+              );
+              if (!hasFrameTriggers) {
+                issues.push({
+                  severity: 'warning',
+                  scene: sceneId,
+                  field: 'anchorActions',
+                  message: 'image-sequence com 2+ frames sem anchorActions trigger com payload.frameIndex -- usando fallback timer (recomendado: adicionar triggers)'
+                });
+              }
+            }
+
+            // C12.1 WARNING: promptScene with text indicators (text should be overlay via microVisual)
+            if (Array.isArray(frames)) {
+              for (const frame of frames) {
+                const ps = (frame.promptScene || '').toLowerCase();
+                const textIndicators = ['"', 'r$', '#', 'copy:', 'texto:', 'escrito'];
+                const found = textIndicators.filter((t: string) => ps.includes(t));
+                if (found.length > 0) {
+                  issues.push({
+                    severity: 'warning',
+                    scene: sceneId,
+                    field: `frames[${frame.id}].promptScene`,
+                    message: `promptScene contem indicadores de texto (${found.join(', ')}) -- texto deve ser overlay via microVisual, nao imagem`
+                  });
+                }
+              }
+            }
           }
         }
       }
