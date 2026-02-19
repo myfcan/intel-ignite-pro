@@ -6473,6 +6473,8 @@ Deno.serve(async (req) => {
       const imageScenesForBridge: Array<{ scene_id: string; prompt_scene: string; style_hints?: string; phaseIdx: number; mvIdx: number }> = [];
       // Track image-sequence frames separately for injection
       const imageSequenceFrames: Array<{ frameId: string; prompt_scene: string; phaseIdx: number; frameIdx: number }> = [];
+      // ✅ NEW: Track visual.type='image' narrative phases for bridge generation
+      const imageNarrativeScenes: Array<{ scene_id: string; prompt_scene: string; style_hints?: string; phaseIdx: number }> = [];
 
       for (let pi = 0; pi < phases.length; pi++) {
         const phase = phases[pi];
@@ -6493,6 +6495,26 @@ Deno.serve(async (req) => {
                 frameIdx: fi,
               });
             }
+          }
+
+          // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
+          // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
+          if (
+            phase.visual?.type === 'image' &&
+            phase.visual.promptScene &&
+            typeof phase.visual.promptScene === 'string' &&
+            (
+              !phase.visual.storagePath ||
+              (phase.visual.storagePath as string).startsWith('PENDING:')
+            )
+          ) {
+            imageNarrativeScenes.push({
+              scene_id: phase.id,
+              prompt_scene: phase.visual.promptScene as string,
+              style_hints: (phase.visual as any).styleHints || undefined,
+              phaseIdx: pi,
+            });
+            console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
           }
         }
         
@@ -6532,11 +6554,17 @@ Deno.serve(async (req) => {
           prompt_scene: f.prompt_scene,
           style_hints: undefined as string | undefined,
         })),
+        // ✅ NEW: visual.type='image' narrative phases
+        ...imageNarrativeScenes.map(s => ({
+          scene_id: s.scene_id,
+          prompt_scene: s.prompt_scene,
+          style_hints: s.style_hints,
+        })),
       ];
 
       if (allScenesForBridge.length > 0) {
         bridgeReport.scenesSubmitted = allScenesForBridge.length;
-        console.log(`[V7-vv] Step 4.9: IMAGE_LAB_BRIDGE — ${imageScenesForBridge.length} microVisual(s) + ${imageSequenceFrames.length} sequence frame(s) to generate`);
+        console.log(`[V7-vv] Step 4.9: IMAGE_LAB_BRIDGE — ${imageScenesForBridge.length} microVisual(s) + ${imageSequenceFrames.length} sequence frame(s) + ${imageNarrativeScenes.length} narrative image(s) to generate`);
         try {
           const bridgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/image-lab-pipeline-bridge`;
           const bridgeServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -6606,6 +6634,22 @@ Deno.serve(async (req) => {
                   const frame = phases[frameMatch.phaseIdx].visual.frames![frameMatch.frameIdx];
                   frame.storagePath = result.storage_path;
                   injectedFrames++;
+                  continue;
+                }
+
+                // ✅ NEW: Try to match visual.type='image' narrative scene
+                const narrativeMatch = imageNarrativeScenes.find(s => s.scene_id === result.scene_id);
+                if (narrativeMatch) {
+                  const targetPhase = phases[narrativeMatch.phaseIdx];
+                  // Inject at root level (Player reads visual.storagePath first)
+                  (targetPhase.visual as Record<string, unknown>).storagePath = result.storage_path;
+                  // Also inject in content for Player fallback path
+                  if (targetPhase.visual.content && typeof targetPhase.visual.content === 'object') {
+                    (targetPhase.visual.content as Record<string, unknown>).storagePath = result.storage_path;
+                    (targetPhase.visual.content as Record<string, unknown>).assetId = result.asset_id;
+                  }
+                  console.log(`[V7-vv] Step 4.9: ✅ NARRATIVE_IMAGE injected: phase=${targetPhase.id} storagePath=${result.storage_path}`);
+                  injectedMv++; // reuse counter — represents all visual injections
                 }
               }
             }
