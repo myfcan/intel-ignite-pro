@@ -80,7 +80,6 @@ function FrameImage({
   objectFit: 'object-cover' | 'object-contain';
 }) {
   const signedUrl = useSignedUrl(storagePath || null);
-  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
   if (!storagePath || error || !signedUrl) {
@@ -108,7 +107,7 @@ function FrameImage({
       exit={{ opacity: 0 }}
       transition={{ duration: fadeSeconds, ease: 'easeInOut' }}
       className={`absolute inset-0 w-full h-full ${objectFit} rounded-lg`}
-      onLoad={() => setLoaded(true)}
+      onLoad={() => { /* image loaded successfully */ }}
       onError={() => {
         setError(true);
         pushV7DebugLog('IMAGE_SEQUENCE_FALLBACK', {
