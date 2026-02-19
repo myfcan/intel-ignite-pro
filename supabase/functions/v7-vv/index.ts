@@ -1450,6 +1450,9 @@ interface Phase {
   visual: {
     type: string;
     content: Record<string, unknown>;
+    // ✅ FASE C: storagePath e displayMode explícitos para visual.type='image'
+    storagePath?: string;
+    displayMode?: string;
     frames?: Array<{
       frameId: string;
       durationMs: number;
@@ -1579,6 +1582,19 @@ interface ScriptScene {
   visual: {
     type: string;
     content: Record<string, unknown>;
+    // ✅ FASE C: Campos explícitos para visual.type='image' e 'image-sequence'
+    storagePath?: string;
+    promptScene?: string;
+    instruction?: string;
+    displayMode?: string;
+    presetKey?: string;
+    presetVersion?: string;
+    frames?: Array<{
+      id?: string;
+      durationMs: number;
+      storagePath?: string;
+      promptScene?: string;
+    }>;
     effects?: Record<string, unknown>;
     microVisuals?: Array<{
       id: string;
@@ -5266,6 +5282,24 @@ function generatePhases(
     // ✅ CONTRATO CONGELADO v1.0: Mapear scene.type → phase.type persistível
     // secret-reveal e gamification NÃO existem no banco
     const persistiblePhaseType = SCENE_TO_PHASE_MAP[scene.type] || scene.type;
+
+    // ✅ FASE A: Resolve storagePath defensivo de TODAS as fontes possíveis
+    // O parser pode normalizar visual para apenas {type, content}, descartando campos root.
+    // Lemos de todas as fontes antes de construir o Phase para garantir preservação.
+    const resolvedImageStoragePath: string | undefined =
+      scene.visual.type === 'image'
+        ? (() => {
+            const fromRoot = typeof scene.visual.storagePath === 'string' && scene.visual.storagePath
+              ? scene.visual.storagePath
+              : undefined;
+            const fromContent = typeof (scene.visual.content as any)?.storagePath === 'string' && (scene.visual.content as any).storagePath
+              ? (scene.visual.content as any).storagePath as string
+              : undefined;
+            const resolved = fromRoot || fromContent;
+            console.log(`[Phase] IMAGE_RESOLVE: scene=${scene.id} fromRoot=${fromRoot ?? 'MISSING'} fromContent=${fromContent ?? 'MISSING'} resolved=${resolved ?? 'NOT_FOUND'}`);
+            return resolved;
+          })()
+        : undefined;
     
     // Construir fase
     const phase: Phase = {
@@ -5276,29 +5310,27 @@ function generatePhases(
       endTime,
       visual: {
         type: scene.visual.type,
-        // ✅ IMAGE TYPE FIX: For type='image', hoist storagePath+promptScene into content
-        // so the renderer can access it from visual.content.storagePath
+        // ✅ FASE A: Usar resolvedImageStoragePath (lido defensivamente de ambas as fontes)
         content: scene.visual.type === 'image'
           ? {
               ...(scene.visual.content || {}),
-              ...(((scene.visual as any).storagePath) ? { storagePath: (scene.visual as any).storagePath } : {}),
-              ...(((scene.visual as any).promptScene) ? { promptScene: (scene.visual as any).promptScene } : {}),
-              ...(((scene.visual as any).instruction) ? { instruction: (scene.visual as any).instruction } : {}),
+              // Usa o valor resolvido — não leitura inline que pode ser undefined
+              ...(resolvedImageStoragePath ? { storagePath: resolvedImageStoragePath } : {}),
+              ...(scene.visual.promptScene ? { promptScene: scene.visual.promptScene } : {}),
+              ...(scene.visual.instruction ? { instruction: scene.visual.instruction } : {}),
             }
           : (scene.visual.content || {}),
         // C12.1: Propagate displayMode from input to output
-        ...((scene.visual as any).displayMode ? { displayMode: (scene.visual as any).displayMode } : {}),
+        ...(scene.visual.displayMode ? { displayMode: scene.visual.displayMode } : {}),
         // C12.1: Propagate presetKey from input to output
-        ...((scene.visual as any).presetKey ? { presetKey: (scene.visual as any).presetKey } : {}),
-        // ✅ IMAGE TYPE FIX: Also hoist storagePath at visual level (renderer reads both)
-        ...(scene.visual.type === 'image' && (scene.visual as any).storagePath
-          ? { storagePath: (scene.visual as any).storagePath }
-          : {}),
+        ...(scene.visual.presetKey ? { presetKey: scene.visual.presetKey } : {}),
+        // ✅ FASE A: Root-level storagePath via resolvedImageStoragePath (Player lê visual.storagePath || visual.content.storagePath)
+        ...(resolvedImageStoragePath ? { storagePath: resolvedImageStoragePath } : {}),
         // C12.1: Preserve frames[] for image-sequence visuals
         // Check both visual.frames (hoisted) and visual.content.frames (nested input)
         ...(scene.visual.type === 'image-sequence' 
           ? (() => {
-              const hoistedFrames = (scene.visual as any).frames;
+              const hoistedFrames = scene.visual.frames;
               const contentFrames = (scene.visual.content as any)?.frames;
               const frames = (Array.isArray(hoistedFrames) && hoistedFrames.length > 0) 
                 ? hoistedFrames 
@@ -6633,6 +6665,47 @@ Deno.serve(async (req) => {
         }
       } else {
         console.log('[V7-vv] Step 4.9: No image microVisuals or sequence frames with promptScene found — skipping');
+      }
+    }
+
+    // =========================================================================
+    // ✅ FASE B: C13_IMAGE — Sanitize visual.type='image' storagePaths
+    // Roda SEMPRE, fora do bloco bridge (que pode ser pulado se não há promptScene)
+    // Converte paths fictícios em PENDING:bridge-failed: para rastreabilidade
+    // =========================================================================
+    {
+      const IMAGE_VALID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/\d+\.png$/i;
+      let imageSanitizedCount = 0;
+
+      for (const phase of phases) {
+        if (phase.visual?.type !== 'image') continue;
+
+        // Sanitizar root-level storagePath
+        if (phase.visual.storagePath && typeof phase.visual.storagePath === 'string') {
+          if (!IMAGE_VALID_RE.test(phase.visual.storagePath)) {
+            const original = phase.visual.storagePath;
+            phase.visual.storagePath = `PENDING:bridge-failed:${original}`;
+            console.warn(`[V7-vv] C13_IMAGE: phase=${phase.id} root storagePath fictício: "${original}" → PENDING`);
+            imageSanitizedCount++;
+          }
+        }
+
+        // Sincronizar content.storagePath para consistência (Player lê ambos)
+        const contentSP = (phase.visual.content as any)?.storagePath;
+        if (contentSP && typeof contentSP === 'string') {
+          if (!IMAGE_VALID_RE.test(contentSP)) {
+            const originalContent = contentSP;
+            (phase.visual.content as any).storagePath = `PENDING:bridge-failed:${originalContent}`;
+            console.warn(`[V7-vv] C13_IMAGE: phase=${phase.id} content.storagePath fictício: "${originalContent}" → PENDING`);
+            imageSanitizedCount++;
+          }
+        }
+      }
+
+      if (imageSanitizedCount > 0) {
+        console.warn(`[V7-vv] C13_IMAGE: ${imageSanitizedCount} storagePath(s) sanitizados para visual.type='image'`);
+      } else {
+        console.log('[V7-vv] C13_IMAGE: Nenhum storagePath fictício encontrado em fases visual.type=image');
       }
     }
 
