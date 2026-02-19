@@ -101,6 +101,12 @@ export default function V7ImageSequenceRenderer({
   const [activeIndex, setActiveIndex] = useState(0);
   const startTimeRef = useRef<number | null>(null);
   const hasLoggedStart = useRef(false);
+  const currentTimeRef = useRef(currentTime);
+
+  // Keep ref in sync without triggering re-renders
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
 
   // Log start
   useEffect(() => {
@@ -112,9 +118,10 @@ export default function V7ImageSequenceRenderer({
         currentTime,
       });
     }
-  }, [phaseId, frames.length, currentTime]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phaseId, frames.length]);
 
-  // Timer-based frame progression
+  // Timer-based frame progression — NO currentTime in deps to prevent timer reset
   useEffect(() => {
     if (frames.length <= 1) return;
 
@@ -128,19 +135,19 @@ export default function V7ImageSequenceRenderer({
           phaseId,
           frameId: frames[nextIndex]?.id,
           frameIndex: nextIndex,
-          currentTime,
+          currentTime: currentTimeRef.current,
         });
         setActiveIndex(nextIndex);
       } else {
         pushV7DebugLog('IMAGE_SEQUENCE_END', {
           phaseId,
-          currentTime,
+          currentTime: currentTimeRef.current,
         });
       }
     }, frame.durationMs);
 
     return () => clearTimeout(timer);
-  }, [activeIndex, frames, phaseId, currentTime]);
+  }, [activeIndex, frames, phaseId]);
 
   // Preload next frame with real signed URL
   const nextFramePath = frames[activeIndex + 1]?.storagePath || null;
