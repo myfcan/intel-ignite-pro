@@ -323,7 +323,7 @@ export default function V7ImageSequenceRenderer({
   // ============= RENDER: Fullscreen layout (default) =============
 
   return (
-    <div className={`relative z-0 w-full aspect-video rounded-lg overflow-hidden border ${moodClasses}`}>
+    <div className="absolute inset-0 z-0 overflow-hidden">
       {frameContent}
     </div>
   );

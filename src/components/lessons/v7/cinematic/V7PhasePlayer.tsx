@@ -1440,7 +1440,10 @@ export const V7PhasePlayer = ({
               key={currentPhase.id}
               frames={narrativeVisual.frames}
               activeFrameIndex={imageSequenceFrameIndex}
-              displayMode={narrativeVisual.displayMode ?? 'fullscreen'}
+               displayMode={
+                 narrativeVisual.displayMode ??
+                 (narrativeVisual.presetKey?.startsWith('epp-') ? 'mockup' : 'fullscreen')
+               }
               enableTimerFallback={imageSequenceTimerFallback}
               fadeMs={800}
               effects={narrativeVisual.effects}
@@ -2067,7 +2070,11 @@ export const V7PhasePlayer = ({
       {/* Canvas Background */}
       <V7CinematicCanvas
         mood={getCanvasMood(currentPhase?.type)}
-        intensity={effectiveIsPlaying ? 'high' : 'medium'}
+        intensity={
+          (currentPhase as any)?.visual?.type === 'image-sequence'
+            ? 'low'
+            : effectiveIsPlaying ? 'high' : 'medium'
+        }
       />
 
       {/* Minimal Unified Controls - ✅ V7-v17: Nunca bloqueado, sempre acessível */}
