@@ -1,107 +1,129 @@
 
-## Plano Corrigido: Auditoria E2E Real do C12.1
 
-### Diagnostico Factual (Provado com Dados)
+## Plano: Corrigir Renderizacao Image-Sequence (C12.1) — 3 Bugs Criticos
 
-O pipeline V7-vv gera output CORRETO (confirmado no run `8541bd3c`):
-- `phases[0].anchorActions`: 2 triggers (generico@4.272s frameIndex:1, premium@9.067s frameIndex:2)
-- `phases[0].visual.type`: "image-sequence" com 3 frames e storagePath validos
+### Diagnostico Forense (provado com dados do DB e codigo)
 
-POREM: **zero lessons v7 existem na tabela `lessons`**. Os 3 runs completed (`8541bd3c`, `2e52c764`, `49a271fc`) registraram lesson_ids que NAO existem no banco. O INSERT (L7149-7167 do edge function) retorna ID mas a row desaparece.
+**Lesson ID**: `55f19954-d198-4008-b9cd-5c50173164c5`
 
-- Sem trigger na tabela `lessons` que delete rows
-- Edge function usa `SUPABASE_SERVICE_ROLE_KEY` (contorna RLS)
-- Enum `difficulty_level` aceita os valores enviados
+**DB confirmado**:
+- `phases[0].visual.type` = `image-sequence`
+- `phases[0].visual.displayMode` = `NULL` (deveria ser `mockup`)
+- `phases[0].anchorActions`: 7 acoes (5 show + 2 trigger)
+- Triggers: `evolucao@50.469s -> frameIndex:1`, `premium@57.481s -> frameIndex:2`
+- 3 frames com storagePaths validos (UUIDs reais do Image Lab)
 
-### Causa Raiz Provavel
+---
 
-O INSERT no edge function usa `.insert({...}).select('id').single()`. Se PostgREST retorna um ID, a row DEVERIA existir. Hipoteses restantes:
-1. O edge function roda em ambiente diferente do que estamos lendo (improvavel — `pipeline_executions` e `lessons` estao no mesmo schema)
-2. Ha um constraint ou policy que faz o INSERT parecer suceder mas nao persiste (ex: RLS com `SECURITY DEFINER` no service role nao se aplica — service_role bypassa RLS por design)
-3. Bug no PostgREST: `.select('id').single()` retorna dados do INSERT mas um conflito silencioso reverte
+### Bug 1: `displayMode` perdido pelo Pipeline
 
-### Plano de Execucao (5 Fases)
+**Causa raiz**: O JSON de input envia `displayMode: "mockup"`, mas o pipeline NAO propaga esse campo para o output. No DB, `visual.displayMode` e `null`.
 
-**Fase 0 — Resolver Persistencia (BLOCKER)**
+**Evidencia**: Query SQL retornou `display_mode: <nil>`.
 
-1. Chamar a edge function `v7-vv` com o JSON de referencia image-sequence e `generate_audio: true`
-2. IMEDIATAMENTE apos o retorno, consultar `SELECT * FROM lessons WHERE id = '<returned_id>'`
-3. Se a row NAO existir: adicar log detalhado no edge function ANTES e DEPOIS do INSERT para capturar o erro real
-4. Se necessario: usar `INSERT` direto via SQL (service_role) em vez de PostgREST client, como fallback
+**Consequencia**: O renderer usa o default `fullscreen` (L1443 do V7PhasePlayer: `narrativeVisual.displayMode ?? 'fullscreen'`). A imagem ocupa a tela inteira em vez de usar o layout 65/35 com area de titulo.
 
-Patch minimo se INSERT falhar silenciosamente:
-- Adicionar log explicitio: `console.log('[V7-vv] INSERT result:', JSON.stringify({data: lesson, error: lessonError}))`
-- Se o problema persistir: substituir `.insert().select().single()` por `.insert()` seguido de `.select().eq('id', ...).single()` para confirmar persistencia
+**Fix**: Verificar o step de compilacao no pipeline v7-vv que monta o `visual` da phase. Garantir que `displayMode` do input seja copiado para o output. Se o pipeline ja foi corrigido para novas execucoes, a correcao pode ser feita apenas no frontend como fallback: quando `presetKey` contem `epp-`, usar `mockup` como default.
 
-**Fase 1 — Confirmar Lesson no Banco**
+**Arquivo**: `supabase/functions/v7-vv/index.ts` (step de compilacao de phases) + fallback no `V7PhasePlayer.tsx` L1443.
 
-Apos resolver Fase 0:
-1. Consultar `lessons` WHERE id = nova lesson
-2. Extrair e mostrar:
-   - `content->'phases'->0->'anchorActions'` (2 triggers com keywordTime)
-   - `content->'phases'->0->'visual'->'type'` = "image-sequence"
-   - `content->'phases'->0->'visual'->'frames'` (3 frames)
-   - `audio_url` preenchido
-   - `word_timestamps` preenchido
+---
 
-**Fase 2 — Abrir Player e Capturar Logs Runtime**
+### Bug 2: V7CinematicCanvas (particulas) conflitando com Image-Sequence
 
-1. Navegar para `/admin/v7/play/{lessonId}?debug=1`
-2. Iniciar playback com audio
-3. Capturar logs:
-   - `IMAGE_SEQUENCE_START` -> mode
-   - `C12.1_IMAGE_SEQUENCE_MODE_INIT` -> mode (DEVE ser "anchor")
-   - `C12.1_IMAGE_SEQUENCE_FRAME_TRIGGER` x2 (generico + premium)
-   - `C12.1_IMAGE_SEQUENCE_FRAME_RENDER` x3 (frame 0, 1, 2)
+**Causa raiz**: O `V7CinematicCanvas` renderiza particulas e efeitos em canvas absoluto `(absolute inset-0)` com z-index implicitamente abaixo do conteudo, mas com intensidade `high` quando tocando. Para fases `narrative` com `image-sequence`, as particulas da screenshot final (a imagem do cafe) mostram um excesso massivo de particulas.
 
-**Fase 3 — Validacao Temporal**
+**Evidencia**: Screenshot 8 — particulas brancas cobrindo quase toda a tela sobre a imagem.
 
-1. Ler `keywordTime` do DB para "generico" e "premium"
-2. Comparar com `currentTime` nos logs FRAME_TRIGGER
-3. Tolerancia: +/- 0.3s
-4. Verificar que gap entre triggers >= 2.5s (compativel com narracao)
+**Fix**: Quando a fase atual tem `visual.type === 'image-sequence'`, reduzir intensidade do canvas para `low` ou desabilitar particulas/rays. O canvas deve servir como fundo sutil, nao competir com o conteudo visual.
 
-**Fase 4 — Teste de Seek**
+**Arquivo**: `V7PhasePlayer.tsx` L2068-2071 — condicionar `intensity` e props do canvas baseado no tipo visual da fase.
 
-1. Seek para tempo apos "generico" mas antes de "premium"
-2. Confirmar frameIndex=1 via log `C12.1_IMAGE_SEQUENCE_SEEK_RESYNC`
-3. Seek para tempo apos "premium"
-4. Confirmar frameIndex=2
-5. Seek para tempo ANTES de "generico"
-6. Confirmar frameIndex=0
+---
 
-**Fase 5 — Fallback/Diagnostico (se falhar)**
+### Bug 3: Image-Sequence em Fullscreen com `aspect-video` nao preenche a tela
 
-Se MODE_INIT = "timer":
-1. Verificar se `phase.anchorActions` esta no path que o Player le (nao em `phase.scenes[0].anchorActions`)
-2. Verificar se audio contem literalmente "generico" e "premium" nos word_timestamps
-3. Verificar se normalizacao de tags `[confiante]` remove palavras dos timestamps
-4. Apontar patch minimo com arquivo e linha
+**Causa raiz**: O `V7ImageSequenceRenderer` em modo fullscreen renderiza um `div` com `w-full aspect-video rounded-lg` (L326). Isso cria um container 16:9 centralizado, mas o layout pai (`absolute inset-0 flex items-center justify-center`) centraliza esse container dentro da tela. O resultado: barras pretas em cima e embaixo.
 
-### Detalhes Tecnicos
+**Evidencia**: Screenshots 1-6 mostram barras pretas no topo/base da imagem.
 
-**Arquivos envolvidos:**
-- `supabase/functions/v7-vv/index.ts` L7149-7177: INSERT na tabela lessons (BLOCKER principal)
-- `src/components/lessons/v7/cinematic/V7PhasePlayer.tsx` L603-610: deteccao hasFrameTriggers
-- `src/components/lessons/v7/cinematic/V7ImageSequenceRenderer.tsx`: renderer que recebe frameIndex
+**Fix**: Em modo fullscreen, o renderer deve usar `absolute inset-0` com `object-cover` para preencher toda a tela, sem `aspect-video`. A classe `rounded-lg` tambem deve ser removida em fullscreen.
 
-**Dados ja confirmados no output_data (run 8541bd3c):**
+**Arquivo**: `V7ImageSequenceRenderer.tsx` L325-329 — alterar layout para fullscreen real.
+
+---
+
+### Bug 4 (Observacao): Imagens do Image Lab sao de assuntos diferentes
+
+As 3 imagens geradas pelo Image Lab sao de produtos diferentes (garrafas vs cafe). Isso NAO e um bug de codigo — e um problema de geracao de assets. O `promptScene` pede "same product scene" mas o Image Lab gerou cenas completamente diferentes.
+
+**Acao**: Isso nao sera corrigido neste plano. E um problema de conteudo/IA generativa, nao de renderizacao. As imagens precisam ser regeneradas ou vinculadas manualmente via V7SceneLinker.
+
+---
+
+### Implementacao (4 alteracoes)
+
+**1. V7PhasePlayer.tsx — Reduzir canvas para fases image-sequence**
+
+Linha ~2068: Condicionar intensidade do canvas:
 
 ```text
-anchorActions: [
-  { id: "trigger-frame-1", keyword: "genérico", keywordTime: 4.272, payload: { frameIndex: 1 }, type: "trigger" },
-  { id: "trigger-frame-2", keyword: "premium", keywordTime: 9.067, payload: { frameIndex: 2 }, type: "trigger" }
-]
-visual: {
-  type: "image-sequence",
-  frames: [
-    { id: "frame-0", storagePath: "63154c37-.../0.png" },
-    { id: "frame-1", storagePath: "2e32f87f-.../0.png" },
-    { id: "frame-2", storagePath: "5b4002f6-.../0.png" }
-  ]
+// Antes:
+intensity={effectiveIsPlaying ? 'high' : 'medium'}
+
+// Depois:
+intensity={
+  (currentPhase as any)?.visual?.type === 'image-sequence' 
+    ? 'low' 
+    : effectiveIsPlaying ? 'high' : 'medium'
 }
 ```
 
-**Criterio final PASS/FAIL:**
-- PASS: MODE_INIT=anchor + 2 FRAME_TRIGGER em tempos separados (>=2.5s) + SEEK_RESYNC funcional
-- FAIL: qualquer desvio, com causa raiz identificada e patch minimo
+Tambem desabilitar rays e reduzir glow quando visual e image-sequence.
+
+**2. V7PhasePlayer.tsx — Fallback displayMode para presets EPP**
+
+Linha ~1443: Adicionar fallback inteligente:
+
+```text
+// Antes:
+displayMode={narrativeVisual.displayMode ?? 'fullscreen'}
+
+// Depois:
+displayMode={
+  narrativeVisual.displayMode ?? 
+  (narrativeVisual.presetKey?.startsWith('epp-') ? 'mockup' : 'fullscreen')
+}
+```
+
+**3. V7ImageSequenceRenderer.tsx — Fullscreen real (sem aspect-video)**
+
+Alterar o render fullscreen (L325-329) para preencher toda a tela:
+
+```text
+// Antes:
+<div className="relative z-0 w-full aspect-video rounded-lg overflow-hidden border ...">
+
+// Depois:
+<div className="absolute inset-0 z-0 overflow-hidden">
+```
+
+E ajustar o `FrameImage` para usar `object-cover` sem `rounded-lg` em fullscreen.
+
+**4. Pipeline v7-vv — Propagar displayMode**
+
+No step de compilacao de phases da edge function, garantir que `visual.displayMode` do input scene seja copiado para o output phase visual. Localizar onde o `visual` e montado e adicionar:
+
+```text
+displayMode: scene.visual?.displayMode || undefined,
+```
+
+---
+
+### Resultado esperado apos fix
+
+1. Frame 0 aparece desde o inicio (correto para image-sequence) mas em modo **mockup** (65/35 com titulo ao lado)
+2. Canvas de particulas sutil (intensidade `low`) para nao competir com as imagens
+3. Triggers de frame funcionam nos tempos corretos (evolucao@50.4s, premium@57.4s) — ja confirmado que o crossing detection funciona
+4. Em fullscreen, a imagem preenche toda a tela sem barras pretas
+
