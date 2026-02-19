@@ -273,7 +273,8 @@ export const VALID_VISUAL_TYPES = [
   'cta',
   'loading',
   'image',
-  'video'
+  'video',
+  'effects-only'
 ] as const;
 
 export const VALID_MICROVISUAL_TYPES = [
