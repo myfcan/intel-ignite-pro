@@ -5276,11 +5276,24 @@ function generatePhases(
       endTime,
       visual: {
         type: scene.visual.type,
-        content: scene.visual.content || {},
+        // ✅ IMAGE TYPE FIX: For type='image', hoist storagePath+promptScene into content
+        // so the renderer can access it from visual.content.storagePath
+        content: scene.visual.type === 'image'
+          ? {
+              ...(scene.visual.content || {}),
+              ...(((scene.visual as any).storagePath) ? { storagePath: (scene.visual as any).storagePath } : {}),
+              ...(((scene.visual as any).promptScene) ? { promptScene: (scene.visual as any).promptScene } : {}),
+              ...(((scene.visual as any).instruction) ? { instruction: (scene.visual as any).instruction } : {}),
+            }
+          : (scene.visual.content || {}),
         // C12.1: Propagate displayMode from input to output
         ...((scene.visual as any).displayMode ? { displayMode: (scene.visual as any).displayMode } : {}),
         // C12.1: Propagate presetKey from input to output
         ...((scene.visual as any).presetKey ? { presetKey: (scene.visual as any).presetKey } : {}),
+        // ✅ IMAGE TYPE FIX: Also hoist storagePath at visual level (renderer reads both)
+        ...(scene.visual.type === 'image' && (scene.visual as any).storagePath
+          ? { storagePath: (scene.visual as any).storagePath }
+          : {}),
         // C12.1: Preserve frames[] for image-sequence visuals
         // Check both visual.frames (hoisted) and visual.content.frames (nested input)
         ...(scene.visual.type === 'image-sequence' 

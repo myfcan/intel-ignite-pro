@@ -29,6 +29,7 @@ import V7PhasePERFEITOSynced from './phases/V7PhasePERFEITOSynced';
 import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
 import V7PhaseMethodReveal from './phases/V7PhaseMethodReveal';
 import V7ImageSequenceRenderer from './phases/V7ImageSequenceRenderer';
+import V7StaticImageRenderer from './phases/V7StaticImageRenderer';
 import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
 import { V7NarrativeVisualOverlay } from './effects/V7NarrativeVisualOverlay';
@@ -1437,6 +1438,16 @@ export const V7PhasePlayer = ({
         // ✅ effects-only: background canvas + microVisuals overlay handle everything
         if (narrativeVisual?.type === 'effects-only') {
           return null;
+        }
+
+        // ✅ image: Static image from storagePath (fullscreen or mockup)
+        if (narrativeVisual?.type === 'image') {
+          const imageStoragePath = narrativeVisual.storagePath || narrativeVisual.content?.storagePath;
+          if (!imageStoragePath || imageStoragePath.startsWith('PENDING:')) {
+            // No valid image — fall through to canvas/microVisuals only (similar to effects-only)
+            return null;
+          }
+          return <V7StaticImageRenderer storagePath={imageStoragePath} effects={narrativeVisual.effects} phaseId={currentPhase.id} />;
         }
 
         // ✅ C12.1: Check for image-sequence visual type FIRST
