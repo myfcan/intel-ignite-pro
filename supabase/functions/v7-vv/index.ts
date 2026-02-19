@@ -1424,6 +1424,7 @@ interface AnchorAction {
   keywordTime: number;
   type: 'pause' | 'show' | 'highlight' | 'trigger';
   targetId?: string;
+  payload?: Record<string, unknown>;
 }
 
 interface QuizFeedback {
@@ -1568,6 +1569,13 @@ interface ScriptScene {
     pauseAt?: string;
     transitionAt?: string;
   };
+  anchorActions?: Array<{
+    id: string;
+    keyword: string;
+    type: string;
+    targetId?: string;
+    payload?: Record<string, unknown>;
+  }>;
   visual: {
     type: string;
     content: Record<string, unknown>;
@@ -5208,6 +5216,35 @@ function generatePhases(
       }
     });
 
+    // =========================================================================
+    // ✅ C12.1 FIX: Process scene.anchorActions (frame triggers for image-sequence)
+    // These are explicit trigger actions defined in the input JSON that need
+    // keywordTime resolution from wordTimestamps.
+    // =========================================================================
+    if (scene.anchorActions && Array.isArray(scene.anchorActions)) {
+      for (const inputAction of scene.anchorActions) {
+        // Only process 'trigger' type actions (frame triggers, etc.)
+        if (inputAction.type !== 'trigger') continue;
+        
+        // Resolve keywordTime from wordTimestamps
+        const keywordTime = findKeywordTime(inputAction.keyword, wordTimestamps, startTime, endTime);
+        
+        if (keywordTime !== null) {
+          anchorActions.push({
+            id: inputAction.id || `trigger-${scene.id}-${inputAction.keyword}`,
+            keyword: inputAction.keyword,
+            keywordTime,
+            type: 'trigger',
+            targetId: inputAction.targetId,
+            payload: inputAction.payload,
+          });
+          console.log(`[Phase] ✅ C12.1 FRAME TRIGGER: "${inputAction.keyword}" @ ${keywordTime.toFixed(2)}s payload=${JSON.stringify(inputAction.payload)}`);
+        } else {
+          console.warn(`[Phase] ⚠️ C12.1 FRAME TRIGGER: keyword "${inputAction.keyword}" NOT FOUND in range [${startTime.toFixed(2)}s, ${endTime.toFixed(2)}s]`);
+        }
+      }
+    }
+
     // Determinar comportamento de áudio (usa isInteractiveScene definido acima)
 
     // ✅ INTERACTIVE FLOOR FIX: Garantir mínimo de 5 segundos para fases interativas
@@ -5237,8 +5274,18 @@ function generatePhases(
         type: scene.visual.type,
         content: scene.visual.content || {},
         // C12.1: Preserve frames[] for image-sequence visuals
-        ...(scene.visual.type === 'image-sequence' && (scene.visual as any).frames?.length > 0
-          ? { frames: (scene.visual as any).frames }
+        // Check both visual.frames (hoisted) and visual.content.frames (nested input)
+        ...(scene.visual.type === 'image-sequence' 
+          ? (() => {
+              const hoistedFrames = (scene.visual as any).frames;
+              const contentFrames = (scene.visual.content as any)?.frames;
+              const frames = (Array.isArray(hoistedFrames) && hoistedFrames.length > 0) 
+                ? hoistedFrames 
+                : (Array.isArray(contentFrames) && contentFrames.length > 0) 
+                  ? contentFrames 
+                  : null;
+              return frames ? { frames } : {};
+            })()
           : {}),
       },
       // C03: Populate scenes[] — 1:1 with phase (single scene per phase)
