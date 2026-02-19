@@ -51,7 +51,13 @@ export type V7MicroVisualType =
   | 'text-highlight'     // Highlight text on screen
   | 'highlight'          // Generic highlight (pulse, glow)
   | 'card-reveal'        // Reveal a specific card
-  | 'letter-reveal';     // Reveal a letter from acronym
+  | 'letter-reveal'      // Reveal a letter from acronym (3D flip)
+  | 'stat'               // Impact metric with label (R$ 50k/mês)
+  | 'step'               // Numbered sequential step
+  | 'quote'              // Editorial impact quote
+  | 'pill-tag'           // Contextual keyword tag
+  | 'comparison-bar'     // Two-bar visual comparison
+  | 'alert';             // Urgent warning with shake
 
 /**
  * Phase/Scene types
@@ -197,6 +203,28 @@ export interface V7MicroVisual {
     cardId?: string;
     // For letter-reveal
     index?: number;
+    // For stat — impact metric with label
+    value?: string | number;
+    label?: string;
+    // For step — numbered sequential step
+    stepNumber?: number;
+    totalSteps?: number;
+    // For quote — editorial impact quote
+    quote?: string;
+    author?: string;
+    // For pill-tag — contextual keyword tag
+    tag?: string;
+    dot?: boolean;
+    // For comparison-bar — two-bar visual comparison
+    leftLabel?: string;
+    leftValue?: number;
+    rightLabel?: string;
+    rightValue?: number;
+    leftColor?: string;
+    rightColor?: string;
+    // For alert — urgent warning
+    icon?: string;
+    highlight?: string;
     // Common
     animation?: string;
     color?: string;
