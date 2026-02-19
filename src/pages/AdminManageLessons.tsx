@@ -329,7 +329,7 @@ export default function AdminManageLessons() {
             <Power className="w-3 h-3 mr-1" />
             {activating === lesson.id ? '...' : lesson.is_active ? 'Off' : 'On'}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/v7/preview/${lesson.id}`)}>
+          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/v7/play/${lesson.id}`)}>
             <Play className="w-3 h-3 mr-1" />
             Assistir
           </Button>
