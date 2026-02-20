@@ -1,211 +1,65 @@
 
-# Diagnóstico Sistêmico Completo — Pipeline V7-vv
+# Fix: Adicionar mapDifficulty() na Edge Function v7-vv
 
-## O Que a Screenshot Confirma
+## Diagnóstico Forense
 
-O dashboard está funcional. O usuário (Fernando Canuto, 26 aulas completas, Power 1100, Nv2) está usando o sistema ativamente. O problema não é o dashboard — é a arquitetura interna do pipeline que ainda tem rachaduras que vão travar a produção em escala.
-
----
-
-## Os 4 Problemas Sistêmicos Reais (Verificados no Código)
-
-### PROBLEMA 1 — Divergência Estrutural: Dois Pipelines em Paralelo
-
-O sistema tem **duas implementações independentes** do mesmo pipeline:
-
-```text
-PIPELINE A (Frontend)          PIPELINE B (Edge Function)
-src/lib/lessonPipeline/        supabase/functions/v7-vv/
-  step1-validate.ts              validateInput()
-  step2-build-narration.ts       buildNarration()
-  step3-generate-audio.ts        generateAudio()
-  step4-calculate-anchors.ts     calculateAnchors()
-  step5-build-content.ts         buildContent()
-```
-
-Os dois pipelines têm lógicas **diferentes** e podem produzir outputs **diferentes**. A Edge Function `v7-vv` tem 8019 linhas — é o pipeline **real** que é executado. O pipeline do frontend (`src/lib/lessonPipeline/`) é chamado de onde? Verificando os contratos entre eles, há divergências concretas:
-
-- `V7AnchorAction.timestamp` (frontend) vs `AnchorAction.keywordTime` (edge function) — campo diferente para o mesmo dado
-- `actionType: 'show-visual'` (frontend) vs `type: 'show'` (edge function) — enum diferente
-- O `step4` do frontend injeta `triggerTime` diretamente no `microVisual` — a edge function usa `anchorActions type='show'`
-
-**Impacto**: O player `V7PhasePlayer.tsx` foi escrito para consumir o output da Edge Function (banco). Se alguém chamar o pipeline do frontend diretamente, o output vai ser incompatível com o que o player espera.
-
-### PROBLEMA 2 — Ruptura de Contrato: C06 vs `anchorActions` do Frontend
-
-A Edge Function implementa **C06 (Single Trigger Contract)**:
-- `microVisuals` chegam ao banco **sem** `triggerTime`
-- `triggerTime` vive **exclusivamente** em `anchorActions[type='show'].keywordTime`
-- O player lê `showActionsByTargetId[mv.id]` (Camada 1)
-
-O pipeline do frontend `step4-calculate-anchors.ts` (linhas 167-170) faz o **oposto**:
-- Injeta `microVisual.triggerTime = mvTimestamp` diretamente no objeto
-- Cria `anchorAction` com `actionType: 'show-visual'` (não `type: 'show'`)
-
-O `resolvedMicroVisuals` no player (linha 496) busca `aa.type === 'show'` — nunca vai encontrar `aa.actionType === 'show-visual'`. A Camada 1 (C06) **sempre falha** para aulas processadas pelo pipeline frontend.
-
-### PROBLEMA 3 — ScriptScene Interface Desatualizada na Edge Function
-
-A `ScriptScene` interface na Edge Function (linhas 1566-1621) aceita `anchorActions` como:
+Linha 7606 de `supabase/functions/v7-vv/index.ts`:
 ```typescript
-anchorActions?: Array<{
-  id: string;
-  keyword: string;  // ← mas o JSON do usuário usa "MARCO1", "MARCO2"
-  type: string;
-  targetId?: string;
-  payload?: Record<string, unknown>;
-}>
+difficulty_level: input.difficulty,  // "test" → erro 22P02
 ```
 
-Mas o user's JSON usa:
-```json
-{ "id": "trigger-frame-1", "type": "trigger", "keyword": "MARCO1", "payload": { "frameIndex": 1 } }
-```
+Não existe função de mapeamento na Edge Function. O frontend tem `mapDifficulty()` em `step6-consolidate.ts`, mas a Edge Function nunca implementou o equivalente.
 
-Isso parece compatível — mas o `findKeywordTimestamp` normaliza com `normalizeWord()` que remove maiúsculas. Palavras 100% maiúsculas como "MARCO1", "VISÃO", "RENDA" **têm alta chance de não serem encontradas** por match insensível, porque o ElevenLabs pode narrá-las com entonação diferente ou como texto corrido.
+O enum do banco `difficulty_level` aceita SOMENTE: `beginner`, `intermediate`, `advanced`.
 
-### PROBLEMA 4 — Auto-Enriquecimento Silencioso Sem Gate de Auditoria
+Qualquer valor fora deste conjunto (incluindo `test`, `easy`, `medium`, `hard`, etc.) causa erro 22P02 e o pipeline morre no Step 6.
 
-A Edge Function tem `enrichMicroVisualsFromNarration()` (linhas 2797-2999) que injeta `stat` e `step` microVisuals automaticamente. É **NON-BREAKING** — erros são capturados e ignorados. Mas:
+## Fix Único — 1 Linha no Arquivo Certo
 
-- Os microVisuals auto-injetados recebem `id` como `undefined` (não são gerados IDs únicos)
-- O `step4 calculateAnchors` tenta resolver `anchor-visual-${microVisual.id}` com `id` undefined → gera `anchor-visual-undefined`
-- Duplicatas de `anchor-visual-undefined` não são detectadas
-- O Dry-Run **não valida** os microVisuals auto-injetados (ocorrem depois do Dry-Run)
+### Arquivo: `supabase/functions/v7-vv/index.ts`
 
----
-
-## A Raiz Comum dos 4 Problemas
-
-Todos os problemas têm a mesma causa: **falta de um contrato único e verificável entre pipeline e renderer**.
-
-O objetivo mestre (criar aulas com qualidade e perfeição em escala) exige que:
-1. Exista **UM único pipeline** como fonte de verdade
-2. O output do pipeline seja **verificável automaticamente** antes de chegar ao renderer
-3. Os contratos C01-C15 sejam **enforced com testes reais**, não só documentados
-
----
-
-## Plano de Ação: 5 Fixes Sistêmicos
-
-### Fix 1 — Unificar os Contratos entre Frontend Pipeline e Edge Function
-
-**Arquivo**: `src/lib/lessonPipeline/v7/types.ts`
-
-Mudar `actionType: 'show-visual'` para `type: 'show'` para paridade com a Edge Function. O campo `timestamp` deve ser aliased como `keywordTime` para que o player encontre na Camada 1.
+Adicionar a função de mapeamento próximo à linha 7600, antes do `insertPayload`:
 
 ```typescript
-// ANTES (quebrado)
-export interface V7AnchorAction {
-  actionType: 'pause' | 'transition' | 'show-visual' | 'trigger-interaction';
-  timestamp: number;
-}
-
-// DEPOIS (alinhado com Edge Function)
-export interface V7AnchorAction {
-  type: 'pause' | 'show' | 'transition' | 'trigger';
-  keywordTime: number;
-  keyword: string;   // adicionar campo keyword
-  targetId?: string; // adicionar campo targetId
+// Mapear difficulty para enum válido do banco
+function mapDifficultyLevel(difficulty: string): 'beginner' | 'intermediate' | 'advanced' {
+  switch (difficulty?.toLowerCase()) {
+    case 'beginner': return 'beginner';
+    case 'intermediate': return 'intermediate';
+    case 'advanced': return 'advanced';
+    default: return 'beginner'; // fallback seguro para: 'test', 'easy', 'medium', etc.
+  }
 }
 ```
 
-### Fix 2 — Corrigir step4 para Gerar Anchors Compatíveis com C06
-
-**Arquivo**: `src/lib/lessonPipeline/v7/steps/step4-calculate-anchors.ts`
-
-O `mvAction` gerado pelo step4 usa `actionType: 'show-visual'` — trocar para `type: 'show'` e `keywordTime` para alinhar com o que o player lê na Camada 1.
-
+Depois, na linha 7606, mudar de:
 ```typescript
-// ANTES (incompatível com player Camada 1)
-const mvAction: V7AnchorAction = {
-  id: `anchor-visual-${microVisual.id}`,
-  anchorText: microVisual.anchorText,
-  actionType: 'show-visual',  // ← player não lê isso
-  timestamp: mvTimestamp,     // ← player não lê isso
-  payload: { ... }
-};
-
-// DEPOIS (compatível com C06 do player)
-const mvAction: V7AnchorAction = {
-  id: `anchor-visual-${microVisual.id}`,
-  keyword: microVisual.anchorText,  // ← player lê aa.keyword
-  type: 'show',                     // ← player filtra aa.type === 'show'
-  keywordTime: mvTimestamp,         // ← player lê aa.keywordTime
-  targetId: microVisual.id,         // ← player busca showActionsByTargetId[mv.id]
-};
+difficulty_level: input.difficulty,
+```
+Para:
+```typescript
+difficulty_level: mapDifficultyLevel(input.difficulty),
 ```
 
-### Fix 3 — Adicionar ID Automático nos microVisuals Auto-Injetados
+## Por que isso é sistêmico
 
-**Arquivo**: `supabase/functions/v7-vv/index.ts` (função `enrichMicroVisualsFromNarration`)
+Qualquer JSON de teste que use `"difficulty": "test"` vai falhar neste ponto. O pipeline inteiro aborta sem gerar áudio, sem testar anchors, sem nada.
 
-Os `toInject` items não recebem `id`. Adicionar geração de ID determinístico.
+Com o fix:
+- `"difficulty": "test"` → salva como `beginner` → pipeline continua
+- O JSON de teste do usuário passa a funcionar normalmente
+- Resultado: você vai conseguir dados reais sobre o comportamento dos anchors determinísticos pela primeira vez
 
-```typescript
-// ANTES (id ausente → anchor-visual-undefined)
-toInject.push({
-  type: 'step',
-  anchorText: extracted.anchorWord,
-  duration: 3.5,
-  ...
-});
+## Sequência de deploy
 
-// DEPOIS (id único garantido)
-toInject.push({
-  id: `auto-${sceneType}-step-${extracted.stepNumber}-${Date.now()}`,
-  type: 'step',
-  anchorText: extracted.anchorWord,
-  duration: 3.5,
-  ...
-});
-```
+1. Adicionar `mapDifficultyLevel()` na Edge Function
+2. Re-deploy automático do `v7-vv`
+3. Reprocessar o JSON de teste
+4. Observar os logs do pipeline para validar o sistema determinístico de anchors
 
-### Fix 4 — Gate de Validação no Step4: MicroVisual sem triggerTime = Erro
+## O que NÃO muda
 
-**Arquivo**: `src/lib/lessonPipeline/v7/steps/step4-calculate-anchors.ts`
-
-Se um microVisual usar o fallback `triggerTime = sceneStartTime`, ele vai aparecer no início da fase — timing errado. Transformar em warning explícito que aparece nos logs e é registrado no debug report.
-
-```typescript
-// DEPOIS DA RESOLUÇÃO: checar e logar como issue rastreável
-if (mvTimestamp === null) {
-  await logger.warn(4, 'Calculate Anchors',
-    `   ⚠️ [GATE] MicroVisual "${microVisual.id}" (anchorText="${microVisual.anchorText}") ` +
-    `NÃO ENCONTRADO na narração → triggerTime = sceneStart (${sceneStartTime.toFixed(2)}s). ` +
-    `Isso vai aparecer no início da fase, não ancorado à fala.`
-  );
-}
-```
-
-### Fix 5 — Adicionar Validação de `anchorText` no `enrichMicroVisualsFromNarration`
-
-**Arquivo**: `supabase/functions/v7-vv/index.ts`
-
-Os microVisuals auto-injetados usam `anchorWord` como `anchorText`. Mas `anchorWord` pode ser um número (ex: `50000`), que nunca vai ser encontrado no `wordTimestamps` porque o ElevenLabs narra "cinquenta mil". Adicionar lookup reverso: se `anchorWord` é numérico, converter para palavra narrada.
-
----
-
-## Sequência de Implementação
-
-| Ordem | Arquivo | Fix |
-|-------|---------|-----|
-| 1 | `src/lib/lessonPipeline/v7/types.ts` | Fix 1: Unificar contrato V7AnchorAction |
-| 2 | `src/lib/lessonPipeline/v7/steps/step4-calculate-anchors.ts` | Fix 2: type='show' + keywordTime + targetId |
-| 3 | `src/lib/lessonPipeline/v7/steps/step4-calculate-anchors.ts` | Fix 4: Gate de validação no fallback |
-| 4 | `supabase/functions/v7-vv/index.ts` | Fix 3: IDs nos auto-injetados |
-| 5 | `supabase/functions/v7-vv/index.ts` | Fix 5: Validar anchorWord numérico |
-
----
-
-## O Que Isso Entrega ao Sistema
-
-Após estes fixes, o pipeline vai:
-
-1. **Produzir output idêntico** independente de ser executado via frontend ou via Edge Function
-2. **Garantir que todo microVisual** chegue ao player com `triggerTime` resolvido via C06 (Camada 1)
-3. **Nunca gerar `anchor-visual-undefined`** no banco
-4. **Logar claramente** quando um anchorText não é encontrado — sem silêncio
-5. **Rejeitar anchorWords numéricos** auto-injetados que nunca vão resolver no TTS
-
-Resultado: toda aula gerada pelo pipeline — seja com 3 cenas ou com 30 — vai ter microVisuals aparecendo **no momento exato da fala**, sem depender de fallback runtime no player.
+- Nenhum contrato C01-C15 é alterado
+- Nenhuma lógica de anchor é tocada
+- Nenhum arquivo do frontend é alterado
+- É um fix cirúrgico de 1 função + 1 linha
