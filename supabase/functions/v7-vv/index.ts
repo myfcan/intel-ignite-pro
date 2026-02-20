@@ -7592,6 +7592,16 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Mapear difficulty para enum válido do banco (aceita SOMENTE: beginner | intermediate | advanced)
+      const mapDifficultyLevel = (difficulty: string): 'beginner' | 'intermediate' | 'advanced' => {
+        switch (difficulty?.toLowerCase()) {
+          case 'beginner': return 'beginner';
+          case 'intermediate': return 'intermediate';
+          case 'advanced': return 'advanced';
+          default: return 'beginner'; // fallback seguro para: 'test', 'easy', 'medium', 'hard', etc.
+        }
+      };
+
       const insertPayload = {
         title: input.title,
         description: input.subtitle || `Aula V7 Cinematográfica: ${input.title}`,
@@ -7603,7 +7613,7 @@ Deno.serve(async (req) => {
         audio_url: mainAudio.url || null,
         word_timestamps: mainAudio.wordTimestamps.length > 0 ? mainAudio.wordTimestamps : null,
         estimated_time: Math.ceil(totalDuration / 60),
-        difficulty_level: input.difficulty,
+        difficulty_level: mapDifficultyLevel(input.difficulty),
         is_active: false,
         status: 'rascunho',
       };
