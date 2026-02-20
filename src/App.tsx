@@ -87,6 +87,7 @@ const AdminContracts = lazy(() => import("./pages/AdminContracts"));
 const C10Report = lazy(() => import("./pages/admin/C10Report"));
 const AdminUserManagement = lazy(() => import("./pages/AdminUserManagement"));
 const AdminImageLab = lazy(() => import("./pages/AdminImageLab"));
+const AdminAudioPreview = lazy(() => import("./pages/AdminAudioPreview"));
 
 const queryClient = new QueryClient();
 
@@ -225,6 +226,7 @@ const App = () => (
                 <Route path="/admin/c10-report" element={<AdminRoute><C10Report /></AdminRoute>} />
                 <Route path="/admin/image-lab" element={<AdminRoute><AdminImageLab /></AdminRoute>} />
                 <Route path="/admin/micro-visual" element={<AdminRoute><AdminMicroVisualSandbox /></AdminRoute>} />
+                <Route path="/admin/audio-preview" element={<AdminRoute><AdminAudioPreview /></AdminRoute>} />
                 {/* NEW FEATURES ROUTES */}
                 <Route path="/guides" element={<Guides />} />
                 <Route path="/guides/:guideId" element={<GuideDetail />} />
