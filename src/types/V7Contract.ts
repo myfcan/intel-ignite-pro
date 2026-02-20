@@ -180,11 +180,20 @@ export interface V7MicroVisual {
   triggerTime?: number;  // C06: Optional - source of truth is anchorActions[type='show'].keywordTime
   duration: number;
   content: {
-    // For image-flash
+    // For image-flash (single image)
     description?: string;
     imageUrl?: string;
     storagePath?: string;  // Image Lab C12: private bucket path → resolved via signed URL
     assetId?: string;      // Image Lab C12: asset reference for audit trail
+    // For image-flash (sequence mode — slideshow cinematográfico)
+    images?: Array<{
+      imageUrl?: string;
+      storagePath?: string;
+      description?: string;
+      durationMs?: number;   // tempo em cada frame (default: 1200ms)
+    }>;
+    flashBetween?: boolean;  // exibe flash branco entre cada imagem (default: true)
+    intervalMs?: number;     // duração total de cada frame quando images[] não define durationMs
     // For text-pop
     text?: string;
     words?: string[];

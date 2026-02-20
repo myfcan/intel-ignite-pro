@@ -171,20 +171,117 @@ function getWrapperProps(type: string, content: any) {
 // ============================================================================
 
 function ImageFlash({ content }: { content: any }) {
+  // ── SEQUENCE MODE: array of images ──────────────────────────────────────
+  if (content.images && Array.isArray(content.images) && content.images.length > 0) {
+    return <ImageFlashSequence content={content} />;
+  }
+
+  // ── SINGLE MODE: retrocompatível ─────────────────────────────────────────
   if (!content.imageUrl) return null;
   return (
     <motion.div
       className="relative"
-      initial={{ filter: 'brightness(2)' }}
-      animate={{ filter: 'brightness(1)' }}
-      transition={{ duration: 0.4 }}
+      initial={{ filter: 'brightness(2.5)', scale: 1.05 }}
+      animate={{ filter: 'brightness(1)', scale: 1 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
       <img
         src={content.imageUrl}
         alt={content.description || ''}
-        className="max-w-[300px] max-h-[200px] rounded-lg shadow-2xl"
+        className="max-w-[340px] max-h-[220px] rounded-xl shadow-2xl object-cover"
       />
     </motion.div>
+  );
+}
+
+function ImageFlashSequence({ content }: { content: any }) {
+  const images: any[] = content.images;
+  const flashBetween = content.flashBetween !== false; // default true
+  const defaultDuration = content.intervalMs || 1400;
+
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [isFlashing, setIsFlashing] = React.useState(false);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    const frame = images[currentIndex];
+    const duration = frame?.durationMs ?? defaultDuration;
+
+    const timer = setTimeout(() => {
+      const nextIndex = currentIndex + 1;
+      if (nextIndex >= images.length) return; // fim da sequência
+
+      if (flashBetween) {
+        // 1. Flash branco
+        setIsFlashing(true);
+        setTimeout(() => {
+          setIsFlashing(false);
+          setCurrentIndex(nextIndex);
+        }, 180);
+      } else {
+        setCurrentIndex(nextIndex);
+      }
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, images, defaultDuration, flashBetween]);
+
+  const current = images[currentIndex];
+  if (!current) return null;
+
+  return (
+    <div className="relative">
+      {/* Flash overlay */}
+      <AnimatePresence>
+        {isFlashing && (
+          <motion.div
+            key="flash"
+            className="absolute inset-0 z-10 bg-white rounded-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.9 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.09, ease: 'easeInOut' }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Current image */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentIndex}
+          initial={{ filter: 'brightness(2.5)', opacity: 0, scale: 1.06 }}
+          animate={{ filter: 'brightness(1)', opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="relative"
+        >
+          <img
+            src={current.imageUrl}
+            alt={current.description || `Frame ${currentIndex + 1}`}
+            className="max-w-[340px] max-h-[220px] rounded-xl shadow-2xl object-cover"
+          />
+
+          {/* Frame indicator */}
+          {images.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {images.map((_: any, i: number) => (
+                <div
+                  key={i}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    i === currentIndex
+                      ? 'w-4 bg-white'
+                      : i < currentIndex
+                        ? 'w-2 bg-white/60'
+                        : 'w-2 bg-white/25'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }
 
