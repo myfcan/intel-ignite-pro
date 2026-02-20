@@ -1684,21 +1684,30 @@ interface DryRunResult {
 // ============================================================================
 // TIPOS DE MICROVISUAL — CONTRATO CONGELADO v1.0
 // ============================================================================
-// INPUT: aceita modernos + legados
-// OUTPUT: SEMPRE legado (banco/renderer são canônicos)
+// INPUT: aceita modernos + legados + novos tipos canônicos
+// OUTPUT: SEMPRE tipo canônico (banco/renderer são canônicos)
 const VALID_MICROVISUAL_TYPES = [
   // Modernos (aliases - serão convertidos antes de salvar)
   'text', 'number', 'image', 'badge', 'highlight', 'letter-reveal',
   // Legados (canônicos - passam direto)
-  'image-flash', 'text-pop', 'number-count', 'text-highlight', 'card-reveal'
+  'image-flash', 'text-pop', 'number-count', 'text-highlight', 'card-reveal',
+  // ✅ Novos tipos canônicos (Fix: adicionados ao edge function)
+  'stat', 'step', 'comparison-bar', 'quote', 'pill-tag', 'alert',
+  // ✅ Aliases de input (serão convertidos para canônicos)
+  'slideshow', 'range-counter', 'side-compare'
 ] as const;
 
-// Mapping OBRIGATÓRIO: moderno → legado (nunca persistir moderno)
+// Mapping OBRIGATÓRIO: moderno/alias → canônico (nunca persistir alias)
 const MODERN_TO_LEGACY_MAP: Record<string, string> = {
+  // Aliases modernos → legados
   'image': 'image-flash',
   'text': 'text-pop',
   'number': 'number-count',
   'badge': 'card-reveal',
+  // Aliases de input → canônicos novos
+  'slideshow': 'image-flash',       // slideshow usa content.images array = image-flash mode
+  'range-counter': 'stat',          // range-counter = stat (count-up com prefixo/sufixo)
+  'side-compare': 'comparison-bar', // side-compare = comparison-bar
   // Passthrough (já são canônicos)
   'highlight': 'highlight',
   'letter-reveal': 'letter-reveal',
@@ -1706,7 +1715,14 @@ const MODERN_TO_LEGACY_MAP: Record<string, string> = {
   'text-pop': 'text-pop',
   'number-count': 'number-count',
   'text-highlight': 'text-highlight',
-  'card-reveal': 'card-reveal'
+  'card-reveal': 'card-reveal',
+  // ✅ Novos canônicos passthrough
+  'stat': 'stat',
+  'step': 'step',
+  'comparison-bar': 'comparison-bar',
+  'quote': 'quote',
+  'pill-tag': 'pill-tag',
+  'alert': 'alert',
 };
 
 // Tipos REJEITADOS (sem equivalente no renderer)
@@ -5322,6 +5338,13 @@ function generatePhases(
         case 'text-highlight': return 2.0;
         case 'card-reveal': return 3.0;
         case 'letter-reveal': return 1.0;
+        // ✅ Novos tipos canônicos
+        case 'stat': return 3.5;
+        case 'step': return 4.0;
+        case 'comparison-bar': return 5.0;
+        case 'quote': return 4.0;
+        case 'pill-tag': return 3.0;
+        case 'alert': return 3.0;
         default: return 2.0;
       }
     };
