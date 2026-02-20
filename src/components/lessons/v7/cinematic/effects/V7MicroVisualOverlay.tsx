@@ -112,6 +112,44 @@ const getAnimationVariants = (type: string, animation?: string): any => {
         exit: { opacity: 0, scale: 0.9, x: 20, transition: { duration: 0.25 } },
       };
 
+    // ✅ Fix #4: animações para novos tipos canônicos
+    case 'stat':
+      return {
+        initial: { scale: 0.3, opacity: 0, y: 20 },
+        animate: { scale: 1, opacity: 1, y: 0, transition: { type: 'spring', stiffness: 150, damping: 12 } },
+        exit: { scale: 1.8, opacity: 0, transition: { duration: 0.5, ease: EASING.dramatic } },
+      };
+    case 'step':
+      return {
+        initial: { x: -60, opacity: 0 },
+        animate: { x: 0, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 20 } },
+        exit: { x: 60, opacity: 0, transition: { duration: 0.25 } },
+      };
+    case 'comparison-bar':
+      return {
+        initial: { y: 40, opacity: 0, scale: 0.95 },
+        animate: { y: 0, opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 140, damping: 18 } },
+        exit: { y: -20, opacity: 0, transition: { duration: 0.25 } },
+      };
+    case 'quote':
+      return {
+        initial: { opacity: 0, scale: 0.97 },
+        animate: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: EASING.cinematic } },
+        exit: { opacity: 0, scale: 0.96, transition: { duration: 0.3 } },
+      };
+    case 'pill-tag':
+      return {
+        initial: { opacity: 0, scale: 0.7, y: 10 },
+        animate: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 15 } },
+        exit: { opacity: 0, scale: 0.8, y: -10, transition: { duration: 0.2 } },
+      };
+    case 'alert':
+      return {
+        initial: { opacity: 0, scale: 0.85 },
+        animate: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 250, damping: 14 } },
+        exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } },
+      };
+
     default:
       return {
         initial: { opacity: 0, scale: 0.9, y: 10 },
@@ -126,12 +164,18 @@ const getMicroVisualSound = (type: string): string | null => {
     case 'image-flash': return 'transition-whoosh';
     case 'text-pop':
     case 'text': return 'reveal';
-    case 'number-count': return 'count-up';
+    case 'number-count':
+    case 'stat': return 'count-up';
     case 'text-highlight': return 'click-confirm';
     case 'highlight': return 'click-soft';
     case 'badge':
     case 'card-reveal': return 'transition-dramatic';
     case 'letter-reveal': return 'letter-reveal';
+    case 'step': return 'click-confirm';
+    case 'comparison-bar': return 'transition-dramatic';
+    case 'quote': return 'reveal';
+    case 'pill-tag': return 'click-soft';
+    case 'alert': return 'transition-whoosh';
     default: return 'click-soft';
   }
 };
@@ -193,10 +237,16 @@ export const V7MicroVisualOverlay: React.FC<V7MicroVisualOverlayProps> = ({
   );
 };
 
-// ─── ImageFlash ──────────────────────────────────────────────────────────────
+// ─── ImageFlash (single + slideshow mode) ────────────────────────────────────
 const ImageFlashContent: React.FC<{ content: Record<string, any> }> = ({ content }) => {
   const signedUrl = useSignedUrl(content.storagePath || null);
   const resolvedImageUrl = content.imageUrl || signedUrl;
+
+  // ✅ FIX #3: Suporte a modo slideshow via content.images (array)
+  const images: Array<{ imageUrl?: string; description?: string; durationMs?: number }> = content.images || [];
+  if (images.length > 1) {
+    return <ImageFlashSequence images={images} intervalMs={content.intervalMs || 1800} flashBetween={content.flashBetween ?? true} />;
+  }
 
   return (
     <div className="relative flex items-center justify-center">
@@ -226,6 +276,89 @@ const ImageFlashContent: React.FC<{ content: Record<string, any> }> = ({ content
           <p className="text-white text-lg md:text-xl font-medium text-center max-w-xs">{content.description}</p>
         </motion.div>
       )}
+    </div>
+  );
+};
+
+// ─── ImageFlashSequence (slideshow cinematográfico) ───────────────────────────
+const ImageFlashSequence: React.FC<{
+  images: Array<{ imageUrl?: string; description?: string; durationMs?: number }>;
+  intervalMs: number;
+  flashBetween: boolean;
+}> = ({ images, intervalMs, flashBetween }) => {
+  const [frameIndex, setFrameIndex] = useState(0);
+  const [showFlash, setShowFlash] = useState(false);
+
+  useEffect(() => {
+    const duration = images[frameIndex]?.durationMs || intervalMs;
+    const timer = setTimeout(() => {
+      if (flashBetween) {
+        setShowFlash(true);
+        setTimeout(() => {
+          setShowFlash(false);
+          setFrameIndex(i => (i + 1) % images.length);
+        }, 120);
+      } else {
+        setFrameIndex(i => (i + 1) % images.length);
+      }
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [frameIndex, images, intervalMs, flashBetween]);
+
+  const current = images[frameIndex];
+
+  return (
+    <div className="relative flex flex-col items-center justify-center gap-3" style={{ minWidth: 280 }}>
+      {/* Flash branco de transição */}
+      <AnimatePresence>
+        {showFlash && (
+          <motion.div
+            key="flash"
+            className="absolute inset-0 rounded-2xl bg-white"
+            initial={{ opacity: 0.9 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
+            style={{ zIndex: 10 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Frame image */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={frameIndex}
+          initial={{ opacity: 0, scale: 0.96, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 380, damping: 22 } }}
+          exit={{ opacity: 0, scale: 1.04, transition: { duration: 0.12 } }}
+        >
+          {current?.imageUrl && (
+            <img
+              src={current.imageUrl}
+              alt={current.description || ''}
+              className="max-w-xs max-h-52 object-contain rounded-2xl"
+              style={{ boxShadow: '0 0 60px rgba(0,0,0,0.8), 0 0 100px rgba(255,255,255,0.15)' }}
+            />
+          )}
+          {current?.description && (
+            <p className="text-white/70 text-sm text-center mt-2 font-medium">{current.description}</p>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Indicadores de paginação (dots) */}
+      <div className="flex gap-1.5">
+        {images.map((_, i) => (
+          <div
+            key={i}
+            className="rounded-full transition-all duration-300"
+            style={{
+              width: i === frameIndex ? 18 : 6,
+              height: 6,
+              background: i === frameIndex ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)',
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -457,6 +590,170 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
             duration={microVisual.duration || 1.5}
           />
         );
+
+      // ─── STAT (métricas com count-up) — Fix #4 ───────────────────────────
+      case 'stat': {
+        const statColor = content.color || '#10B981';
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{
+              padding: '20px 36px',
+              borderRadius: 18,
+              background: 'linear-gradient(145deg, rgba(8,8,20,0.95), rgba(16,12,36,0.98))',
+              border: `1px solid ${statColor}40`,
+              boxShadow: `0 0 40px ${statColor}20, 0 20px 50px rgba(0,0,0,0.6)`,
+              backdropFilter: 'blur(24px)',
+              textAlign: 'center',
+            }}>
+              <CountingNumber
+                from={content.from ?? 0}
+                to={content.to ?? content.value ?? 0}
+                prefix={content.prefix || ''}
+                suffix={content.suffix || ''}
+                duration={microVisual.duration || 2}
+              />
+              {content.label && (
+                <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', margin: '6px 0 0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  {content.label}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // ─── STEP (etapas numeradas) — Fix #4 ────────────────────────────────
+      case 'step': {
+        const stepColor = content.color || '#22D3EE';
+        return (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            padding: '16px 28px',
+            borderRadius: 16,
+            background: 'linear-gradient(145deg, rgba(8,8,20,0.95), rgba(16,12,36,0.98))',
+            border: `1px solid ${stepColor}40`,
+            boxShadow: `0 0 30px ${stepColor}18, 0 16px 40px rgba(0,0,0,0.55)`,
+            backdropFilter: 'blur(20px)',
+            maxWidth: '85vw',
+          }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: '50%',
+              background: `linear-gradient(135deg, ${stepColor}, ${stepColor}aa)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 900, fontSize: 20, color: '#000', flexShrink: 0,
+              boxShadow: `0 0 20px ${stepColor}60`,
+            }}>
+              {content.stepNumber ?? 1}
+            </div>
+            <p style={{ fontSize: 'clamp(14px, 2vw, 20px)', fontWeight: 700, color: '#eef', margin: 0, lineHeight: 1.35 }}>
+              {content.text || content.label || ''}
+            </p>
+          </div>
+        );
+      }
+
+      // ─── COMPARISON-BAR (barras de comparação animadas) — Fix #4 ─────────
+      case 'comparison-bar': {
+        const lColor = content.leftColor || '#EF4444';
+        const rColor = content.rightColor || '#10B981';
+        const lVal = content.leftValue ?? 0;
+        const rVal = content.rightValue ?? 100;
+        const total = Math.max(lVal + rVal, 1);
+        return (
+          <div style={{
+            padding: '18px 28px', borderRadius: 16,
+            background: 'linear-gradient(145deg, rgba(8,8,20,0.95), rgba(16,12,36,0.98))',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(20px)',
+            minWidth: 260, maxWidth: '85vw',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: lColor }}>{content.leftLabel || 'A'}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: rColor }}>{content.rightLabel || 'B'}</span>
+            </div>
+            <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 28 }}>
+              <motion.div initial={{ width: 0 }} animate={{ width: `${(lVal / total) * 100}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
+                style={{ background: lColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{lVal}%</span>
+              </motion.div>
+              <motion.div initial={{ width: 0 }} animate={{ width: `${(rVal / total) * 100}%` }} transition={{ duration: 1.2, ease: 'easeOut', delay: 0.1 }}
+                style={{ background: rColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{rVal}%</span>
+              </motion.div>
+            </div>
+          </div>
+        );
+      }
+
+      // ─── QUOTE (citação editorial com typewriter) — Fix #4 ───────────────
+      case 'quote': {
+        const qColor = content.color || '#a78bfa';
+        return (
+          <div style={{
+            padding: '22px 32px', borderRadius: 18,
+            background: 'linear-gradient(145deg, rgba(10,8,28,0.96), rgba(20,12,44,0.98))',
+            border: `1px solid ${qColor}35`,
+            boxShadow: `0 0 40px ${qColor}18, 0 20px 50px rgba(0,0,0,0.6)`,
+            backdropFilter: 'blur(24px)',
+            maxWidth: '85vw',
+          }}>
+            <p style={{ fontSize: 'clamp(13px, 1.8vw, 18px)', fontWeight: 500, color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.6, fontStyle: 'italic' }}>
+              "{content.text || ''}"
+            </p>
+            {content.author && (
+              <p style={{ fontSize: 12, fontWeight: 700, color: qColor, margin: '10px 0 0', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                — {content.author}
+              </p>
+            )}
+          </div>
+        );
+      }
+
+      // ─── PILL-TAG (etiqueta contextual) — Fix #4 ─────────────────────────
+      case 'pill-tag': {
+        const ptColor = content.color || '#f59e0b';
+        return (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 22px', borderRadius: 999,
+            background: `${ptColor}18`,
+            border: `1px solid ${ptColor}50`,
+            boxShadow: `0 0 20px ${ptColor}25`,
+            backdropFilter: 'blur(12px)',
+          }}>
+            {content.icon && <span style={{ fontSize: 18 }}>{content.icon}</span>}
+            <span style={{ fontSize: 'clamp(13px, 1.8vw, 17px)', fontWeight: 700, color: ptColor, letterSpacing: '0.03em' }}>
+              {content.label || content.text || ''}
+            </span>
+          </div>
+        );
+      }
+
+      // ─── ALERT (aviso com shake físico) — Fix #4 ─────────────────────────
+      case 'alert': {
+        const alertColor = content.color || '#ef4444';
+        return (
+          <motion.div
+            animate={{ x: [0, -8, 8, -6, 6, -4, 4, 0] }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '16px 28px', borderRadius: 16,
+              background: `linear-gradient(145deg, rgba(8,8,20,0.96), rgba(20,8,8,0.98))`,
+              border: `1px solid ${alertColor}50`,
+              boxShadow: `0 0 30px ${alertColor}30, 0 16px 40px rgba(0,0,0,0.55)`,
+              backdropFilter: 'blur(20px)',
+              maxWidth: '85vw',
+            }}
+          >
+            <span style={{ fontSize: 28 }}>{content.icon || '⚠️'}</span>
+            <p style={{ fontSize: 'clamp(14px, 2vw, 19px)', fontWeight: 700, color: alertColor, margin: 0, lineHeight: 1.35 }}>
+              {content.text || content.label || ''}
+            </p>
+          </motion.div>
+        );
+      }
 
       // ─── TEXT-HIGHLIGHT ───────────────────────────────────────────────────
       case 'text-highlight':

@@ -476,11 +476,51 @@ export const V7PhasePlayer = ({
   
   // AnchorText habilitado APENAS quando temos wordTimestamps E anchorActions
   const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
-  
+
+  // ✅ FIX #1 + #2: Ler microVisuals de visual.microVisuals (não phase.microVisuals)
+  // e resolver triggerTime em runtime via wordTimestamps quando ausente no banco
+  const resolvedMicroVisuals = useMemo(() => {
+    const rawMvs: any[] = (currentPhase as any)?.visual?.microVisuals || [];
+    if (rawMvs.length === 0) return [];
+
+    const phaseStart = currentPhase?.startTime ?? 0;
+    const phaseEnd = currentPhase?.endTime ?? Infinity;
+
+    return rawMvs.map((mv: any) => {
+      // Se já tem triggerTime resolvido e válido, usar diretamente
+      if (mv.triggerTime && mv.triggerTime > 0) return mv;
+
+      // Resolver via wordTimestamps (FIRST_IN_RANGE — encontra a primeira ocorrência no range)
+      const keyword = (mv.anchorText || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      let resolvedTime: number | null = null;
+
+      if (wordTimestamps.length > 0 && keyword) {
+        const inRange = wordTimestamps.filter(w => w.start >= phaseStart && w.end <= phaseEnd);
+        const matched = inRange.find(w => {
+          const wNorm = w.word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.,!?;:'"()]/g, '').trim();
+          return wNorm === keyword || wNorm.includes(keyword) || keyword.includes(wNorm);
+        });
+        if (matched) {
+          resolvedTime = matched.start;
+          console.log(`[MicroVisual] ✅ triggerTime resolvido: "${mv.anchorText}" → ${resolvedTime.toFixed(2)}s (phase: ${phaseStart.toFixed(1)}-${phaseEnd === Infinity ? '∞' : phaseEnd.toFixed(1)}s)`);
+        } else {
+          console.warn(`[MicroVisual] ⚠️ keyword "${mv.anchorText}" não encontrada no range [${phaseStart.toFixed(1)}-${phaseEnd === Infinity ? '∞' : phaseEnd.toFixed(1)}s] — fallback para phaseStart`);
+        }
+      }
+
+      return {
+        ...mv,
+        triggerTime: resolvedTime ?? phaseStart,
+        duration: mv.duration ?? 4,
+      };
+    });
+  }, [currentPhase?.id, currentPhase?.startTime, currentPhase?.endTime, wordTimestamps]);
+
   // Log simples do status
   useEffect(() => {
     console.log(`[V7PhasePlayer] 🎯 Phase "${currentPhase?.id}": AnchorText ${shouldEnableAnchors ? 'ENABLED' : 'DISABLED'} (words: ${wordTimestamps.length}, actions: ${anchorActions.length})`);
-  }, [currentPhase?.id, shouldEnableAnchors, wordTimestamps.length, anchorActions.length]);
+    console.log(`[V7PhasePlayer] 🎯 resolvedMicroVisuals: ${resolvedMicroVisuals.length} (raw: ${(currentPhase as any)?.visual?.microVisuals?.length ?? 0})`);
+  }, [currentPhase?.id, shouldEnableAnchors, wordTimestamps.length, anchorActions.length, resolvedMicroVisuals.length]);
 
   // ÚNICO useAnchorText - sem fallbacks, sem triggers globais
   const { 
@@ -1266,7 +1306,11 @@ export const V7PhasePlayer = ({
   }, [ctaClicked, playSound, goToNextPhase, manualResume, hasAudio, audio]);
 
   // Get canvas mood based on phase type
+  // ✅ FIX #5: image-sequence → always 'calm' to suppress heavy particles over images
   const getCanvasMood = (type?: V7Phase['type']): 'dramatic' | 'calm' | 'energetic' | 'mysterious' => {
+    // FIX #5: Se o visual da fase for image-sequence, força mood calm independente do phase type
+    if ((currentPhase as any)?.visual?.type === 'image-sequence') return 'calm';
+
     switch (type) {
       case 'dramatic': return 'dramatic';
       case 'narrative': return 'mysterious';
@@ -2141,12 +2185,12 @@ export const V7PhasePlayer = ({
 
       {/* V7-vv-v4: MicroVisual Overlay - renders word-triggered micro-visuals with sounds */}
       {/* Hide during dramatic/revelation phases as they have their own prominent visuals */}
-      {/* ✅ V7-v60: Pass anchorTriggeredIds for anchor-based visibility */}
-      {currentPhase?.microVisuals && currentPhase.microVisuals.length > 0 && 
+      {/* ✅ FIX #1+#2: Ler de visual.microVisuals (não phase.microVisuals) + resolver triggerTime */}
+      {resolvedMicroVisuals.length > 0 && 
        currentPhase?.type !== 'dramatic' && 
        currentPhase?.type !== 'revelation' && (
         <V7MicroVisualOverlay
-          microVisuals={currentPhase.microVisuals}
+          microVisuals={resolvedMicroVisuals}
           currentTime={hasAudio ? audio.currentTime : internalTime}
           isPlaying={effectiveIsPlaying}
           visualType={(currentPhase as any).visual?.type}
