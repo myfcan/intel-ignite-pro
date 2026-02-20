@@ -61,7 +61,11 @@ export interface V7AnchorAction {
     targetPhaseId?: string;
     visualType?: string;
     interactionType?: string;
+    microVisualId?: string;
+    triggerTime?: number;
+    frameIndex?: number;
   };
+
 }
 
 // ============================================================================

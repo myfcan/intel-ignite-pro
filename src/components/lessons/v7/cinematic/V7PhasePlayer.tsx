@@ -477,8 +477,10 @@ export const V7PhasePlayer = ({
   // AnchorText habilitado APENAS quando temos wordTimestamps E anchorActions
   const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
 
-  // ✅ FIX #1 + #2: Ler microVisuals de visual.microVisuals (não phase.microVisuals)
-  // e resolver triggerTime em runtime via wordTimestamps quando ausente no banco
+  // ✅ FIX SISTÊMICO: Resolução de triggerTime em 3 camadas de prioridade
+  // Camada 1 (mais confiável): keywordTime nos anchorActions type='show' (C06 do banco)
+  // Camada 2 (fallback): wordTimestamps em runtime
+  // Camada 3 (último recurso): phaseStart
   const resolvedMicroVisuals = useMemo(() => {
     const rawMvs: any[] = (currentPhase as any)?.visual?.microVisuals || [];
     if (rawMvs.length === 0) return [];
@@ -486,11 +488,31 @@ export const V7PhasePlayer = ({
     const phaseStart = currentPhase?.startTime ?? 0;
     const phaseEnd = currentPhase?.endTime ?? Infinity;
 
-    return rawMvs.map((mv: any) => {
-      // Se já tem triggerTime resolvido e válido, usar diretamente
-      if (mv.triggerTime && mv.triggerTime > 0) return mv;
+    // Construir lookup de keywordTime via anchorActions type='show' do banco (C06)
+    // Formato: { [microVisualId]: keywordTime }
+    const showActionsByTargetId: Record<string, number> = {};
+    const phaseAnchorActions: any[] = (currentPhase as any)?.anchorActions || [];
+    for (const aa of phaseAnchorActions) {
+      if (aa.type === 'show' && aa.targetId && aa.keywordTime !== undefined && aa.keywordTime !== null) {
+        showActionsByTargetId[aa.targetId] = aa.keywordTime;
+      }
+    }
 
-      // Resolver via wordTimestamps (FIRST_IN_RANGE — encontra a primeira ocorrência no range)
+    return rawMvs.map((mv: any) => {
+      // CAMADA 1: keywordTime no anchorAction type='show' (C06 — fonte canônica do banco)
+      if (showActionsByTargetId[mv.id] !== undefined) {
+        const kt = showActionsByTargetId[mv.id];
+        console.log(`[MicroVisual] ✅ C06 keywordTime: "${mv.id}" (${mv.anchorText}) → ${kt.toFixed(3)}s`);
+        return { ...mv, triggerTime: kt, duration: mv.duration ?? 4 };
+      }
+
+      // CAMADA 2: triggerTime já presente no microVisual (ex: pipeline local step4)
+      if (mv.triggerTime && mv.triggerTime > 0) {
+        console.log(`[MicroVisual] ✅ triggerTime do banco: "${mv.id}" → ${mv.triggerTime.toFixed(3)}s`);
+        return { ...mv, duration: mv.duration ?? 4 };
+      }
+
+      // CAMADA 3: Resolver via wordTimestamps em runtime (FIRST_IN_RANGE)
       const keyword = (mv.anchorText || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       let resolvedTime: number | null = null;
 
@@ -502,9 +524,9 @@ export const V7PhasePlayer = ({
         });
         if (matched) {
           resolvedTime = matched.start;
-          console.log(`[MicroVisual] ✅ triggerTime resolvido: "${mv.anchorText}" → ${resolvedTime.toFixed(2)}s (phase: ${phaseStart.toFixed(1)}-${phaseEnd === Infinity ? '∞' : phaseEnd.toFixed(1)}s)`);
+          console.log(`[MicroVisual] ⚡ Resolvido via wordTimestamps: "${mv.anchorText}" → ${resolvedTime.toFixed(3)}s`);
         } else {
-          console.warn(`[MicroVisual] ⚠️ keyword "${mv.anchorText}" não encontrada no range [${phaseStart.toFixed(1)}-${phaseEnd === Infinity ? '∞' : phaseEnd.toFixed(1)}s] — fallback para phaseStart`);
+          console.warn(`[MicroVisual] ⚠️ "${mv.anchorText}" não encontrado em [${phaseStart.toFixed(1)}-${phaseEnd === Infinity ? '∞' : phaseEnd.toFixed(1)}s] → fallback phaseStart`);
         }
       }
 
@@ -514,7 +536,8 @@ export const V7PhasePlayer = ({
         duration: mv.duration ?? 4,
       };
     });
-  }, [currentPhase?.id, currentPhase?.startTime, currentPhase?.endTime, wordTimestamps]);
+  }, [currentPhase?.id, currentPhase?.startTime, currentPhase?.endTime, currentPhase?.anchorActions, wordTimestamps]);
+
 
   // Log simples do status
   useEffect(() => {
