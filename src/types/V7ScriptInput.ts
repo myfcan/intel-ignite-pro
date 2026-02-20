@@ -217,17 +217,24 @@ export interface V7MicroVisualInput {
   id: string;
   /** Palavra-chave que dispara o micro-visual */
   anchorText: string;
-  type: 'icon' | 'text' | 'number' | 'image' | 'badge' | 'highlight';
-  content: {
-    value?: string;
-    icon?: string;
-    color?: string;
-    animation?: 'fade' | 'pop' | 'slide' | 'bounce';
-    position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
-  };
+  /** Tipos canônicos aceitos pelo pipeline v7-vv */
+  type: 
+    | 'icon' | 'text' | 'number' | 'image' | 'badge' | 'highlight'  // legados
+    | 'image-flash' | 'text-pop' | 'number-count' | 'text-highlight'  // canônicos
+    | 'card-reveal' | 'stat' | 'step' | 'quote' | 'pill-tag'          // canônicos
+    | 'comparison-bar' | 'alert' | 'letter-reveal'                     // canônicos
+    | 'slideshow' | 'range-counter' | 'side-compare';                  // aliases (convertidos pelo pipeline)
+  content: Record<string, unknown>;
   /** Duração em segundos */
-  duration: number;
+  duration?: number;
+  /**
+   * ✅ Injetado pelo pipeline step4 após resolução de anchorText via wordTimestamps.
+   * Representa o timestamp exato (em segundos) em que este micro-visual deve ser exibido.
+   * Nunca deve ser definido manualmente no JSON de entrada — é responsabilidade do pipeline.
+   */
+  triggerTime?: number;
 }
+
 
 // ============================================================================
 // EFEITOS VISUAIS

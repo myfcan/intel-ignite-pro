@@ -152,6 +152,8 @@ export async function v7Step4CalculateAnchors(
     }
 
     // 2.3 Anchors de micro-visuais
+    // ✅ FIX SISTÊMICO: injeta triggerTime resolvido de volta no microVisual
+    // Garante que phase.visual.microVisuals[i].triggerTime está preenchido no banco
     if (scene.visual.microVisuals) {
       for (const microVisual of scene.visual.microVisuals) {
         const mvTimestamp = findKeywordTimestamp(
@@ -162,16 +164,35 @@ export async function v7Step4CalculateAnchors(
         );
 
         if (mvTimestamp !== null) {
+          // 🔑 INJETAR triggerTime resolvido no próprio microVisual (fonte de verdade)
+          // Garante que phase.visual.microVisuals[i].triggerTime está preenchido no banco
+          microVisual.triggerTime = mvTimestamp;
+          microVisual.duration = microVisual.duration ?? 4;
+
           const mvAction: V7AnchorAction = {
             id: `anchor-visual-${microVisual.id}`,
             anchorText: microVisual.anchorText,
             actionType: 'show-visual',
             timestamp: mvTimestamp,
             payload: {
-              visualType: microVisual.type
+              visualType: microVisual.type,
+              microVisualId: microVisual.id,
+              triggerTime: mvTimestamp
             }
           };
           sceneAnchorActions.push(mvAction);
+
+          await logger.info(4, 'Calculate Anchors',
+            `   🎯 MicroVisual "${microVisual.id}" (${microVisual.type}): anchorText="${microVisual.anchorText}" → triggerTime=${mvTimestamp.toFixed(3)}s`
+          );
+        } else {
+          // triggerTime não resolvido: usar startTime da cena como fallback seguro
+          microVisual.triggerTime = sceneStartTime;
+          microVisual.duration = microVisual.duration ?? 4;
+
+          await logger.warn(4, 'Calculate Anchors',
+            `   ⚠️ MicroVisual "${microVisual.id}": anchorText="${microVisual.anchorText}" não encontrado → fallback triggerTime=${sceneStartTime.toFixed(3)}s`
+          );
         }
       }
     }
