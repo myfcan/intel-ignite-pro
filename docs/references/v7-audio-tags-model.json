@@ -1,0 +1,171 @@
+{
+  "$schema": "V7ScriptInput — Audio Tags Reference (eleven_v3)",
+  "_description": "Modelo JSON demonstrando o uso de audio tags emocionais no pipeline V7-vv. Requer use_emotion_tags: true na chamada do pipeline.",
+  "_model_required": "eleven_v3 (alpha) — audio tags são IGNORADAS pelo eleven_multilingual_v2",
+  "_rules": {
+    "syntax": "Tag entre colchetes antes do trecho afetado: [excited] texto aqui.",
+    "scope": "A tag afeta o texto até a próxima tag ou fim da frase. Não é necessário fechar.",
+    "position": "Colocar ANTES do segmento que deve ter aquele tom.",
+    "nesting": "NÃO aninhe tags. Use uma tag por segmento.",
+    "ssml": "eleven_v3 NÃO processa SSML (<break/>). Use [pause] ou [long pause] no lugar.",
+    "max_tags_per_scene": "Recomendado: no máximo 3-4 tags por cena para evitar variação excessiva."
+  },
+  "_available_tags": {
+    "emotions": [
+      "[excited]",
+      "[calm]",
+      "[nervous]",
+      "[frustrated]",
+      "[serious]",
+      "[cheerful]",
+      "[empathetic]",
+      "[assertive]",
+      "[dramatic tone]",
+      "[reflective]",
+      "[hopeful]"
+    ],
+    "physical_sounds": [
+      "[sigh]",
+      "[laughs]",
+      "[whispers]",
+      "[gasps]",
+      "[clears throat]"
+    ],
+    "pacing": [
+      "[pause]",
+      "[long pause]",
+      "[rushed]",
+      "[slows down]",
+      "[hesitates]"
+    ]
+  },
+  "contentVersion": "v7-vv",
+  "title": "Como Usar IA para Gerar Renda Extra",
+  "subtitle": "Do zero à primeira renda digital",
+  "difficulty": "beginner",
+  "category": "renda-extra",
+  "tags": ["ia", "renda", "produtividade"],
+  "learningObjectives": [
+    "Entender quais ferramentas de IA pagam mais rápido",
+    "Identificar o primeiro serviço que você pode oferecer hoje"
+  ],
+  "_pipeline_options": {
+    "_note": "Passe estas opções ao chamar o pipeline V7 para ativar eleven_v3",
+    "use_emotion_tags": true,
+    "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+    "generateAudio": true,
+    "failOnAudioError": false
+  },
+  "scenes": [
+    {
+      "id": "scene-hook-001",
+      "type": "hook",
+      "title": "O gancho — despertar curiosidade",
+      "_narration_notes": "[excited] no início para capturar atenção; [slows down] na revelação do número",
+      "narration": "[excited] Você sabia que pessoas comuns estão faturando de dois a dez mil reais por mês usando ferramentas de inteligência artificial? [pause] E o mais impressionante: [slows down] a maioria começou sem nenhuma experiência técnica.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "R$ 2k – R$ 10k/mês",
+          "subtitle": "Usando IA. Do zero.",
+          "highlightWord": "zero",
+          "mood": "success"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "sparks"
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-hook-number",
+          "type": "stat",
+          "anchorText": "dez mil reais",
+          "duration": 2.5,
+          "content": {
+            "value": "R$ 10k",
+            "label": "por mês",
+            "trend": "up"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "experiência técnica",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    },
+    {
+      "id": "scene-reveal-002",
+      "type": "narrative",
+      "title": "A revelação — ferramentas que pagam",
+      "_narration_notes": "[calm] para credibilidade; [assertive] na lista das ferramentas; [whispers] no segredo",
+      "narration": "[calm] Existem três ferramentas que estão gerando mais oportunidades agora mesmo. [assertive] ChatGPT para criação de conteúdo, Midjourney para design, e Cursor para desenvolvimento. [pause] E existe um segredo que poucos falam: [whispers] você não precisa dominar todas. Basta uma.",
+      "visual": {
+        "type": "comparison",
+        "content": {
+          "title": "Ferramentas que pagam",
+          "items": [
+            { "icon": "🤖", "text": "ChatGPT — Conteúdo & Copywriting" },
+            { "icon": "🎨", "text": "Midjourney — Design & Arte" },
+            { "icon": "💻", "text": "Cursor — Desenvolvimento" }
+          ]
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-secret-badge",
+          "type": "badge",
+          "anchorText": "segredo",
+          "duration": 3.0,
+          "content": {
+            "text": "1 ferramenta = 1 nicho",
+            "variant": "warning"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "basta uma",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    },
+    {
+      "id": "scene-cta-003",
+      "type": "cta",
+      "title": "Chamada para ação",
+      "_narration_notes": "[hopeful] para motivar; [reflective] na pergunta; [excited] no fechamento",
+      "narration": "[reflective] Então pensa comigo: qual dessas ferramentas você já usa ou tem mais curiosidade? [pause] Porque é exatamente aí que está o seu ponto de entrada. [hopeful] Na próxima aula, vamos descobrir juntos qual é o seu nicho ideal. [excited] E eu tenho certeza que você vai se surpreender.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "Qual é o seu nicho?",
+          "subtitle": "Próxima aula: descobrindo sua especialidade",
+          "mood": "default"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "question": "Qual ferramenta você quer explorar primeiro?",
+        "options": [
+          { "id": "opt-1", "text": "ChatGPT — criar textos e conteúdo", "isCorrect": false },
+          { "id": "opt-2", "text": "Midjourney — design e imagens", "isCorrect": false },
+          { "id": "opt-3", "text": "Cursor — programação com IA", "isCorrect": false },
+          { "id": "opt-4", "text": "Ainda não sei — me ajuda a descobrir!", "isCorrect": true }
+        ],
+        "explanation": "Não existe resposta errada. A próxima aula vai ajudar você a descobrir qual é a sua melhor opção."
+      },
+      "anchorTexts": [
+        {
+          "keyword": "próxima aula",
+          "action": "pause",
+          "pauseAt": "surpreender"
+        }
+      ]
+    }
+  ]
+}

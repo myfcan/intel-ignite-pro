@@ -71,40 +71,49 @@ export async function v7Step2BuildNarration(
 }
 
 /**
- * Limpa o texto para geração de áudio TTS
+ * Limpa o texto para geração de áudio TTS.
+ *
+ * PRESERVA audio tags eleven_v3 do tipo [excited], [calm], [pause], etc.
+ * Estas tags têm 1-30 caracteres e não contêm parênteses ou URLs.
+ *
+ * Audio tags REMOVIDAS pelo bridge dependendo do modelo:
+ *   - eleven_v3          → preserva [tags], remove SSML
+ *   - eleven_multilingual_v2 → remove [tags], preserva SSML
  */
 function cleanTextForTTS(text: string): string {
   let cleaned = text;
-  
-  // 1. Remover emojis
+
+  // 1. Remover emojis (fora de colchetes)
   cleaned = cleaned.replace(/[\u{1F300}-\u{1F9FF}]/gu, '');
   cleaned = cleaned.replace(/[\u{2600}-\u{26FF}]/gu, '');
   cleaned = cleaned.replace(/[\u{2700}-\u{27BF}]/gu, '');
-  
-  // 2. Remover markdown
+
+  // 2. Remover markdown — imagens PRIMEIRO (para não confundir [texto] com audio tags)
+  // Imagens: ![alt](url)
+  cleaned = cleaned.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '');
+  // Links: [texto](url) — APENAS quando seguido de parêntese (não é audio tag)
+  cleaned = cleaned.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+  // Separadores
+  cleaned = cleaned.replace(/^[-_*]{3,}$/gm, '');
+
+  // 3. Remover markdown de formatação (NÃO toca em [tags])
   // Títulos
   cleaned = cleaned.replace(/^#{1,6}\s+/gm, '');
   // Negrito e itálico
   cleaned = cleaned.replace(/(\*\*|__)(.*?)\1/g, '$2');
   cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, '$2');
-  // Links
-  cleaned = cleaned.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
   // Código inline
   cleaned = cleaned.replace(/`([^`]+)`/g, '$1');
   // Listas
   cleaned = cleaned.replace(/^[\s]*[-*]\s+/gm, '');
   cleaned = cleaned.replace(/^[\s]*\d+\.\s+/gm, '');
-  
-  // 3. Remover imagens e separadores
-  cleaned = cleaned.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '');
-  cleaned = cleaned.replace(/^[-_*]{3,}$/gm, '');
-  
+
   // 4. Normalizar espaços
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
   cleaned = cleaned.replace(/[ \t]{2,}/g, ' ');
-  
+
   // 5. Trim final
   cleaned = cleaned.trim();
-  
+
   return cleaned;
 }
