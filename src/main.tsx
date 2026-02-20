@@ -7,24 +7,37 @@ import "./index.css";
 // que causava exibição de versões antigas do dashboard
 // O SW será reativado quando o app estiver estável para produção
 
-// Limpar qualquer Service Worker antigo que ainda esteja registrado
+// 🧹 Limpar qualquer Service Worker antigo e caches obsoletos
+const APP_VERSION = '2025-02-20-v3';
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(registrations => {
     registrations.forEach(registration => {
       registration.unregister();
       console.log('[PWA] Service Worker removido:', registration.scope);
     });
+    // Se havia SWs ativos, força reload limpo UMA vez
+    if (registrations.length > 0) {
+      const reloadKey = `sw-cleared-${APP_VERSION}`;
+      if (!sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, '1');
+        window.location.reload();
+      }
+    }
   });
-  // Limpar caches antigos
-  if ('caches' in window) {
-    caches.keys().then(names => {
-      names.forEach(name => {
-        caches.delete(name);
-        console.log('[PWA] Cache removido:', name);
-      });
-    });
-  }
 }
+
+// Limpar caches antigos (IndexedDB / Cache API)
+if ('caches' in window) {
+  caches.keys().then(names => {
+    names.forEach(name => {
+      caches.delete(name);
+      console.log('[PWA] Cache removido:', name);
+    });
+  });
+}
+
+console.log('[AIliv] Dashboard versão:', APP_VERSION);
 
 // 🧪 Disponibilizar testes no console (desenvolvimento)
 if (import.meta.env.DEV) {
