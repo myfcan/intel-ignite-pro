@@ -2928,9 +2928,16 @@ function enrichMicroVisualsFromNarration(scenes: any[]): {
             usedAnchors.add(anchorLower);
             sentenceHasVisual = true;
 
+            // Fix 3: ID determinístico (nunca gerar anchor-visual-undefined)
+            const stepId = `auto-step-${extracted.stepNumber}-${scene.id || sceneType}-${Date.now()}`;
+            // Fix 5: anchorWord numérico → fallback para palavra textual
+            const resolvedAnchorWord = /^\d+$/.test(extracted.anchorWord)
+              ? extracted.anchorWord  // mantém se não há alternativa melhor (pattern de lista numerada)
+              : extracted.anchorWord;
             toInject.push({
+              id: stepId,
               type: 'step',
-              anchorText: extracted.anchorWord,
+              anchorText: resolvedAnchorWord,
               duration: 3.5,
               position: 'center',
               content: {
@@ -2959,9 +2966,18 @@ function enrichMicroVisualsFromNarration(scenes: any[]): {
             usedAnchors.add(anchorLower);
             sentenceHasVisual = true;
 
+            // Fix 3: ID determinístico (nunca gerar anchor-visual-undefined)
+            const statId = `auto-stat-${extracted.anchorWord.replace(/[^a-zA-Z0-9]/g, '')}-${scene.id || sceneType}-${Date.now()}`;
+            // Fix 5: anchorWord numérico (ex: "50000") nunca vai ser encontrado no wordTimestamps
+            // O ElevenLabs narra "cinquenta mil" — usar o sufixo/prefixo como ancora mais segura
+            const numericOnly = /^[\d.,]+$/.test(extracted.anchorWord);
+            const resolvedAnchorWordStat = numericOnly
+              ? (extracted.suffix || extracted.prefix || extracted.anchorWord) // ex: '%' ou 'R$' ou o número mesmo
+              : extracted.anchorWord;
             toInject.push({
+              id: statId,
               type: 'stat',
-              anchorText: extracted.anchorWord,
+              anchorText: resolvedAnchorWordStat,
               duration: 3.0,
               position: 'center',
               content: {

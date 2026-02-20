@@ -50,12 +50,22 @@ export interface V7WordTimestamp {
 
 export interface V7AnchorAction {
   id: string;
-  /** Palavra-chave que dispara a ação */
-  anchorText: string;
-  /** Tipo de ação */
-  actionType: 'pause' | 'transition' | 'show-visual' | 'trigger-interaction';
-  /** Timestamp calculado (segundos) */
-  timestamp: number;
+  /**
+   * Tipo de ação — alinhado com o contrato C06 da Edge Function.
+   * 'show' = exibir microVisual (substitui 'show-visual' do pipeline legado)
+   * 'pause' = pausar áudio para interação
+   * 'transition' = transição entre fases
+   * 'trigger' = gatilho genérico (ex: frameIndex slideshow)
+   */
+  type: 'pause' | 'show' | 'transition' | 'trigger';
+  /** Palavra-chave na narração que dispara a ação (C06: campo 'keyword') */
+  keyword: string;
+  /** Timestamp calculado (segundos) — alias C06: keywordTime */
+  keywordTime: number;
+  /** ID do elemento alvo (microVisual.id para type='show') */
+  targetId?: string;
+  /** Fase alvo para type='pause' ou 'transition' */
+  targetPhaseId?: string;
   /** Dados adicionais da ação */
   payload?: {
     targetPhaseId?: string;
@@ -66,6 +76,13 @@ export interface V7AnchorAction {
     frameIndex?: number;
   };
 
+  // ── CAMPOS LEGADOS (backward compat — NÃO usar em código novo) ──
+  /** @deprecated Use keyword */
+  anchorText?: string;
+  /** @deprecated Use type */
+  actionType?: 'pause' | 'transition' | 'show-visual' | 'trigger-interaction';
+  /** @deprecated Use keywordTime */
+  timestamp?: number;
 }
 
 // ============================================================================

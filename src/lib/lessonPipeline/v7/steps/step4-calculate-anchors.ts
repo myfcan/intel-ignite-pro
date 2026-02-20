@@ -88,15 +88,13 @@ export async function v7Step4CalculateAnchors(
     const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal', 'cta', 'gamification'];
     const isInteractiveScene = INTERACTIVE_SCENE_TYPES.includes(scene.type);
 
-    // 2.1 Anchor de pausa (APENAS para cenas interativas)
+    // 2.1 Anchor de pausa (APENAS para cenas interativas) — C06 contract: type='pause'
     if (scene.anchorText?.pauseAt) {
-      // ✅ GUARD: Se a cena NÃO é interativa, ignorar pauseAt e avisar no log
       if (!isInteractiveScene) {
         await logger.warn(4, 'Calculate Anchors',
           `   ⚠️ ${scene.id}: pauseAt ignorado - cena tipo "${scene.type}" não é interativa`
         );
       } else {
-        // Cena interativa: criar anchor de pause
         const pauseTimestamp = findKeywordTimestamp(
           scene.anchorText.pauseAt,
           wordTimestamps,
@@ -107,9 +105,10 @@ export async function v7Step4CalculateAnchors(
         if (pauseTimestamp !== null) {
           const pauseAction: V7AnchorAction = {
             id: `anchor-pause-${scene.id}`,
-            anchorText: scene.anchorText.pauseAt,
-            actionType: 'pause',
-            timestamp: pauseTimestamp,
+            keyword: scene.anchorText.pauseAt,
+            type: 'pause',
+            keywordTime: pauseTimestamp,
+            targetPhaseId: scene.id,
             payload: {
               targetPhaseId: scene.id,
               interactionType: scene.interaction?.type
@@ -128,7 +127,7 @@ export async function v7Step4CalculateAnchors(
       }
     }
 
-    // 2.2 Anchor de transição
+    // 2.2 Anchor de transição — C06 contract: type='transition'
     if (scene.anchorText?.transitionAt) {
       const transitionTimestamp = findKeywordTimestamp(
         scene.anchorText.transitionAt,
@@ -140,9 +139,10 @@ export async function v7Step4CalculateAnchors(
       if (transitionTimestamp !== null) {
         const transitionAction: V7AnchorAction = {
           id: `anchor-transition-${scene.id}`,
-          anchorText: scene.anchorText.transitionAt,
-          actionType: 'transition',
-          timestamp: transitionTimestamp,
+          keyword: scene.anchorText.transitionAt,
+          type: 'transition',
+          keywordTime: transitionTimestamp,
+          targetPhaseId: scenes[sceneIdx + 1]?.id,
           payload: {
             targetPhaseId: scenes[sceneIdx + 1]?.id
           }
@@ -151,11 +151,18 @@ export async function v7Step4CalculateAnchors(
       }
     }
 
-    // 2.3 Anchors de micro-visuais
-    // ✅ FIX SISTÊMICO: injeta triggerTime resolvido de volta no microVisual
-    // Garante que phase.visual.microVisuals[i].triggerTime está preenchido no banco
+    // 2.3 Anchors de micro-visuais — C06 contract: type='show', keywordTime, targetId
+    // ✅ FIX SISTÊMICO: anchors compatíveis com V7PhasePlayer Camada 1 (showActionsByTargetId)
     if (scene.visual.microVisuals) {
       for (const microVisual of scene.visual.microVisuals) {
+        // Garantir que microVisual tem ID (Fix 3: nunca gerar anchor-visual-undefined)
+        if (!microVisual.id) {
+          microVisual.id = `auto-mv-${scene.id}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+          await logger.warn(4, 'Calculate Anchors',
+            `   ⚠️ [GATE] MicroVisual sem ID detectado → ID gerado: "${microVisual.id}"`
+          );
+        }
+
         const mvTimestamp = findKeywordTimestamp(
           microVisual.anchorText,
           wordTimestamps,
@@ -164,16 +171,18 @@ export async function v7Step4CalculateAnchors(
         );
 
         if (mvTimestamp !== null) {
-          // 🔑 INJETAR triggerTime resolvido no próprio microVisual (fonte de verdade)
-          // Garante que phase.visual.microVisuals[i].triggerTime está preenchido no banco
+          // Injetar triggerTime no objeto para persistência no banco (Camada 2 fallback)
           microVisual.triggerTime = mvTimestamp;
           microVisual.duration = microVisual.duration ?? 4;
 
+          // ✅ C06-COMPATIBLE: type='show', keywordTime, targetId
+          // Player lê: anchorActions.filter(aa => aa.type === 'show') → showActionsByTargetId[mv.id]
           const mvAction: V7AnchorAction = {
             id: `anchor-visual-${microVisual.id}`,
-            anchorText: microVisual.anchorText,
-            actionType: 'show-visual',
-            timestamp: mvTimestamp,
+            keyword: microVisual.anchorText,
+            type: 'show',
+            keywordTime: mvTimestamp,
+            targetId: microVisual.id,
             payload: {
               visualType: microVisual.type,
               microVisualId: microVisual.id,
@@ -183,16 +192,33 @@ export async function v7Step4CalculateAnchors(
           sceneAnchorActions.push(mvAction);
 
           await logger.info(4, 'Calculate Anchors',
-            `   🎯 MicroVisual "${microVisual.id}" (${microVisual.type}): anchorText="${microVisual.anchorText}" → triggerTime=${mvTimestamp.toFixed(3)}s`
+            `   🎯 MicroVisual "${microVisual.id}" (${microVisual.type}): keyword="${microVisual.anchorText}" → keywordTime=${mvTimestamp.toFixed(3)}s [C06 ✓]`
           );
         } else {
-          // triggerTime não resolvido: usar startTime da cena como fallback seguro
+          // ✅ [GATE] Fix 4: triggerTime não resolvido — fallback explícito com log rastreável
           microVisual.triggerTime = sceneStartTime;
           microVisual.duration = microVisual.duration ?? 4;
 
           await logger.warn(4, 'Calculate Anchors',
-            `   ⚠️ MicroVisual "${microVisual.id}": anchorText="${microVisual.anchorText}" não encontrado → fallback triggerTime=${sceneStartTime.toFixed(3)}s`
+            `   ⚠️ [GATE] MicroVisual "${microVisual.id}" (anchorText="${microVisual.anchorText}") ` +
+            `NÃO ENCONTRADO na narração → triggerTime = sceneStart (${sceneStartTime.toFixed(2)}s). ` +
+            `Elemento vai aparecer no início da fase, não ancorado à fala.`
           );
+
+          // Mesmo sem encontrar, criar anchor com keywordTime=sceneStartTime para o player não perder o elemento
+          const mvFallbackAction: V7AnchorAction = {
+            id: `anchor-visual-${microVisual.id}`,
+            keyword: microVisual.anchorText,
+            type: 'show',
+            keywordTime: sceneStartTime,
+            targetId: microVisual.id,
+            payload: {
+              visualType: microVisual.type,
+              microVisualId: microVisual.id,
+              triggerTime: sceneStartTime
+            }
+          };
+          sceneAnchorActions.push(mvFallbackAction);
         }
       }
     }
