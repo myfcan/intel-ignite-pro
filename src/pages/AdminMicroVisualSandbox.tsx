@@ -128,11 +128,29 @@ const PRESETS: VisualPreset[] = [
   {
     type: 'image-flash',
     label: 'image-flash',
-    description: 'Imagem com flash de brilho na entrada',
+    description: 'Slideshow cinematográfico: sequência de imagens com flash entre cada uma',
     color: 'purple',
+    isNew: true,
     content: {
-      imageUrl: 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400&q=80',
-      description: 'IA Generativa',
+      flashBetween: true,
+      intervalMs: 1800,
+      images: [
+        {
+          imageUrl: 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400&q=80',
+          description: 'IA Generativa — Visão',
+          durationMs: 1800,
+        },
+        {
+          imageUrl: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=400&q=80',
+          description: 'Robô IA — Execução',
+          durationMs: 1800,
+        },
+        {
+          imageUrl: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=400&q=80',
+          description: 'Resultado — Renda Extra',
+          durationMs: 2000,
+        },
+      ],
     },
   },
 ];
