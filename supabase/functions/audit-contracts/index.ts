@@ -344,7 +344,11 @@ Deno.serve(async (req) => {
         }
         for (const frame of frames) {
           c121FramesChecked++;
-          if (!frame.promptScene) c121Violations++;
+          // promptScene é obrigatório SOMENTE se não há storagePath explícito
+          // Se storagePath está presente (mesmo PENDING), a intenção do frame está declarada
+          const hasExplicitStoragePath = !!frame.storagePath;
+          const hasPromptScene = !!frame.promptScene?.trim();
+          if (!hasExplicitStoragePath && !hasPromptScene) c121Violations++;
           if (!frame.durationMs || frame.durationMs < 1000) c121Violations++;
         }
         const totalDurationMs = frames.reduce((sum: number, f: any) => sum + (f.durationMs || 0), 0);

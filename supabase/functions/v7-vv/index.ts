@@ -2609,7 +2609,9 @@ function executeDryRun(input: ScriptInput): DryRunResult {
               }
               let totalDur = 0;
               frames.forEach((f: any, fi: number) => {
-                if (!f.promptScene?.trim()) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.frames[${fi}].promptScene`, message: 'promptScene obrigatório' });
+                // promptScene é obrigatório SOMENTE se não há storagePath explícito
+                const hasExplicitPath = !!f.storagePath;
+                if (!hasExplicitPath && !f.promptScene?.trim()) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.frames[${fi}].promptScene`, message: 'promptScene obrigatório quando storagePath não está definido' });
                 if (!f.durationMs || f.durationMs < 1000) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.frames[${fi}].durationMs`, message: `durationMs >= 1000 (tem ${f.durationMs})` });
                 totalDur += (f.durationMs || 0);
                 // C13 PREP: Optional cameraSpec validation (warning only, tolerant parsing)
