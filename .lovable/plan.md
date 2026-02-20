@@ -1,101 +1,211 @@
 
-# Diagnóstico Forense — Bugs Identificados nas Screenshots
+# Diagnóstico Sistêmico Completo — Pipeline V7-vv
 
-## O Que Está Errado (3 Bugs Reais)
+## O Que a Screenshot Confirma
 
-### BUG #1 — CRÍTICO: microVisuals nunca chegam ao renderer
-O player renderiza em `currentPhase.microVisuals` (linha 2145 de V7PhasePlayer.tsx), mas o pipeline persiste os microVisuals dentro de `phase.visual.microVisuals` (step5, linha 192).
-
-```
-Pipeline persiste:   phase.visual.microVisuals = [...]
-Player lê:           phase.microVisuals → undefined → NADA RENDERIZA
-```
-
-Resultado: Nenhum `image-flash` (slideshow), `stat`, `step` ou `comparison-bar` aparece jamais.
-
-### BUG #2 — CRÍTICO: microVisuals do banco chegam sem `triggerTime`
-O `V7MicroVisualOverlay` precisa de `mv.triggerTime` (número em segundos) para saber quando exibir cada micro-visual. Mas o banco salva os microVisuals no formato de input cru com `anchorText` (string), sem o `triggerTime` resolvido.
-
-O pipeline (`step4-calculate-anchors.ts`) calcula o timestamp da keyword e salva em `allAnchorActions`, mas **não injeta esse timestamp de volta nos microVisuals**. Quando o player pega `phase.visual.microVisuals`, os objetos têm `anchorText: "VISÃO"` mas `triggerTime: 0` (undefined/zero).
-
-### BUG #3 — Canvas intensity "dramatic" na fase EPP
-As screenshots mostram partículas gigantes e explosivas sobre a imagem mockup. O código já prevê `intensity='low'` para `image-sequence`, mas o V7CinematicCanvas está recebendo `mood='energetic'` derivado do tipo da fase (`narrative`), que por padrão gera partículas de alta intensidade que ignoram o `low`.
+O dashboard está funcional. O usuário (Fernando Canuto, 26 aulas completas, Power 1100, Nv2) está usando o sistema ativamente. O problema não é o dashboard — é a arquitetura interna do pipeline que ainda tem rachaduras que vão travar a produção em escala.
 
 ---
 
-## Solução por Camada (Princípio de Responsabilidade Correta)
+## Os 4 Problemas Sistêmicos Reais (Verificados no Código)
 
-### Fix 1 — V7PhasePlayer.tsx: Ler microVisuals do lugar certo
-Mudar a leitura de `currentPhase.microVisuals` para `(currentPhase as any).visual?.microVisuals`.
+### PROBLEMA 1 — Divergência Estrutural: Dois Pipelines em Paralelo
 
-Mas isso ainda não resolve o `triggerTime` ausente — por isso precisamos do Fix 2.
+O sistema tem **duas implementações independentes** do mesmo pipeline:
 
-### Fix 2 — V7PhasePlayer.tsx: Resolver triggerTime dos microVisuals em runtime
-Criar um `useMemo` que, para cada microVisual em `phase.visual.microVisuals`, resolve o `triggerTime` cruzando o `anchorText` com os `wordTimestamps` disponíveis no player.
+```text
+PIPELINE A (Frontend)          PIPELINE B (Edge Function)
+src/lib/lessonPipeline/        supabase/functions/v7-vv/
+  step1-validate.ts              validateInput()
+  step2-build-narration.ts       buildNarration()
+  step3-generate-audio.ts        generateAudio()
+  step4-calculate-anchors.ts     calculateAnchors()
+  step5-build-content.ts         buildContent()
+```
 
-Isso é o que o pipeline deveria fazer, mas já que o player tem os `wordTimestamps`, pode fazê-lo em runtime com segurança.
+Os dois pipelines têm lógicas **diferentes** e podem produzir outputs **diferentes**. A Edge Function `v7-vv` tem 8019 linhas — é o pipeline **real** que é executado. O pipeline do frontend (`src/lib/lessonPipeline/`) é chamado de onde? Verificando os contratos entre eles, há divergências concretas:
+
+- `V7AnchorAction.timestamp` (frontend) vs `AnchorAction.keywordTime` (edge function) — campo diferente para o mesmo dado
+- `actionType: 'show-visual'` (frontend) vs `type: 'show'` (edge function) — enum diferente
+- O `step4` do frontend injeta `triggerTime` diretamente no `microVisual` — a edge function usa `anchorActions type='show'`
+
+**Impacto**: O player `V7PhasePlayer.tsx` foi escrito para consumir o output da Edge Function (banco). Se alguém chamar o pipeline do frontend diretamente, o output vai ser incompatível com o que o player espera.
+
+### PROBLEMA 2 — Ruptura de Contrato: C06 vs `anchorActions` do Frontend
+
+A Edge Function implementa **C06 (Single Trigger Contract)**:
+- `microVisuals` chegam ao banco **sem** `triggerTime`
+- `triggerTime` vive **exclusivamente** em `anchorActions[type='show'].keywordTime`
+- O player lê `showActionsByTargetId[mv.id]` (Camada 1)
+
+O pipeline do frontend `step4-calculate-anchors.ts` (linhas 167-170) faz o **oposto**:
+- Injeta `microVisual.triggerTime = mvTimestamp` diretamente no objeto
+- Cria `anchorAction` com `actionType: 'show-visual'` (não `type: 'show'`)
+
+O `resolvedMicroVisuals` no player (linha 496) busca `aa.type === 'show'` — nunca vai encontrar `aa.actionType === 'show-visual'`. A Camada 1 (C06) **sempre falha** para aulas processadas pelo pipeline frontend.
+
+### PROBLEMA 3 — ScriptScene Interface Desatualizada na Edge Function
+
+A `ScriptScene` interface na Edge Function (linhas 1566-1621) aceita `anchorActions` como:
+```typescript
+anchorActions?: Array<{
+  id: string;
+  keyword: string;  // ← mas o JSON do usuário usa "MARCO1", "MARCO2"
+  type: string;
+  targetId?: string;
+  payload?: Record<string, unknown>;
+}>
+```
+
+Mas o user's JSON usa:
+```json
+{ "id": "trigger-frame-1", "type": "trigger", "keyword": "MARCO1", "payload": { "frameIndex": 1 } }
+```
+
+Isso parece compatível — mas o `findKeywordTimestamp` normaliza com `normalizeWord()` que remove maiúsculas. Palavras 100% maiúsculas como "MARCO1", "VISÃO", "RENDA" **têm alta chance de não serem encontradas** por match insensível, porque o ElevenLabs pode narrá-las com entonação diferente ou como texto corrido.
+
+### PROBLEMA 4 — Auto-Enriquecimento Silencioso Sem Gate de Auditoria
+
+A Edge Function tem `enrichMicroVisualsFromNarration()` (linhas 2797-2999) que injeta `stat` e `step` microVisuals automaticamente. É **NON-BREAKING** — erros são capturados e ignorados. Mas:
+
+- Os microVisuals auto-injetados recebem `id` como `undefined` (não são gerados IDs únicos)
+- O `step4 calculateAnchors` tenta resolver `anchor-visual-${microVisual.id}` com `id` undefined → gera `anchor-visual-undefined`
+- Duplicatas de `anchor-visual-undefined` não são detectadas
+- O Dry-Run **não valida** os microVisuals auto-injetados (ocorrem depois do Dry-Run)
+
+---
+
+## A Raiz Comum dos 4 Problemas
+
+Todos os problemas têm a mesma causa: **falta de um contrato único e verificável entre pipeline e renderer**.
+
+O objetivo mestre (criar aulas com qualidade e perfeição em escala) exige que:
+1. Exista **UM único pipeline** como fonte de verdade
+2. O output do pipeline seja **verificável automaticamente** antes de chegar ao renderer
+3. Os contratos C01-C15 sejam **enforced com testes reais**, não só documentados
+
+---
+
+## Plano de Ação: 5 Fixes Sistêmicos
+
+### Fix 1 — Unificar os Contratos entre Frontend Pipeline e Edge Function
+
+**Arquivo**: `src/lib/lessonPipeline/v7/types.ts`
+
+Mudar `actionType: 'show-visual'` para `type: 'show'` para paridade com a Edge Function. O campo `timestamp` deve ser aliased como `keywordTime` para que o player encontre na Camada 1.
 
 ```typescript
-const resolvedMicroVisuals = useMemo(() => {
-  const rawMvs = (currentPhase as any)?.visual?.microVisuals || [];
-  if (!wordTimestamps.length) return rawMvs;
-  
-  return rawMvs.map((mv: any) => {
-    // Se já tem triggerTime resolvido, usar
-    if (mv.triggerTime && mv.triggerTime > 0) return mv;
-    
-    // Resolver via wordTimestamps
-    const phaseStart = currentPhase?.startTime ?? 0;
-    const phaseEnd = currentPhase?.endTime ?? Infinity;
-    const keyword = mv.anchorText || '';
-    
-    const triggerTime = findMicroVisualTriggerTime(
-      keyword, wordTimestamps, phaseStart, phaseEnd
-    );
-    
-    return {
-      ...mv,
-      triggerTime: triggerTime ?? phaseStart,
-      duration: mv.duration ?? 4, // 4s default
-    };
-  });
-}, [currentPhase, wordTimestamps]);
+// ANTES (quebrado)
+export interface V7AnchorAction {
+  actionType: 'pause' | 'transition' | 'show-visual' | 'trigger-interaction';
+  timestamp: number;
+}
+
+// DEPOIS (alinhado com Edge Function)
+export interface V7AnchorAction {
+  type: 'pause' | 'show' | 'transition' | 'trigger';
+  keywordTime: number;
+  keyword: string;   // adicionar campo keyword
+  targetId?: string; // adicionar campo targetId
+}
 ```
 
-### Fix 3 — V7MicroVisualOverlay.tsx: Suporte ao tipo `image-flash` com `content.images` (slideshow)
-O usuário está usando `image-flash` com `content.images: []` (array de objetos com `imageUrl`, `description`, `durationMs`). O `ImageFlashContent` atual só exibe uma única imagem (`content.imageUrl` ou `content.storagePath`). Precisa detectar o modo slideshow e renderizar o `ImageFlashSequence` já existente na memória do projeto.
+### Fix 2 — Corrigir step4 para Gerar Anchors Compatíveis com C06
 
-### Fix 4 — V7PhasePlayer.tsx: Suporte aos novos tipos canônicos no `V7MicroVisualOverlay`
-Adicionar ao `renderContent()` os cases: `stat`, `step`, `comparison-bar`, `quote`, `pill-tag`, `alert` — que são os tipos que o Dry-Run agora aceita mas o renderer não renderiza, caindo no `default` (que exibe texto genérico).
+**Arquivo**: `src/lib/lessonPipeline/v7/steps/step4-calculate-anchors.ts`
 
-### Fix 5 — V7CinematicCanvas: Suprimir partículas em image-sequence
-O `getCanvasMood` retorna `'energetic'` para type `'narrative'`, mesmo quando a fase tem `visual.type === 'image-sequence'`. Adicionar uma verificação no `getCanvasMood` que retorna `'calm'` quando o visual type for `image-sequence`, complementando o `intensity='low'` já implementado.
+O `mvAction` gerado pelo step4 usa `actionType: 'show-visual'` — trocar para `type: 'show'` e `keywordTime` para alinhar com o que o player lê na Camada 1.
 
----
+```typescript
+// ANTES (incompatível com player Camada 1)
+const mvAction: V7AnchorAction = {
+  id: `anchor-visual-${microVisual.id}`,
+  anchorText: microVisual.anchorText,
+  actionType: 'show-visual',  // ← player não lê isso
+  timestamp: mvTimestamp,     // ← player não lê isso
+  payload: { ... }
+};
 
-## Arquivos a Modificar
+// DEPOIS (compatível com C06 do player)
+const mvAction: V7AnchorAction = {
+  id: `anchor-visual-${microVisual.id}`,
+  keyword: microVisual.anchorText,  // ← player lê aa.keyword
+  type: 'show',                     // ← player filtra aa.type === 'show'
+  keywordTime: mvTimestamp,         // ← player lê aa.keywordTime
+  targetId: microVisual.id,         // ← player busca showActionsByTargetId[mv.id]
+};
+```
 
-| Arquivo | Mudança |
-|---|---|
-| `src/components/lessons/v7/cinematic/V7PhasePlayer.tsx` | Fix 1: ler de `visual.microVisuals` + Fix 2: resolver triggerTime + Fix 5: getCanvasMood para image-sequence |
-| `src/components/lessons/v7/cinematic/effects/V7MicroVisualOverlay.tsx` | Fix 3: slideshow no image-flash + Fix 4: novos tipos canônicos (stat, step, comparison-bar, quote, pill-tag, alert) |
+### Fix 3 — Adicionar ID Automático nos microVisuals Auto-Injetados
+
+**Arquivo**: `supabase/functions/v7-vv/index.ts` (função `enrichMicroVisualsFromNarration`)
+
+Os `toInject` items não recebem `id`. Adicionar geração de ID determinístico.
+
+```typescript
+// ANTES (id ausente → anchor-visual-undefined)
+toInject.push({
+  type: 'step',
+  anchorText: extracted.anchorWord,
+  duration: 3.5,
+  ...
+});
+
+// DEPOIS (id único garantido)
+toInject.push({
+  id: `auto-${sceneType}-step-${extracted.stepNumber}-${Date.now()}`,
+  type: 'step',
+  anchorText: extracted.anchorWord,
+  duration: 3.5,
+  ...
+});
+```
+
+### Fix 4 — Gate de Validação no Step4: MicroVisual sem triggerTime = Erro
+
+**Arquivo**: `src/lib/lessonPipeline/v7/steps/step4-calculate-anchors.ts`
+
+Se um microVisual usar o fallback `triggerTime = sceneStartTime`, ele vai aparecer no início da fase — timing errado. Transformar em warning explícito que aparece nos logs e é registrado no debug report.
+
+```typescript
+// DEPOIS DA RESOLUÇÃO: checar e logar como issue rastreável
+if (mvTimestamp === null) {
+  await logger.warn(4, 'Calculate Anchors',
+    `   ⚠️ [GATE] MicroVisual "${microVisual.id}" (anchorText="${microVisual.anchorText}") ` +
+    `NÃO ENCONTRADO na narração → triggerTime = sceneStart (${sceneStartTime.toFixed(2)}s). ` +
+    `Isso vai aparecer no início da fase, não ancorado à fala.`
+  );
+}
+```
+
+### Fix 5 — Adicionar Validação de `anchorText` no `enrichMicroVisualsFromNarration`
+
+**Arquivo**: `supabase/functions/v7-vv/index.ts`
+
+Os microVisuals auto-injetados usam `anchorWord` como `anchorText`. Mas `anchorWord` pode ser um número (ex: `50000`), que nunca vai ser encontrado no `wordTimestamps` porque o ElevenLabs narra "cinquenta mil". Adicionar lookup reverso: se `anchorWord` é numérico, converter para palavra narrada.
 
 ---
 
 ## Sequência de Implementação
 
-1. Corrigir leitura de `microVisuals` no V7PhasePlayer (Fix 1)
-2. Adicionar `resolvedMicroVisuals` com triggerTime em runtime (Fix 2)
-3. Corrigir getCanvasMood para image-sequence (Fix 5)
-4. Adicionar slideshow ao `ImageFlashContent` (Fix 3)
-5. Adicionar os 6 novos tipos canônicos ao `renderContent()` do MicroVisualOverlay (Fix 4)
+| Ordem | Arquivo | Fix |
+|-------|---------|-----|
+| 1 | `src/lib/lessonPipeline/v7/types.ts` | Fix 1: Unificar contrato V7AnchorAction |
+| 2 | `src/lib/lessonPipeline/v7/steps/step4-calculate-anchors.ts` | Fix 2: type='show' + keywordTime + targetId |
+| 3 | `src/lib/lessonPipeline/v7/steps/step4-calculate-anchors.ts` | Fix 4: Gate de validação no fallback |
+| 4 | `supabase/functions/v7-vv/index.ts` | Fix 3: IDs nos auto-injetados |
+| 5 | `supabase/functions/v7-vv/index.ts` | Fix 5: Validar anchorWord numérico |
 
 ---
 
-## O que NÃO está errado
+## O Que Isso Entrega ao Sistema
 
-- O Dry-Run já aceita os tipos corretamente (fix anterior)
-- Os anchorActions de trigger (MARCO1/MARCO2) para image-sequence estão corretos
-- O mockup mode do V7ImageSequenceRenderer está funcionando (screenshot mostra a imagem da TV)
-- As legendas sincronizadas estão funcionando
-- O EPP image-sequence carregou e mostrou a imagem (screenshot 7)
+Após estes fixes, o pipeline vai:
+
+1. **Produzir output idêntico** independente de ser executado via frontend ou via Edge Function
+2. **Garantir que todo microVisual** chegue ao player com `triggerTime` resolvido via C06 (Camada 1)
+3. **Nunca gerar `anchor-visual-undefined`** no banco
+4. **Logar claramente** quando um anchorText não é encontrado — sem silêncio
+5. **Rejeitar anchorWords numéricos** auto-injetados que nunca vão resolver no TTS
+
+Resultado: toda aula gerada pelo pipeline — seja com 3 cenas ou com 30 — vai ter microVisuals aparecendo **no momento exato da fala**, sem depender de fallback runtime no player.
