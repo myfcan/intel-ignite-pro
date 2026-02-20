@@ -1,120 +1,101 @@
 
-## Diagnóstico: Auto-Geração de `stat` e `step` no Pipeline
+# Diagnóstico Forense — Bugs Identificados nas Screenshots
 
-### Resposta Direta: NÃO, isso ainda não foi feito.
+## O Que Está Errado (3 Bugs Reais)
 
-A análise completa do codebase confirma:
+### BUG #1 — CRÍTICO: microVisuals nunca chegam ao renderer
+O player renderiza em `currentPhase.microVisuals` (linha 2145 de V7PhasePlayer.tsx), mas o pipeline persiste os microVisuals dentro de `phase.visual.microVisuals` (step5, linha 192).
 
-**O que existe hoje:**
-- Os tipos `stat` e `step` estão definidos no contrato de tipos (`V7Contract.ts`) como opções válidas de `V7MicroVisualType`
-- O renderer (`V7MicroVisualOverlay.tsx`) sabe renderizar esses tipos
-- O pipeline processa os `microVisuals` definidos manualmente no JSON de entrada, calculando seus timestamps via `anchorText`
+```
+Pipeline persiste:   phase.visual.microVisuals = [...]
+Player lê:           phase.microVisuals → undefined → NADA RENDERIZA
+```
 
-**O que NÃO existe (gap confirmado):**
-- Nenhuma lógica de inferência automática de micro-visuais no pipeline
-- O pipeline é 100% passivo: ele só processa os `microVisuals` que o autor do JSON já declarou explicitamente em `scene.visual.microVisuals[]`
-- Não existe nenhum step de "auto-enrich" que analise a narração e gere micro-visuais `stat` ou `step` automaticamente
+Resultado: Nenhum `image-flash` (slideshow), `stat`, `step` ou `comparison-bar` aparece jamais.
+
+### BUG #2 — CRÍTICO: microVisuals do banco chegam sem `triggerTime`
+O `V7MicroVisualOverlay` precisa de `mv.triggerTime` (número em segundos) para saber quando exibir cada micro-visual. Mas o banco salva os microVisuals no formato de input cru com `anchorText` (string), sem o `triggerTime` resolvido.
+
+O pipeline (`step4-calculate-anchors.ts`) calcula o timestamp da keyword e salva em `allAnchorActions`, mas **não injeta esse timestamp de volta nos microVisuals**. Quando o player pega `phase.visual.microVisuals`, os objetos têm `anchorText: "VISÃO"` mas `triggerTime: 0` (undefined/zero).
+
+### BUG #3 — Canvas intensity "dramatic" na fase EPP
+As screenshots mostram partículas gigantes e explosivas sobre a imagem mockup. O código já prevê `intensity='low'` para `image-sequence`, mas o V7CinematicCanvas está recebendo `mood='energetic'` derivado do tipo da fase (`narrative`), que por padrão gera partículas de alta intensidade que ignoram o `low`.
 
 ---
 
-### Onde a Auto-Geração Deve Ser Implementada
+## Solução por Camada (Princípio de Responsabilidade Correta)
 
-O pipeline real que executa em produção é a edge function em `supabase/functions/v7-vv/index.ts` (7.755 linhas). É nele que a lógica deve viver — conforme o padrão arquitetural permanente do projeto (memória: integridade-entrypoint-pipeline).
+### Fix 1 — V7PhasePlayer.tsx: Ler microVisuals do lugar certo
+Mudar a leitura de `currentPhase.microVisuals` para `(currentPhase as any).visual?.microVisuals`.
 
-O Step 3 do pipeline (após gerar o áudio e wordTimestamps, antes de calcular os anchors) é o momento ideal para um novo Step 3.5 de "MicroVisual Enrichment", pois:
-- Os wordTimestamps já existem → sabemos onde cada palavra ocorre
-- Os anchors ainda não foram calculados → podemos adicionar novos microVisuals antes desse cálculo
-- A narração completa está disponível por cena
+Mas isso ainda não resolve o `triggerTime` ausente — por isso precisamos do Fix 2.
 
----
+### Fix 2 — V7PhasePlayer.tsx: Resolver triggerTime dos microVisuals em runtime
+Criar um `useMemo` que, para cada microVisual em `phase.visual.microVisuals`, resolve o `triggerTime` cruzando o `anchorText` com os `wordTimestamps` disponíveis no player.
 
-### Design da Solução: Step 3.5 — MicroVisual Auto-Enrichment
+Isso é o que o pipeline deveria fazer, mas já que o player tem os `wordTimestamps`, pode fazê-lo em runtime com segurança.
 
-**Estratégia: Pattern Matching Determinístico na Narração**
-
-O sistema analisa cada narração de cena buscando padrões textuais específicos e injeta `microVisuals` automáticos quando detecta esses padrões — desde que o autor do JSON não tenha declarado um microVisual com o mesmo `anchorText` (regra de não-duplicação).
-
-**Padrões para `stat`:**
-Detectar números monetários, percentuais e métricas na narração:
-```
-R\$\s*[\d.,]+\w*          → R$ 50.000, R$ 3k
-\d+\s*%                    → 98%, 30%
-[\d.,]+\s*(mil|reais|k|M)  → 10 mil, 3k
-```
-A palavra mais próxima ao número na narração vira o `anchorText`.
-
-**Padrões para `step`:**
-Detectar marcadores de passos numerados:
-```
-Passo\s+\d+                → "Passo 1", "Passo 2"
-\d+\.\s+[A-Z]              → "1. Defina", "2. Execute"
-Etapa\s+\d+               → "Etapa 1"
-Primeiro[,:]|Segundo[,:]  → "Primeiro," "Segundo,"
-```
-
-**Regras de Governança:**
-1. Máximo 1 auto-microVisual por parágrafo/frase (evitar sobrecarga visual)
-2. Respeitar `scene.visual.microVisuals[]` existentes — não duplicar anchorText
-3. Apenas em cenas do tipo `narrative`, `dramatic`, `comparison` — nunca em cenas interativas
-4. Log explícito de cada microVisual injetado automaticamente para rastreabilidade
-
----
-
-### Arquivos a Alterar
-
-| Arquivo | Operação | Detalhe |
-|---|---|---|
-| `supabase/functions/v7-vv/index.ts` | Adicionar Step 3.5 | Nova função `enrichMicroVisualsFromNarration()` inserida entre a geração de áudio (Step 3) e o cálculo de anchors (Step 4). Modifica `inputScenes[].visual.microVisuals` in-place. |
-
-**Nenhum outro arquivo precisa ser alterado** — os tipos já estão no contrato (`V7Contract.ts`), o renderer já suporta (`V7MicroVisualOverlay.tsx`), e o Step 4 de cálculo de anchors já processa qualquer microVisual presente no array, independente de ter vindo do autor ou do enriquecimento automático.
-
----
-
-### Estrutura da Função `enrichMicroVisualsFromNarration`
-
-```
-Para cada cena em inputScenes:
-  Se cena é interativa (quiz/playground) → skip
+```typescript
+const resolvedMicroVisuals = useMemo(() => {
+  const rawMvs = (currentPhase as any)?.visual?.microVisuals || [];
+  if (!wordTimestamps.length) return rawMvs;
   
-  Para cada frase/parágrafo da narração:
-    1. Detectar padrões de STAT (R$, %, mil, k, M)
-       → Se encontrado E sem duplicata:
-          Criar microVisual tipo 'stat' com:
-            anchorText: palavra mais próxima ao número (ex: "reais", "mil", o próprio número)
-            content.value: número extraído
-            content.prefix: "R$" se monetário
-            content.suffix: "%" se percentual
-            content.color: "green" por padrão
-            duration: 3.0
+  return rawMvs.map((mv: any) => {
+    // Se já tem triggerTime resolvido, usar
+    if (mv.triggerTime && mv.triggerTime > 0) return mv;
     
-    2. Detectar padrões de STEP ("Passo N", "Etapa N", "N. Texto")
-       → Se encontrado E sem duplicata:
-          Criar microVisual tipo 'step' com:
-            anchorText: "Passo" ou "Etapa" ou a palavra anterior ao número
-            content.stepNumber: N extraído
-            content.text: frase resumida após o marcador (até 6 palavras)
-            duration: 3.5
+    // Resolver via wordTimestamps
+    const phaseStart = currentPhase?.startTime ?? 0;
+    const phaseEnd = currentPhase?.endTime ?? Infinity;
+    const keyword = mv.anchorText || '';
     
-    Máximo 1 auto-microVisual por período gramatical (.)
-  
-  Adicionar ao scene.visual.microVisuals[]
-  Logar: [ENRICH] Cena X: +N microVisuais injetados (stat: A, step: B)
+    const triggerTime = findMicroVisualTriggerTime(
+      keyword, wordTimestamps, phaseStart, phaseEnd
+    );
+    
+    return {
+      ...mv,
+      triggerTime: triggerTime ?? phaseStart,
+      duration: mv.duration ?? 4, // 4s default
+    };
+  });
+}, [currentPhase, wordTimestamps]);
 ```
 
+### Fix 3 — V7MicroVisualOverlay.tsx: Suporte ao tipo `image-flash` com `content.images` (slideshow)
+O usuário está usando `image-flash` com `content.images: []` (array de objetos com `imageUrl`, `description`, `durationMs`). O `ImageFlashContent` atual só exibe uma única imagem (`content.imageUrl` ou `content.storagePath`). Precisa detectar o modo slideshow e renderizar o `ImageFlashSequence` já existente na memória do projeto.
+
+### Fix 4 — V7PhasePlayer.tsx: Suporte aos novos tipos canônicos no `V7MicroVisualOverlay`
+Adicionar ao `renderContent()` os cases: `stat`, `step`, `comparison-bar`, `quote`, `pill-tag`, `alert` — que são os tipos que o Dry-Run agora aceita mas o renderer não renderiza, caindo no `default` (que exibe texto genérico).
+
+### Fix 5 — V7CinematicCanvas: Suprimir partículas em image-sequence
+O `getCanvasMood` retorna `'energetic'` para type `'narrative'`, mesmo quando a fase tem `visual.type === 'image-sequence'`. Adicionar uma verificação no `getCanvasMood` que retorna `'calm'` quando o visual type for `image-sequence`, complementando o `intensity='low'` já implementado.
+
 ---
 
-### Garantias de Segurança (Non-Breaking)
+## Arquivos a Modificar
 
-- Se o regex não encontrar nenhum padrão, a cena não é modificada — pipeline continua idêntico ao atual
-- Qualquer exceção dentro do enriquecimento é capturada com try/catch, logada como warning, e o pipeline continua sem o enriquecimento (degraded mode graceful)
-- O Step 4 (calculateAnchors) não sabe se o microVisual veio do autor ou do enrichment — trata todos igualmente, o que garante que a lógica de anchorText existente funciona sem modificação
-- O log indica claramente `[ENRICH]` vs `[MANUAL]` para auditoria
+| Arquivo | Mudança |
+|---|---|
+| `src/components/lessons/v7/cinematic/V7PhasePlayer.tsx` | Fix 1: ler de `visual.microVisuals` + Fix 2: resolver triggerTime + Fix 5: getCanvasMood para image-sequence |
+| `src/components/lessons/v7/cinematic/effects/V7MicroVisualOverlay.tsx` | Fix 3: slideshow no image-flash + Fix 4: novos tipos canônicos (stat, step, comparison-bar, quote, pill-tag, alert) |
 
 ---
 
-### O Que Não Muda
+## Sequência de Implementação
 
-- Contratos C10, C10B, Boundary Fix Guard, C03, C06 — nenhum é afetado
-- O formato de `V7MicroVisual` no banco — idêntico
-- O renderer — já suporta os tipos
-- O input JSON do autor — continua funcionando igual, com ou sem microVisuals declarados
+1. Corrigir leitura de `microVisuals` no V7PhasePlayer (Fix 1)
+2. Adicionar `resolvedMicroVisuals` com triggerTime em runtime (Fix 2)
+3. Corrigir getCanvasMood para image-sequence (Fix 5)
+4. Adicionar slideshow ao `ImageFlashContent` (Fix 3)
+5. Adicionar os 6 novos tipos canônicos ao `renderContent()` do MicroVisualOverlay (Fix 4)
+
+---
+
+## O que NÃO está errado
+
+- O Dry-Run já aceita os tipos corretamente (fix anterior)
+- Os anchorActions de trigger (MARCO1/MARCO2) para image-sequence estão corretos
+- O mockup mode do V7ImageSequenceRenderer está funcionando (screenshot mostra a imagem da TV)
+- As legendas sincronizadas estão funcionando
+- O EPP image-sequence carregou e mostrou a imagem (screenshot 7)
