@@ -279,13 +279,26 @@ export const VALID_VISUAL_TYPES = [
 ] as const;
 
 export const VALID_MICROVISUAL_TYPES = [
+  // Legacy / basic types
   'icon',
   'text',
   'number',
   'image',
   'badge',
   'highlight',
-  'letter-reveal'
+  'letter-reveal',
+  // V7Contract canonical types (V7MicroVisualType)
+  'image-flash',       // imagem com flash (suporta slideshow via content.images)
+  'text-pop',          // texto com spring bounce
+  'number-count',      // contador animado
+  'text-highlight',    // destaque com glow pulsante
+  'card-reveal',       // card com slide-up
+  'stat',              // métrica de impacto com label (ex: R$ 50k/mês)
+  'step',              // passo numerado sequencial
+  'quote',             // citação editorial com typewriter
+  'pill-tag',          // tag/etiqueta contextual
+  'comparison-bar',    // barras de comparação visual (substitui side-compare)
+  'alert',             // alerta urgente com shake físico
 ] as const;
 
 export const VALID_INTERACTION_TYPES = [
