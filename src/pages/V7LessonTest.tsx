@@ -202,8 +202,8 @@ const V7LessonTest = () => {
     setIsGeneratingAudio(true);
 
     try {
-      // Call the v7-pipeline edge function with just audio generation
-      const { data, error } = await supabase.functions.invoke('v7-pipeline', {
+      // Call the v7-vv edge function with just audio generation
+      const { data, error } = await supabase.functions.invoke('v7-vv', {
         body: {
           title: script?.title || 'V7 Test Lesson',
           subtitle: script?.subtitle || '',

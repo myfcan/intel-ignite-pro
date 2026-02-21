@@ -38,7 +38,7 @@ export async function submitToV7Pipeline(
   try {
     console.log('[V7CinematicService] Submitting to pipeline:', input.title);
 
-    const { data, error } = await supabase.functions.invoke('v7-pipeline', {
+    const { data, error } = await supabase.functions.invoke('v7-vv', {
       body: input,
     });
 

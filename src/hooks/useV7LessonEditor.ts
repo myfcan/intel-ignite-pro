@@ -150,7 +150,7 @@ export const useV7LessonEditor = ({ lessonId }: UseV7LessonEditorProps) => {
 
       try {
         // Call pipeline with update flag
-        const { data, error } = await supabase.functions.invoke('v7-pipeline', {
+        const { data, error } = await supabase.functions.invoke('v7-vv', {
           body: {
             ...newFormData,
             existingLessonId: lessonId,

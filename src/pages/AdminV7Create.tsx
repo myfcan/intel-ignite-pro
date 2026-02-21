@@ -283,7 +283,7 @@ export default function AdminV7Create() {
 
       // Call V7 Pipeline Edge Function
       addLog('info', 'Enviando para Pipeline V7...');
-      const { data, error } = await supabase.functions.invoke('v7-pipeline', {
+      const { data, error } = await supabase.functions.invoke('v7-vv', {
         body: {
           title: payload.title,
           subtitle: payload.subtitle || '',
@@ -398,7 +398,7 @@ export default function AdminV7Create() {
     setIsGenerating(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('v7-pipeline', {
+      const { data, error } = await supabase.functions.invoke('v7-vv', {
         body: {
           title: formData.title,
           subtitle: formData.subtitle || '',
