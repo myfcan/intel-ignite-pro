@@ -482,7 +482,9 @@ export const V7PhasePlayer = ({
   // Camada 2 (fallback): wordTimestamps em runtime
   // Camada 3 (último recurso): phaseStart
   const resolvedMicroVisuals = useMemo(() => {
-    const rawMvs: any[] = (currentPhase as any)?.visual?.microVisuals || [];
+    // Canonical source from v7-vv pipeline is phase.microVisuals.
+    // Keep visual.microVisuals as compatibility fallback for legacy payloads.
+    const rawMvs: any[] = (currentPhase as any)?.microVisuals || (currentPhase as any)?.visual?.microVisuals || [];
     if (rawMvs.length === 0) return [];
 
     const phaseStart = currentPhase?.startTime ?? 0;
@@ -542,7 +544,7 @@ export const V7PhasePlayer = ({
   // Log simples do status
   useEffect(() => {
     console.log(`[V7PhasePlayer] 🎯 Phase "${currentPhase?.id}": AnchorText ${shouldEnableAnchors ? 'ENABLED' : 'DISABLED'} (words: ${wordTimestamps.length}, actions: ${anchorActions.length})`);
-    console.log(`[V7PhasePlayer] 🎯 resolvedMicroVisuals: ${resolvedMicroVisuals.length} (raw: ${(currentPhase as any)?.visual?.microVisuals?.length ?? 0})`);
+    console.log(`[V7PhasePlayer] 🎯 resolvedMicroVisuals: ${resolvedMicroVisuals.length} (raw: ${((currentPhase as any)?.microVisuals?.length ?? (currentPhase as any)?.visual?.microVisuals?.length ?? 0)})`);
   }, [currentPhase?.id, shouldEnableAnchors, wordTimestamps.length, anchorActions.length, resolvedMicroVisuals.length]);
 
   // ÚNICO useAnchorText - sem fallbacks, sem triggers globais
