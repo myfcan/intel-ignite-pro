@@ -36,6 +36,7 @@ import { ArrowLeft, Film, Sparkles, Save, Play, Loader2, RefreshCw, Trash2, Edit
 import { V7PipelineInput } from '@/types/v7-cinematic.types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { toV7vvPayload } from '@/services/v7vvPayloadAdapter';
 import { useV7LessonEditor } from '@/hooks/useV7LessonEditor';
 import { AI_CATEGORIES, DIFFICULTY_LABELS } from '@/constants/ai-categories';
 import { V7PipelineMonitor, PipelineStep, PipelineLog, DEFAULT_V7_PIPELINE_STEPS } from '@/components/admin/V7PipelineMonitor';
@@ -284,20 +285,12 @@ export default function AdminV7Create() {
       // Call V7 Pipeline Edge Function
       addLog('info', 'Enviando para Pipeline V7...');
       const { data, error } = await supabase.functions.invoke('v7-vv', {
-        body: {
-          title: payload.title,
-          subtitle: payload.subtitle || '',
-          difficulty: payload.difficulty || 'beginner',
-          category: payload.category || 'prompts',
-          tags: payload.tags || [],
-          learningObjectives: payload.learningObjectives || [],
-          narrativeScript: payload.narrativeScript || '',
-          sections: payload.sections,
-          duration: payload.duration || 300,
-          cinematic_flow: payload.cinematic_flow,
-          cinematicFlow: payload.cinematicFlow,
-          useEmotionTags, // ← toggle eleven_v3
-        },
+        body: toV7vvPayload({
+          ...payload,
+          generate_audio: true,
+          fail_on_audio_error: false,
+          voice_id: payload.voice_id,
+        }),
       });
 
       if (error) throw error;
@@ -399,17 +392,13 @@ export default function AdminV7Create() {
 
     try {
       const { data, error } = await supabase.functions.invoke('v7-vv', {
-        body: {
-          title: formData.title,
-          subtitle: formData.subtitle || '',
-          difficulty: formData.difficulty || 'beginner',
-          category: formData.category || 'prompts',
-          tags: formData.tags || [],
-          learningObjectives: formData.learningObjectives || [],
+        body: toV7vvPayload({
+          ...formData,
+          generate_audio: true,
+          fail_on_audio_error: false,
+          voice_id: formData.voice_id,
           narrativeScript: formData.narrativeScript,
-          duration: formData.duration || 300,
-          useEmotionTags, // ← toggle eleven_v3
-        },
+        }),
       });
 
       if (error) throw error;

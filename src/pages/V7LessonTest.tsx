@@ -202,33 +202,26 @@ const V7LessonTest = () => {
     setIsGeneratingAudio(true);
 
     try {
-      // Call the v7-vv edge function with just audio generation
-      const { data, error } = await supabase.functions.invoke('v7-vv', {
+      // Call dedicated audio generator edge function
+      const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
         body: {
-          title: script?.title || 'V7 Test Lesson',
-          subtitle: script?.subtitle || '',
-          difficulty: script?.difficulty || 'beginner',
-          category: script?.category || 'test',
-          tags: script?.tags || [],
-          learningObjectives: script?.learningObjectives || [],
-          narrativeScript: narrationText,
-          duration: script?.duration || 300,
+          text: narrationText,
           voice_id: script?.voice_id || 'Xb7hH8MSUJpSbSDYk0k2', // Alice - mesma voz do V5
-          generate_audio: true,
-          cinematic_flow: script?.cinematic_flow
         }
       });
 
       if (error) throw error;
 
-      if (data?.audioUrl) {
-        setAudioUrl(data.audioUrl);
+      const generatedAudioUrl = data?.audioUrl || data?.url;
+      if (generatedAudioUrl) {
+        setAudioUrl(generatedAudioUrl);
         toast({ title: 'Áudio gerado!', description: 'URL do áudio disponível' });
       }
 
-      if (data?.wordTimestamps?.length > 0) {
-        setWordTimestamps(data.wordTimestamps);
-        toast({ title: 'WordTimestamps!', description: `${data.wordTimestamps.length} palavras sincronizadas` });
+      const generatedTimestamps = data?.wordTimestamps || data?.word_timestamps;
+      if (generatedTimestamps?.length > 0) {
+        setWordTimestamps(generatedTimestamps);
+        toast({ title: 'WordTimestamps!', description: `${generatedTimestamps.length} palavras sincronizadas` });
       }
     } catch (err: any) {
       console.error('Audio generation error:', err);
@@ -236,7 +229,7 @@ const V7LessonTest = () => {
     } finally {
       setIsGeneratingAudio(false);
     }
-  }, [narrationText, toast]);
+  }, [narrationText, script?.voice_id, toast]);
 
   // Audio element setup
   useEffect(() => {

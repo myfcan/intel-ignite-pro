@@ -3,6 +3,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toV7vvPayload } from '@/services/v7vvPayloadAdapter';
 import { V7CinematicLesson, V7PipelineInput } from '@/types/v7-cinematic.types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -151,11 +152,11 @@ export const useV7LessonEditor = ({ lessonId }: UseV7LessonEditorProps) => {
       try {
         // Call pipeline with update flag
         const { data, error } = await supabase.functions.invoke('v7-vv', {
-          body: {
+          body: toV7vvPayload({
             ...newFormData,
             existingLessonId: lessonId,
             mode: 'regenerate',
-          },
+          }),
         });
 
         if (error) throw error;

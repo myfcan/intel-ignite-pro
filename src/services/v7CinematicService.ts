@@ -1,5 +1,6 @@
 // Service to connect V7 Cinematic System to Pipeline and Database
 import { supabase } from '@/integrations/supabase/client';
+import { toV7vvPayload } from '@/services/v7vvPayloadAdapter';
 
 export interface V7CinematicPipelineInput {
   title: string;
@@ -39,7 +40,7 @@ export async function submitToV7Pipeline(
     console.log('[V7CinematicService] Submitting to pipeline:', input.title);
 
     const { data, error } = await supabase.functions.invoke('v7-vv', {
-      body: input,
+      body: toV7vvPayload(input),
     });
 
     if (error) {
