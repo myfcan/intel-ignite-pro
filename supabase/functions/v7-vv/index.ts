@@ -1479,6 +1479,12 @@ interface Phase {
       }>;
     };
   };
+  telemetry?: {
+    fallback?: {
+      microVisualTriggerFallbackCount?: number;
+      frameTriggerLegacyNormalizationCount?: number;
+    };
+  };
 }
 
 interface LessonData {
@@ -5299,6 +5305,8 @@ function generatePhases(
 
     // Anchor Actions
     const anchorActions: AnchorAction[] = [];
+    let microVisualTriggerFallbackCount = 0;
+    let frameTriggerLegacyNormalizationCount = 0;
 
     // ✅ CONTRATO CONGELADO v1.0: Usar constante GLOBAL (definida no topo)
     // NUNCA duplicar a lista aqui - referencia a INTERACTIVE_SCENE_TYPES global
@@ -5472,6 +5480,9 @@ function generatePhases(
       // ✅ triggerTime: NUNCA undefined (fallback determinístico)
       const fallbackTriggerTime = startTime + (endTime - startTime) * ((idx + 1) / (scene.visual.microVisuals!.length + 1));
       const safeTriggerTime = triggerTime ?? fallbackTriggerTime;
+      if (triggerTime === null) {
+        microVisualTriggerFallbackCount++;
+      }
       
       // ✅ duration: NUNCA undefined (fallback por tipo canônico)
       const safeDuration = (mv.content as any)?.duration || getDefaultDuration(canonicalType);
@@ -5505,8 +5516,24 @@ function generatePhases(
     // =========================================================================
     if (scene.anchorActions && Array.isArray(scene.anchorActions)) {
       for (const inputAction of scene.anchorActions) {
-        // Only process 'trigger' type actions (frame triggers, etc.)
-        if (inputAction.type !== 'trigger') continue;
+        const hasFramePayload = typeof inputAction?.payload === 'object' &&
+          inputAction?.payload !== null &&
+          typeof (inputAction?.payload as any).frameIndex === 'number';
+
+        if (!hasFramePayload) continue;
+
+        // Canonical contract: frame trigger must be type='trigger'.
+        // Accept legacy aliases but normalize and track telemetry.
+        const rawType = String(inputAction?.type || '').toLowerCase();
+        const isCanonical = rawType === 'trigger';
+        const isLegacyAlias = rawType === 'show' || rawType === 'setframeindex';
+
+        if (!isCanonical && !isLegacyAlias) continue;
+
+        if (isLegacyAlias) {
+          frameTriggerLegacyNormalizationCount++;
+          console.warn(`[Phase] ⚠️ FRAME TRIGGER LEGACY NORMALIZED: scene=${scene.id} actionId=${inputAction.id || 'n/a'} type=${inputAction.type} -> trigger`);
+        }
         
         // Resolve keywordTime from wordTimestamps
         const keywordTime = findKeywordTime(inputAction.keyword, wordTimestamps, startTime, endTime);
@@ -5617,6 +5644,14 @@ function generatePhases(
       effects: scene.visual.effects,
       microVisuals: microVisuals.length > 0 ? microVisuals : undefined,
       anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
+      telemetry: (microVisualTriggerFallbackCount > 0 || frameTriggerLegacyNormalizationCount > 0)
+        ? {
+            fallback: {
+              ...(microVisualTriggerFallbackCount > 0 ? { microVisualTriggerFallbackCount } : {}),
+              ...(frameTriggerLegacyNormalizationCount > 0 ? { frameTriggerLegacyNormalizationCount } : {}),
+            },
+          }
+        : undefined,
       audioBehavior: isInteractiveScene ? buildAudioBehavior(scene) : undefined,
     };
 
