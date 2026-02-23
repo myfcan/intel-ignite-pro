@@ -41,6 +41,9 @@ const Index = () => {
     });
   }, [navigate]);
 
+  // Prefetch Dashboard, Onboarding and TrailDetail in background
+  usePrefetchMainPages(!checkingSession);
+
   // Enquanto verifica sessão, não renderiza a landing (evita flash do conteúdo antigo)
   if (checkingSession) {
     return (
@@ -53,8 +56,6 @@ const Index = () => {
     );
   }
 
-  // Prefetch Dashboard, Onboarding and TrailDetail in background
-  usePrefetchMainPages();
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar */}
