@@ -1539,6 +1539,7 @@ interface Phase {
 
 interface LessonData {
   // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
+  contentVersion?: string;             // P5 FIX (C14): versão do content no root
   schema: string;                    // Bug 7: era "model"
   version: string;                   // Bug 8: será "1.0.0"
   title: string;                     // Bug 9: title no root
@@ -6948,25 +6949,26 @@ Deno.serve(async (req) => {
             }
           }
 
-          // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
-          // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
-          if (
-            phase.visual?.type === 'image' &&
-            phase.visual.promptScene &&
-            typeof phase.visual.promptScene === 'string' &&
-            (
-              !phase.visual.storagePath ||
-              (phase.visual.storagePath as string).startsWith('PENDING:')
-            )
-          ) {
-            imageNarrativeScenes.push({
-              scene_id: phase.id,
-              prompt_scene: phase.visual.promptScene as string,
-              style_hints: (phase.visual as any).styleHints || undefined,
-              phaseIdx: pi,
-            });
-            console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
-          }
+        }
+
+        // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
+        // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
+        if (
+          phase.visual?.type === 'image' &&
+          phase.visual.promptScene &&
+          typeof phase.visual.promptScene === 'string' &&
+          (
+            !phase.visual.storagePath ||
+            (phase.visual.storagePath as string).startsWith('PENDING:')
+          )
+        ) {
+          imageNarrativeScenes.push({
+            scene_id: phase.id,
+            prompt_scene: phase.visual.promptScene as string,
+            style_hints: (phase.visual as any).styleHints || undefined,
+            phaseIdx: pi,
+          });
+          console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
         }
         
         // Original: Scan microVisuals
