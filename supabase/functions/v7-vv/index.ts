@@ -61,6 +61,20 @@ interface V7DebugTimelineEvent {
   payload: Record<string, unknown> | null;
 }
 
+interface ReleaseForensicReport {
+  runId: string;
+  pipelineVersion: string;
+  mode: 'create' | 'reprocess' | 'dry_run';
+  generatedAt: string;
+  auditGate: {
+    checked: boolean;
+    passed: boolean;
+    httpStatus: number | null;
+    requiredFailed: number | null;
+    scorecardHash: string | null;
+  };
+}
+
 interface V7PipelineDebugReport {
   lessonId: string;
   lessonTitle: string;
@@ -139,6 +153,30 @@ function createDebugIssue(
     possibleCause,
     suggestedFix,
     relatedData: relatedData || null,
+  };
+}
+
+function buildReleaseForensicReport(params: {
+  runId: string;
+  mode: 'create' | 'reprocess' | 'dry_run';
+  auditChecked: boolean;
+  auditPassed: boolean;
+  auditHttpStatus?: number | null;
+  requiredFailed?: number | null;
+  scorecardHash?: string | null;
+}): ReleaseForensicReport {
+  return {
+    runId: params.runId,
+    pipelineVersion: PIPELINE_VERSION,
+    mode: params.mode,
+    generatedAt: new Date().toISOString(),
+    auditGate: {
+      checked: params.auditChecked,
+      passed: params.auditPassed,
+      httpStatus: params.auditHttpStatus ?? null,
+      requiredFailed: params.requiredFailed ?? null,
+      scorecardHash: params.scorecardHash ?? null,
+    },
   };
 }
 
@@ -6409,6 +6447,7 @@ Deno.serve(async (req) => {
   let runId: string | null = null;
   let input: ScriptInput | null = null;
   let executionInserted = false;
+  let releaseForensicReport: ReleaseForensicReport | null = null;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -7886,6 +7925,15 @@ Deno.serve(async (req) => {
         
         console.error(`[AUDIT_GATE] Run ${runId} reverted to FAILED`);
         
+        releaseForensicReport = buildReleaseForensicReport({
+          runId,
+          mode,
+          auditChecked: true,
+          auditPassed: false,
+          auditHttpStatus: auditResponse.status,
+          requiredFailed: auditScorecard.required_failed,
+        });
+
         return new Response(
           JSON.stringify({
             success: false,
@@ -7896,6 +7944,7 @@ Deno.serve(async (req) => {
               required_failed: auditScorecard.required_failed,
               scorecard: auditScorecard,
             },
+            forensic: releaseForensicReport,
             runId,
           }),
           { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -7908,14 +7957,6 @@ Deno.serve(async (req) => {
         const scorecardHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(scorecardJson));
         const scorecardHash = Array.from(new Uint8Array(scorecardHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         
-        await supabase
-          .from('pipeline_executions')
-          .update({
-            output_data: supabase.rpc ? undefined : undefined, // fallback below
-            updated_at: new Date().toISOString(),
-          })
-          .eq('run_id', runId);
-        
         // Update output_data.meta.auditGate via raw SQL-safe approach
         const { data: currentRun } = await supabase
           .from('pipeline_executions')
@@ -7924,6 +7965,16 @@ Deno.serve(async (req) => {
           .single();
         
         if (currentRun?.output_data) {
+          releaseForensicReport = buildReleaseForensicReport({
+            runId,
+            mode,
+            auditChecked: true,
+            auditPassed: true,
+            auditHttpStatus: auditResponse.status,
+            requiredFailed: 0,
+            scorecardHash,
+          });
+
           const updatedOutput = {
             ...currentRun.output_data,
             meta: {
@@ -7933,6 +7984,7 @@ Deno.serve(async (req) => {
                 httpStatus: auditResponse.status,
                 scorecardHash,
               },
+              releaseForensicReport,
             },
           };
           await supabase
@@ -7941,6 +7993,16 @@ Deno.serve(async (req) => {
             .eq('run_id', runId);
           
           console.log(`[AUDIT_GATE] ✅ auditGate stamp persisted: hash=${scorecardHash.slice(0, 16)}...`);
+        } else {
+          releaseForensicReport = buildReleaseForensicReport({
+            runId,
+            mode,
+            auditChecked: true,
+            auditPassed: true,
+            auditHttpStatus: auditResponse.status,
+            requiredFailed: 0,
+            scorecardHash,
+          });
         }
       }
     } catch (auditErr: any) {
@@ -7962,12 +8024,20 @@ Deno.serve(async (req) => {
         })
         .eq('run_id', runId);
       
+      releaseForensicReport = buildReleaseForensicReport({
+        runId,
+        mode,
+        auditChecked: true,
+        auditPassed: false,
+      });
+
       return new Response(
         JSON.stringify({
           success: false,
           error: 'AUDIT_GATE_FAILED',
           error_code: 'AUDIT_GATE_FAILED',
           error_details: { reason: 'unreachable', message: auditErr.message },
+          forensic: releaseForensicReport,
           runId,
         }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -7977,6 +8047,15 @@ Deno.serve(async (req) => {
     // =========================================================================
     // RESPOSTA COM DEBUG REPORT
     // =========================================================================
+    if (!releaseForensicReport) {
+      releaseForensicReport = buildReleaseForensicReport({
+        runId,
+        mode,
+        auditChecked: true,
+        auditPassed: true,
+      });
+    }
+
     const response = {
       success: true,
       lessonId,
@@ -7991,6 +8070,7 @@ Deno.serve(async (req) => {
       },
       // ✅ DEBUG REPORT AUTOMÁTICO (null no modo preserve_structure)
       debug: debugReport,
+      forensic: releaseForensicReport,
     };
 
     console.log('================================================');
