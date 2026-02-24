@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     // HELPER: Build filtered query (supports per-run or per-version filtering)
     // ========================================================================
     function buildQuery(select: string) {
-      let q = supabase.from('pipeline_executions').select(select);
+      let q = supabase.from('pipeline_executions').select(select) as any;
       if (singleRunId) {
         q = q.eq('run_id', singleRunId);
       } else {
