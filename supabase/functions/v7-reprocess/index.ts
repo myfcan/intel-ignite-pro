@@ -35,12 +35,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Step 1: Fetch the original input_data
-    let query = supabase
-      .from('pipeline_executions')
-      .select('run_id, input_data, lesson_id, lesson_title, model')
-      .eq('model', 'v7-vv')
-      .order('created_at', { ascending: false })
-      .limit(1);
+    let query: any;
 
     if (run_id) {
       query = supabase
