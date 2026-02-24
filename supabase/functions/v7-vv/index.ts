@@ -61,6 +61,20 @@ interface V7DebugTimelineEvent {
   payload: Record<string, unknown> | null;
 }
 
+interface ReleaseForensicReport {
+  runId: string;
+  pipelineVersion: string;
+  mode: 'create' | 'reprocess' | 'dry_run';
+  generatedAt: string;
+  auditGate: {
+    checked: boolean;
+    passed: boolean;
+    httpStatus: number | null;
+    requiredFailed: number | null;
+    scorecardHash: string | null;
+  };
+}
+
 interface V7PipelineDebugReport {
   lessonId: string;
   lessonTitle: string;
@@ -139,6 +153,30 @@ function createDebugIssue(
     possibleCause,
     suggestedFix,
     relatedData: relatedData || null,
+  };
+}
+
+function buildReleaseForensicReport(params: {
+  runId: string;
+  mode: 'create' | 'reprocess' | 'dry_run';
+  auditChecked: boolean;
+  auditPassed: boolean;
+  auditHttpStatus?: number | null;
+  requiredFailed?: number | null;
+  scorecardHash?: string | null;
+}): ReleaseForensicReport {
+  return {
+    runId: params.runId,
+    pipelineVersion: PIPELINE_VERSION,
+    mode: params.mode,
+    generatedAt: new Date().toISOString(),
+    auditGate: {
+      checked: params.auditChecked,
+      passed: params.auditPassed,
+      httpStatus: params.auditHttpStatus ?? null,
+      requiredFailed: params.requiredFailed ?? null,
+      scorecardHash: params.scorecardHash ?? null,
+    },
   };
 }
 
@@ -1479,6 +1517,12 @@ interface Phase {
       }>;
     };
   };
+  telemetry?: {
+    fallback?: {
+      microVisualTriggerFallbackCount?: number;
+      frameTriggerLegacyNormalizationCount?: number;
+    };
+  };
 }
 
 interface LessonData {
@@ -2626,7 +2670,7 @@ function executeDryRun(input: ScriptInput): DryRunResult {
               issues.push({ severity: 'error', scene: sceneId, field: 'visual.microVisuals', message: 'image-sequence não coexiste com microVisual type="image"' });
             }
 
-            // C12.1 WARNING: image-sequence with 2+ frames but no frame triggers (regresses to timer fallback)
+            // C12.1 HARD REQUIREMENT: image-sequence with 2+ frames MUST have explicit frame triggers
             if (Array.isArray(frames) && frames.length >= 2) {
               const sceneAnchorActions = scene.anchorActions || [];
               const hasFrameTriggers = sceneAnchorActions.some(
@@ -2634,10 +2678,10 @@ function executeDryRun(input: ScriptInput): DryRunResult {
               );
               if (!hasFrameTriggers) {
                 issues.push({
-                  severity: 'warning',
+                  severity: 'error',
                   scene: sceneId,
                   field: 'anchorActions',
-                  message: 'image-sequence com 2+ frames sem anchorActions trigger com payload.frameIndex -- usando fallback timer (recomendado: adicionar triggers)'
+                  message: 'image-sequence com 2+ frames exige anchorActions trigger com payload.frameIndex (fallback timer não é permitido)'
                 });
               }
             }
@@ -3212,7 +3256,15 @@ interface AnchorSelectionResult {
   selectedIndex: number;
   selectedWord: string | null;
   strategyUsed: AnchorStrategy;
-  allMatches: Array<{ word: string; start: number; end: number; idx: number }>;
+  allMatches: Array<{ word: string; start: number; end: number; idx: number; mode: 'exact' | 'prefix' | 'suffix' | 'inclusion' }>;
+}
+
+interface KeywordNormalizationStats {
+  totalLookups: number;
+  matchedLookups: number;
+  unmatchedLookups: number;
+  normalizedLookups: number;
+  multiWordLookups: number;
 }
 
 const ANCHOR_EPS_GLOBAL = 0.30; // 300ms tolerance - R1 RULES.md
@@ -3281,7 +3333,8 @@ function selectAnchorOccurrence(
           word: keyword,
           start: relevantTimestamps[i].start,
           end: lastWordInSequence.end,
-          idx: i
+          idx: i,
+          mode: 'inclusion'
         });
       }
     }
@@ -3317,21 +3370,21 @@ function selectAnchorOccurrence(
       
       // Match exato - SEMPRE aceito, mesmo para palavras curtas
       if (normalizedWord === target) {
-        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
+        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx, mode: 'exact' });
         return;
       }
       
       // Match por prefixo (ex: "Persona" começa com "persona")
       // Reduzido para 3 chars para capturar "opção" → "opc"
       if (target.length >= 3 && normalizedWord.startsWith(target)) {
-        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
+        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx, mode: 'prefix' });
         return;
       }
       
       // Match por sufixo (ex: "Otimização" termina com "ação")
       // Reduzido para 3 chars
       if (target.length >= 3 && normalizedWord.endsWith(target)) {
-        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
+        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx, mode: 'suffix' });
         return;
       }
       
@@ -3340,7 +3393,7 @@ function selectAnchorOccurrence(
       // 2. A palavra do áudio CONTÉM o target
       // REMOVIDO: target.includes(normalizedWord) - causava falsos positivos
       if (target.length >= minInclusionLength && normalizedWord.includes(target)) {
-        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
+        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx, mode: 'inclusion' });
         return;
       }
       
@@ -5190,6 +5243,27 @@ function findKeywordTime(
   return null;
 }
 
+function trackKeywordNormalization(
+  stats: KeywordNormalizationStats,
+  keyword: string,
+  result: AnchorSelectionResult,
+): void {
+  const normalizedKeyword = keyword
+    .split(/\s+/)
+    .map(normalizeWord)
+    .filter((w) => w.length > 0)
+    .join(' ');
+
+  const rawKeyword = (keyword || '').toLowerCase().trim();
+  const normalizedChanged = normalizedKeyword !== rawKeyword;
+
+  stats.totalLookups += 1;
+  if (normalizedChanged) stats.normalizedLookups += 1;
+  if ((keyword || '').trim().includes(' ')) stats.multiWordLookups += 1;
+  if (result.selectedTime !== null) stats.matchedLookups += 1;
+  else stats.unmatchedLookups += 1;
+}
+
 function findNarrationRange(
   narration: string,
   wordTimestamps: WordTimestamp[],
@@ -5299,6 +5373,15 @@ function generatePhases(
 
     // Anchor Actions
     const anchorActions: AnchorAction[] = [];
+    let microVisualTriggerFallbackCount = 0;
+    let frameTriggerLegacyNormalizationCount = 0;
+    const keywordNormalizationStats: KeywordNormalizationStats = {
+      totalLookups: 0,
+      matchedLookups: 0,
+      unmatchedLookups: 0,
+      normalizedLookups: 0,
+      multiWordLookups: 0,
+    };
 
     // ✅ CONTRATO CONGELADO v1.0: Usar constante GLOBAL (definida no topo)
     // NUNCA duplicar a lista aqui - referencia a INTERACTIVE_SCENE_TYPES global
@@ -5311,6 +5394,7 @@ function generatePhases(
       } else {
         // ✅ C02 FIX: Usar selectAnchorOccurrence com LAST_IN_RANGE para pauseAt
         const pauseResult = selectAnchorOccurrence(scene.anchorText.pauseAt, wordTimestamps, startTime, endTime, 'LAST_IN_RANGE');
+        trackKeywordNormalization(keywordNormalizationStats, scene.anchorText.pauseAt, pauseResult);
         
         if (pauseResult.selectedTime !== null) {
           anchorActions.push({
@@ -5330,8 +5414,10 @@ function generatePhases(
 
     // ✅ FASE 6 ANCHOR FIX: Processar transitionAt DENTRO do range
     if (scene.anchorText?.transitionAt) {
-      const transitionTime = findKeywordTime(scene.anchorText.transitionAt, wordTimestamps, startTime, endTime);
-      if (transitionTime !== null) {
+      const transitionResult = selectAnchorOccurrence(scene.anchorText.transitionAt, wordTimestamps, startTime, endTime, 'FIRST_IN_RANGE');
+      trackKeywordNormalization(keywordNormalizationStats, scene.anchorText.transitionAt, transitionResult);
+      if (transitionResult.selectedTime !== null && transitionResult.allMatches.length > 0) {
+        const transitionTime = transitionResult.allMatches[transitionResult.selectedIndex].start;
         anchorActions.push({
           id: `transition-${scene.id}`,
           keyword: scene.anchorText.transitionAt,
@@ -5381,7 +5467,11 @@ function generatePhases(
     
     // CASO 1: microVisuals com anchors antes
     scene.visual?.microVisuals?.forEach((mv, idx) => {
-      const globalTriggerTime = findKeywordTime(mv.anchorText, wordTimestamps, 0, wordTimestamps[wordTimestamps.length - 1]?.end || 0);
+      const globalProbeResult = selectAnchorOccurrence(mv.anchorText, wordTimestamps, 0, wordTimestamps[wordTimestamps.length - 1]?.end || 0, 'FIRST_IN_RANGE');
+      trackKeywordNormalization(keywordNormalizationStats, mv.anchorText, globalProbeResult);
+      const globalTriggerTime = globalProbeResult.selectedTime !== null && globalProbeResult.allMatches.length > 0
+        ? globalProbeResult.allMatches[globalProbeResult.selectedIndex].start
+        : null;
       
       if (globalTriggerTime !== null && globalTriggerTime < startTime) {
         const isVisualWithNarration = ['letter-reveal', 'card-reveal', 'text-reveal'].includes(mv.type);
@@ -5449,7 +5539,11 @@ function generatePhases(
       
       // Primeiro: busca GLOBAL para encontrar onde a palavra realmente está
       const audioEnd = wordTimestamps[wordTimestamps.length - 1]?.end || endTime;
-      const globalTriggerTime = findKeywordTime(mv.anchorText, wordTimestamps, 0, audioEnd);
+      const globalTriggerResult = selectAnchorOccurrence(mv.anchorText, wordTimestamps, 0, audioEnd, 'FIRST_IN_RANGE');
+      trackKeywordNormalization(keywordNormalizationStats, mv.anchorText, globalTriggerResult);
+      const globalTriggerTime = globalTriggerResult.selectedTime !== null && globalTriggerResult.allMatches.length > 0
+        ? globalTriggerResult.allMatches[globalTriggerResult.selectedIndex].start
+        : null;
       
       // Segundo: validar se está no range expandido da fase
       let triggerTime: number | null = null;
@@ -5472,6 +5566,9 @@ function generatePhases(
       // ✅ triggerTime: NUNCA undefined (fallback determinístico)
       const fallbackTriggerTime = startTime + (endTime - startTime) * ((idx + 1) / (scene.visual.microVisuals!.length + 1));
       const safeTriggerTime = triggerTime ?? fallbackTriggerTime;
+      if (triggerTime === null) {
+        microVisualTriggerFallbackCount++;
+      }
       
       // ✅ duration: NUNCA undefined (fallback por tipo canônico)
       const safeDuration = (mv.content as any)?.duration || getDefaultDuration(canonicalType);
@@ -5505,11 +5602,31 @@ function generatePhases(
     // =========================================================================
     if (scene.anchorActions && Array.isArray(scene.anchorActions)) {
       for (const inputAction of scene.anchorActions) {
-        // Only process 'trigger' type actions (frame triggers, etc.)
-        if (inputAction.type !== 'trigger') continue;
+        const hasFramePayload = typeof inputAction?.payload === 'object' &&
+          inputAction?.payload !== null &&
+          typeof (inputAction?.payload as any).frameIndex === 'number';
+
+        if (!hasFramePayload) continue;
+
+        // Canonical contract: frame trigger must be type='trigger'.
+        // Accept legacy aliases but normalize and track telemetry.
+        const rawType = String(inputAction?.type || '').toLowerCase();
+        const isCanonical = rawType === 'trigger';
+        const isLegacyAlias = rawType === 'show' || rawType === 'setframeindex';
+
+        if (!isCanonical && !isLegacyAlias) continue;
+
+        if (isLegacyAlias) {
+          frameTriggerLegacyNormalizationCount++;
+          console.warn(`[Phase] ⚠️ FRAME TRIGGER LEGACY NORMALIZED: scene=${scene.id} actionId=${inputAction.id || 'n/a'} type=${inputAction.type} -> trigger`);
+        }
         
         // Resolve keywordTime from wordTimestamps
-        const keywordTime = findKeywordTime(inputAction.keyword, wordTimestamps, startTime, endTime);
+        const frameTriggerResult = selectAnchorOccurrence(inputAction.keyword, wordTimestamps, startTime, endTime, 'FIRST_IN_RANGE');
+        trackKeywordNormalization(keywordNormalizationStats, inputAction.keyword, frameTriggerResult);
+        const keywordTime = frameTriggerResult.selectedTime !== null && frameTriggerResult.allMatches.length > 0
+          ? frameTriggerResult.allMatches[frameTriggerResult.selectedIndex].start
+          : null;
         
         if (keywordTime !== null) {
           anchorActions.push({
@@ -5525,6 +5642,18 @@ function generatePhases(
           console.warn(`[Phase] ⚠️ C12.1 FRAME TRIGGER: keyword "${inputAction.keyword}" NOT FOUND in range [${startTime.toFixed(2)}s, ${endTime.toFixed(2)}s]`);
         }
       }
+    }
+
+    const declaredFrames = (scene.visual as any)?.frames || (scene.visual?.content as any)?.frames;
+    const hasMultiFrameImageSequence = scene.visual?.type === 'image-sequence' &&
+      Array.isArray(declaredFrames) && declaredFrames.length >= 2;
+    const hasCanonicalFrameTrigger = anchorActions.some(
+      (a: any) => a.type === 'trigger' && typeof a.payload?.frameIndex === 'number'
+    );
+    if (hasMultiFrameImageSequence && !hasCanonicalFrameTrigger) {
+      throw new Error(
+        `[C12.1] image-sequence com 2+ frames na scene "${scene.id}" sem trigger com payload.frameIndex. Fallback timer bloqueado.`
+      );
     }
 
     // Determinar comportamento de áudio (usa isInteractiveScene definido acima)
@@ -5617,6 +5746,21 @@ function generatePhases(
       effects: scene.visual.effects,
       microVisuals: microVisuals.length > 0 ? microVisuals : undefined,
       anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
+      telemetry: (microVisualTriggerFallbackCount > 0 || frameTriggerLegacyNormalizationCount > 0)
+        ? {
+            fallback: {
+              ...(microVisualTriggerFallbackCount > 0 ? { microVisualTriggerFallbackCount } : {}),
+              ...(frameTriggerLegacyNormalizationCount > 0 ? { frameTriggerLegacyNormalizationCount } : {}),
+              ...(keywordNormalizationStats.totalLookups > 0 ? { keywordNormalization: keywordNormalizationStats } : {}),
+            },
+          }
+        : (keywordNormalizationStats.totalLookups > 0
+          ? {
+              fallback: {
+                keywordNormalization: keywordNormalizationStats,
+              },
+            }
+          : undefined),
       audioBehavior: isInteractiveScene ? buildAudioBehavior(scene) : undefined,
     };
 
@@ -6303,6 +6447,7 @@ Deno.serve(async (req) => {
   let runId: string | null = null;
   let input: ScriptInput | null = null;
   let executionInserted = false;
+  let releaseForensicReport: ReleaseForensicReport | null = null;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -7780,6 +7925,15 @@ Deno.serve(async (req) => {
         
         console.error(`[AUDIT_GATE] Run ${runId} reverted to FAILED`);
         
+        releaseForensicReport = buildReleaseForensicReport({
+          runId,
+          mode,
+          auditChecked: true,
+          auditPassed: false,
+          auditHttpStatus: auditResponse.status,
+          requiredFailed: auditScorecard.required_failed,
+        });
+
         return new Response(
           JSON.stringify({
             success: false,
@@ -7790,6 +7944,7 @@ Deno.serve(async (req) => {
               required_failed: auditScorecard.required_failed,
               scorecard: auditScorecard,
             },
+            forensic: releaseForensicReport,
             runId,
           }),
           { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -7802,14 +7957,6 @@ Deno.serve(async (req) => {
         const scorecardHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(scorecardJson));
         const scorecardHash = Array.from(new Uint8Array(scorecardHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         
-        await supabase
-          .from('pipeline_executions')
-          .update({
-            output_data: supabase.rpc ? undefined : undefined, // fallback below
-            updated_at: new Date().toISOString(),
-          })
-          .eq('run_id', runId);
-        
         // Update output_data.meta.auditGate via raw SQL-safe approach
         const { data: currentRun } = await supabase
           .from('pipeline_executions')
@@ -7818,6 +7965,16 @@ Deno.serve(async (req) => {
           .single();
         
         if (currentRun?.output_data) {
+          releaseForensicReport = buildReleaseForensicReport({
+            runId,
+            mode,
+            auditChecked: true,
+            auditPassed: true,
+            auditHttpStatus: auditResponse.status,
+            requiredFailed: 0,
+            scorecardHash,
+          });
+
           const updatedOutput = {
             ...currentRun.output_data,
             meta: {
@@ -7827,6 +7984,7 @@ Deno.serve(async (req) => {
                 httpStatus: auditResponse.status,
                 scorecardHash,
               },
+              releaseForensicReport,
             },
           };
           await supabase
@@ -7835,6 +7993,16 @@ Deno.serve(async (req) => {
             .eq('run_id', runId);
           
           console.log(`[AUDIT_GATE] ✅ auditGate stamp persisted: hash=${scorecardHash.slice(0, 16)}...`);
+        } else {
+          releaseForensicReport = buildReleaseForensicReport({
+            runId,
+            mode,
+            auditChecked: true,
+            auditPassed: true,
+            auditHttpStatus: auditResponse.status,
+            requiredFailed: 0,
+            scorecardHash,
+          });
         }
       }
     } catch (auditErr: any) {
@@ -7856,12 +8024,20 @@ Deno.serve(async (req) => {
         })
         .eq('run_id', runId);
       
+      releaseForensicReport = buildReleaseForensicReport({
+        runId,
+        mode,
+        auditChecked: true,
+        auditPassed: false,
+      });
+
       return new Response(
         JSON.stringify({
           success: false,
           error: 'AUDIT_GATE_FAILED',
           error_code: 'AUDIT_GATE_FAILED',
           error_details: { reason: 'unreachable', message: auditErr.message },
+          forensic: releaseForensicReport,
           runId,
         }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -7871,6 +8047,15 @@ Deno.serve(async (req) => {
     // =========================================================================
     // RESPOSTA COM DEBUG REPORT
     // =========================================================================
+    if (!releaseForensicReport) {
+      releaseForensicReport = buildReleaseForensicReport({
+        runId,
+        mode,
+        auditChecked: true,
+        auditPassed: true,
+      });
+    }
+
     const response = {
       success: true,
       lessonId,
@@ -7885,6 +8070,7 @@ Deno.serve(async (req) => {
       },
       // ✅ DEBUG REPORT AUTOMÁTICO (null no modo preserve_structure)
       debug: debugReport,
+      forensic: releaseForensicReport,
     };
 
     console.log('================================================');
