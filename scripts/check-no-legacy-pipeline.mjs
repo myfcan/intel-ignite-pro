@@ -2,8 +2,10 @@
 import process from 'node:process';
 import { execSync } from 'node:child_process';
 
-const FORBIDDEN_PATTERN = String.raw`invoke\(['\"]v7-pipeline['\"]\)`;
-const SEARCH_PATHS = ['src', 'supabase', 'tests', 'scripts', '.github'];
+const LEGACY_FN = 'v7-pipeline';
+const FORBIDDEN_PATTERN = String.raw`invoke\(['\"]${LEGACY_FN}['\"]\)`;
+// Scope restricted to runtime code paths to avoid self-matching in guard/workflow files.
+const SEARCH_PATHS = ['src', 'supabase', 'tests'];
 
 try {
   const output = execSync(
@@ -12,17 +14,19 @@ try {
   ).trim();
 
   if (output.length > 0) {
-    globalThis.console.error('❌ Forbidden legacy invoke detected: invoke("v7-pipeline")');
+    globalThis.console.error(`❌ Forbidden legacy invoke detected: invoke("${LEGACY_FN}")`);
     globalThis.console.error(output);
     process.exit(1);
   }
+
+  globalThis.console.log(`✅ No forbidden legacy invoke("${LEGACY_FN}") usage found.`);
 } catch (error) {
   const stderr = error?.stderr?.toString?.() ?? '';
   const stdout = error?.stdout?.toString?.() ?? '';
 
   // git grep exits with code 1 when there are no matches (expected pass)
   if (error?.status === 1 && !stdout.trim()) {
-    globalThis.console.log('✅ No forbidden legacy invoke("v7-pipeline") usage found.');
+    globalThis.console.log(`✅ No forbidden legacy invoke("${LEGACY_FN}") usage found.`);
     process.exit(0);
   }
 
