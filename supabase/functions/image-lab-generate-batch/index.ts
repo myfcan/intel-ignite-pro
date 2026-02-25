@@ -369,7 +369,7 @@ Deno.serve(async (req) => {
           if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
           // File hash
-          const fileHashBuffer = await crypto.subtle.digest("SHA-256", imageBytes);
+          const fileHashBuffer = await crypto.subtle.digest("SHA-256", imageBytes.buffer as ArrayBuffer);
           const fileHash = Array.from(new Uint8Array(fileHashBuffer))
             .map(b => b.toString(16).padStart(2, "0")).join("");
 

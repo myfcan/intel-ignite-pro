@@ -1529,6 +1529,7 @@ interface Phase {
     // ✅ FASE C: storagePath e displayMode explícitos para visual.type='image'
     storagePath?: string;
     displayMode?: string;
+    promptScene?: string;
     frames?: Array<{
       frameId: string;
       durationMs: number;
@@ -1536,6 +1537,17 @@ interface Phase {
       promptScene?: string;
     }>;
   };
+  // C03: scenes[] inline — 1:1 with phase
+  scenes?: Array<{
+    id: string;
+    type: string;
+    startTime: number;
+    endTime: number;
+    duration: number;
+    narration: string;
+    content: Record<string, unknown>;
+    animation: string;
+  }>;
   effects?: Record<string, unknown>;
   microVisuals?: MicroVisual[];
   anchorActions?: AnchorAction[];
@@ -1565,6 +1577,7 @@ interface Phase {
 
 interface LessonData {
   // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
+  contentVersion?: string;             // P5 FIX (C14): versão do content no root
   schema: string;                    // Bug 7: era "model"
   version: string;                   // Bug 8: será "1.0.0"
   title: string;                     // Bug 9: title no root
@@ -1876,7 +1889,7 @@ const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal'] a
 // Alinhado com os defaults do renderer (useV7AudioManager.ts).
 // ============================================================================
 
-function buildAudioBehavior(scene: SceneInput): Phase['audioBehavior'] {
+function buildAudioBehavior(scene: ScriptScene): Phase['audioBehavior'] {
   const interactionType = scene.interaction?.type;
 
   // Quiz: pausa total, ambiente baixo para foco
@@ -2387,9 +2400,8 @@ function executeDryRun(input: ScriptInput): DryRunResult {
   if (!input.scenes || !Array.isArray(input.scenes) || input.scenes.length === 0) {
     console.error('[V7-vv:DryRun] ❌ input.scenes está vazio ou undefined');
     return {
-      valid: false,
-      errorCount: 1,
-      warningCount: 0,
+      canProcess: false,
+      validationScore: 0,
       issues: [{
         severity: 'error',
         scene: 'root',
@@ -2399,8 +2411,17 @@ function executeDryRun(input: ScriptInput): DryRunResult {
       }],
       autoFixes: [],
       sceneAnalysis: [],
-      estimatedDuration: 0,
-      summary: 'Input inválido: scenes[] ausente ou vazio'
+      summary: {
+        totalScenes: 0,
+        totalWords: 0,
+        estimatedDuration: 0,
+        interactiveScenes: 0,
+        microVisualCount: 0,
+        errorCount: 1,
+        warningCount: 0,
+        infoCount: 0,
+      },
+      recommendation: 'Input inválido: scenes[] ausente ou vazio',
     };
   }
 
@@ -2870,6 +2891,7 @@ function executeDryRun(input: ScriptInput): DryRunResult {
 // ============================================================================
 
 interface EnrichedMicroVisual {
+  id?: string;
   type: 'stat' | 'step';
   anchorText: string;
   duration: number;
@@ -6481,9 +6503,9 @@ Deno.serve(async (req) => {
   // =========================================================================
   // EXECUTION STATE CONTRACT: Variables defined OUTSIDE try for catch access
   // =========================================================================
-  let supabase: ReturnType<typeof createClient> | null = null;
+  let supabase: any = null;
   let runId: string | null = null;
-  let input: ScriptInput | null = null;
+  let input: ScriptInput = null as unknown as ScriptInput;
   let executionInserted = false;
   let releaseForensicReport: ReleaseForensicReport | null = null;
 
@@ -6492,7 +6514,10 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    input = await req.json();
+    input = await req.json() as ScriptInput;
+    if (!input || typeof input !== 'object') {
+      throw new Error('Input inválido: body JSON obrigatório');
+    }
     
     // =========================================================================
     // C05: INITIALIZE TRACEABILITY
@@ -6607,8 +6632,8 @@ Deno.serve(async (req) => {
         // EXECUTION STATE CONTRACT: Mark as failed BEFORE returning
         // =========================================================================
         if (supabase && runId && executionInserted) {
-          await supabase
-            .from('pipeline_executions')
+          await (supabase
+            .from('pipeline_executions') as any)
             .update({
               status: 'failed',
               error_message: fullErrorMessage,
@@ -6664,8 +6689,8 @@ Deno.serve(async (req) => {
       console.log(`[V7-vv] 🔄 REPROCESS MODE: Buscando dados da lição ${input.existing_lesson_id}`);
       
       // Buscar dados existentes do banco
-      const { data: existingLesson, error: fetchError } = await supabase
-        .from('lessons')
+      const { data: existingLesson, error: fetchError } = await (supabase
+        .from('lessons') as any)
         .select('audio_url, word_timestamps')
         .eq('id', input.existing_lesson_id)
         .single();
@@ -6962,25 +6987,26 @@ Deno.serve(async (req) => {
             }
           }
 
-          // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
-          // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
-          if (
-            phase.visual?.type === 'image' &&
-            phase.visual.promptScene &&
-            typeof phase.visual.promptScene === 'string' &&
-            (
-              !phase.visual.storagePath ||
-              (phase.visual.storagePath as string).startsWith('PENDING:')
-            )
-          ) {
-            imageNarrativeScenes.push({
-              scene_id: phase.id,
-              prompt_scene: phase.visual.promptScene as string,
-              style_hints: (phase.visual as any).styleHints || undefined,
-              phaseIdx: pi,
-            });
-            console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
-          }
+        }
+
+        // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
+        // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
+        if (
+          phase.visual?.type === 'image' &&
+          phase.visual.promptScene &&
+          typeof phase.visual.promptScene === 'string' &&
+          (
+            !phase.visual.storagePath ||
+            (phase.visual.storagePath as string).startsWith('PENDING:')
+          )
+        ) {
+          imageNarrativeScenes.push({
+            scene_id: phase.id,
+            prompt_scene: phase.visual.promptScene as string,
+            style_hints: (phase.visual as any).styleHints || undefined,
+            phaseIdx: pi,
+          });
+          console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
         }
         
         // Original: Scan microVisuals
