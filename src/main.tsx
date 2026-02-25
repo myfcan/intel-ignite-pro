@@ -8,7 +8,7 @@ import "./index.css";
 // O SW será reativado quando o app estiver estável para produção
 
 // 🧹 Limpar qualquer Service Worker antigo e caches obsoletos
-const APP_VERSION = '2025-02-20-v3';
+const APP_VERSION = '2026-02-25-v4';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(registrations => {
@@ -38,6 +38,11 @@ if ('caches' in window) {
 }
 
 console.log('[AIliv] Dashboard versão:', APP_VERSION);
+
+// Runtime signature no boot
+import('./lib/runtimeSignature').then(({ logRuntimeSignature }) => {
+  logRuntimeSignature({ route: window.location.pathname });
+});
 
 // 🧪 Disponibilizar testes no console (desenvolvimento)
 if (import.meta.env.DEV) {
