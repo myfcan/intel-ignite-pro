@@ -1682,6 +1682,72 @@ export type Database = {
         }
         Relationships: []
       }
+      v7vv_audit_runs_v1: {
+        Row: {
+          audit_checked: boolean | null
+          audit_http_status: number | null
+          audit_scorecard_hash: string | null
+          completed_at: string | null
+          created_at: string | null
+          error_code: string | null
+          error_preview: string | null
+          forensic_audit_checked: boolean | null
+          forensic_audit_passed: boolean | null
+          forensic_generated_at: string | null
+          forensic_http_status: number | null
+          forensic_scorecard_hash: string | null
+          lesson_id: string | null
+          mode: string | null
+          pipeline_version: string | null
+          run_id: string | null
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          audit_checked?: never
+          audit_http_status?: never
+          audit_scorecard_hash?: never
+          completed_at?: string | null
+          created_at?: string | null
+          error_code?: never
+          error_preview?: never
+          forensic_audit_checked?: never
+          forensic_audit_passed?: never
+          forensic_generated_at?: never
+          forensic_http_status?: never
+          forensic_scorecard_hash?: never
+          lesson_id?: string | null
+          mode?: string | null
+          pipeline_version?: string | null
+          run_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          audit_checked?: never
+          audit_http_status?: never
+          audit_scorecard_hash?: never
+          completed_at?: string | null
+          created_at?: string | null
+          error_code?: never
+          error_preview?: never
+          forensic_audit_checked?: never
+          forensic_audit_passed?: never
+          forensic_generated_at?: never
+          forensic_http_status?: never
+          forensic_scorecard_hash?: never
+          lesson_id?: string | null
+          mode?: string | null
+          pipeline_version?: string | null
+          run_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       c05_compute_content_hash: { Args: { p_run_id: string }; Returns: string }
@@ -1718,6 +1784,36 @@ export type Database = {
           is_authenticated: boolean
           user_role: string
         }[]
+      }
+      get_v7vv_audit_runs: {
+        Args: { limit_rows?: number; run_id_filter?: string }
+        Returns: {
+          audit_checked: boolean | null
+          audit_http_status: number | null
+          audit_scorecard_hash: string | null
+          completed_at: string | null
+          created_at: string | null
+          error_code: string | null
+          error_preview: string | null
+          forensic_audit_checked: boolean | null
+          forensic_audit_passed: boolean | null
+          forensic_generated_at: string | null
+          forensic_http_status: number | null
+          forensic_scorecard_hash: string | null
+          lesson_id: string | null
+          mode: string | null
+          pipeline_version: string | null
+          run_id: string | null
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "v7vv_audit_runs_v1"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       has_role: {
         Args: {
