@@ -3160,13 +3160,13 @@ async function generateAudio(
           'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: JSON.stringify({
-          text: text,
-          model_id: 'eleven_multilingual_v2',
+          text: sanitizeTextForV3(text),
+          model_id: 'eleven_v3',
           voice_settings: {
-            stability: 0.5,          // 50%
-            similarity_boost: 0.75,  // 75%
-            style: 0.5,              // 50% - Alice engaging style
-            use_speaker_boost: true, // Ativado
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.3,              // eleven_v3 expressividade
+            use_speaker_boost: true,
           },
         }),
       }
@@ -3238,6 +3238,20 @@ async function generateAudio(
   }
 }
 
+/**
+ * Sanitiza texto para eleven_v3:
+ * - Remove SSML <break/> (v3 não suporta)
+ * - Preserva audio tags [excited], [pause], [whispers] etc.
+ * - Mantém pontuação natural
+ */
+function sanitizeTextForV3(text: string): string {
+  // Remover SSML tags (v3 não suporta)
+  let cleaned = text.replace(/<[^>]+>/g, '');
+  // Normalizar espaços extras
+  cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+  return cleaned;
+}
+
 function processWordTimestamps(
   characters: string[],
   characterStartTimes: number[]
@@ -3245,9 +3259,15 @@ function processWordTimestamps(
   const words: WordTimestamp[] = [];
   let currentWord = '';
   let wordStartIndex = 0;
+  let insideTag = false;
 
   for (let i = 0; i < characters.length; i++) {
     const char = characters[i];
+
+    // Pular audio tags [tag] nos word timestamps
+    if (char === '[') { insideTag = true; continue; }
+    if (char === ']') { insideTag = false; continue; }
+    if (insideTag) continue;
 
     if (char === ' ' || char === '\n' || i === characters.length - 1) {
       if (i === characters.length - 1 && char !== ' ' && char !== '\n') {
