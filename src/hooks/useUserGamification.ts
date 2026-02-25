@@ -51,6 +51,15 @@ export function useUserGamification() {
 
       if (error) {
         console.error('[useUserGamification] Query error:', error);
+        // Setar stats zerados em vez de null para evitar loading infinito
+        setStats({
+          powerScore: 0,
+          coins: 0,
+          patentLevel: 0,
+          patentName: PATENT_NAMES[0],
+          streakDays: 0,
+          lessonsCompleted: 0,
+        });
         setIsLoading(false);
         return;
       }
@@ -79,6 +88,15 @@ export function useUserGamification() {
       }
     } catch (err) {
       console.error('[useUserGamification] Error:', err);
+      // Setar stats zerados para não travar em loading
+      setStats({
+        powerScore: 0,
+        coins: 0,
+        patentLevel: 0,
+        patentName: PATENT_NAMES[0],
+        streakDays: 0,
+        lessonsCompleted: 0,
+      });
     } finally {
       setIsLoading(false);
     }
