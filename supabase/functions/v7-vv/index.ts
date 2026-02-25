@@ -6630,18 +6630,56 @@ Deno.serve(async (req) => {
         
         // =========================================================================
         // EXECUTION STATE CONTRACT: Mark as failed BEFORE returning
+        // Sprint H: Persist releaseForensicReport + output_data.meta on ALL failures
         // =========================================================================
         if (supabase && runId && executionInserted) {
+          const inferredMode: 'create' | 'reprocess' | 'dry_run' =
+            input.dry_run ? 'dry_run' :
+            input.reprocess ? 'reprocess' : 'create';
+
+          const validationForensicReport = buildReleaseForensicReport({
+            runId,
+            mode: inferredMode,
+            auditChecked: false,
+            auditPassed: false,
+          });
+
+          // Import contract metadata for forensic persistence
+          let contractVersion = 'c10b-boundaryfix-execstate-1.0';
+          let activeContracts = ['C01', 'C02', 'C04', 'C05', 'C06', 'C08', 'C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+          try {
+            const contractsMod = await import('./contracts.ts');
+            contractVersion = contractsMod.CONTRACT_VERSION;
+            activeContracts = contractsMod.ACTIVE_CONTRACTS_LIST;
+          } catch { /* fallback to hardcoded */ }
+
+          const { data: currentRun } = await supabase
+            .from('pipeline_executions')
+            .select('output_data')
+            .eq('run_id', runId)
+            .single();
+
+          const failedOutputData = buildFailedOutputData({
+            currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+            input,
+            releaseForensicReport: validationForensicReport,
+            errorCode: 'VALIDATION_ERROR',
+            contractVersion,
+            activeContracts,
+            forceTestMeta: (input as any)?.forceTestMeta,
+          });
+
           await (supabase
             .from('pipeline_executions') as any)
             .update({
               status: 'failed',
               error_message: fullErrorMessage,
+              output_data: failedOutputData,
               completed_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
             .eq('run_id', runId);
-          console.log(`[EXECUTION_STATE_CONTRACT] ✅ Validation failure recorded for run ${runId}`);
+          console.log(`[EXECUTION_STATE_CONTRACT] ✅ Validation failure recorded for run ${runId} (with forensic report)`);
         }
         
         return new Response(
