@@ -31,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.1.4-forcetest-fix';
-const COMMIT_HASH = 'forcetest-fix-r06-r08-r11-2026-02-09';
+const PIPELINE_VERSION = 'v7-vv-1.1.5-forensic-persist';
+const COMMIT_HASH = 'forensic-persist-fix-2026-02-25';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -7939,18 +7939,7 @@ Deno.serve(async (req) => {
           },
         });
         
-        // Revert status to failed
-        await supabase
-          .from('pipeline_executions')
-          .update({
-            status: 'failed',
-            error_message: auditErrorMsg,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('run_id', runId);
-        
-        console.error(`[AUDIT_GATE] Run ${runId} reverted to FAILED`);
-        
+        // Build forensic report BEFORE persist so it's included in output_data.meta
         releaseForensicReport = buildReleaseForensicReport({
           runId,
           mode,
@@ -7959,6 +7948,40 @@ Deno.serve(async (req) => {
           auditHttpStatus: auditResponse.status,
           requiredFailed: auditScorecard.required_failed,
         });
+
+        // Fetch current output_data to merge forensic metadata
+        const { data: failedRun } = await supabase
+          .from('pipeline_executions')
+          .select('output_data')
+          .eq('run_id', runId)
+          .single();
+
+        const failedOutputData = {
+          ...(failedRun?.output_data || {}),
+          meta: {
+            ...(failedRun?.output_data?.meta || {}),
+            auditGate: {
+              checked: true,
+              passed: false,
+              httpStatus: auditResponse.status,
+              requiredFailed: auditScorecard.required_failed,
+            },
+            releaseForensicReport,
+          },
+        };
+
+        // Revert status to failed WITH forensic metadata persisted
+        await (supabase as any)
+          .from('pipeline_executions')
+          .update({
+            status: 'failed',
+            error_message: auditErrorMsg,
+            output_data: failedOutputData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('run_id', runId);
+        
+        console.error(`[AUDIT_GATE] Run ${runId} reverted to FAILED (forensic persisted)`);
 
         return new Response(
           JSON.stringify({
@@ -8041,21 +8064,44 @@ Deno.serve(async (req) => {
         error_details: { reason: 'unreachable', message: auditErr.message },
       });
       
-      await supabase
-        .from('pipeline_executions')
-        .update({
-          status: 'failed',
-          error_message: unreachableErrorMsg,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('run_id', runId);
-      
+      // Build forensic report BEFORE persist
       releaseForensicReport = buildReleaseForensicReport({
         runId,
         mode,
         auditChecked: true,
         auditPassed: false,
       });
+
+      // Fetch current output_data to merge forensic metadata
+      const { data: unreachableRun } = await supabase
+        .from('pipeline_executions')
+        .select('output_data')
+        .eq('run_id', runId)
+        .single();
+
+      const unreachableOutputData = {
+        ...(unreachableRun?.output_data || {}),
+        meta: {
+          ...(unreachableRun?.output_data?.meta || {}),
+          auditGate: {
+            checked: true,
+            passed: false,
+            httpStatus: null,
+            error: 'unreachable',
+          },
+          releaseForensicReport,
+        },
+      };
+
+      await (supabase as any)
+        .from('pipeline_executions')
+        .update({
+          status: 'failed',
+          error_message: unreachableErrorMsg,
+          output_data: unreachableOutputData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('run_id', runId);
 
       return new Response(
         JSON.stringify({
@@ -8175,6 +8221,14 @@ Deno.serve(async (req) => {
         // Extract forceTestMeta from input if available
         const forceTestMeta = (input as any)?.forceTestMeta;
         
+        // Build forensic report for global catch failures
+        const catchForensicReport = buildReleaseForensicReport({
+          runId,
+          mode: (input as any)?.reprocess ? 'reprocess' : ((input as any)?.dry_run ? 'dry_run' : 'create'),
+          auditChecked: false,
+          auditPassed: false,
+        });
+
         const failedOutputData = {
           lesson_id: (input as any)?.existing_lesson_id || null,
           meta: {
@@ -8183,6 +8237,7 @@ Deno.serve(async (req) => {
             triggerContract: 'anchorActions',
             failedAt: new Date().toISOString(),
             errorCode: errorCode,
+            releaseForensicReport: catchForensicReport,
             ...(forceTestMeta?.batchId ? { forceTestBatchId: forceTestMeta.batchId } : {}),
             ...(forceTestMeta?.runTag ? { forceTestRunTag: forceTestMeta.runTag } : {}),
           },
