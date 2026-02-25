@@ -32,7 +32,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
 const PIPELINE_VERSION = 'v7-vv-1.1.5-forensic-persist';
-const COMMIT_HASH = 'forensic-persist-fix-2026-02-25';
+const COMMIT_HASH = 'forensic-persist-r01-2026-02-25';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -176,6 +176,44 @@ function buildReleaseForensicReport(params: {
       httpStatus: params.auditHttpStatus ?? null,
       requiredFailed: params.requiredFailed ?? null,
       scorecardHash: params.scorecardHash ?? null,
+    },
+  };
+}
+
+
+function buildFailedOutputData(params: {
+  currentOutputData?: Record<string, unknown> | null;
+  input: ScriptInput | null;
+  releaseForensicReport: ReleaseForensicReport;
+  errorCode: string;
+  contractVersion: string;
+  activeContracts: string[];
+  forceTestMeta?: { batchId?: string; runTag?: string };
+}): Record<string, unknown> {
+  const existingMeta = (params.currentOutputData?.meta as Record<string, unknown> | undefined) ?? {};
+
+  return {
+    ...(params.currentOutputData ?? {}),
+    lesson_id:
+      (params.currentOutputData?.lesson_id as string | undefined) ??
+      (params.input as any)?.existing_lesson_id ??
+      null,
+    meta: {
+      ...existingMeta,
+      contractVersion: params.contractVersion,
+      contracts: params.activeContracts,
+      triggerContract: 'anchorActions',
+      failedAt: new Date().toISOString(),
+      errorCode: params.errorCode,
+      auditGate: {
+        checked: params.releaseForensicReport.auditGate.checked,
+        passed: params.releaseForensicReport.auditGate.passed,
+        httpStatus: params.releaseForensicReport.auditGate.httpStatus,
+        scorecardHash: params.releaseForensicReport.auditGate.scorecardHash,
+      },
+      releaseForensicReport: params.releaseForensicReport,
+      ...(params.forceTestMeta?.batchId ? { forceTestBatchId: params.forceTestMeta.batchId } : {}),
+      ...(params.forceTestMeta?.runTag ? { forceTestRunTag: params.forceTestMeta.runTag } : {}),
     },
   };
 }
@@ -7939,7 +7977,6 @@ Deno.serve(async (req) => {
           },
         });
         
-        // Build forensic report BEFORE persist so it's included in output_data.meta
         releaseForensicReport = buildReleaseForensicReport({
           runId,
           mode,
@@ -7949,39 +7986,35 @@ Deno.serve(async (req) => {
           requiredFailed: auditScorecard.required_failed,
         });
 
-        // Fetch current output_data to merge forensic metadata
-        const { data: failedRun } = await supabase
+        const { data: currentRun } = await supabase
           .from('pipeline_executions')
           .select('output_data')
           .eq('run_id', runId)
           .single();
 
-        const failedOutputData = {
-          ...(failedRun?.output_data || {}),
-          meta: {
-            ...(failedRun?.output_data?.meta || {}),
-            auditGate: {
-              checked: true,
-              passed: false,
-              httpStatus: auditResponse.status,
-              requiredFailed: auditScorecard.required_failed,
-            },
-            releaseForensicReport,
-          },
-        };
+        const failedOutputData = buildFailedOutputData({
+          currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+          input,
+          releaseForensicReport,
+          errorCode: 'AUDIT_GATE_FAILED',
+          contractVersion: CONTRACT_VERSION,
+          activeContracts: ACTIVE_CONTRACTS_LIST,
+          forceTestMeta,
+        });
 
-        // Revert status to failed WITH forensic metadata persisted
-        await (supabase as any)
+        // Revert status to failed and persist forensic metadata
+        await supabase
           .from('pipeline_executions')
           .update({
             status: 'failed',
             error_message: auditErrorMsg,
             output_data: failedOutputData,
+            completed_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('run_id', runId);
         
-        console.error(`[AUDIT_GATE] Run ${runId} reverted to FAILED (forensic persisted)`);
+        console.error(`[AUDIT_GATE] Run ${runId} reverted to FAILED`);
 
         return new Response(
           JSON.stringify({
@@ -8064,7 +8097,6 @@ Deno.serve(async (req) => {
         error_details: { reason: 'unreachable', message: auditErr.message },
       });
       
-      // Build forensic report BEFORE persist
       releaseForensicReport = buildReleaseForensicReport({
         runId,
         mode,
@@ -8072,33 +8104,29 @@ Deno.serve(async (req) => {
         auditPassed: false,
       });
 
-      // Fetch current output_data to merge forensic metadata
-      const { data: unreachableRun } = await supabase
+      const { data: currentRun } = await supabase
         .from('pipeline_executions')
         .select('output_data')
         .eq('run_id', runId)
         .single();
 
-      const unreachableOutputData = {
-        ...(unreachableRun?.output_data || {}),
-        meta: {
-          ...(unreachableRun?.output_data?.meta || {}),
-          auditGate: {
-            checked: true,
-            passed: false,
-            httpStatus: null,
-            error: 'unreachable',
-          },
-          releaseForensicReport,
-        },
-      };
+      const failedOutputData = buildFailedOutputData({
+        currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+        input,
+        releaseForensicReport,
+        errorCode: 'AUDIT_GATE_FAILED',
+        contractVersion: CONTRACT_VERSION,
+        activeContracts: ACTIVE_CONTRACTS_LIST,
+        forceTestMeta,
+      });
 
-      await (supabase as any)
+      await supabase
         .from('pipeline_executions')
         .update({
           status: 'failed',
           error_message: unreachableErrorMsg,
-          output_data: unreachableOutputData,
+          output_data: failedOutputData,
+          completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('run_id', runId);
@@ -8221,28 +8249,36 @@ Deno.serve(async (req) => {
         // Extract forceTestMeta from input if available
         const forceTestMeta = (input as any)?.forceTestMeta;
         
-        // Build forensic report for global catch failures
-        const catchForensicReport = buildReleaseForensicReport({
-          runId,
-          mode: (input as any)?.reprocess ? 'reprocess' : ((input as any)?.dry_run ? 'dry_run' : 'create'),
-          auditChecked: false,
-          auditPassed: false,
+        const inferredMode: 'create' | 'reprocess' | 'dry_run' =
+          input?.dry_run ? 'dry_run' :
+          input?.reprocess ? 'reprocess' :
+          'create';
+
+        if (!releaseForensicReport) {
+          releaseForensicReport = buildReleaseForensicReport({
+            runId,
+            mode: inferredMode,
+            auditChecked: errorCode === 'AUDIT_GATE_FAILED',
+            auditPassed: false,
+          });
+        }
+
+        const { data: currentRun } = await supabase
+          .from('pipeline_executions')
+          .select('output_data')
+          .eq('run_id', runId)
+          .single();
+
+        const failedOutputData = buildFailedOutputData({
+          currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+          input,
+          releaseForensicReport,
+          errorCode,
+          contractVersion: CONTRACT_VERSION_FAIL,
+          activeContracts: ACTIVE_CONTRACTS_FAIL,
+          forceTestMeta,
         });
 
-        const failedOutputData = {
-          lesson_id: (input as any)?.existing_lesson_id || null,
-          meta: {
-            contractVersion: CONTRACT_VERSION_FAIL,
-            contracts: ACTIVE_CONTRACTS_FAIL,
-            triggerContract: 'anchorActions',
-            failedAt: new Date().toISOString(),
-            errorCode: errorCode,
-            releaseForensicReport: catchForensicReport,
-            ...(forceTestMeta?.batchId ? { forceTestBatchId: forceTestMeta.batchId } : {}),
-            ...(forceTestMeta?.runTag ? { forceTestRunTag: forceTestMeta.runTag } : {}),
-          },
-        };
-        
         await supabase
           .from('pipeline_executions')
           .update({

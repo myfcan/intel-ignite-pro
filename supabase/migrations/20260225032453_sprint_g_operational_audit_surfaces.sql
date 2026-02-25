@@ -6,6 +6,11 @@ BEGIN;
 -- ============================================================================
 -- 1) Flattened forensic view for v7-vv operational analysis
 -- ============================================================================
+-- Defensive cleanup for environments where an older shape of the view/function
+-- already exists (prevents 42P16 when replacing a view with renamed columns).
+DROP FUNCTION IF EXISTS public.get_v7vv_audit_runs(int, uuid);
+DROP VIEW IF EXISTS public.v7vv_audit_runs_v1;
+
 CREATE OR REPLACE VIEW public.v7vv_audit_runs_v1 AS
 SELECT
   pe.run_id,

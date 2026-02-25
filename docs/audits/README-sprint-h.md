@@ -1,57 +1,19 @@
-# Sprint H — Forensic Report Persistence Fix (v7-vv-1.1.5)
+# Sprint H — persistência forense em runs `failed`
 
-## Problema Diagnosticado
-O `releaseForensicReport` e `auditGate` eram persistidos em `output_data.meta` apenas para runs **completed** que passaram o audit gate.
-Runs **failed** (AUDIT_GATE_FAILED ou UNREACHABLE) tinham o relatório construído mas apenas retornado no HTTP response — nunca persistido no banco.
+## Problema observado
+Em produção, parte das execuções com status `failed` (especialmente `AUDIT_GATE_FAILED` e falhas em caminhos de erro) não persistia `meta.releaseForensicReport` em `pipeline_executions.output_data`.
 
-### Evidência Forense (antes do fix)
-```sql
--- Completed create runs: auditGate ✅, releaseForensicReport ✅
--- Failed create runs:    auditGate ❌, releaseForensicReport ❌
-```
+## Correção aplicada
+- Bump de versão do pipeline para `v7-vv-1.1.5-forensic-persist`.
+- Padronização de persistência de metadados forenses em **3 caminhos de falha**:
+  1. `AUDIT_GATE_FAILED` (HTTP != 200)
+  2. `AUDIT_GATE_FAILED` por indisponibilidade do audit service (`unreachable`)
+  3. `catch` global do pipeline
+- Em todos os casos acima, `output_data.meta` passa a incluir:
+  - `auditGate`
+  - `releaseForensicReport`
+  - metadados de contrato e erro canônico
 
-## Correções Aplicadas (v7-vv-1.1.5-forensic-persist)
-
-### 1. AUDIT_GATE_FAILED path
-- Agora faz fetch do `output_data` existente antes de atualizar
-- Merge `auditGate` + `releaseForensicReport` em `output_data.meta`
-- Persiste junto com `status=failed` e `error_message`
-
-### 2. AUDIT_GATE UNREACHABLE path
-- Mesmo padrão: fetch → merge → persist
-
-### 3. Global catch (erros genéricos)
-- `failedOutputData.meta` agora inclui `releaseForensicReport` com `auditChecked: false`
-
-## Validação
-
-### Testes unitários
-```bash
-npx vitest run src/components/lessons/v7/cinematic/validators/__tests__/forensicReportPersistence.test.ts
-```
-
-### SQL de validação pós-deploy
-```sql
--- Q1: Coverage por status (deve ser 100% para v7-vv-1.1.5+)
--- Ver: docs/audits/sprint-h-forensic-persist-validation.sql
-
--- Q3: Gap detection (deve retornar 0 rows)
-SELECT count(*) FROM pipeline_executions
-WHERE pipeline_version LIKE 'v7-vv-1.1.5%'
-  AND mode IN ('create', 'reprocess')
-  AND status IN ('completed', 'failed')
-  AND output_data->'meta'->'releaseForensicReport' IS NULL;
-```
-
-## Plano de Validação Pós-Deploy
-
-1. Executar um `dry_run` (não persiste forensic — esperado)
-2. Executar um `create` com input válido → verificar Q2
-3. Executar um `create` com input que cause AUDIT_GATE_FAILED → verificar Q3 retorna 0
-4. Executar `sprint-h-forensic-persist-validation.sql` completo
-
-## Compatibilidade Retroativa
-- ✅ Nenhuma alteração de schema
-- ✅ Runs antigos (v7-vv-1.1.4) continuam funcionando
-- ✅ View `v7vv_audit_runs_v1` e function `get_v7vv_audit_runs` continuam compatíveis
-- ✅ `output_data.meta` usa spread (`...existingMeta`), preservando campos existentes
+## Validação pós-deploy
+Use `docs/audits/sprint-h-forensic-persist-validation.sql`.
+Objetivo: confirmar que runs `failed` novas não ficam sem `releaseForensicReport`.

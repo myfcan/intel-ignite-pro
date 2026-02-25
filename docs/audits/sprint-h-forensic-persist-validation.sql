@@ -1,86 +1,51 @@
--- Sprint H — Forensic Persist Validation (v7-vv-1.1.5)
--- Objective: Verify that releaseForensicReport is persisted in output_data.meta
--- for ALL terminal states (completed AND failed) in create/reprocess modes.
--- Safe: read-only queries, no mutations.
+-- Sprint H: forensic persist validation
 
--- ============================================================================
--- Q1) Coverage: releaseForensicReport presence by status (v7-vv runs only)
--- Expected after fix: 100% coverage for completed AND failed runs
--- ============================================================================
-SELECT
+-- Q1) Cobertura geral por status (últimos 30 dias)
+select
   status,
-  mode,
-  count(*) AS total_runs,
-  count(*) FILTER (
-    WHERE output_data->'meta'->'releaseForensicReport' IS NOT NULL
-  ) AS has_forensic,
-  count(*) FILTER (
-    WHERE output_data->'meta'->'auditGate' IS NOT NULL
-  ) AS has_audit_gate,
-  round(
-    100.0 * count(*) FILTER (
-      WHERE output_data->'meta'->'releaseForensicReport' IS NOT NULL
-    ) / NULLIF(count(*), 0), 1
-  ) AS forensic_coverage_pct
-FROM pipeline_executions
-WHERE pipeline_version LIKE 'v7-vv%'
-  AND mode IN ('create', 'reprocess')
-GROUP BY status, mode
-ORDER BY status, mode;
+  count(*) as total,
+  count(*) filter (where output_data->'meta' ? 'auditGate') as with_audit_gate,
+  count(*) filter (where output_data->'meta' ? 'releaseForensicReport') as with_release_forensic_report
+from public.pipeline_executions
+where created_at >= now() - interval '30 days'
+  and pipeline_version = 'v7-vv-1.1.5-forensic-persist'
+group by status
+order by status;
 
--- ============================================================================
--- Q2) Detailed forensic report for latest v7-vv-1.1.5 runs
--- ============================================================================
-SELECT
+-- Q2) Amostra das últimas falhas
+select
   run_id,
   mode,
   status,
-  pipeline_version,
-  completed_at,
-  (output_data->'meta'->'auditGate'->>'checked')::boolean AS audit_checked,
-  (output_data->'meta'->'auditGate'->>'passed')::boolean AS audit_passed,
-  (output_data->'meta'->'auditGate'->>'httpStatus')::int AS audit_http,
-  output_data->'meta'->'releaseForensicReport'->>'generatedAt' AS forensic_at,
-  output_data->'meta'->'releaseForensicReport'->>'pipelineVersion' AS forensic_version,
-  (output_data->'meta'->'releaseForensicReport'->'auditGate'->>'passed')::boolean AS forensic_passed
-FROM pipeline_executions
-WHERE pipeline_version LIKE 'v7-vv-1.1.5%'
-  AND mode IN ('create', 'reprocess')
-ORDER BY completed_at DESC
-LIMIT 20;
+  created_at,
+  output_data->'meta'->'auditGate'->>'checked' as audit_checked,
+  output_data->'meta'->'releaseForensicReport'->>'generatedAt' as forensic_generated_at,
+  output_data->'meta'->'releaseForensicReport'->'auditGate'->>'passed' as forensic_audit_passed,
+  error_message
+from public.pipeline_executions
+where pipeline_version = 'v7-vv-1.1.5-forensic-persist'
+  and status = 'failed'
+order by created_at desc
+limit 50;
 
--- ============================================================================
--- Q3) Gap detection: runs WITHOUT forensic report (should be zero after fix)
--- ============================================================================
-SELECT
+-- Q3) failed sem releaseForensicReport (deve retornar ZERO linhas)
+select
   run_id,
   mode,
   status,
-  pipeline_version,
-  completed_at,
-  left(error_message, 120) AS error_preview
-FROM pipeline_executions
-WHERE pipeline_version LIKE 'v7-vv-1.1.5%'
-  AND mode IN ('create', 'reprocess')
-  AND status IN ('completed', 'failed')
-  AND output_data->'meta'->'releaseForensicReport' IS NULL
-ORDER BY completed_at DESC
-LIMIT 20;
+  created_at,
+  error_message
+from public.pipeline_executions
+where pipeline_version = 'v7-vv-1.1.5-forensic-persist'
+  and status = 'failed'
+  and not (coalesce(output_data->'meta', '{}'::jsonb) ? 'releaseForensicReport')
+order by created_at desc;
 
--- ============================================================================
--- Q4) Timestamp consistency: forensic_at should be close to completed_at
--- (not identical across all runs like a backfill)
--- ============================================================================
-SELECT
-  run_id,
-  completed_at,
-  output_data->'meta'->'releaseForensicReport'->>'generatedAt' AS forensic_at,
-  EXTRACT(EPOCH FROM (
-    (output_data->'meta'->'releaseForensicReport'->>'generatedAt')::timestamptz - completed_at
-  )) AS drift_seconds
-FROM pipeline_executions
-WHERE pipeline_version LIKE 'v7-vv-1.1.5%'
-  AND status IN ('completed', 'failed')
-  AND output_data->'meta'->'releaseForensicReport' IS NOT NULL
-ORDER BY completed_at DESC
-LIMIT 20;
+-- Q4) Recorte AUDIT_GATE_FAILED
+select
+  count(*) as total_audit_gate_failed,
+  count(*) filter (where coalesce(output_data->'meta', '{}'::jsonb) ? 'releaseForensicReport') as with_release_forensic_report
+from public.pipeline_executions
+where pipeline_version = 'v7-vv-1.1.5-forensic-persist'
+  and status = 'failed'
+  and error_message::jsonb ->> 'error_code' = 'AUDIT_GATE_FAILED';
