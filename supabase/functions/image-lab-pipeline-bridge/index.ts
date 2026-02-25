@@ -347,9 +347,18 @@ Deno.serve(async (req) => {
       .eq("status", "processing");
 
     if (kpis && !fault.active) {
-      // Skip SLO_GUARD during fault injection tests
-      const failRateViolation = kpis.first_pass_accept_rate !== null && kpis.first_pass_accept_rate < 75;
-      const latencyViolation = (kpis.avg_latency_openai || 0) > 60000 && (kpis.avg_latency_gemini || 0) > 60000;
+      // C12.1_SLO_GUARD v2: Bridge is server-to-server automated
+      // Skip first_pass_accept_rate (requires manual approval, not applicable)
+      // Only block on real operational failures
+
+      // fail_rate from view is 0-100 scale (percentage)
+      const failRateViolation = (kpis.fail_rate_openai || 0) > 40
+        && (kpis.fail_rate_gemini || 0) > 40;
+
+      // Both providers must be slow (at least one healthy = proceed)
+      const latencyViolation = (kpis.avg_latency_openai || 0) > 60000
+        && (kpis.avg_latency_gemini || 0) > 60000;
+
       const stuckViolation = (stuckCount || 0) > 0;
 
       if (failRateViolation || latencyViolation || stuckViolation) {
@@ -358,7 +367,8 @@ Deno.serve(async (req) => {
           ok: false,
           reason: "SLO_VIOLATION",
           details: {
-            first_pass_accept_rate: kpis.first_pass_accept_rate,
+            fail_rate_openai: kpis.fail_rate_openai,
+            fail_rate_gemini: kpis.fail_rate_gemini,
             avg_latency_openai: kpis.avg_latency_openai,
             avg_latency_gemini: kpis.avg_latency_gemini,
             stuck_jobs: stuckCount,
