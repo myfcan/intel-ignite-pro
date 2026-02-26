@@ -36,15 +36,29 @@ describe('toV7vvPayload', () => {
     expect(payload.scenes[1]).toMatchObject({ id: 'a2', title: 'Ato 2', narration: 'Narração 2' });
   });
 
+
+  it('aceita cinematicFlow.phases como origem legada de cenas', () => {
+    const payload = toV7vvPayload({
+      cinematicFlow: {
+        phases: [{ id: 'p1', title: 'Fase 1', narration: 'Texto da fase' }],
+      },
+    });
+
+    expect(payload.scenes).toHaveLength(1);
+    expect(payload.scenes[0]).toMatchObject({ id: 'p1', title: 'Fase 1', narration: 'Texto da fase' });
+  });
+
   it('mapeia fluxo de regenerate/reprocess com preserve_structure', () => {
     const payload = toV7vvPayload({
       mode: 'regenerate',
       existingLessonId: 'lesson-123',
+      run_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
       scenes: [],
     });
 
     expect(payload.reprocess).toBe(true);
     expect(payload.existing_lesson_id).toBe('lesson-123');
+    expect(payload.run_id).toBe('f47ac10b-58cc-4372-a567-0e02b2c3d479');
     expect(payload.reprocess_preserve_structure).toBe(true);
     expect(payload.scenes).toEqual([]);
   });
