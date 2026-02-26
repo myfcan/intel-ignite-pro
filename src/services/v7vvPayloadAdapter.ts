@@ -35,6 +35,7 @@ interface LegacyInputLike {
   existing_lesson_id?: string;
   mode?: string;
   reprocess?: boolean;
+  reprocess_preserve_structure?: boolean;
 }
 
 interface CanonicalScene {
@@ -162,14 +163,18 @@ export function toV7vvPayload(input: LegacyInputLike): V7vvPayload {
 
     const scenes = Array.isArray(input.scenes) ? input.scenes : [];
 
-    return {
+    const payload: V7vvPayload = {
       ...base,
       reprocess: true,
       existing_lesson_id: existingLessonId,
-      // preserve current content when scenes aren't provided by legacy callers
-      reprocess_preserve_structure: scenes.length === 0,
       scenes,
     };
+
+    if (Object.prototype.hasOwnProperty.call(input, 'reprocess_preserve_structure')) {
+      payload.reprocess_preserve_structure = Boolean(input.reprocess_preserve_structure);
+    }
+
+    return payload;
   }
 
   // Canonical path if scenes already available
