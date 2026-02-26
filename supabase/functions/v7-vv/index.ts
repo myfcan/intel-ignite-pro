@@ -8050,13 +8050,21 @@ Deno.serve(async (req) => {
           .eq('run_id', runId)
           .single();
 
+        let _CV_AUDIT = 'c10b-boundaryfix-execstate-c11-c03-1.0';
+        let _AC_AUDIT: string[] = [];
+        try {
+          const _cm = await import('./contracts.ts');
+          _CV_AUDIT = _cm.CONTRACT_VERSION;
+          _AC_AUDIT = _cm.ACTIVE_CONTRACTS_LIST;
+        } catch { /* fallback */ }
+
         const failedOutputData = buildFailedOutputData({
           currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
           input,
           releaseForensicReport,
           errorCode: 'AUDIT_GATE_FAILED',
-          contractVersion: CONTRACT_VERSION,
-          activeContracts: ACTIVE_CONTRACTS_LIST,
+          contractVersion: _CV_AUDIT,
+          activeContracts: _AC_AUDIT,
           forceTestMeta,
         });
 
@@ -8168,13 +8176,21 @@ Deno.serve(async (req) => {
         .eq('run_id', runId)
         .single();
 
+      let _CV_AUDIT2 = 'c10b-boundaryfix-execstate-c11-c03-1.0';
+      let _AC_AUDIT2: string[] = [];
+      try {
+        const _cm2 = await import('./contracts.ts');
+        _CV_AUDIT2 = _cm2.CONTRACT_VERSION;
+        _AC_AUDIT2 = _cm2.ACTIVE_CONTRACTS_LIST;
+      } catch { /* fallback */ }
+
       const failedOutputData = buildFailedOutputData({
         currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
         input,
         releaseForensicReport,
         errorCode: 'AUDIT_GATE_FAILED',
-        contractVersion: CONTRACT_VERSION,
-        activeContracts: ACTIVE_CONTRACTS_LIST,
+        contractVersion: _CV_AUDIT2,
+        activeContracts: _AC_AUDIT2,
         forceTestMeta,
       });
 
