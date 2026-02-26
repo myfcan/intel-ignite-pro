@@ -130,6 +130,36 @@ function isFrameTriggerPayload(payload: unknown): payload is { frameIndex: numbe
   );
 }
 
+type FrameTriggerInfo = {
+  frameIndex: number;
+  triggerTime: number;
+  keyword?: string;
+};
+
+function extractFrameTriggers(anchorActions: any[] = []): { triggers: FrameTriggerInfo[]; usedLegacyFallback: boolean } {
+  const canonical = anchorActions
+    .filter((a: any) => a?.type === 'trigger' && isFrameTriggerPayload(a?.payload))
+    .map((a: any) => ({
+      frameIndex: a.payload.frameIndex,
+      triggerTime: a.keywordTime ?? 0,
+      keyword: a.keyword,
+    }));
+
+  if (canonical.length > 0) {
+    return { triggers: canonical, usedLegacyFallback: false };
+  }
+
+  const legacy = anchorActions
+    .filter((a: any) => isFrameTriggerPayload(a?.payload))
+    .map((a: any) => ({
+      frameIndex: a.payload.frameIndex,
+      triggerTime: a.keywordTime ?? 0,
+      keyword: a.keyword,
+    }));
+
+  return { triggers: legacy, usedLegacyFallback: legacy.length > 0 };
+}
+
 export const V7PhasePlayer = ({
   script,
   audioUrl,
@@ -482,7 +512,9 @@ export const V7PhasePlayer = ({
   // Camada 2 (fallback): wordTimestamps em runtime
   // Camada 3 (último recurso): phaseStart
   const resolvedMicroVisuals = useMemo(() => {
-    const rawMvs: any[] = (currentPhase as any)?.visual?.microVisuals || [];
+    // Canonical source from v7-vv pipeline is phase.microVisuals.
+    // Keep visual.microVisuals as compatibility fallback for legacy payloads.
+    const rawMvs: any[] = (currentPhase as any)?.microVisuals || (currentPhase as any)?.visual?.microVisuals || [];
     if (rawMvs.length === 0) return [];
 
     const phaseStart = currentPhase?.startTime ?? 0;
@@ -542,7 +574,7 @@ export const V7PhasePlayer = ({
   // Log simples do status
   useEffect(() => {
     console.log(`[V7PhasePlayer] 🎯 Phase "${currentPhase?.id}": AnchorText ${shouldEnableAnchors ? 'ENABLED' : 'DISABLED'} (words: ${wordTimestamps.length}, actions: ${anchorActions.length})`);
-    console.log(`[V7PhasePlayer] 🎯 resolvedMicroVisuals: ${resolvedMicroVisuals.length} (raw: ${(currentPhase as any)?.visual?.microVisuals?.length ?? 0})`);
+    console.log(`[V7PhasePlayer] 🎯 resolvedMicroVisuals: ${resolvedMicroVisuals.length} (raw: ${((currentPhase as any)?.microVisuals?.length ?? (currentPhase as any)?.visual?.microVisuals?.length ?? 0)})`);
   }, [currentPhase?.id, shouldEnableAnchors, wordTimestamps.length, anchorActions.length, resolvedMicroVisuals.length]);
 
   // ÚNICO useAnchorText - sem fallbacks, sem triggers globais
@@ -664,15 +696,24 @@ export const V7PhasePlayer = ({
       }
       return;
     }
-    const hasFrameTriggers = currentPhase.anchorActions?.some(
-      (a: any) => a.type === 'trigger' && isFrameTriggerPayload(a.payload)
-    );
+    const { triggers: phaseFrameTriggers, usedLegacyFallback } = extractFrameTriggers((currentPhase as any).anchorActions || []);
+    const hasFrameTriggers = phaseFrameTriggers.length > 0;
     if (hasFrameTriggers) {
       setImageSequenceFrameIndex(0);
       setImageSequenceTimerFallback(false);
       pushV7DebugLog('C12.1_IMAGE_SEQUENCE_MODE_INIT', {
-        phaseId: currentPhase.id, mode: 'anchor', currentTime: audio.currentTime,
+        phaseId: currentPhase.id,
+        mode: 'anchor',
+        currentTime: audio.currentTime,
+        usedLegacyFallback,
       });
+      if (usedLegacyFallback) {
+        pushV7DebugLog('C12.1_IMAGE_SEQUENCE_FRAME_TRIGGER_LEGACY_FALLBACK', {
+          phaseId: currentPhase.id,
+          currentTime: audio.currentTime,
+          reason: 'anchorActions with payload.frameIndex found without canonical type="trigger"',
+        });
+      }
     } else {
       setImageSequenceFrameIndex(null);
       setImageSequenceTimerFallback(true);
@@ -722,18 +763,22 @@ export const V7PhasePlayer = ({
     if (imageSequenceFrameIndex === null) return; // timer mode, skip
     if (!currentPhase?.anchorActions?.length) return;
 
-    const frameTriggers = currentPhase.anchorActions
-      .filter((a: any) => a.type === 'trigger' && isFrameTriggerPayload(a.payload))
-      .map((a: any) => ({
-        frameIndex: (a.payload as { frameIndex: number }).frameIndex,
-        triggerTime: a.keywordTime ?? 0,
-      }))
+    const { triggers: frameTriggers, usedLegacyFallback } = extractFrameTriggers((currentPhase as any).anchorActions || []);
+    const sortedFrameTriggers = frameTriggers
       .sort((a: { triggerTime: number }, b: { triggerTime: number }) => a.triggerTime - b.triggerTime);
 
-    if (!frameTriggers.length) return;
+    if (!sortedFrameTriggers.length) return;
+
+    if (usedLegacyFallback) {
+      pushV7DebugLog('C12.1_IMAGE_SEQUENCE_FRAME_TRIGGER_LEGACY_FALLBACK', {
+        phaseId: currentPhase.id,
+        currentTime: audio.currentTime,
+        reason: 'seek-resync used legacy frame triggers (non-trigger type)',
+      });
+    }
 
     let correctFrame = 0;
-    for (const ft of frameTriggers) {
+    for (const ft of sortedFrameTriggers) {
       if (ft.triggerTime <= audio.currentTime) {
         correctFrame = ft.frameIndex;
       }
