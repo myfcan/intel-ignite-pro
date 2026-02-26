@@ -32,7 +32,10 @@ export const V8AudioPlayer = ({
 
   // Sync external speed
   useEffect(() => {
-    if (externalSpeed && PLAYBACK_RATES.includes(externalSpeed as any)) {
+    if (
+      externalSpeed &&
+      (PLAYBACK_RATES as readonly number[]).includes(externalSpeed)
+    ) {
       setSpeed(externalSpeed as (typeof PLAYBACK_RATES)[number]);
     }
   }, [externalSpeed]);

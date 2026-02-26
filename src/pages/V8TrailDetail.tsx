@@ -33,6 +33,7 @@ export default function V8TrailDetail() {
         .select("id, title, description, order_index, estimated_time, is_active, model")
         .eq("trail_id", trailId!)
         .eq("is_active", true)
+        .eq("model", "v8")
         .order("order_index", { ascending: true });
       if (error) throw error;
       return data;
