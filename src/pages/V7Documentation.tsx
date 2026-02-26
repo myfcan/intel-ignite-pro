@@ -203,12 +203,43 @@ const documentationContent = `# V7-vv JSON Schema - Documentação Completa
 
 ---
 
+## 🖼️ Image Sequence (C12.1) — Boas Práticas
+
+### Regras Obrigatórias
+- \`image-sequence\` com **2+ frames** exige \`anchorActions\` com triggers explícitos
+- Cada frame após o índice 0 precisa de **1 trigger** com \`payload.frameIndex\`
+- **Fallback timer é proibido** — controle determinístico via anchor no áudio
+
+### ⚠️ Keywords Frágeis (EVITAR)
+| Keyword | Problema |
+|---------|----------|
+| \`MARCO1\` | TTS pode tokenizar como "marco" + "1" |
+| \`FRAME2\` | Mesmo problema: "frame" + "2" |
+| \`PASSO3\` | Alfanumérico = alto risco de split |
+
+### ✅ Keywords Resilientes (PREFERIR)
+| Keyword | Por que funciona |
+|---------|-----------------|
+| \`primeiro\` | Palavra natural da narração |
+| \`depois\` | Palavra natural, sem ambiguidade |
+| \`premium\` | Única, distintiva, natural |
+| \`resultado\` | Clara e presente na fala |
+
+### Checklist C12.1
+- [ ] Cada frame > 0 tem um trigger com \`payload.frameIndex\`
+- [ ] Keywords são palavras naturais presentes na narração
+- [ ] Keywords são únicas dentro da cena
+- [ ] Evitar keywords alfanuméricos como \`MARCO1\`
+
+---
+
 ## ✅ Checklist
 
 - [ ] \`anchorText.pauseAt\` APENAS em cenas interativas
 - [ ] Keywords existem exatamente na narração
 - [ ] Cada cena interativa tem \`interaction\` definido
 - [ ] IDs únicos em kebab-case
+- [ ] Image-sequence: triggers com keywords naturais (C12.1)
 
 ---
 
@@ -219,6 +250,7 @@ const documentationContent = `# V7-vv JSON Schema - Documentação Completa
 | Aula congela | \`pauseAt\` em cena não-interativa | Remover \`anchorText\` |
 | Quiz não aparece | Tipo errado | Usar \`type: "interaction"\` |
 | Áudio não pausa | Keyword não encontrada | Verificar palavra na narração |
+| C12.1 500 error | Trigger não resolvido no áudio | Usar keywords naturais, evitar alfanuméricos |
 `;
 
 export default function V7Documentation() {
