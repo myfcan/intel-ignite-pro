@@ -347,22 +347,16 @@ Deno.serve(async (req) => {
       .eq("status", "processing");
 
     if (kpis && !fault.active) {
-      // C12.1_SLO_GUARD v2: Bridge is server-to-server automated
-      // Skip first_pass_accept_rate (requires manual approval, not applicable)
-      // Only block on real operational failures
-
-      // fail_rate from view is 0-100 scale (percentage)
-      const failRateViolation = (kpis.fail_rate_openai || 0) > 40
-        && (kpis.fail_rate_gemini || 0) > 40;
-
-      // Both providers must be slow (at least one healthy = proceed)
-      const latencyViolation = (kpis.avg_latency_openai || 0) > 60000
-        && (kpis.avg_latency_gemini || 0) > 60000;
-
+      // Skip SLO_GUARD during fault injection tests.
+      // NOTE: first_pass_accept_rate is approval-based (manual Image Lab workflow)
+      // and is not reliable for server-to-server bridge traffic.
+      const latencyViolation = (kpis.avg_latency_openai || 0) > 60_000 && (kpis.avg_latency_gemini || 0) > 60_000;
       const stuckViolation = (stuckCount || 0) > 0;
+      // fail_rate_* are percentages (0..100) in image_lab_kpis_last_7d.
+      const failRateViolation = (kpis.fail_rate_openai || 0) > 40 && (kpis.fail_rate_gemini || 0) > 40;
 
-      if (failRateViolation || latencyViolation || stuckViolation) {
-        console.warn(`[bridge:C12.1_SLO] VIOLATION: failRate=${failRateViolation}, latency=${latencyViolation}, stuck=${stuckViolation}`);
+      if (latencyViolation || stuckViolation || failRateViolation) {
+        console.warn(`[bridge:C12.1_SLO] VIOLATION: latency=${latencyViolation}, stuck=${stuckViolation}, failRate=${failRateViolation}`);
         return new Response(JSON.stringify({
           ok: false,
           reason: "SLO_VIOLATION",
