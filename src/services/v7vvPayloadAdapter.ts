@@ -30,9 +30,11 @@ interface LegacyInputLike {
   narrativeScript?: string;
   scenes?: any[];
   cinematic_flow?: { acts?: LegacyAct[] };
-  cinematicFlow?: { acts?: LegacyAct[] };
+  cinematicFlow?: { acts?: LegacyAct[]; phases?: LegacyAct[] };
   existingLessonId?: string;
   existing_lesson_id?: string;
+  run_id?: string;
+  runId?: string;
   mode?: string;
   reprocess?: boolean;
 }
@@ -66,6 +68,7 @@ interface V7vvPayload {
   fail_on_audio_error: boolean;
   reprocess?: boolean;
   existing_lesson_id?: string;
+  run_id?: string;
   reprocess_preserve_structure?: boolean;
   scenes: any[];
 }
@@ -88,7 +91,11 @@ function assertValidInput(input: LegacyInputLike | null | undefined): asserts in
 }
 
 function getLegacyActs(input: LegacyInputLike): LegacyAct[] {
-  const acts = input.cinematic_flow?.acts || input.cinematicFlow?.acts || [];
+  const acts =
+    input.cinematic_flow?.acts ||
+    input.cinematicFlow?.acts ||
+    input.cinematicFlow?.phases ||
+    [];
   return Array.isArray(acts) ? acts : [];
 }
 
@@ -137,6 +144,7 @@ export function toV7vvPayload(input: LegacyInputLike): V7vvPayload {
   assertValidInput(input);
 
   const existingLessonId = input.existing_lesson_id || input.existingLessonId;
+  const runId = input.run_id || input.runId;
   const reprocessMode = input.reprocess || input.mode === 'regenerate' || !!existingLessonId;
 
   const base = {
@@ -165,6 +173,7 @@ export function toV7vvPayload(input: LegacyInputLike): V7vvPayload {
       ...base,
       reprocess: true,
       existing_lesson_id: existingLessonId,
+      run_id: runId,
       // preserve current content when scenes aren't provided by legacy callers
       reprocess_preserve_structure: scenes.length === 0,
       scenes,
