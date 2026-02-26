@@ -12,6 +12,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'node:url';
 import { validateV7DebugLogs } from '../../src/components/lessons/v7/cinematic/validators/validateV7DebugLogs';
 
 // ============= CONFIG =============
@@ -20,6 +21,8 @@ const LESSON_ID = '837cc44a-fb80-4949-8fff-dbb8ba66bd1a';
 const PLAYER_URL = `/admin/v7/play/${LESSON_ID}?debug=1`;
 const EXPECTED_CONTRACT_VERSION = 'v7-runtime-c11-1.0';
 const EXPECTED_CONTRACTS = ['C11_RUNTIME_ANCHOR_AUDIT', 'C11_RAF_ANCHOR_TIMING'];
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ARTIFACTS_DIR = path.resolve(__dirname, '../../artifacts');
 const STORAGE_STATE_PATH = path.resolve(__dirname, '../../playwright/.auth/admin.json');
 

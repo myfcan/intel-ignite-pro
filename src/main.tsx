@@ -46,7 +46,7 @@ import('./lib/runtimeSignature').then(({ logRuntimeSignature }) => {
 
 // 🧪 Disponibilizar testes no console (desenvolvimento)
 if (import.meta.env.DEV) {
-  import('./lib/exerciseValidator.test').catch(() => {
+  import('./lib/exerciseValidator.manual').catch(() => {
     // Ignore test file loading errors in dev
   });
 }
