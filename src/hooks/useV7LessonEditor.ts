@@ -155,6 +155,7 @@ export const useV7LessonEditor = ({ lessonId }: UseV7LessonEditorProps) => {
           body: toV7vvPayload({
             ...newFormData,
             existingLessonId: lessonId,
+            run_id: crypto.randomUUID(),
             mode: 'regenerate',
           }),
         });
