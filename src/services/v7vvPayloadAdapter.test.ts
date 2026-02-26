@@ -27,13 +27,29 @@ describe('toV7vvPayload', () => {
         acts: [
           { id: 'a1', title: 'Ato 1', narration: 'Narração 1' },
           { id: 'a2', title: 'Ato 2', audio: { narration: 'Narração 2' } },
+          { id: 'a3', title: 'Ato 3', content: { audio: { narration: 'Narração 3' } } },
         ],
       },
     });
 
-    expect(payload.scenes).toHaveLength(2);
+    expect(payload.scenes).toHaveLength(3);
     expect(payload.scenes[0]).toMatchObject({ id: 'a1', title: 'Ato 1', narration: 'Narração 1' });
     expect(payload.scenes[1]).toMatchObject({ id: 'a2', title: 'Ato 2', narration: 'Narração 2' });
+    expect(payload.scenes[2]).toMatchObject({ id: 'a3', title: 'Ato 3', narration: 'Narração 3' });
+  });
+
+  it('preserva o tipo original do act ao converter cinematic_flow', () => {
+    const payload = toV7vvPayload({
+      cinematic_flow: {
+        acts: [
+          { id: 'a1', type: 'interactive', narration: 'Narração interativa' },
+          { id: 'a2', narration: 'Narração padrão' },
+        ],
+      },
+    });
+
+    expect(payload.scenes[0]).toMatchObject({ id: 'a1', type: 'interactive' });
+    expect(payload.scenes[1]).toMatchObject({ id: 'a2', type: 'narrative' });
   });
 
   it('lê narração legada em content.audio.narration', () => {
@@ -66,8 +82,18 @@ describe('toV7vvPayload', () => {
 
     expect(payload.reprocess).toBe(true);
     expect(payload.existing_lesson_id).toBe('lesson-123');
-    expect(payload.reprocess_preserve_structure).toBe(true);
+    expect(payload.reprocess_preserve_structure).toBeUndefined();
     expect(payload.scenes).toEqual([]);
+  });
+
+  it('respeita reprocess_preserve_structure quando explicitamente enviado', () => {
+    const payload = toV7vvPayload({
+      mode: 'regenerate',
+      existingLessonId: 'lesson-123',
+      reprocess_preserve_structure: true,
+    });
+
+    expect(payload.reprocess_preserve_structure).toBe(true);
   });
 
   it('lança erro quando reprocess não traz existing lesson id', () => {

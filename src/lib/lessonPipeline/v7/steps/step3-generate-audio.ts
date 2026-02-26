@@ -49,9 +49,9 @@ export async function v7Step3GenerateAudio(
             text: narration.fullNarration,
             voice_id: options.voiceId,
             speed: 1.0,
-            // eleven_v3 quando useEmotionTags está ativo
-            use_emotion_tags: options.useEmotionTags === true,
-            model_id: options.useEmotionTags ? 'eleven_v3' : 'eleven_multilingual_v2',
+            // eleven_v3 é mandatório para V7-vv (audio tags)
+            use_emotion_tags: true,
+            model_id: 'eleven_v3',
           }
         }),
         new Promise((_, reject) => 

@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+
 import { ArrowLeft, Film, Sparkles, Save, Play, Loader2, RefreshCw, Trash2, Edit, FileJson, FormInput, Send, CheckCircle2, AlertCircle, Mic, Zap } from 'lucide-react';
 import { V7PipelineInput } from '@/types/v7-cinematic.types';
 import { useToast } from '@/hooks/use-toast';
@@ -96,7 +96,7 @@ export default function AdminV7Create() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLesson, setGeneratedLesson] = useState<any>(null);
-  const [useEmotionTags, setUseEmotionTags] = useState(false);
+  const useEmotionTags = true; // eleven_v3 é mandatório para V7-vv
 
   // Pipeline Monitor State
   const [pipelineSteps, setPipelineSteps] = useState<PipelineStep[]>([]);
@@ -673,39 +673,18 @@ export default function AdminV7Create() {
                     </div>
                   )}
 
-                  {/* ── Toggle Modelo de Áudio ── */}
-                  <div className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-colors ${useEmotionTags ? 'border-violet-400/50 bg-violet-500/5' : 'border-border bg-muted/30'}`}>
-                    <Switch
-                      id="emotion-tags-json"
-                      checked={useEmotionTags}
-                      onCheckedChange={setUseEmotionTags}
-                      className="mt-0.5 flex-shrink-0"
-                    />
+                  {/* ── Modelo de Áudio (fixo eleven_v3) ── */}
+                  <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-violet-400/50 bg-violet-500/5">
+                    <Mic className="w-5 h-5 text-violet-500 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <label htmlFor="emotion-tags-json" className="text-sm font-semibold cursor-pointer">
-                          {useEmotionTags ? '🎭 eleven_v3 — Audio Tags Ativas' : '🔊 eleven_multilingual_v2 — Padrão'}
-                        </label>
-                        <Badge variant="outline" className={`text-[10px] ${useEmotionTags ? 'border-violet-400 text-violet-600' : 'text-muted-foreground'}`}>
-                          {useEmotionTags ? 'v3 alpha' : 'v2 estável'}
-                        </Badge>
+                        <span className="text-sm font-semibold">🎭 eleven_v3 — Audio Tags Ativas</span>
+                        <Badge variant="outline" className="text-[10px] border-violet-400 text-violet-600">mandatório</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        {useEmotionTags
-                          ? 'Preserva tags como [excited], [pause], [whispers] no texto. SSML (<break/>) é ignorado.'
-                          : 'Modelo padrão. Tags emocionais [tag] são removidas automaticamente.'}
+                        Tags como [excited], [pause], [whispers] são interpretadas pelo TTS. SSML é removido automaticamente.
                       </p>
-                      {useEmotionTags && (
-                        <button
-                          type="button"
-                          onClick={() => navigate('/admin/audio-preview')}
-                          className="mt-1.5 text-[11px] text-violet-600 underline hover:no-underline"
-                        >
-                          → Testar tags no sandbox de áudio
-                        </button>
-                      )}
                     </div>
-                    <Mic className={`w-5 h-5 flex-shrink-0 mt-0.5 ${useEmotionTags ? 'text-violet-500' : 'text-muted-foreground'}`} />
                   </div>
 
                   <Button
@@ -883,39 +862,18 @@ export default function AdminV7Create() {
                 </TabsContent>
               </Tabs>
 
-              {/* ── Toggle Modelo de Áudio (Form) ── */}
-              <div className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-colors ${useEmotionTags ? 'border-violet-400/50 bg-violet-500/5' : 'border-border bg-muted/30'}`}>
-                <Switch
-                  id="emotion-tags-form"
-                  checked={useEmotionTags}
-                  onCheckedChange={setUseEmotionTags}
-                  className="mt-0.5 flex-shrink-0"
-                />
+              {/* ── Modelo de Áudio (fixo eleven_v3) ── */}
+              <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-violet-400/50 bg-violet-500/5">
+                <Mic className="w-5 h-5 text-violet-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <label htmlFor="emotion-tags-form" className="text-sm font-semibold cursor-pointer">
-                      {useEmotionTags ? '🎭 eleven_v3 — Audio Tags Ativas' : '🔊 eleven_multilingual_v2 — Padrão'}
-                    </label>
-                    <Badge variant="outline" className={`text-[10px] ${useEmotionTags ? 'border-violet-400 text-violet-600' : 'text-muted-foreground'}`}>
-                      {useEmotionTags ? 'v3 alpha' : 'v2 estável'}
-                    </Badge>
+                    <span className="text-sm font-semibold">🎭 eleven_v3 — Audio Tags Ativas</span>
+                    <Badge variant="outline" className="text-[10px] border-violet-400 text-violet-600">mandatório</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    {useEmotionTags
-                      ? 'Preserva [excited], [pause], [whispers] no roteiro. SSML (<break/>) é ignorado.'
-                      : 'Modelo padrão. Tags emocionais [tag] são removidas automaticamente.'}
+                    Tags como [excited], [pause], [whispers] são interpretadas pelo TTS. SSML é removido automaticamente.
                   </p>
-                  {useEmotionTags && (
-                    <button
-                      type="button"
-                      onClick={() => navigate('/admin/audio-preview')}
-                      className="mt-1.5 text-[11px] text-violet-600 underline hover:no-underline"
-                    >
-                      → Testar tags no sandbox de áudio
-                    </button>
-                  )}
                 </div>
-                <Mic className={`w-5 h-5 flex-shrink-0 mt-0.5 ${useEmotionTags ? 'text-violet-500' : 'text-muted-foreground'}`} />
               </div>
 
               <Button

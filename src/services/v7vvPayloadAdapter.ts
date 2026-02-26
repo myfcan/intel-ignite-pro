@@ -35,6 +35,7 @@ interface LegacyInputLike {
   existing_lesson_id?: string;
   mode?: string;
   reprocess?: boolean;
+  reprocess_preserve_structure?: boolean;
 }
 
 interface CanonicalScene {
@@ -92,6 +93,11 @@ function getLegacyActs(input: LegacyInputLike): LegacyAct[] {
   return Array.isArray(acts) ? acts : [];
 }
 
+function getCanonicalActType(type?: string): string {
+  const normalizedType = type?.trim();
+  return normalizedType || 'narrative';
+}
+
 function buildScenesFromActs(acts: LegacyAct[] = []): CanonicalScene[] {
   return acts
     .map((act, index) => {
@@ -99,6 +105,7 @@ function buildScenesFromActs(acts: LegacyAct[] = []): CanonicalScene[] {
         act.audio?.narration ||
         act.content?.audio?.narration ||
         act.narration ||
+        act.content?.audio?.narration ||
         act.content?.text ||
         act.content?.description ||
         '';
@@ -108,7 +115,7 @@ function buildScenesFromActs(acts: LegacyAct[] = []): CanonicalScene[] {
       return {
         id: act.id || `scene-${index + 1}`,
         title: act.title || `Cena ${index + 1}`,
-        type: 'narrative',
+        type: getCanonicalActType(act.type),
         narration,
         visual: {
           type: 'effects-only',
@@ -162,14 +169,18 @@ export function toV7vvPayload(input: LegacyInputLike): V7vvPayload {
 
     const scenes = Array.isArray(input.scenes) ? input.scenes : [];
 
-    return {
+    const payload: V7vvPayload = {
       ...base,
       reprocess: true,
       existing_lesson_id: existingLessonId,
-      // preserve current content when scenes aren't provided by legacy callers
-      reprocess_preserve_structure: scenes.length === 0,
       scenes,
     };
+
+    if (Object.prototype.hasOwnProperty.call(input, 'reprocess_preserve_structure')) {
+      payload.reprocess_preserve_structure = Boolean(input.reprocess_preserve_structure);
+    }
+
+    return payload;
   }
 
   // Canonical path if scenes already available
