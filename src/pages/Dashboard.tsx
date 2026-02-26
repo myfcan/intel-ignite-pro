@@ -37,6 +37,7 @@ interface Trail {
   description: string;
   icon: string;
   order_index: number;
+  trail_type: string | null;
 }
 
 interface TrailProgress {
@@ -568,15 +569,32 @@ const Dashboard = () => {
               {visibleTrails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
 
+                    // Segregar V7 vs V8 pelo trail_type real do banco
+                    if (trail.trail_type === 'v8') {
+                      return (
+                        <V8TrailCard
+                          key={trail.id}
+                          trailId={trail.id}
+                          title={trail.title}
+                          description={trail.description}
+                          icon={trail.icon}
+                          lessonCount={trailProgress?.totalLessons || 0}
+                          completedCount={trailProgress?.completedLessons || 0}
+                        />
+                      );
+                    }
+
+                    // V7 (default) — usa TrailCard original
                     return (
-                      <V8TrailCard
+                      <TrailCard
                         key={trail.id}
-                        trailId={trail.id}
-                        title={trail.title}
-                        description={trail.description}
-                        icon={trail.icon}
-                        lessonCount={trailProgress?.totalLessons || 0}
-                        completedCount={trailProgress?.completedLessons || 0}
+                        trail={trail}
+                        Icon={BookOpen}
+                        gradient="from-indigo-500 to-violet-500"
+                        progress={trailProgress?.progress || 0}
+                        completedLessons={trailProgress?.completedLessons || 0}
+                        totalLessons={trailProgress?.totalLessons || 0}
+                        status={trailProgress?.status || "locked"}
                       />
                     );
                   })}
