@@ -192,21 +192,62 @@ export default function AdminV7Create() {
 
       // ✅ V7.1: Warn if interactive acts don't have pauseKeyword
       let warning: string | undefined;
+      const warnings: string[] = [];
       if (interactiveActsWithoutPauseKeyword.length > 0) {
-        warning = `Atos interativos sem pauseKeyword: ${interactiveActsWithoutPauseKeyword.join(', ')}. O sistema tentará detectar automaticamente.`;
+        warnings.push(`Atos interativos sem pauseKeyword: ${interactiveActsWithoutPauseKeyword.join(', ')}. O sistema tentará detectar automaticamente.`);
       }
+
+      // ✅ C12.1: Validate image-sequence + anchorActions in scenes[]
+      const scenes = parsed.scenes || [];
+      for (const scene of scenes) {
+        const vType = scene?.visual?.type;
+        const frames = scene?.visual?.content?.frames || scene?.visual?.frames;
+        if (vType === 'image-sequence' && Array.isArray(frames) && frames.length >= 2) {
+          const sceneId = scene.id || 'unknown';
+          const anchorActions = scene.anchorActions || [];
+          const frameTriggers = anchorActions.filter((a: any) => {
+            const rt = String(a?.type || '').toLowerCase();
+            return (rt === 'trigger' || rt === 'show' || rt === 'setframeindex') && typeof a?.payload?.frameIndex === 'number';
+          });
+          
+          const requiredTriggers = frames.length - 1;
+          if (frameTriggers.length < requiredTriggers) {
+            warnings.push(`⚠️ C12.1: Cena "${sceneId}" tem image-sequence com ${frames.length} frames mas apenas ${frameTriggers.length}/${requiredTriggers} triggers. Vai falhar no pipeline.`);
+          }
+          
+          // Warn about fragile keywords
+          for (const trigger of frameTriggers) {
+            const kw = String(trigger.keyword || '').trim();
+            if (/^[A-Za-z]+\d+$/.test(kw)) {
+              warnings.push(`⚠️ C12.1: Keyword "${kw}" na cena "${sceneId}" é alfanumérico — TTS pode dividir em tokens separados. Prefira palavras naturais da narração.`);
+            }
+            // Check keyword exists in narration
+            if (kw && scene.narration) {
+              const normalizedNarration = scene.narration.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+              const normalizedKw = kw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              const kwNoSpaces = normalizedKw.replace(/\s+/g, '');
+              const narNoSpaces = normalizedNarration.replace(/\s+/g, '');
+              if (!normalizedNarration.includes(normalizedKw) && !narNoSpaces.includes(kwNoSpaces)) {
+                warnings.push(`❌ C12.1: Keyword "${kw}" (cena "${sceneId}") não encontrado na narração. Vai falhar no pipeline.`);
+              }
+            }
+          }
+        }
+      }
+
+      warning = warnings.length > 0 ? warnings.join('\n') : undefined;
 
       setJsonValidation({
         isValid: true,
         data: parsed,
-        error: warning, // Use error field for warnings too
+        error: warning,
         stats: {
           sections: actCount || sections,
           duration,
           actCount,
           narrationCount,
           hasCinematicFlow: hasCinematicFlowV3 || hasCinematicFlowV2,
-          pauseKeywordCount, // ✅ V7.1: Track pause keywords
+          pauseKeywordCount,
         }
       });
     } catch (e: any) {

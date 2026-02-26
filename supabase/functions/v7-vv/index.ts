@@ -2732,19 +2732,97 @@ function executeDryRun(input: ScriptInput): DryRunResult {
             // C12.1 HARD REQUIREMENT: image-sequence with 2+ frames MUST have explicit frame triggers
             if (Array.isArray(frames) && frames.length >= 2) {
               const sceneAnchorActions = scene.anchorActions || [];
-              const hasFrameTriggers = sceneAnchorActions.some((a: any) => {
+              const frameTriggers = sceneAnchorActions.filter((a: any) => {
                 const rawType = String(a?.type || '').toLowerCase();
                 const isCanonical = rawType === 'trigger';
                 const isLegacyAlias = rawType === 'show' || rawType === 'setframeindex';
                 return (isCanonical || isLegacyAlias) && typeof a?.payload?.frameIndex === 'number';
               });
-              if (!hasFrameTriggers) {
+              
+              const requiredTriggers = frames.length - 1;
+              
+              if (frameTriggers.length === 0) {
                 issues.push({
                   severity: 'error',
                   scene: sceneId,
                   field: 'anchorActions',
-                  message: 'image-sequence com 2+ frames exige anchorActions trigger com payload.frameIndex (fallback timer não é permitido)'
+                  message: `image-sequence com ${frames.length} frames exige ${requiredTriggers} anchorActions trigger com payload.frameIndex (fallback timer não é permitido)`
                 });
+              } else if (frameTriggers.length < requiredTriggers) {
+                issues.push({
+                  severity: 'error',
+                  scene: sceneId,
+                  field: 'anchorActions',
+                  message: `image-sequence com ${frames.length} frames exige ${requiredTriggers} triggers, mas só tem ${frameTriggers.length}`
+                });
+              }
+              
+              // Validate frameIndex range and uniqueness
+              const seenFrameIndices = new Set<number>();
+              for (const trigger of frameTriggers) {
+                const fi = trigger.payload.frameIndex;
+                if (fi < 1 || fi > frames.length - 1) {
+                  issues.push({
+                    severity: 'error',
+                    scene: sceneId,
+                    field: 'anchorActions',
+                    message: `frameIndex ${fi} fora do intervalo válido [1..${frames.length - 1}]`
+                  });
+                }
+                if (seenFrameIndices.has(fi)) {
+                  issues.push({
+                    severity: 'error',
+                    scene: sceneId,
+                    field: 'anchorActions',
+                    message: `frameIndex ${fi} duplicado em triggers`
+                  });
+                }
+                seenFrameIndices.add(fi);
+                
+                // Validate keyword not empty
+                if (!trigger.keyword || !String(trigger.keyword).trim()) {
+                  issues.push({
+                    severity: 'error',
+                    scene: sceneId,
+                    field: 'anchorActions',
+                    message: `trigger com frameIndex ${fi} tem keyword vazio`
+                  });
+                } else {
+                  // Validate keyword exists in narration (preflight, before TTS)
+                  const narration = scene.narration || '';
+                  const normalizedNarration = narration.toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[.,!?;:'"()[\]{}…\-–—]+/g, ' ')
+                    .replace(/\s+/g, ' ').trim();
+                  const normalizedKeyword = String(trigger.keyword).toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[.,!?;:'"()[\]{}…\-–—]+/g, '').trim();
+                  
+                  // Check both exact presence and concatenated form (MARCO1 → "marco 1" or "marco1")
+                  const keywordNoSpaces = normalizedKeyword.replace(/\s+/g, '');
+                  const narrationNoSpaces = normalizedNarration.replace(/\s+/g, '');
+                  const foundInNarration = normalizedNarration.includes(normalizedKeyword) 
+                    || narrationNoSpaces.includes(keywordNoSpaces);
+                  
+                  if (!foundInNarration) {
+                    issues.push({
+                      severity: 'error',
+                      scene: sceneId,
+                      field: 'anchorActions',
+                      message: `keyword "${trigger.keyword}" (frameIndex ${fi}) não encontrado na narração da cena. Keywords devem ser palavras naturais da narração.`
+                    });
+                  }
+                  
+                  // Warn about fragile alphanumeric keywords
+                  if (/^[A-Za-z]+\d+$/.test(String(trigger.keyword).trim())) {
+                    issues.push({
+                      severity: 'warning',
+                      scene: sceneId,
+                      field: 'anchorActions',
+                      message: `keyword "${trigger.keyword}" é alfanumérico (ex: MARCO1) — TTS pode tokenizar como palavras separadas. Prefira palavras naturais da narração.`
+                    });
+                  }
+                }
               }
             }
 
@@ -3422,25 +3500,12 @@ function selectAnchorOccurrence(
       }
     }
   } else {
-    // Single word matching
+  // Single word matching
     // =====================================================================
     // ✅ C08 FIX v3: Matching mais estrito para evitar false-positives
-    // PROBLEMA: "target.includes(normalizedWord)" aceitava matches como:
-    //   - "Otimização" inclui "o" → match em qualquer "o" no áudio
-    //   - Isso causava triggers em 0.57s ao invés de 77.94s
-    //
-    // SOLUÇÃO: 
-    //   1. Match exato: normalizedWord === target
-    //   2. Match por prefixo: normalizedWord.startsWith(target) com min 3 chars
-    //   3. Match por sufixo: normalizedWord.endsWith(target) com min 3 chars
-    //   4. Match inclusivo: apenas se target tiver 4+ chars para evitar "o", "e", etc.
-    // =====================================================================
-    // ✅ R08 FIX: Melhor matching para palavras com acentos e curtas
-    // REGRAS:
-    //   1. Match exato (após normalização) - SEMPRE aceito, qualquer tamanho
-    //   2. Match por prefixo - target >= 3 chars
-    //   3. Match por sufixo - target >= 3 chars
-    //   4. Match inclusivo - target >= 4 chars (evita "o", "e", "a")
+    // ✅ C12.1 FIX: Concatenated-window matching for alphanumeric tokens
+    //   TTS may tokenize "MARCO1" as ["marco", "1"], so we check adjacent
+    //   word concatenations as well.
     // =====================================================================
     const target = keywordParts[0]; // já normalizado
     const minInclusionLength = 4;
@@ -3458,32 +3523,50 @@ function selectAnchorOccurrence(
       }
       
       // Match por prefixo (ex: "Persona" começa com "persona")
-      // Reduzido para 3 chars para capturar "opção" → "opc"
       if (target.length >= 3 && normalizedWord.startsWith(target)) {
         allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx, mode: 'prefix' });
         return;
       }
       
       // Match por sufixo (ex: "Otimização" termina com "ação")
-      // Reduzido para 3 chars
       if (target.length >= 3 && normalizedWord.endsWith(target)) {
         allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx, mode: 'suffix' });
         return;
       }
       
-      // Match inclusivo APENAS se:
-      // 1. Target for longo o suficiente (≥4 chars)
-      // 2. A palavra do áudio CONTÉM o target
-      // REMOVIDO: target.includes(normalizedWord) - causava falsos positivos
+      // Match inclusivo APENAS se target for longo o suficiente (≥4 chars)
       if (target.length >= minInclusionLength && normalizedWord.includes(target)) {
         allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx, mode: 'inclusion' });
         return;
       }
       
-      // ✅ R08 EXTRA: Se target tem 3+ chars e a palavra é "quase igual" (fuzzy)
-      // Isso captura casos onde a normalização pode ter falhado parcialmente
+      // ✅ C12.1 FIX: Concatenated-window matching for split alphanumeric tokens
+      // Example: keyword="MARCO1", TTS produces ["marco", "1"] as separate words
+      // We try concatenating current word with next 1-2 adjacent words
+      if (target.length >= 4) {
+        for (let windowSize = 2; windowSize <= Math.min(3, relevantTimestamps.length - idx); windowSize++) {
+          const windowWords = [];
+          for (let w = 0; w < windowSize; w++) {
+            windowWords.push(normalizeWord(relevantTimestamps[idx + w].word));
+          }
+          const concatenated = windowWords.join('');
+          if (concatenated === target) {
+            const lastWordInWindow = relevantTimestamps[idx + windowSize - 1];
+            allMatches.push({ 
+              word: `${ts.word}+${windowSize - 1}adj`, 
+              start: ts.start, 
+              end: lastWordInWindow.end, 
+              idx, 
+              mode: 'exact' 
+            });
+            console.log(`[selectAnchorOccurrence] ✅ C12.1 CONCAT MATCH: "${windowWords.join('" + "')}" → "${target}"`);
+            return;
+          }
+        }
+      }
+      
+      // Fuzzy match diagnostic (not auto-added)
       if (target.length >= 3 && normalizedWord.length >= 3) {
-        // Verificar se diferem em apenas 1 caractere (typo tolerance)
         const maxDiff = 1;
         let diff = Math.abs(target.length - normalizedWord.length);
         if (diff <= maxDiff) {
@@ -3499,8 +3582,7 @@ function selectAnchorOccurrence(
             }
           }
           if (mismatches <= maxDiff && j >= shorter.length - 1) {
-            // Não adicionar automaticamente - apenas log para diagnóstico
-            // console.log(`[selectAnchorOccurrence] Fuzzy match candidate: "${normalizedWord}" ~= "${target}"`);
+            // Diagnostic only - not auto-added
           }
         }
       }
@@ -5734,9 +5816,62 @@ function generatePhases(
       (a: any) => a.type === 'trigger' && typeof a.payload?.frameIndex === 'number'
     );
     if (hasMultiFrameImageSequence && !hasCanonicalFrameTrigger) {
-      throw new Error(
-        `[C12.1] image-sequence com 2+ frames na scene "${scene.id}" sem trigger com payload.frameIndex. Fallback timer bloqueado.`
+      // Enriched C12.1 error with diagnostic details
+      const declaredTriggerKeywords = (scene.anchorActions || [])
+        .filter((a: any) => {
+          const rt = String(a?.type || '').toLowerCase();
+          return (rt === 'trigger' || rt === 'show' || rt === 'setframeindex') && typeof a?.payload?.frameIndex === 'number';
+        })
+        .map((a: any) => ({ keyword: a.keyword, frameIndex: a.payload.frameIndex }));
+      
+      const resolvedKeywords = anchorActions
+        .filter((a: any) => a.type === 'trigger' && typeof a.payload?.frameIndex === 'number')
+        .map((a: any) => ({ keyword: a.keyword, frameIndex: a.payload.frameIndex }));
+      
+      const unresolvedKeywords = declaredTriggerKeywords.filter(
+        (dk: any) => !resolvedKeywords.some((rk: any) => rk.frameIndex === dk.frameIndex)
       );
+      
+      const wordsInRange = wordTimestamps
+        .filter(wt => wt.start >= startTime && wt.end <= endTime)
+        .slice(0, 20)
+        .map(wt => wt.word);
+      
+      const diagnostics = {
+        sceneId: scene.id,
+        frameCount: declaredFrames.length,
+        declaredTriggers: declaredTriggerKeywords,
+        resolvedTriggers: resolvedKeywords,
+        unresolvedTriggers: unresolvedKeywords,
+        sceneTimeRange: { start: startTime, end: endTime },
+        sampleWordsInRange: wordsInRange,
+        hint: 'Keywords may have been split by TTS (e.g. "MARCO1" → "marco" + "1"). Use natural narration words instead.'
+      };
+      
+      console.error(`[C12.1] DIAGNOSTIC:`, JSON.stringify(diagnostics, null, 2));
+      
+      throw new Error(
+        `[C12.1] image-sequence com ${declaredFrames.length} frames na scene "${scene.id}" sem trigger resolvido. ` +
+        `Declarados: ${JSON.stringify(declaredTriggerKeywords)}. ` +
+        `Resolvidos: ${JSON.stringify(resolvedKeywords)}. ` +
+        `Não resolvidos: ${JSON.stringify(unresolvedKeywords)}. ` +
+        `Range: [${startTime.toFixed(2)}s, ${endTime.toFixed(2)}s]. ` +
+        `Palavras detectadas: [${wordsInRange.slice(0, 10).join(', ')}]. ` +
+        `Fallback timer bloqueado.`
+      );
+    }
+    
+    // =========================================================================
+    // ✅ C12.1 OBSERVABILITY: Log frame trigger metrics per scene
+    // =========================================================================
+    if (hasMultiFrameImageSequence) {
+      const declaredCount = (scene.anchorActions || []).filter((a: any) => {
+        const rt = String(a?.type || '').toLowerCase();
+        return (rt === 'trigger' || rt === 'show' || rt === 'setframeindex') && typeof a?.payload?.frameIndex === 'number';
+      }).length;
+      const resolvedCount = anchorActions.filter((a: any) => a.type === 'trigger' && typeof a.payload?.frameIndex === 'number').length;
+      
+      console.log(`[C12.1-METRICS] scene=${scene.id} frameTriggersDeclared=${declaredCount} frameTriggersResolved=${resolvedCount} frameTriggersMissing=${declaredCount - resolvedCount}`);
     }
 
     // Determinar comportamento de áudio (usa isInteractiveScene definido acima)
