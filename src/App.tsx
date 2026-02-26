@@ -75,6 +75,10 @@ const AdminV7Diagnostic = lazy(() => import("./pages/AdminV7Diagnostic"));
 const V7CinematicDemo = lazy(() => import("./pages/V7CinematicDemo"));
 const V7CinematicPlayer = lazy(() => import("./pages/V7CinematicPlayer"));
 const V7LessonTest = lazy(() => import("./pages/V7LessonTest"));
+
+// V8 Read & Listen Premium
+const V8TrailDetail = lazy(() => import("./pages/V8TrailDetail"));
+const V8Lesson = lazy(() => import("./pages/V8Lesson"));
 const ChatDesignDemo = lazy(() => import("./pages/ChatDesignDemo"));
 const V7Documentation = lazy(() => import("./pages/V7Documentation"));
 const Admin3DDemos = lazy(() => import("./pages/Admin3DDemos"));
@@ -237,6 +241,9 @@ const App = () => (
                 <Route path="/curso-exclusivo" element={<CursoExclusivo />} />
                 <Route path="/chat-design-demo" element={<ChatDesignDemo />} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                {/* V8 READ & LISTEN PREMIUM ROUTES */}
+                <Route path="/v8-trail/:trailId" element={<ProtectedRoute><V8TrailDetail /></ProtectedRoute>} />
+                <Route path="/v8/:lessonId" element={<ProtectedRoute><V8Lesson /></ProtectedRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
