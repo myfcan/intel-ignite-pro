@@ -347,18 +347,22 @@ Deno.serve(async (req) => {
       .eq("status", "processing");
 
     if (kpis && !fault.active) {
-      // Skip SLO_GUARD during fault injection tests
-      const failRateViolation = kpis.first_pass_accept_rate !== null && kpis.first_pass_accept_rate < 75;
-      const latencyViolation = (kpis.avg_latency_openai || 0) > 60000 && (kpis.avg_latency_gemini || 0) > 60000;
+      // Skip SLO_GUARD during fault injection tests.
+      // NOTE: first_pass_accept_rate is approval-based (manual Image Lab workflow)
+      // and is not reliable for server-to-server bridge traffic.
+      const latencyViolation = (kpis.avg_latency_openai || 0) > 60_000 && (kpis.avg_latency_gemini || 0) > 60_000;
       const stuckViolation = (stuckCount || 0) > 0;
+      // fail_rate_* are percentages (0..100) in image_lab_kpis_last_7d.
+      const failRateViolation = (kpis.fail_rate_openai || 0) > 40 && (kpis.fail_rate_gemini || 0) > 40;
 
-      if (failRateViolation || latencyViolation || stuckViolation) {
-        console.warn(`[bridge:C12.1_SLO] VIOLATION: failRate=${failRateViolation}, latency=${latencyViolation}, stuck=${stuckViolation}`);
+      if (latencyViolation || stuckViolation || failRateViolation) {
+        console.warn(`[bridge:C12.1_SLO] VIOLATION: latency=${latencyViolation}, stuck=${stuckViolation}, failRate=${failRateViolation}`);
         return new Response(JSON.stringify({
           ok: false,
           reason: "SLO_VIOLATION",
           details: {
-            first_pass_accept_rate: kpis.first_pass_accept_rate,
+            fail_rate_openai: kpis.fail_rate_openai,
+            fail_rate_gemini: kpis.fail_rate_gemini,
             avg_latency_openai: kpis.avg_latency_openai,
             avg_latency_gemini: kpis.avg_latency_gemini,
             stuck_jobs: stuckCount,
@@ -466,7 +470,7 @@ Deno.serve(async (req) => {
           if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
 
           // Binary-safe file hash
-          const fileHashBuf = await crypto.subtle.digest("SHA-256", genResult.bytes);
+          const fileHashBuf = await crypto.subtle.digest("SHA-256", genResult.bytes.buffer as ArrayBuffer);
           const fileHash = Array.from(new Uint8Array(fileHashBuf))
             .map(b => b.toString(16).padStart(2, "0")).join("");
 

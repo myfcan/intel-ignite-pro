@@ -1,6 +1,6 @@
 {
   "$schema": "V7-vv Pipeline Input Schema",
-  "$comment": "JSON INPUT C01-C10 compliant — MicroVisuals canônicos (7 tipos). Cada anchorText.pauseAt existe literalmente na narração da cena e é a última palavra.",
+  "$comment": "JSON INPUT C01-C10 compliant — MicroVisuals canônicos (13 tipos: image, text, number, badge, highlight, letter-reveal, stat, step, quote, pill-tag, comparison-bar, alert). Cada anchorText.pauseAt existe literalmente na narração da cena e é a última palavra.",
   "$contractVersion": "c10b-boundaryfix-execstate-1.0",
   "$contracts": ["C01", "C02", "C04", "C05", "C06", "C08", "C10", "C10B", "BOUNDARY_FIX_GUARD", "EXEC_STATE_CANONICAL_JSON"],
   "title": "O Fim da Brincadeira com IA",

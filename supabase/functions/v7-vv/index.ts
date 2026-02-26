@@ -31,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.1.4-forcetest-fix';
-const COMMIT_HASH = 'forcetest-fix-r06-r08-r11-2026-02-09';
+const PIPELINE_VERSION = 'v7-vv-1.1.5-forensic-persist';
+const COMMIT_HASH = 'forensic-persist-r01-2026-02-25';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -59,6 +59,20 @@ interface V7DebugTimelineEvent {
   anchorText: string | null;
   targetId: string | null;
   payload: Record<string, unknown> | null;
+}
+
+interface ReleaseForensicReport {
+  runId: string;
+  pipelineVersion: string;
+  mode: 'create' | 'reprocess' | 'dry_run';
+  generatedAt: string;
+  auditGate: {
+    checked: boolean;
+    passed: boolean;
+    httpStatus: number | null;
+    requiredFailed: number | null;
+    scorecardHash: string | null;
+  };
 }
 
 interface V7PipelineDebugReport {
@@ -139,6 +153,68 @@ function createDebugIssue(
     possibleCause,
     suggestedFix,
     relatedData: relatedData || null,
+  };
+}
+
+function buildReleaseForensicReport(params: {
+  runId: string;
+  mode: 'create' | 'reprocess' | 'dry_run';
+  auditChecked: boolean;
+  auditPassed: boolean;
+  auditHttpStatus?: number | null;
+  requiredFailed?: number | null;
+  scorecardHash?: string | null;
+}): ReleaseForensicReport {
+  return {
+    runId: params.runId,
+    pipelineVersion: PIPELINE_VERSION,
+    mode: params.mode,
+    generatedAt: new Date().toISOString(),
+    auditGate: {
+      checked: params.auditChecked,
+      passed: params.auditPassed,
+      httpStatus: params.auditHttpStatus ?? null,
+      requiredFailed: params.requiredFailed ?? null,
+      scorecardHash: params.scorecardHash ?? null,
+    },
+  };
+}
+
+
+function buildFailedOutputData(params: {
+  currentOutputData?: Record<string, unknown> | null;
+  input: ScriptInput | null;
+  releaseForensicReport: ReleaseForensicReport;
+  errorCode: string;
+  contractVersion: string;
+  activeContracts: string[];
+  forceTestMeta?: { batchId?: string; runTag?: string };
+}): Record<string, unknown> {
+  const existingMeta = (params.currentOutputData?.meta as Record<string, unknown> | undefined) ?? {};
+
+  return {
+    ...(params.currentOutputData ?? {}),
+    lesson_id:
+      (params.currentOutputData?.lesson_id as string | undefined) ??
+      (params.input as any)?.existing_lesson_id ??
+      null,
+    meta: {
+      ...existingMeta,
+      contractVersion: params.contractVersion,
+      contracts: params.activeContracts,
+      triggerContract: 'anchorActions',
+      failedAt: new Date().toISOString(),
+      errorCode: params.errorCode,
+      auditGate: {
+        checked: params.releaseForensicReport.auditGate.checked,
+        passed: params.releaseForensicReport.auditGate.passed,
+        httpStatus: params.releaseForensicReport.auditGate.httpStatus,
+        scorecardHash: params.releaseForensicReport.auditGate.scorecardHash,
+      },
+      releaseForensicReport: params.releaseForensicReport,
+      ...(params.forceTestMeta?.batchId ? { forceTestBatchId: params.forceTestMeta.batchId } : {}),
+      ...(params.forceTestMeta?.runTag ? { forceTestRunTag: params.forceTestMeta.runTag } : {}),
+    },
   };
 }
 
@@ -1453,6 +1529,7 @@ interface Phase {
     // ✅ FASE C: storagePath e displayMode explícitos para visual.type='image'
     storagePath?: string;
     displayMode?: string;
+    promptScene?: string;
     frames?: Array<{
       frameId: string;
       durationMs: number;
@@ -1460,6 +1537,17 @@ interface Phase {
       promptScene?: string;
     }>;
   };
+  // C03: scenes[] inline — 1:1 with phase
+  scenes?: Array<{
+    id: string;
+    type: string;
+    startTime: number;
+    endTime: number;
+    duration: number;
+    narration: string;
+    content: Record<string, unknown>;
+    animation: string;
+  }>;
   effects?: Record<string, unknown>;
   microVisuals?: MicroVisual[];
   anchorActions?: AnchorAction[];
@@ -1489,6 +1577,7 @@ interface Phase {
 
 interface LessonData {
   // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
+  contentVersion?: string;             // P5 FIX (C14): versão do content no root
   schema: string;                    // Bug 7: era "model"
   version: string;                   // Bug 8: será "1.0.0"
   title: string;                     // Bug 9: title no root
@@ -1800,7 +1889,7 @@ const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal'] a
 // Alinhado com os defaults do renderer (useV7AudioManager.ts).
 // ============================================================================
 
-function buildAudioBehavior(scene: SceneInput): Phase['audioBehavior'] {
+function buildAudioBehavior(scene: ScriptScene): Phase['audioBehavior'] {
   const interactionType = scene.interaction?.type;
 
   // Quiz: pausa total, ambiente baixo para foco
@@ -2311,9 +2400,8 @@ function executeDryRun(input: ScriptInput): DryRunResult {
   if (!input.scenes || !Array.isArray(input.scenes) || input.scenes.length === 0) {
     console.error('[V7-vv:DryRun] ❌ input.scenes está vazio ou undefined');
     return {
-      valid: false,
-      errorCount: 1,
-      warningCount: 0,
+      canProcess: false,
+      validationScore: 0,
       issues: [{
         severity: 'error',
         scene: 'root',
@@ -2323,8 +2411,17 @@ function executeDryRun(input: ScriptInput): DryRunResult {
       }],
       autoFixes: [],
       sceneAnalysis: [],
-      estimatedDuration: 0,
-      summary: 'Input inválido: scenes[] ausente ou vazio'
+      summary: {
+        totalScenes: 0,
+        totalWords: 0,
+        estimatedDuration: 0,
+        interactiveScenes: 0,
+        microVisualCount: 0,
+        errorCount: 1,
+        warningCount: 0,
+        infoCount: 0,
+      },
+      recommendation: 'Input inválido: scenes[] ausente ou vazio',
     };
   }
 
@@ -2635,9 +2732,12 @@ function executeDryRun(input: ScriptInput): DryRunResult {
             // C12.1 HARD REQUIREMENT: image-sequence with 2+ frames MUST have explicit frame triggers
             if (Array.isArray(frames) && frames.length >= 2) {
               const sceneAnchorActions = scene.anchorActions || [];
-              const hasFrameTriggers = sceneAnchorActions.some(
-                (a: any) => a.type === 'trigger' && typeof a.payload?.frameIndex === 'number'
-              );
+              const hasFrameTriggers = sceneAnchorActions.some((a: any) => {
+                const rawType = String(a?.type || '').toLowerCase();
+                const isCanonical = rawType === 'trigger';
+                const isLegacyAlias = rawType === 'show' || rawType === 'setframeindex';
+                return (isCanonical || isLegacyAlias) && typeof a?.payload?.frameIndex === 'number';
+              });
               if (!hasFrameTriggers) {
                 issues.push({
                   severity: 'error',
@@ -2794,6 +2894,7 @@ function executeDryRun(input: ScriptInput): DryRunResult {
 // ============================================================================
 
 interface EnrichedMicroVisual {
+  id?: string;
   type: 'stat' | 'step';
   anchorText: string;
   duration: number;
@@ -3062,13 +3163,13 @@ async function generateAudio(
           'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: JSON.stringify({
-          text: text,
-          model_id: 'eleven_multilingual_v2',
+          text: sanitizeTextForV3(text),
+          model_id: 'eleven_v3',
           voice_settings: {
-            stability: 0.5,          // 50%
-            similarity_boost: 0.75,  // 75%
-            style: 0.5,              // 50% - Alice engaging style
-            use_speaker_boost: true, // Ativado
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.3,              // eleven_v3 expressividade
+            use_speaker_boost: true,
           },
         }),
       }
@@ -3140,6 +3241,20 @@ async function generateAudio(
   }
 }
 
+/**
+ * Sanitiza texto para eleven_v3:
+ * - Remove SSML <break/> (v3 não suporta)
+ * - Preserva audio tags [excited], [pause], [whispers] etc.
+ * - Mantém pontuação natural
+ */
+function sanitizeTextForV3(text: string): string {
+  // Remover SSML tags (v3 não suporta)
+  let cleaned = text.replace(/<[^>]+>/g, '');
+  // Normalizar espaços extras
+  cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+  return cleaned;
+}
+
 function processWordTimestamps(
   characters: string[],
   characterStartTimes: number[]
@@ -3147,9 +3262,15 @@ function processWordTimestamps(
   const words: WordTimestamp[] = [];
   let currentWord = '';
   let wordStartIndex = 0;
+  let insideTag = false;
 
   for (let i = 0; i < characters.length; i++) {
     const char = characters[i];
+
+    // Pular audio tags [tag] nos word timestamps
+    if (char === '[') { insideTag = true; continue; }
+    if (char === ']') { insideTag = false; continue; }
+    if (insideTag) continue;
 
     if (char === ' ' || char === '\n' || i === characters.length - 1) {
       if (i === characters.length - 1 && char !== ' ' && char !== '\n') {
@@ -6405,17 +6526,21 @@ Deno.serve(async (req) => {
   // =========================================================================
   // EXECUTION STATE CONTRACT: Variables defined OUTSIDE try for catch access
   // =========================================================================
-  let supabase: ReturnType<typeof createClient> | null = null;
+  let supabase: any = null;
   let runId: string | null = null;
-  let input: ScriptInput | null = null;
+  let input: ScriptInput = null as unknown as ScriptInput;
   let executionInserted = false;
+  let releaseForensicReport: ReleaseForensicReport | null = null;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    input = await req.json();
+    input = await req.json() as ScriptInput;
+    if (!input || typeof input !== 'object') {
+      throw new Error('Input inválido: body JSON obrigatório');
+    }
     
     // =========================================================================
     // C05: INITIALIZE TRACEABILITY
@@ -6528,18 +6653,56 @@ Deno.serve(async (req) => {
         
         // =========================================================================
         // EXECUTION STATE CONTRACT: Mark as failed BEFORE returning
+        // Sprint H: Persist releaseForensicReport + output_data.meta on ALL failures
         // =========================================================================
         if (supabase && runId && executionInserted) {
-          await supabase
+          const inferredMode: 'create' | 'reprocess' | 'dry_run' =
+            input.dry_run ? 'dry_run' :
+            input.reprocess ? 'reprocess' : 'create';
+
+          const validationForensicReport = buildReleaseForensicReport({
+            runId,
+            mode: inferredMode,
+            auditChecked: false,
+            auditPassed: false,
+          });
+
+          // Import contract metadata for forensic persistence
+          let contractVersion = 'c10b-boundaryfix-execstate-1.0';
+          let activeContracts = ['C01', 'C02', 'C04', 'C05', 'C06', 'C08', 'C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+          try {
+            const contractsMod = await import('./contracts.ts');
+            contractVersion = contractsMod.CONTRACT_VERSION;
+            activeContracts = contractsMod.ACTIVE_CONTRACTS_LIST;
+          } catch { /* fallback to hardcoded */ }
+
+          const { data: currentRun } = await supabase
             .from('pipeline_executions')
+            .select('output_data')
+            .eq('run_id', runId)
+            .single();
+
+          const failedOutputData = buildFailedOutputData({
+            currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+            input,
+            releaseForensicReport: validationForensicReport,
+            errorCode: 'VALIDATION_ERROR',
+            contractVersion,
+            activeContracts,
+            forceTestMeta: (input as any)?.forceTestMeta,
+          });
+
+          await (supabase
+            .from('pipeline_executions') as any)
             .update({
               status: 'failed',
               error_message: fullErrorMessage,
+              output_data: failedOutputData,
               completed_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
             .eq('run_id', runId);
-          console.log(`[EXECUTION_STATE_CONTRACT] ✅ Validation failure recorded for run ${runId}`);
+          console.log(`[EXECUTION_STATE_CONTRACT] ✅ Validation failure recorded for run ${runId} (with forensic report)`);
         }
         
         return new Response(
@@ -6587,8 +6750,8 @@ Deno.serve(async (req) => {
       console.log(`[V7-vv] 🔄 REPROCESS MODE: Buscando dados da lição ${input.existing_lesson_id}`);
       
       // Buscar dados existentes do banco
-      const { data: existingLesson, error: fetchError } = await supabase
-        .from('lessons')
+      const { data: existingLesson, error: fetchError } = await (supabase
+        .from('lessons') as any)
         .select('audio_url, word_timestamps')
         .eq('id', input.existing_lesson_id)
         .single();
@@ -6885,25 +7048,26 @@ Deno.serve(async (req) => {
             }
           }
 
-          // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
-          // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
-          if (
-            phase.visual?.type === 'image' &&
-            phase.visual.promptScene &&
-            typeof phase.visual.promptScene === 'string' &&
-            (
-              !phase.visual.storagePath ||
-              (phase.visual.storagePath as string).startsWith('PENDING:')
-            )
-          ) {
-            imageNarrativeScenes.push({
-              scene_id: phase.id,
-              prompt_scene: phase.visual.promptScene as string,
-              style_hints: (phase.visual as any).styleHints || undefined,
-              phaseIdx: pi,
-            });
-            console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
-          }
+        }
+
+        // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
+        // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
+        if (
+          phase.visual?.type === 'image' &&
+          phase.visual.promptScene &&
+          typeof phase.visual.promptScene === 'string' &&
+          (
+            !phase.visual.storagePath ||
+            (phase.visual.storagePath as string).startsWith('PENDING:')
+          )
+        ) {
+          imageNarrativeScenes.push({
+            scene_id: phase.id,
+            prompt_scene: phase.visual.promptScene as string,
+            style_hints: (phase.visual as any).styleHints || undefined,
+            phaseIdx: pi,
+          });
+          console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
         }
         
         // Original: Scan microVisuals
@@ -7874,18 +8038,53 @@ Deno.serve(async (req) => {
           },
         });
         
-        // Revert status to failed
+        releaseForensicReport = buildReleaseForensicReport({
+          runId,
+          mode,
+          auditChecked: true,
+          auditPassed: false,
+          auditHttpStatus: auditResponse.status,
+          requiredFailed: auditScorecard.required_failed,
+        });
+
+        const { data: currentRun } = await supabase
+          .from('pipeline_executions')
+          .select('output_data')
+          .eq('run_id', runId)
+          .single();
+
+        let _CV_AUDIT = 'c10b-boundaryfix-execstate-c11-c03-1.0';
+        let _AC_AUDIT: string[] = [];
+        try {
+          const _cm = await import('./contracts.ts');
+          _CV_AUDIT = _cm.CONTRACT_VERSION;
+          _AC_AUDIT = _cm.ACTIVE_CONTRACTS_LIST;
+        } catch { /* fallback */ }
+
+        const failedOutputData = buildFailedOutputData({
+          currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+          input,
+          releaseForensicReport,
+          errorCode: 'AUDIT_GATE_FAILED',
+          contractVersion: _CV_AUDIT,
+          activeContracts: _AC_AUDIT,
+          forceTestMeta,
+        });
+
+        // Revert status to failed and persist forensic metadata
         await supabase
           .from('pipeline_executions')
           .update({
             status: 'failed',
             error_message: auditErrorMsg,
+            output_data: failedOutputData,
+            completed_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('run_id', runId);
         
         console.error(`[AUDIT_GATE] Run ${runId} reverted to FAILED`);
-        
+
         return new Response(
           JSON.stringify({
             success: false,
@@ -7896,6 +8095,7 @@ Deno.serve(async (req) => {
               required_failed: auditScorecard.required_failed,
               scorecard: auditScorecard,
             },
+            forensic: releaseForensicReport,
             runId,
           }),
           { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -7908,14 +8108,6 @@ Deno.serve(async (req) => {
         const scorecardHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(scorecardJson));
         const scorecardHash = Array.from(new Uint8Array(scorecardHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         
-        await supabase
-          .from('pipeline_executions')
-          .update({
-            output_data: supabase.rpc ? undefined : undefined, // fallback below
-            updated_at: new Date().toISOString(),
-          })
-          .eq('run_id', runId);
-        
         // Update output_data.meta.auditGate via raw SQL-safe approach
         const { data: currentRun } = await supabase
           .from('pipeline_executions')
@@ -7924,6 +8116,16 @@ Deno.serve(async (req) => {
           .single();
         
         if (currentRun?.output_data) {
+          releaseForensicReport = buildReleaseForensicReport({
+            runId,
+            mode,
+            auditChecked: true,
+            auditPassed: true,
+            auditHttpStatus: auditResponse.status,
+            requiredFailed: 0,
+            scorecardHash,
+          });
+
           const updatedOutput = {
             ...currentRun.output_data,
             meta: {
@@ -7933,6 +8135,7 @@ Deno.serve(async (req) => {
                 httpStatus: auditResponse.status,
                 scorecardHash,
               },
+              releaseForensicReport,
             },
           };
           await supabase
@@ -7941,6 +8144,16 @@ Deno.serve(async (req) => {
             .eq('run_id', runId);
           
           console.log(`[AUDIT_GATE] ✅ auditGate stamp persisted: hash=${scorecardHash.slice(0, 16)}...`);
+        } else {
+          releaseForensicReport = buildReleaseForensicReport({
+            runId,
+            mode,
+            auditChecked: true,
+            auditPassed: true,
+            auditHttpStatus: auditResponse.status,
+            requiredFailed: 0,
+            scorecardHash,
+          });
         }
       }
     } catch (auditErr: any) {
@@ -7953,21 +8166,55 @@ Deno.serve(async (req) => {
         error_details: { reason: 'unreachable', message: auditErr.message },
       });
       
+      releaseForensicReport = buildReleaseForensicReport({
+        runId,
+        mode,
+        auditChecked: true,
+        auditPassed: false,
+      });
+
+      const { data: currentRun } = await supabase
+        .from('pipeline_executions')
+        .select('output_data')
+        .eq('run_id', runId)
+        .single();
+
+      let _CV_AUDIT2 = 'c10b-boundaryfix-execstate-c11-c03-1.0';
+      let _AC_AUDIT2: string[] = [];
+      try {
+        const _cm2 = await import('./contracts.ts');
+        _CV_AUDIT2 = _cm2.CONTRACT_VERSION;
+        _AC_AUDIT2 = _cm2.ACTIVE_CONTRACTS_LIST;
+      } catch { /* fallback */ }
+
+      const failedOutputData = buildFailedOutputData({
+        currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+        input,
+        releaseForensicReport,
+        errorCode: 'AUDIT_GATE_FAILED',
+        contractVersion: _CV_AUDIT2,
+        activeContracts: _AC_AUDIT2,
+        forceTestMeta,
+      });
+
       await supabase
         .from('pipeline_executions')
         .update({
           status: 'failed',
           error_message: unreachableErrorMsg,
+          output_data: failedOutputData,
+          completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('run_id', runId);
-      
+
       return new Response(
         JSON.stringify({
           success: false,
           error: 'AUDIT_GATE_FAILED',
           error_code: 'AUDIT_GATE_FAILED',
           error_details: { reason: 'unreachable', message: auditErr.message },
+          forensic: releaseForensicReport,
           runId,
         }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -7977,6 +8224,15 @@ Deno.serve(async (req) => {
     // =========================================================================
     // RESPOSTA COM DEBUG REPORT
     // =========================================================================
+    if (!releaseForensicReport) {
+      releaseForensicReport = buildReleaseForensicReport({
+        runId,
+        mode,
+        auditChecked: true,
+        auditPassed: true,
+      });
+    }
+
     const response = {
       success: true,
       lessonId,
@@ -7991,6 +8247,7 @@ Deno.serve(async (req) => {
       },
       // ✅ DEBUG REPORT AUTOMÁTICO (null no modo preserve_structure)
       debug: debugReport,
+      forensic: releaseForensicReport,
     };
 
     console.log('================================================');
@@ -8069,19 +8326,36 @@ Deno.serve(async (req) => {
         // Extract forceTestMeta from input if available
         const forceTestMeta = (input as any)?.forceTestMeta;
         
-        const failedOutputData = {
-          lesson_id: (input as any)?.existing_lesson_id || null,
-          meta: {
-            contractVersion: CONTRACT_VERSION_FAIL,
-            contracts: ACTIVE_CONTRACTS_FAIL,
-            triggerContract: 'anchorActions',
-            failedAt: new Date().toISOString(),
-            errorCode: errorCode,
-            ...(forceTestMeta?.batchId ? { forceTestBatchId: forceTestMeta.batchId } : {}),
-            ...(forceTestMeta?.runTag ? { forceTestRunTag: forceTestMeta.runTag } : {}),
-          },
-        };
-        
+        const inferredMode: 'create' | 'reprocess' | 'dry_run' =
+          input?.dry_run ? 'dry_run' :
+          input?.reprocess ? 'reprocess' :
+          'create';
+
+        if (!releaseForensicReport) {
+          releaseForensicReport = buildReleaseForensicReport({
+            runId,
+            mode: inferredMode,
+            auditChecked: errorCode === 'AUDIT_GATE_FAILED',
+            auditPassed: false,
+          });
+        }
+
+        const { data: currentRun } = await supabase
+          .from('pipeline_executions')
+          .select('output_data')
+          .eq('run_id', runId)
+          .single();
+
+        const failedOutputData = buildFailedOutputData({
+          currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+          input,
+          releaseForensicReport,
+          errorCode,
+          contractVersion: CONTRACT_VERSION_FAIL,
+          activeContracts: ACTIVE_CONTRACTS_FAIL,
+          forceTestMeta,
+        });
+
         await supabase
           .from('pipeline_executions')
           .update({
