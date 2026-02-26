@@ -36,6 +36,17 @@ describe('toV7vvPayload', () => {
     expect(payload.scenes[1]).toMatchObject({ id: 'a2', title: 'Ato 2', narration: 'Narração 2' });
   });
 
+  it('aproveita narração legada em content.audio.narration', () => {
+    const payload = toV7vvPayload({
+      cinematic_flow: {
+        acts: [{ id: 'a1', title: 'Ato 1', content: { audio: { narration: 'Narração profunda' } } }],
+      },
+    });
+
+    expect(payload.scenes).toHaveLength(1);
+    expect(payload.scenes[0]).toMatchObject({ id: 'a1', title: 'Ato 1', narration: 'Narração profunda' });
+  });
+
   it('mapeia fluxo de regenerate/reprocess com preserve_structure', () => {
     const payload = toV7vvPayload({
       mode: 'regenerate',
