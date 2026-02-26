@@ -92,6 +92,11 @@ function getLegacyActs(input: LegacyInputLike): LegacyAct[] {
   return Array.isArray(acts) ? acts : [];
 }
 
+function getCanonicalActType(type?: string): string {
+  const normalizedType = type?.trim();
+  return normalizedType || 'narrative';
+}
+
 function buildScenesFromActs(acts: LegacyAct[] = []): CanonicalScene[] {
   return acts
     .map((act, index) => {
@@ -107,7 +112,7 @@ function buildScenesFromActs(acts: LegacyAct[] = []): CanonicalScene[] {
       return {
         id: act.id || `scene-${index + 1}`,
         title: act.title || `Cena ${index + 1}`,
-        type: 'narrative',
+        type: getCanonicalActType(act.type),
         narration,
         visual: {
           type: 'effects-only',
