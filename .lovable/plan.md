@@ -1,67 +1,84 @@
 
-# Tornar eleven_v3 Mandatório para V7-vv
+Objetivo: eliminar a recorrência do erro C12.1 (“image-sequence sem trigger com payload.frameIndex”) de forma estrutural, sem relaxar o contrato de determinismo.
 
-## Problema
+Contexto confirmado na investigação:
+- O run que falhou (`08ee2fdf-b287-4393-8932-a5baf8d1b14e`) já tinha `anchorActions` corretos no input da `scene-08-sessao-8-epp`:
+  - `type: "trigger"` com `payload.frameIndex: 1/2`
+  - keywords `MARCO1` e `MARCO2`
+- O erro não é ausência de trigger no JSON de entrada; é ausência de trigger resolvido no output da fase.
+- Na edge function `v7-vv`, os frame triggers só entram se `selectAnchorOccurrence(...)` encontrar o keyword no `wordTimestamps`.
+- Se nenhum trigger é resolvido, a função lança erro bloqueante C12.1 (por contrato, fallback timer está proibido).
+- Hoje existe validação de `anchorText` para microVisual/pauseAt, mas não existe validação equivalente para `scene.anchorActions` de image-sequence antes da montagem final.
 
-As tags de emoção (`[excited]`, `[pause]`, `[whispers]`) estão sendo **lidas em voz alta** pelo TTS porque:
+Hipótese técnica mais provável (consistente com o caso):
+- Keywords sentinela alfanuméricos (`MARCO1`, `MARCO2`) podem ser tokenizados pelo TTS/timestamps como partes separadas (ex.: “MARCO” + “1”), ou normalizados de forma diferente, então o matcher atual não encontra correspondência exata suficiente.
+- Resultado: os triggers existem no input, mas “somem” na resolução temporal.
 
-1. A edge function `v7-vv` hardcoda `model_id: 'eleven_multilingual_v2'` (linha 3164) -- este modelo trata `[tags]` como texto literal
-2. O adapter `v7vvPayloadAdapter.ts` não passa `use_emotion_tags` no payload
-3. O toggle na UI (`AdminV7Create.tsx`) começa como `false` e não é enviado ao pipeline
-4. O pipeline client-side (`step3-generate-audio.ts`) usa condicional `useEmotionTags ? 'eleven_v3' : ...` em vez de forçar v3
+Plano de implementação (sem quebrar o contrato C12.1):
 
-## Solução
+1) Fortalecer validação pré-áudio para image-sequence com triggers (fail-fast com diagnóstico útil)
+- Arquivo: `supabase/functions/v7-vv/index.ts` (bloco de validação principal).
+- Adicionar validação dedicada para `scene.anchorActions` quando `visual.type === "image-sequence"` e `frames.length >= 2`:
+  - exigir ao menos `frames.length - 1` triggers com `payload.frameIndex` válido;
+  - validar intervalo de `frameIndex` (1..frames.length-1);
+  - validar keyword não vazio;
+  - validar unicidade de `frameIndex`;
+  - validar presença literal do keyword na narração normalizada (regra preflight, sem depender de timestamp ainda).
+- Em caso de falha, retornar erro de contrato claro (antes de gerar áudio), com detalhes por cena.
 
-Forçar `eleven_v3` em **todos** os caminhos de geração de áudio V7-vv.
+2) Melhorar resolução de keyword para frame-trigger (robustez sem inventar fallback)
+- Arquivo: `supabase/functions/v7-vv/index.ts` (`selectAnchorOccurrence` e/ou etapa de processamento de `scene.anchorActions`).
+- Adicionar matching específico para tokens alfanuméricos:
+  - suportar comparação por “janela concatenada” de palavras adjacentes normalizadas (ex.: `["marco","1"] -> "marco1"`), além do matching atual;
+  - manter estratégia determinística e sem criar tempo artificial.
+- Isso preserva o contrato de “trigger real no áudio”, mas reduz falso negativo para casos como `MARCO1`.
 
----
+3) Erro operacional mais acionável no ponto de quebra C12.1
+- Arquivo: `supabase/functions/v7-vv/index.ts` (trecho que lança `[C12.1] ... sem trigger ...`).
+- Enriquecer erro com:
+  - `sceneId`,
+  - lista de keywords de frame-trigger declarados,
+  - lista dos que resolveram vs não resolveram,
+  - range temporal da cena,
+  - amostra de palavras detectadas no range.
+- Mantém status 500 (ou erro estruturado equivalente), mas com diagnóstico imediato para correção rápida.
 
-### Alterações
+4) Guardrail no frontend Admin (evitar ida desnecessária ao backend)
+- Arquivo: `src/pages/AdminV7Create.tsx`.
+- Expandir `validateJson` para incluir checks de `image-sequence + anchorActions`:
+  - aviso/erro local se `frames>=2` e faltar trigger por frame;
+  - aviso para keywords frágeis (somente sentinela com dígitos, ex.: `MARCO1`);
+  - sugerir keywords naturais presentes na frase narrada.
+- Resultado: menos tentativas quebradas em produção.
 
-**1. Edge Function `supabase/functions/v7-vv/index.ts`** (principal)
-- Trocar `model_id: 'eleven_multilingual_v2'` por `model_id: 'eleven_v3'` na função de geração de áudio (~linha 3164)
-- Ajustar `voice_settings.style` para `0.3` (expressividade do v3)
-- Adicionar sanitização: antes de enviar ao ElevenLabs, remover SSML `<break/>` (v3 não suporta), preservar `[tags]`
+5) Atualizar documentação de referência para padrões resilientes
+- Arquivos:
+  - `src/pages/V7Documentation.tsx`
+  - (opcional) `docs/references/v7-reference-image-sequence.json`
+- Adicionar seção “Boas práticas C12.1”:
+  - preferir keywords naturais da narração (“primeiro”, “depois”, “premium”) em vez de sentinelas alfanuméricos;
+  - manter 1 trigger por troca de frame;
+  - garantir keyword único dentro da cena para evitar ambiguidade.
 
-**2. Pipeline client-side `src/lib/lessonPipeline/v7/steps/step3-generate-audio.ts`**
-- Remover condicional: sempre enviar `use_emotion_tags: true` e `model_id: 'eleven_v3'`
+6) Observabilidade mínima para recorrência
+- Arquivo: `supabase/functions/v7-vv/index.ts`.
+- Logar métricas por run:
+  - `frameTriggersDeclared`,
+  - `frameTriggersResolved`,
+  - `frameTriggersMissing`,
+  - `keywordNormalizationStats` por cena image-sequence.
+- Facilita detectar regressão “segunda vez no dia” sem inspeção manual extensa.
 
-**3. Adapter `src/services/v7vvPayloadAdapter.ts`**
-- Não precisa mudar -- o modelo é decidido na edge function, não no payload
+Sequência de execução recomendada:
+1. Ajuste de validação preflight (passo 1).
+2. Ajuste de matching robusto (passo 2).
+3. Enriquecimento do erro C12.1 (passo 3).
+4. Guardrail na tela AdminV7Create (passo 4).
+5. Atualização da documentação (passo 5).
+6. Logs de observabilidade (passo 6).
 
-**4. UI `src/pages/AdminV7Create.tsx`**
-- Remover o toggle de seleção de modelo (já que v3 é mandatório)
-- Substituir por um badge fixo indicando "eleven_v3 - Audio Tags Ativas"
-- Setar `useEmotionTags` como `true` por padrão (hardcoded)
-
-**5. Tipos `src/lib/lessonPipeline/v7/types.ts`**
-- Marcar `useEmotionTags` como deprecated ou remover (agora é sempre `true`)
-
-**6. Edge function `supabase/functions/generate-audio-with-timestamps/index.ts`**
-- Já suporta v3 via flag -- nenhuma mudança necessária (já funciona quando `use_emotion_tags: true`)
-
----
-
-### Detalhes Tecniicos
-
-Na edge function `v7-vv`, a mudança crítica é:
-
-```text
-ANTES:  model_id: 'eleven_multilingual_v2'
-DEPOIS: model_id: 'eleven_v3'
-```
-
-E adicionar sanitização do texto antes do envio:
-
-```text
-- Remover <break time="..."/> (SSML nao funciona no v3)
-- Preservar [excited], [pause], [whispers] etc.
-- Manter pontuacao natural para pausas
-```
-
-### Impacto
-
-- Todas as aulas V7-vv futuras usarao eleven_v3 automaticamente
-- Tags de emoção serao interpretadas corretamente (nao lidas em voz alta)
-- Aulas existentes nao sao afetadas (ja foram geradas)
-- Para regenerar audio de aulas existentes, usar o fluxo de reprocess
+Critérios de aceite:
+- Um payload igual ao run falho deixa de quebrar se o áudio contiver os gatilhos de forma tokenizada separada (ex.: “MARCO 1”).
+- Quando realmente inválido, falha cedo com mensagem específica apontando exatamente qual trigger/keyword está inconsistente.
+- `image-sequence` continua sem fallback timer automático (contrato preservado).
+- Admin mostra alerta pré-envio para JSON com alto risco de falha C12.1.
