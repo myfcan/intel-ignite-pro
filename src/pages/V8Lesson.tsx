@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -133,8 +134,14 @@ export default function V8Lesson() {
     );
   }
 
-  // Mark as in_progress on first render
-  saveProgress("in_progress");
+  // Mark as in_progress on first render (useEffect prevents infinite loop)
+  const hasSavedProgress = useRef(false);
+  useEffect(() => {
+    if (!hasSavedProgress.current && playerData) {
+      hasSavedProgress.current = true;
+      saveProgress("in_progress");
+    }
+  }, [playerData, lessonId]);
 
   return (
     <V8LessonPlayer
