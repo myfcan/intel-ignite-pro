@@ -479,7 +479,7 @@ export default function AdminV8Create() {
             {!generateResult && !isGenerating && (
               <button
                 onClick={handleGenerateAudio}
-                disabled={!selectedTrailId && trails.length === 0}
+                disabled={!selectedTrailId || trails.length === 0}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 <Zap className="w-4 h-4" />

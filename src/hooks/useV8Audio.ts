@@ -21,6 +21,12 @@ export const useV8Audio = (audioUrl: string, options: UseV8AudioOptions = {}) =>
   const [isReady, setIsReady] = useState(false);
 
   // Create / swap audio element on URL change
+  // Store callbacks in refs to avoid stale closures
+  const onEndedRef = useRef(onEnded);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  onEndedRef.current = onEnded;
+  onTimeUpdateRef.current = onTimeUpdate;
+
   useEffect(() => {
     const audio = new Audio(audioUrl);
     audio.preload = "auto";
@@ -30,12 +36,12 @@ export const useV8Audio = (audioUrl: string, options: UseV8AudioOptions = {}) =>
     const handleCanPlay = () => setIsReady(true);
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      onTimeUpdate?.(audio.currentTime, audio.duration);
+      onTimeUpdateRef.current?.(audio.currentTime, audio.duration);
     };
     const handleDuration = () => setDuration(audio.duration);
     const handleEnded = () => {
       setIsPlaying(false);
-      onEnded?.();
+      onEndedRef.current?.();
     };
 
     audio.addEventListener("canplaythrough", handleCanPlay);
@@ -55,7 +61,7 @@ export const useV8Audio = (audioUrl: string, options: UseV8AudioOptions = {}) =>
       audio.removeEventListener("ended", handleEnded);
       audio.src = "";
     };
-  }, [audioUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [audioUrl, autoPlay, playbackRate]);
 
   // Sync playback rate
   useEffect(() => {
