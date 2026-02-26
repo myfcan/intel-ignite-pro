@@ -104,15 +104,17 @@ const INTERACTIVE_SCENE_TYPES = [
 ];
 
 // ============================================================================
-// MICRO VISUAL TYPES (7 canônicos)
+// MICRO VISUAL TYPES (13 canônicos — V7Contract.ts SSOT)
 // ============================================================================
 
 const MICRO_VISUAL_TYPES = [
+  // ── ORIGINAIS (7) ──
   { 
     input: 'image', 
     output: 'image-flash', 
     desc: 'Flash de imagem — exibe uma imagem com efeito de entrada',
     rules: ['Requer anchorText com keyword no narration', 'Máx 1 por frase'],
+    isNew: false,
     example: {
       microVisuals: [{ type: "image", anchorText: "Midjourney", content: { src: "/images/midjourney.png", alt: "Logo Midjourney" } }]
     }
@@ -122,6 +124,7 @@ const MICRO_VISUAL_TYPES = [
     output: 'text-pop', 
     desc: 'Pop de texto — destaca uma frase ou conceito chave',
     rules: ['anchorText obrigatório', 'Texto curto (máx 50 chars)', 'Máx 1 por frase'],
+    isNew: false,
     example: {
       microVisuals: [{ type: "text", anchorText: "inteligência", content: { text: "Inteligência Artificial", style: "highlight" } }]
     }
@@ -131,6 +134,7 @@ const MICRO_VISUAL_TYPES = [
     output: 'number-count', 
     desc: 'Contador numérico — anima um número com contagem progressiva',
     rules: ['anchorText obrigatório', 'Número deve ser string', 'Máx 1 por frase'],
+    isNew: false,
     example: {
       microVisuals: [{ type: "number", anchorText: "bilhões", content: { number: "3.5", suffix: "bilhões", subtitle: "de usuários de IA" } }]
     }
@@ -140,6 +144,7 @@ const MICRO_VISUAL_TYPES = [
     output: 'card-reveal', 
     desc: 'Card/badge — revela um card com informação contextual',
     rules: ['anchorText obrigatório', 'Máx 1 por frase'],
+    isNew: false,
     example: {
       microVisuals: [{ type: "badge", anchorText: "certificado", content: { title: "Certificado IA", subtitle: "Nível Profissional" } }]
     }
@@ -149,6 +154,7 @@ const MICRO_VISUAL_TYPES = [
     output: 'highlight', 
     desc: 'Destaque visual — passthrough, mantém tipo no output',
     rules: ['anchorText obrigatório', 'Máx 1 por frase'],
+    isNew: false,
     example: {
       microVisuals: [{ type: "highlight", anchorText: "importante", content: { text: "Este conceito é fundamental", color: "cyan" } }]
     }
@@ -158,8 +164,70 @@ const MICRO_VISUAL_TYPES = [
     output: 'letter-reveal', 
     desc: 'Revelação letra a letra — passthrough, ideal para método/acrônimo',
     rules: ['anchorText obrigatório', 'Usado para revelar método passo a passo', 'Máx 1 por frase'],
+    isNew: false,
     example: {
       microVisuals: [{ type: "letter-reveal", anchorText: "método", content: { letters: ["P","R","O","M","P","T"], meanings: ["Preciso","Relevante","Objetivo","Mensurável","Prático","Testável"] } }]
+    }
+  },
+  // ── NOVOS (6) — adicionados ao V7Contract.ts ──
+  { 
+    input: 'stat', 
+    output: 'stat', 
+    desc: 'Métrica de impacto — count-up animado com label e valor',
+    rules: ['anchorText obrigatório', 'Campos: value, label (obrigatórios)', 'Máx 1 por frase'],
+    isNew: true,
+    example: {
+      microVisuals: [{ type: "stat", anchorText: "cinquenta mil", content: { value: "R$ 50k", label: "renda mensal com IA", color: "#10B981" } }]
+    }
+  },
+  { 
+    input: 'step', 
+    output: 'step', 
+    desc: 'Passo numerado sequencial — com borda timeline visual',
+    rules: ['anchorText obrigatório', 'Campos: stepNumber, text (obrigatórios)', 'Máx 1 por frase'],
+    isNew: true,
+    example: {
+      microVisuals: [{ type: "step", anchorText: "primeiro passo", content: { stepNumber: 1, text: "Defina o output que você quer gerar com IA", color: "#22D3EE" } }]
+    }
+  },
+  { 
+    input: 'quote', 
+    output: 'quote', 
+    desc: 'Citação editorial — com efeito typewriter stagger',
+    rules: ['anchorText obrigatório', 'Campos: quote, author (obrigatórios)', 'Máx 1 por frase'],
+    isNew: true,
+    example: {
+      microVisuals: [{ type: "quote", anchorText: "domina", content: { quote: "Quem domina prompts, domina o futuro do trabalho.", author: "AIliv", color: "#818CF8" } }]
+    }
+  },
+  { 
+    input: 'pill-tag', 
+    output: 'pill-tag', 
+    desc: 'Tag/etiqueta contextual — com dot pulsante',
+    rules: ['anchorText obrigatório', 'Campos: tag (obrigatório), dot (opcional)', 'Máx 1 por frase'],
+    isNew: true,
+    example: {
+      microVisuals: [{ type: "pill-tag", anchorText: "produtividade", content: { tag: "Produtividade", dot: true, color: "#38BDF8" } }]
+    }
+  },
+  { 
+    input: 'comparison-bar', 
+    output: 'comparison-bar', 
+    desc: 'Barras de comparação antes/depois — animadas lado a lado',
+    rules: ['anchorText obrigatório', 'Campos: leftLabel, leftValue, rightLabel, rightValue (obrigatórios)', 'Máx 1 por frase'],
+    isNew: true,
+    example: {
+      microVisuals: [{ type: "comparison-bar", anchorText: "diferença", content: { leftLabel: "Amador", leftValue: 20, rightLabel: "Profissional", rightValue: 95, leftColor: "#EF4444", rightColor: "#10B981" } }]
+    }
+  },
+  { 
+    input: 'alert', 
+    output: 'alert', 
+    desc: 'Alerta urgente — com shake físico e glow vermelho',
+    rules: ['anchorText obrigatório', 'Campos: text, highlight (obrigatórios)', 'Máx 1 por frase'],
+    isNew: true,
+    example: {
+      microVisuals: [{ type: "alert", anchorText: "cuidado", content: { text: "Nunca compartilhe dados sensíveis com IA pública", highlight: "dados sensíveis", icon: "⚠️" } }]
     }
   },
 ];
@@ -242,7 +310,7 @@ export default function AdminModelos() {
             <div className="text-sm space-y-1.5">
               <p>✅ 11 cenas completas (dramatic, narrative, interaction, playground, revelation, cta, gamification)</p>
               <p>✅ anchorText.pauseAt APENAS em cenas interativas (C10 compliance)</p>
-              <p>✅ Método PERFEITO com letter-reveal (7 tipos canônicos de microVisual)</p>
+              <p>✅ 13 tipos canônicos de MicroVisual (image, text, number, badge, highlight, letter-reveal, stat, step, quote, pill-tag, comparison-bar, alert)</p>
               <p>✅ Quiz 4 opções com feedback narrado</p>
               <p>✅ Playground amador vs profissional</p>
               <p>✅ CTA via scene.type="narrative" + visual.type="cta" (C10B compliance)</p>
@@ -293,8 +361,8 @@ export default function AdminModelos() {
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors">
                   {expandedVisualSection === 'microvisuals' ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-amber-500" />}
                   <FileText className="w-5 h-5 text-amber-500" />
-                  <span className="text-sm font-semibold">MicroVisual Types (7 canônicos)</span>
-                  <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px] ml-auto">APENAS ESTES</Badge>
+                  <span className="text-sm font-semibold">MicroVisual Types (13 canônicos)</span>
+                  <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-[10px] ml-auto">13 TIPOS</Badge>
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -311,6 +379,7 @@ export default function AdminModelos() {
                           {expandedMV === mv.input ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                           <span className="text-sm font-mono text-emerald-500 font-bold">{mv.input}</span>
                           <span className="text-xs text-muted-foreground">→ {mv.output}</span>
+                          {mv.isNew && <Badge variant="outline" className="border-pink-500/50 text-pink-400 text-[9px]">NOVO</Badge>}
                           <span className="text-xs text-muted-foreground ml-auto">{mv.desc}</span>
                         </div>
                       </CollapsibleTrigger>

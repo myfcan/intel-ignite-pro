@@ -15,6 +15,8 @@ import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
 import { CourseProgressCard } from "@/components/dashboard/CourseProgressCard";
 import { PointsCard } from "@/components/dashboard/PointsCard";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { BuildBadge } from "@/components/BuildBadge";
+import { DASHBOARD_LAYOUT_ID, logRuntimeSignature } from "@/lib/runtimeSignature";
 
 interface User {
   id: string;
@@ -66,6 +68,7 @@ const Dashboard = () => {
   const visibleTrails = trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
 
   useEffect(() => {
+    logRuntimeSignature({ route: '/dashboard', layoutId: DASHBOARD_LAYOUT_ID });
     checkAuth();
   }, []);
 
@@ -106,7 +109,7 @@ const Dashboard = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate('/auth');
+        navigate('/auth?reason=session_missing&redirect=/dashboard');
         return;
       }
 
@@ -153,7 +156,7 @@ const Dashboard = () => {
         description: "Por favor, faça login novamente.",
         variant: "destructive",
       });
-      navigate('/auth');
+      navigate('/auth?reason=error&redirect=/dashboard');
     } finally {
       setLoading(false);
     }
@@ -299,7 +302,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen relative" style={{ background: 'linear-gradient(180deg, #F0F1F5 0%, #E8E9EF 50%, #F0F1F5 100%)' }}>
+    <div className="min-h-screen relative" data-layout-id={DASHBOARD_LAYOUT_ID} style={{ background: 'linear-gradient(180deg, #F0F1F5 0%, #E8E9EF 50%, #F0F1F5 100%)' }}>
       <DashboardHeader user={user!} />
       
       {/* Gamification Header */}
@@ -760,6 +763,7 @@ const Dashboard = () => {
 
       {/* Notification Prompt */}
       <NotificationPrompt />
+      <BuildBadge isAdmin={isAdmin} />
     </div>
   );
 };
