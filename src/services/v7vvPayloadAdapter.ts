@@ -103,6 +103,7 @@ function buildScenesFromActs(acts: LegacyAct[] = []): CanonicalScene[] {
     .map((act, index) => {
       const narration =
         act.audio?.narration ||
+        act.content?.audio?.narration ||
         act.narration ||
         act.content?.audio?.narration ||
         act.content?.text ||
