@@ -13,7 +13,7 @@ interface LegacyAct {
   type?: string;
   narration?: string;
   audio?: { narration?: string };
-  content?: { text?: string; description?: string };
+  content?: { text?: string; description?: string; audio?: { narration?: string } };
   visualContent?: Record<string, unknown>;
 }
 
@@ -97,6 +97,7 @@ function buildScenesFromActs(acts: LegacyAct[] = []): CanonicalScene[] {
     .map((act, index) => {
       const narration =
         act.audio?.narration ||
+        act.content?.audio?.narration ||
         act.narration ||
         act.content?.text ||
         act.content?.description ||

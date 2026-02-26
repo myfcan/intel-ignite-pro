@@ -1,33 +1,39 @@
 #!/usr/bin/env node
 import process from 'node:process';
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 
 const FORBIDDEN_PATTERN = String.raw`invoke\(['\"]v7-pipeline['\"]\)`;
 const SEARCH_PATHS = ['src', 'supabase', 'tests', 'scripts', '.github'];
+const EXCLUDED_PATHS = [
+  'scripts/check-no-legacy-pipeline.mjs',
+  '.github/workflows/no-legacy-v7-pipeline.yml',
+];
 
-try {
-  const output = execSync(
-    `git grep -nE "${FORBIDDEN_PATTERN}" -- ${SEARCH_PATHS.join(' ')}`,
-    { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
-  ).trim();
+const args = [
+  'grep',
+  '-nE',
+  FORBIDDEN_PATTERN,
+  '--',
+  ...SEARCH_PATHS,
+  ...EXCLUDED_PATHS.map((path) => `:(exclude)${path}`),
+];
 
-  if (output.length > 0) {
-    globalThis.console.error('❌ Forbidden legacy invoke detected: invoke("v7-pipeline")');
-    globalThis.console.error(output);
-    process.exit(1);
-  }
-} catch (error) {
-  const stderr = error?.stderr?.toString?.() ?? '';
-  const stdout = error?.stdout?.toString?.() ?? '';
+const result = spawnSync('git', args, { encoding: 'utf8' });
+const stdout = result.stdout?.trim() ?? '';
+const stderr = result.stderr?.trim() ?? '';
 
-  // git grep exits with code 1 when there are no matches (expected pass)
-  if (error?.status === 1 && !stdout.trim()) {
-    globalThis.console.log('✅ No forbidden legacy invoke("v7-pipeline") usage found.');
-    process.exit(0);
-  }
-
-  globalThis.console.error('❌ Failed to run legacy invoke guard.');
-  if (stdout.trim()) globalThis.console.error(stdout.trim());
-  if (stderr.trim()) globalThis.console.error(stderr.trim());
-  process.exit(2);
+if (result.status === 0 && stdout.length > 0) {
+  globalThis.console.error('❌ Forbidden legacy invoke detected: invoke("v7-pipeline")');
+  globalThis.console.error(stdout);
+  process.exit(1);
 }
+
+if (result.status === 1 && stdout.length === 0) {
+  globalThis.console.log('✅ No forbidden legacy invoke("v7-pipeline") usage found.');
+  process.exit(0);
+}
+
+globalThis.console.error('❌ Failed to run legacy invoke guard.');
+if (stdout) globalThis.console.error(stdout);
+if (stderr) globalThis.console.error(stderr);
+process.exit(2);
