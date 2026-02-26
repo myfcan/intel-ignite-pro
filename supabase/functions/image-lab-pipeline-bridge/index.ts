@@ -470,7 +470,7 @@ Deno.serve(async (req) => {
           if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
 
           // Binary-safe file hash
-          const fileHashBuf = await crypto.subtle.digest("SHA-256", genResult.bytes);
+          const fileHashBuf = await crypto.subtle.digest("SHA-256", genResult.bytes.buffer as ArrayBuffer);
           const fileHash = Array.from(new Uint8Array(fileHashBuf))
             .map(b => b.toString(16).padStart(2, "0")).join("");
 

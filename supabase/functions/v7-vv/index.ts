@@ -1529,6 +1529,7 @@ interface Phase {
     // ✅ FASE C: storagePath e displayMode explícitos para visual.type='image'
     storagePath?: string;
     displayMode?: string;
+    promptScene?: string;
     frames?: Array<{
       frameId: string;
       durationMs: number;
@@ -1536,6 +1537,17 @@ interface Phase {
       promptScene?: string;
     }>;
   };
+  // C03: scenes[] inline — 1:1 with phase
+  scenes?: Array<{
+    id: string;
+    type: string;
+    startTime: number;
+    endTime: number;
+    duration: number;
+    narration: string;
+    content: Record<string, unknown>;
+    animation: string;
+  }>;
   effects?: Record<string, unknown>;
   microVisuals?: MicroVisual[];
   anchorActions?: AnchorAction[];
@@ -1565,6 +1577,7 @@ interface Phase {
 
 interface LessonData {
   // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
+  contentVersion?: string;             // P5 FIX (C14): versão do content no root
   schema: string;                    // Bug 7: era "model"
   version: string;                   // Bug 8: será "1.0.0"
   title: string;                     // Bug 9: title no root
@@ -1876,7 +1889,7 @@ const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal'] a
 // Alinhado com os defaults do renderer (useV7AudioManager.ts).
 // ============================================================================
 
-function buildAudioBehavior(scene: SceneInput): Phase['audioBehavior'] {
+function buildAudioBehavior(scene: ScriptScene): Phase['audioBehavior'] {
   const interactionType = scene.interaction?.type;
 
   // Quiz: pausa total, ambiente baixo para foco
@@ -2387,9 +2400,8 @@ function executeDryRun(input: ScriptInput): DryRunResult {
   if (!input.scenes || !Array.isArray(input.scenes) || input.scenes.length === 0) {
     console.error('[V7-vv:DryRun] ❌ input.scenes está vazio ou undefined');
     return {
-      valid: false,
-      errorCount: 1,
-      warningCount: 0,
+      canProcess: false,
+      validationScore: 0,
       issues: [{
         severity: 'error',
         scene: 'root',
@@ -2399,8 +2411,17 @@ function executeDryRun(input: ScriptInput): DryRunResult {
       }],
       autoFixes: [],
       sceneAnalysis: [],
-      estimatedDuration: 0,
-      summary: 'Input inválido: scenes[] ausente ou vazio'
+      summary: {
+        totalScenes: 0,
+        totalWords: 0,
+        estimatedDuration: 0,
+        interactiveScenes: 0,
+        microVisualCount: 0,
+        errorCount: 1,
+        warningCount: 0,
+        infoCount: 0,
+      },
+      recommendation: 'Input inválido: scenes[] ausente ou vazio',
     };
   }
 
@@ -2870,6 +2891,7 @@ function executeDryRun(input: ScriptInput): DryRunResult {
 // ============================================================================
 
 interface EnrichedMicroVisual {
+  id?: string;
   type: 'stat' | 'step';
   anchorText: string;
   duration: number;
@@ -3138,13 +3160,13 @@ async function generateAudio(
           'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: JSON.stringify({
-          text: text,
-          model_id: 'eleven_multilingual_v2',
+          text: sanitizeTextForV3(text),
+          model_id: 'eleven_v3',
           voice_settings: {
-            stability: 0.5,          // 50%
-            similarity_boost: 0.75,  // 75%
-            style: 0.5,              // 50% - Alice engaging style
-            use_speaker_boost: true, // Ativado
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.3,              // eleven_v3 expressividade
+            use_speaker_boost: true,
           },
         }),
       }
@@ -3216,6 +3238,20 @@ async function generateAudio(
   }
 }
 
+/**
+ * Sanitiza texto para eleven_v3:
+ * - Remove SSML <break/> (v3 não suporta)
+ * - Preserva audio tags [excited], [pause], [whispers] etc.
+ * - Mantém pontuação natural
+ */
+function sanitizeTextForV3(text: string): string {
+  // Remover SSML tags (v3 não suporta)
+  let cleaned = text.replace(/<[^>]+>/g, '');
+  // Normalizar espaços extras
+  cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+  return cleaned;
+}
+
 function processWordTimestamps(
   characters: string[],
   characterStartTimes: number[]
@@ -3223,9 +3259,15 @@ function processWordTimestamps(
   const words: WordTimestamp[] = [];
   let currentWord = '';
   let wordStartIndex = 0;
+  let insideTag = false;
 
   for (let i = 0; i < characters.length; i++) {
     const char = characters[i];
+
+    // Pular audio tags [tag] nos word timestamps
+    if (char === '[') { insideTag = true; continue; }
+    if (char === ']') { insideTag = false; continue; }
+    if (insideTag) continue;
 
     if (char === ' ' || char === '\n' || i === characters.length - 1) {
       if (i === characters.length - 1 && char !== ' ' && char !== '\n') {
@@ -6481,9 +6523,9 @@ Deno.serve(async (req) => {
   // =========================================================================
   // EXECUTION STATE CONTRACT: Variables defined OUTSIDE try for catch access
   // =========================================================================
-  let supabase: ReturnType<typeof createClient> | null = null;
+  let supabase: any = null;
   let runId: string | null = null;
-  let input: ScriptInput | null = null;
+  let input: ScriptInput = null as unknown as ScriptInput;
   let executionInserted = false;
   let releaseForensicReport: ReleaseForensicReport | null = null;
 
@@ -6492,7 +6534,10 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    input = await req.json();
+    input = await req.json() as ScriptInput;
+    if (!input || typeof input !== 'object') {
+      throw new Error('Input inválido: body JSON obrigatório');
+    }
     
     // =========================================================================
     // C05: INITIALIZE TRACEABILITY
@@ -6605,18 +6650,56 @@ Deno.serve(async (req) => {
         
         // =========================================================================
         // EXECUTION STATE CONTRACT: Mark as failed BEFORE returning
+        // Sprint H: Persist releaseForensicReport + output_data.meta on ALL failures
         // =========================================================================
         if (supabase && runId && executionInserted) {
-          await supabase
+          const inferredMode: 'create' | 'reprocess' | 'dry_run' =
+            input.dry_run ? 'dry_run' :
+            input.reprocess ? 'reprocess' : 'create';
+
+          const validationForensicReport = buildReleaseForensicReport({
+            runId,
+            mode: inferredMode,
+            auditChecked: false,
+            auditPassed: false,
+          });
+
+          // Import contract metadata for forensic persistence
+          let contractVersion = 'c10b-boundaryfix-execstate-1.0';
+          let activeContracts = ['C01', 'C02', 'C04', 'C05', 'C06', 'C08', 'C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+          try {
+            const contractsMod = await import('./contracts.ts');
+            contractVersion = contractsMod.CONTRACT_VERSION;
+            activeContracts = contractsMod.ACTIVE_CONTRACTS_LIST;
+          } catch { /* fallback to hardcoded */ }
+
+          const { data: currentRun } = await supabase
             .from('pipeline_executions')
+            .select('output_data')
+            .eq('run_id', runId)
+            .single();
+
+          const failedOutputData = buildFailedOutputData({
+            currentOutputData: (currentRun?.output_data as Record<string, unknown> | undefined) ?? null,
+            input,
+            releaseForensicReport: validationForensicReport,
+            errorCode: 'VALIDATION_ERROR',
+            contractVersion,
+            activeContracts,
+            forceTestMeta: (input as any)?.forceTestMeta,
+          });
+
+          await (supabase
+            .from('pipeline_executions') as any)
             .update({
               status: 'failed',
               error_message: fullErrorMessage,
+              output_data: failedOutputData,
               completed_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
             .eq('run_id', runId);
-          console.log(`[EXECUTION_STATE_CONTRACT] ✅ Validation failure recorded for run ${runId}`);
+          console.log(`[EXECUTION_STATE_CONTRACT] ✅ Validation failure recorded for run ${runId} (with forensic report)`);
         }
         
         return new Response(
@@ -6664,8 +6747,8 @@ Deno.serve(async (req) => {
       console.log(`[V7-vv] 🔄 REPROCESS MODE: Buscando dados da lição ${input.existing_lesson_id}`);
       
       // Buscar dados existentes do banco
-      const { data: existingLesson, error: fetchError } = await supabase
-        .from('lessons')
+      const { data: existingLesson, error: fetchError } = await (supabase
+        .from('lessons') as any)
         .select('audio_url, word_timestamps')
         .eq('id', input.existing_lesson_id)
         .single();
@@ -6962,25 +7045,26 @@ Deno.serve(async (req) => {
             }
           }
 
-          // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
-          // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
-          if (
-            phase.visual?.type === 'image' &&
-            phase.visual.promptScene &&
-            typeof phase.visual.promptScene === 'string' &&
-            (
-              !phase.visual.storagePath ||
-              (phase.visual.storagePath as string).startsWith('PENDING:')
-            )
-          ) {
-            imageNarrativeScenes.push({
-              scene_id: phase.id,
-              prompt_scene: phase.visual.promptScene as string,
-              style_hints: (phase.visual as any).styleHints || undefined,
-              phaseIdx: pi,
-            });
-            console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
-          }
+        }
+
+        // ✅ NEW: Scan visual.type='image' narrative phases for bridge generation
+        // Only when phase has promptScene AND no valid storagePath yet (PENDING or missing)
+        if (
+          phase.visual?.type === 'image' &&
+          phase.visual.promptScene &&
+          typeof phase.visual.promptScene === 'string' &&
+          (
+            !phase.visual.storagePath ||
+            (phase.visual.storagePath as string).startsWith('PENDING:')
+          )
+        ) {
+          imageNarrativeScenes.push({
+            scene_id: phase.id,
+            prompt_scene: phase.visual.promptScene as string,
+            style_hints: (phase.visual as any).styleHints || undefined,
+            phaseIdx: pi,
+          });
+          console.log(`[V7-vv] Step 4.9: NARRATIVE_IMAGE_SCENE queued for bridge: phase=${phase.id} promptScene="${(phase.visual.promptScene as string).substring(0, 60)}..."`);
         }
         
         // Original: Scan microVisuals
