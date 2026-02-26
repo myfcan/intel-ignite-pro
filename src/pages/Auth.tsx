@@ -7,9 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Brain } from "lucide-react";
+import { Loader2, Brain, AlertCircle } from "lucide-react";
 import { usePrefetchMainPages } from "@/hooks/usePrefetch";
 import { AuthBackground3D } from "@/components/backgrounds";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { BuildBadge } from "@/components/BuildBadge";
 
 const Auth = () => {
   // Prefetch Dashboard and Onboarding while user fills login form
@@ -20,6 +22,10 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
+  
+  // Session redirect params
+  const reason = searchParams.get('reason');
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -109,7 +115,9 @@ const Auth = () => {
         if (!userData?.onboarding_completed) {
           navigate('/onboarding');
         } else {
-          navigate('/dashboard');
+          // Respect redirect param (validate it's a local path)
+          const dest = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+          navigate(dest);
         }
       }
     } catch (error: any) {
@@ -204,6 +212,23 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Session expiry alert */}
+          {reason === 'session_missing' && (
+            <Alert className="mb-4 border-amber-200 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 text-sm">
+                Sua sessão expirou. Faça login para voltar ao dashboard.
+              </AlertDescription>
+            </Alert>
+          )}
+          {reason === 'error' && (
+            <Alert className="mb-4 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800 text-sm">
+                Ocorreu um erro ao carregar seus dados. Faça login novamente.
+              </AlertDescription>
+            </Alert>
+          )}
           <Tabs value={mode} onValueChange={(v) => setMode(v as 'login' | 'signup')} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">Entrar</TabsTrigger>
@@ -314,6 +339,7 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+      <BuildBadge />
     </div>
   );
 };

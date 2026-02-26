@@ -20,8 +20,8 @@ export interface V7PipelineOptions {
   voiceId: string;
   generateAudio: boolean;
   /**
-   * Se true, usa eleven_v3 e processa audio tags emocionais ([excited], [calm], etc.)
-   * Se false, usa eleven_multilingual_v2 (padrão) e ignora audio tags.
+   * @deprecated Agora é sempre true. eleven_v3 é mandatório para V7-vv.
+   * Mantido apenas para backward compatibility.
    */
   useEmotionTags?: boolean;
 }

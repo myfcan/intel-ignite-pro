@@ -1,95 +1,67 @@
 
-# Fix Sistêmico: C12.1 deve aceitar frames com storagePath sem promptScene
+# Tornar eleven_v3 Mandatório para V7-vv
 
-## Causa Raiz Confirmada (Forense)
+## Problema
 
-O audit-contracts (`supabase/functions/audit-contracts/index.ts`, linha 347) exige `promptScene` em TODOS os frames de `image-sequence`, sem exceção:
+As tags de emoção (`[excited]`, `[pause]`, `[whispers]`) estão sendo **lidas em voz alta** pelo TTS porque:
 
-```typescript
-if (!frame.promptScene) c121Violations++;  // sem exceção para storagePath
-```
+1. A edge function `v7-vv` hardcoda `model_id: 'eleven_multilingual_v2'` (linha 3164) -- este modelo trata `[tags]` como texto literal
+2. O adapter `v7vvPayloadAdapter.ts` não passa `use_emotion_tags` no payload
+3. O toggle na UI (`AdminV7Create.tsx`) começa como `false` e não é enviado ao pipeline
+4. O pipeline client-side (`step3-generate-audio.ts`) usa condicional `useEmotionTags ? 'eleven_v3' : ...` em vez de forçar v3
 
-Mas o contrato deveria ter uma exceção: **se o frame já possui `storagePath` explícito, `promptScene` é dispensável** — a imagem já existe (ou foi explicitamente marcada como PENDING).
+## Solução
 
-A regra de negócio correta é:
-- `promptScene` é obrigatório quando **não há storagePath** (pipeline precisa gerar a imagem)
-- `promptScene` é **opcional** quando **há storagePath** (imagem já resolvida ou placeholder explícito)
-
-O mesmo bug existe na **validação Preflight** da Edge Function `v7-vv` (linha 2612), que também exige `promptScene` sem verificar `storagePath`.
+Forçar `eleven_v3` em **todos** os caminhos de geração de áudio V7-vv.
 
 ---
 
-## Os 2 Arquivos a Corrigir
+### Alterações
 
-### Fix 1 — `supabase/functions/audit-contracts/index.ts` (linha 347)
+**1. Edge Function `supabase/functions/v7-vv/index.ts`** (principal)
+- Trocar `model_id: 'eleven_multilingual_v2'` por `model_id: 'eleven_v3'` na função de geração de áudio (~linha 3164)
+- Ajustar `voice_settings.style` para `0.3` (expressividade do v3)
+- Adicionar sanitização: antes de enviar ao ElevenLabs, remover SSML `<break/>` (v3 não suporta), preservar `[tags]`
 
-**Antes (rígido demais):**
-```typescript
-if (!frame.promptScene) c121Violations++;
-```
+**2. Pipeline client-side `src/lib/lessonPipeline/v7/steps/step3-generate-audio.ts`**
+- Remover condicional: sempre enviar `use_emotion_tags: true` e `model_id: 'eleven_v3'`
 
-**Depois (lógica correta):**
-```typescript
-// promptScene é obrigatório SOMENTE se não há storagePath resolvido
-const hasStoragePath = frame.storagePath && 
-  !frame.storagePath.startsWith('PENDING:');
-const hasPromptScene = !!frame.promptScene?.trim();
-if (!hasStoragePath && !hasPromptScene) c121Violations++;
-```
+**3. Adapter `src/services/v7vvPayloadAdapter.ts`**
+- Não precisa mudar -- o modelo é decidido na edge function, não no payload
 
-**Mas PENDING também deve ser aceito** — o usuário declarou explicitamente um placeholder. A regra deveria ser: se `storagePath` existe (mesmo que PENDING), `promptScene` é dispensável. A intenção do frame está declarada.
+**4. UI `src/pages/AdminV7Create.tsx`**
+- Remover o toggle de seleção de modelo (já que v3 é mandatório)
+- Substituir por um badge fixo indicando "eleven_v3 - Audio Tags Ativas"
+- Setar `useEmotionTags` como `true` por padrão (hardcoded)
 
-```typescript
-// Se storagePath está presente (mesmo PENDING), promptScene é dispensável
-const hasExplicitStoragePath = !!frame.storagePath;
-const hasPromptScene = !!frame.promptScene?.trim();
-if (!hasExplicitStoragePath && !hasPromptScene) c121Violations++;
-```
+**5. Tipos `src/lib/lessonPipeline/v7/types.ts`**
+- Marcar `useEmotionTags` como deprecated ou remover (agora é sempre `true`)
 
-### Fix 2 — `supabase/functions/v7-vv/index.ts` (linha 2612, Preflight)
-
-Mesma lógica na validação Preflight que ocorre antes do pipeline rodar:
-
-**Antes:**
-```typescript
-if (!f.promptScene?.trim()) issues.push({ severity: 'error', ... message: 'promptScene obrigatório' });
-```
-
-**Depois:**
-```typescript
-const hasExplicitPath = !!f.storagePath;
-if (!hasExplicitPath && !f.promptScene?.trim()) {
-  issues.push({ severity: 'error', scene: sceneId, 
-    field: `visual.content.frames[${fi}].promptScene`, 
-    message: 'promptScene obrigatório quando storagePath não está definido' });
-}
-```
+**6. Edge function `supabase/functions/generate-audio-with-timestamps/index.ts`**
+- Já suporta v3 via flag -- nenhuma mudança necessária (já funciona quando `use_emotion_tags: true`)
 
 ---
 
-## Comportamento Após o Fix
+### Detalhes Tecniicos
 
-| Frame | promptScene | storagePath | Resultado |
-|-------|-------------|-------------|-----------|
-| Frame com imagem gerada | Presente | Ausente | ✅ Passa (gera imagem) |
-| Frame com URL real | Ausente | `image-lab/assets/uuid.png` | ✅ Passa (imagem existente) |
-| Frame de teste | Ausente | `PENDING:bridge-failed:frame0.png` | ✅ Passa (placeholder explícito) |
-| Frame inválido | Ausente | Ausente | ❌ Falha (correto — sem imagem nem prompt) |
+Na edge function `v7-vv`, a mudança crítica é:
 
----
+```text
+ANTES:  model_id: 'eleven_multilingual_v2'
+DEPOIS: model_id: 'eleven_v3'
+```
 
-## Arquivos a Modificar
+E adicionar sanitização do texto antes do envio:
 
-1. `supabase/functions/audit-contracts/index.ts` — linha 347: condição `if (!frame.promptScene)`
-2. `supabase/functions/v7-vv/index.ts` — linha 2612: validação Preflight do mesmo campo
+```text
+- Remover <break time="..."/> (SSML nao funciona no v3)
+- Preservar [excited], [pause], [whispers] etc.
+- Manter pontuacao natural para pausas
+```
 
-Após o fix, re-deploy de ambas as edge functions. O JSON de teste do usuário vai passar no pipeline completo e finalmente será possível validar o sistema determinístico de anchors com dados reais.
+### Impacto
 
----
-
-## O Que NÃO Muda
-
-- Nenhuma lógica de anchor é alterada
-- Nenhum contrato C01-C11, C13-C15 é afetado
-- A Image Lab Bridge continua exigindo `promptScene` para geração (isso é correto — só o audit gate e o preflight são relaxados)
-- O player continua usando `storagePath` como fonte primária de imagem
+- Todas as aulas V7-vv futuras usarao eleven_v3 automaticamente
+- Tags de emoção serao interpretadas corretamente (nao lidas em voz alta)
+- Aulas existentes nao sao afetadas (ja foram geradas)
+- Para regenerar audio de aulas existentes, usar o fluxo de reprocess

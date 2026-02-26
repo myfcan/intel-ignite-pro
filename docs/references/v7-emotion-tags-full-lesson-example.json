@@ -1,0 +1,278 @@
+{
+  "$schema": "V7ScriptInput — Aula completa com Audio Tags (eleven_v3)",
+  "_description": "Modelo de aula V7-vv completa usando emotion tags em todas as cenas. Use como referência para criação de novos JSONs.",
+  "contentVersion": "v7-vv",
+  "title": "3 Formas de Ganhar Dinheiro com ChatGPT Ainda Esta Semana",
+  "subtitle": "Estratégias práticas para começar hoje",
+  "difficulty": "beginner",
+  "category": "renda-extra",
+  "tags": ["chatgpt", "renda-extra", "freelancer", "copywriting"],
+  "learningObjectives": [
+    "Conhecer 3 formas reais de monetizar o ChatGPT",
+    "Saber qual plataforma usar para cada serviço",
+    "Criar seu primeiro entregável com IA em menos de 30 minutos"
+  ],
+  "_pipeline_options": {
+    "_note": "Passar estas opções ao pipeline V7 para ativar eleven_v3 com emotion tags",
+    "use_emotion_tags": true,
+    "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+    "generateAudio": true,
+    "failOnAudioError": false
+  },
+  "scenes": [
+    {
+      "id": "scene-hook-001",
+      "type": "hook",
+      "title": "Gancho — Despertar urgência",
+      "_narration_notes": "[excited] para energia inicial; [pause] para suspense; [whispers] para segredo",
+      "narration": "[excited] E se eu te dissesse que você pode ganhar seu primeiro dinheiro com inteligência artificial ainda esta semana? [pause] Sem precisar de experiência, sem precisar de investimento. [whispers] E o melhor: usando uma ferramenta que é de graça.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "Primeira renda com IA",
+          "subtitle": "Esta semana. De graça.",
+          "highlightWord": "graça",
+          "mood": "success"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "sparks"
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-hook-001-free",
+          "type": "badge",
+          "anchorText": "de graça",
+          "duration": 2.5,
+          "content": {
+            "text": "R$ 0 de investimento",
+            "variant": "success"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "de graça",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    },
+    {
+      "id": "scene-context-002",
+      "type": "narrative",
+      "title": "Contexto — Por que agora?",
+      "_narration_notes": "[serious] para credibilidade; [calm] para dados; [assertive] para conclusão",
+      "narration": "[serious] O mercado de serviços com inteligência artificial cresceu trezentos por cento só no último ano. [calm] Empresas pequenas, profissionais liberais e até influenciadores estão desesperados por quem saiba usar o ChatGPT de forma profissional. [pause] [assertive] E a maioria das pessoas ainda não percebeu essa oportunidade.",
+      "visual": {
+        "type": "comparison",
+        "content": {
+          "title": "Mercado de serviços com IA",
+          "items": [
+            { "icon": "📈", "text": "Crescimento de 300% em 2025" },
+            { "icon": "🏢", "text": "PMEs precisam de IA mas não sabem usar" },
+            { "icon": "💡", "text": "Poucos profissionais capacitados" }
+          ]
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-context-002-stat",
+          "type": "stat",
+          "anchorText": "trezentos por cento",
+          "duration": 3.0,
+          "content": {
+            "value": "+300%",
+            "label": "crescimento em 2025",
+            "trend": "up"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "essa oportunidade",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    },
+    {
+      "id": "scene-method1-003",
+      "type": "narrative",
+      "title": "Método 1 — Copywriting com IA",
+      "_narration_notes": "[cheerful] para engajar; [slows down] no valor; [excited] no resultado",
+      "narration": "[cheerful] A primeira forma é a mais simples de todas: copywriting com IA. Você pega um briefing do cliente, usa o ChatGPT para criar textos de vendas, posts para redes sociais ou descrições de produtos. [slows down] E cobra entre cem e quinhentos reais por entrega. [pause] [excited] Tem gente faturando cinco mil reais por mês só com isso, trabalhando duas horas por dia.",
+      "visual": {
+        "type": "comparison",
+        "content": {
+          "title": "Copywriting com IA",
+          "items": [
+            { "icon": "✍️", "text": "Textos de vendas e landing pages" },
+            { "icon": "📱", "text": "Posts para redes sociais" },
+            { "icon": "🛒", "text": "Descrições de produtos e-commerce" }
+          ]
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-method1-003-price",
+          "type": "stat",
+          "anchorText": "quinhentos reais",
+          "duration": 3.0,
+          "content": {
+            "value": "R$ 100–500",
+            "label": "por entrega",
+            "trend": "up"
+          }
+        },
+        {
+          "id": "mv-method1-003-income",
+          "type": "badge",
+          "anchorText": "cinco mil reais",
+          "duration": 2.5,
+          "content": {
+            "text": "R$ 5k/mês — 2h/dia",
+            "variant": "success"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "só com isso",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    },
+    {
+      "id": "scene-method2-004",
+      "type": "narrative",
+      "title": "Método 2 — Assistente virtual com IA",
+      "_narration_notes": "[calm] para explicação; [assertive] no diferencial; [hopeful] no potencial",
+      "narration": "[calm] A segunda forma é se posicionar como assistente virtual potencializado por IA. Você ajuda empresários a responder emails, organizar planilhas, criar apresentações e resumir reuniões. Tudo usando o ChatGPT como seu copiloto. [assertive] O diferencial é que você entrega em uma hora o que antes levava um dia inteiro. [pause] [hopeful] E o valor mensal? Entre mil e três mil reais por cliente.",
+      "visual": {
+        "type": "comparison",
+        "content": {
+          "title": "Assistente Virtual + IA",
+          "items": [
+            { "icon": "📧", "text": "Emails e comunicação profissional" },
+            { "icon": "📊", "text": "Planilhas e organização de dados" },
+            { "icon": "🎯", "text": "Apresentações e resumos executivos" }
+          ]
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-method2-004-speed",
+          "type": "badge",
+          "anchorText": "dia inteiro",
+          "duration": 2.5,
+          "content": {
+            "text": "1 hora vs 1 dia",
+            "variant": "warning"
+          }
+        },
+        {
+          "id": "mv-method2-004-price",
+          "type": "stat",
+          "anchorText": "três mil reais",
+          "duration": 3.0,
+          "content": {
+            "value": "R$ 1k–3k",
+            "label": "por cliente/mês",
+            "trend": "up"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "por cliente",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    },
+    {
+      "id": "scene-method3-005",
+      "type": "narrative",
+      "title": "Método 3 — Criação de conteúdo automatizada",
+      "_narration_notes": "[dramatic tone] para impacto; [laughs] para leveza; [excited] na receita",
+      "narration": "[dramatic tone] E a terceira forma é a que tem o maior potencial de escala: criação de conteúdo automatizada. Você usa o ChatGPT para criar roteiros de vídeos, newsletters, scripts de podcast e artigos de blog. [laughs] E antes que você pense que isso é difícil, deixa eu te contar: com os prompts certos, você cria uma semana inteira de conteúdo em menos de uma hora. [pause] [excited] Alguns criadores estão cobrando de dois a oito mil reais por mês por esse serviço.",
+      "visual": {
+        "type": "comparison",
+        "content": {
+          "title": "Conteúdo automatizado com IA",
+          "items": [
+            { "icon": "🎬", "text": "Roteiros de vídeos e reels" },
+            { "icon": "📰", "text": "Newsletters e artigos de blog" },
+            { "icon": "🎙️", "text": "Scripts de podcast" }
+          ]
+        }
+      },
+      "microVisuals": [
+        {
+          "id": "mv-method3-005-time",
+          "type": "badge",
+          "anchorText": "uma hora",
+          "duration": 2.5,
+          "content": {
+            "text": "1 semana de conteúdo em 1h",
+            "variant": "info"
+          }
+        },
+        {
+          "id": "mv-method3-005-price",
+          "type": "stat",
+          "anchorText": "oito mil reais",
+          "duration": 3.0,
+          "content": {
+            "value": "R$ 2k–8k",
+            "label": "por mês/cliente",
+            "trend": "up"
+          }
+        }
+      ],
+      "anchorTexts": [
+        {
+          "keyword": "esse serviço",
+          "action": "transition",
+          "transitionAt": 0.9
+        }
+      ]
+    },
+    {
+      "id": "scene-cta-006",
+      "type": "cta",
+      "title": "Chamada para ação — Escolha seu caminho",
+      "_narration_notes": "[reflective] para reflexão; [empathetic] para conexão; [hopeful] para motivar; [excited] no fechamento",
+      "narration": "[reflective] Agora eu quero que você pense com calma: qual dessas três formas faz mais sentido pra você neste momento? [pause] [empathetic] Não precisa ser a mais lucrativa. Precisa ser a que você consegue começar ainda esta semana. [hopeful] Porque o primeiro passo é sempre o mais importante. [pause] [excited] Na próxima aula, eu vou te mostrar exatamente como montar seu primeiro serviço e conseguir seu primeiro cliente. Vai ser incrível.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "Qual é o seu caminho?",
+          "subtitle": "Escolha e comece esta semana",
+          "mood": "default"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "question": "Qual forma de renda extra você quer explorar primeiro?",
+        "options": [
+          { "id": "opt-1", "text": "Copywriting com IA — criar textos que vendem", "isCorrect": false },
+          { "id": "opt-2", "text": "Assistente Virtual com IA — organizar e entregar", "isCorrect": false },
+          { "id": "opt-3", "text": "Conteúdo Automatizado — escalar criação", "isCorrect": false },
+          { "id": "opt-4", "text": "Ainda não sei — me ajuda a decidir!", "isCorrect": true }
+        ],
+        "explanation": "Todas são válidas! Na próxima aula vamos descobrir qual combina melhor com seu perfil."
+      },
+      "anchorTexts": [
+        {
+          "keyword": "próxima aula",
+          "action": "pause",
+          "pauseAt": "incrível"
+        }
+      ]
+    }
+  ]
+}
