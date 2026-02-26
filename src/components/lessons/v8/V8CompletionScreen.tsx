@@ -4,6 +4,7 @@ import { Trophy, Zap, Coins, Flame, ArrowRight, RotateCcw } from "lucide-react";
 import confetti from "canvas-confetti";
 import { registerGamificationEvent } from "@/services/gamification";
 import { updateMissionProgress } from "@/lib/updateMissionProgress";
+import { supabase } from "@/integrations/supabase/client";
 
 interface V8CompletionScreenProps {
   scores: number[];
@@ -77,10 +78,19 @@ export const V8CompletionScreen = ({
     }
   }, [lessonId, avgScore]);
 
-  // Animate streak from user_streaks (simple mock — real data comes from useUserGamification)
+  // Fetch real streak from user_streaks table
   useEffect(() => {
-    const timer = setTimeout(() => setStreakDays((prev) => prev || 1), 600);
-    return () => clearTimeout(timer);
+    const fetchStreak = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("user_streaks")
+        .select("current_streak")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setStreakDays(data?.current_streak ?? 0);
+    };
+    fetchStreak();
   }, []);
 
   const xp = gamificationResult?.xpDelta ?? 40;
