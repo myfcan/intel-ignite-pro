@@ -38,7 +38,21 @@ describe('toV7vvPayload', () => {
     expect(payload.scenes[2]).toMatchObject({ id: 'a3', title: 'Ato 3', narration: 'Narração 3' });
   });
 
-  it('mapeia fluxo de regenerate/reprocess sem forçar preserve_structure', () => {
+  it('preserva o tipo original do act ao converter cinematic_flow', () => {
+    const payload = toV7vvPayload({
+      cinematic_flow: {
+        acts: [
+          { id: 'a1', type: 'interactive', narration: 'Narração interativa' },
+          { id: 'a2', narration: 'Narração padrão' },
+        ],
+      },
+    });
+
+    expect(payload.scenes[0]).toMatchObject({ id: 'a1', type: 'interactive' });
+    expect(payload.scenes[1]).toMatchObject({ id: 'a2', type: 'narrative' });
+  });
+
+  it('mapeia fluxo de regenerate/reprocess com preserve_structure', () => {
     const payload = toV7vvPayload({
       mode: 'regenerate',
       existingLessonId: 'lesson-123',
