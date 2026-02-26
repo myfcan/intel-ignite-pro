@@ -1,0 +1,1 @@
+ALTER TABLE public.trails ADD COLUMN trail_type TEXT DEFAULT 'v7';
