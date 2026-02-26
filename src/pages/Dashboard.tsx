@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
+import { V8TrailCard } from "@/components/lessons/v8/V8TrailCard";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -564,26 +565,18 @@ const Dashboard = () => {
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
-                  {visibleTrails.map((trail, index) => {
-                    const globalIndex = trailPage * TRAILS_PER_PAGE + index;
+              {visibleTrails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-                    const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
-                    const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
-                    const previousTrail = trails[globalIndex - 1];
-                    const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
-                    const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
 
                     return (
-                      <TrailCard
+                      <V8TrailCard
                         key={trail.id}
-                        trail={trail}
-                        Icon={Icon}
-                        progress={trailProgress?.progress || 0}
-                        completedLessons={trailProgress?.completedLessons || 0}
-                        totalLessons={trailProgress?.totalLessons || 0}
-                        status={trailProgress?.status || 'locked'}
-                        gradient={gradient}
-                        isNext={isNext}
+                        trailId={trail.id}
+                        title={trail.title}
+                        description={trail.description}
+                        icon={trail.icon}
+                        lessonCount={trailProgress?.totalLessons || 0}
+                        completedCount={trailProgress?.completedLessons || 0}
                       />
                     );
                   })}
