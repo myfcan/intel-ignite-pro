@@ -2673,9 +2673,12 @@ function executeDryRun(input: ScriptInput): DryRunResult {
             // C12.1 HARD REQUIREMENT: image-sequence with 2+ frames MUST have explicit frame triggers
             if (Array.isArray(frames) && frames.length >= 2) {
               const sceneAnchorActions = scene.anchorActions || [];
-              const hasFrameTriggers = sceneAnchorActions.some(
-                (a: any) => a.type === 'trigger' && typeof a.payload?.frameIndex === 'number'
-              );
+              const hasFrameTriggers = sceneAnchorActions.some((a: any) => {
+                const rawType = String(a?.type || '').toLowerCase();
+                const isCanonical = rawType === 'trigger';
+                const isLegacyAlias = rawType === 'show' || rawType === 'setframeindex';
+                return (isCanonical || isLegacyAlias) && typeof a?.payload?.frameIndex === 'number';
+              });
               if (!hasFrameTriggers) {
                 issues.push({
                   severity: 'error',
