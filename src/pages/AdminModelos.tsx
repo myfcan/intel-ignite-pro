@@ -250,6 +250,7 @@ const VISUAL_EFFECTS = [
 export default function AdminModelos() {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [copiedV8, setCopiedV8] = useState(false);
   const [expandedMV, setExpandedMV] = useState<string | null>(null);
   const [expandedScene, setExpandedScene] = useState<string | null>(null);
   const [expandedVisualSection, setExpandedVisualSection] = useState<string | null>('microvisuals');
@@ -314,13 +315,105 @@ export default function AdminModelos() {
               <p>✅ Modo Ler (manual) e Ouvir (autoplay)</p>
             </div>
             <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
-              <p className="text-xs text-muted-foreground mb-2">Exemplo mínimo (estrutura de aula V8):</p>
-              <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-foreground/90">{`{
-  "title": "Minha Aula V8",
-  "model": "v8",
-  "course_id": null,
+              <p className="text-xs font-semibold text-indigo-400 mb-2">🏆 JSON Golden Template V8 — Referência Completa</p>
+              <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-foreground/90 max-h-[600px] overflow-y-auto">{`{
+  "contentVersion": "v8",
+  "title": "Fundamentos de Prompts com I.A.",
+  "description": "Aprenda a criar prompts eficazes para gerar resultados profissionais com Inteligência Artificial.",
+
   "sections": [
-    { "id": "s1", "title": "Introdução", "text": "...", "audioUrl": "..." }
+    {
+      "id": "section-01",
+      "title": "O que é um Prompt?",
+      "content": "## O que é um Prompt?\\n\\nUm **prompt** é a instrução que você dá para uma Inteligência Artificial. É como uma pergunta ou comando que guia a IA para gerar exatamente o que você precisa.\\n\\n> Pense no prompt como uma receita: quanto mais detalhada, melhor o resultado.\\n\\n### Por que isso importa?\\n\\n- Prompts vagos = resultados genéricos\\n- Prompts específicos = resultados profissionais\\n- A diferença entre amador e profissional está no prompt",
+      "imageUrl": "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800",
+      "audioUrl": "https://storage.example.com/v8/aula-01/section-01.mp3",
+      "audioDurationSeconds": 25
+    },
+    {
+      "id": "section-02",
+      "title": "Anatomia de um Bom Prompt",
+      "content": "## Anatomia de um Bom Prompt\\n\\nTodo prompt profissional tem **4 elementos**:\\n\\n1. **Contexto** — Quem você é e qual o cenário\\n2. **Tarefa** — O que você quer que a IA faça\\n3. **Formato** — Como o resultado deve ser entregue\\n4. **Restrições** — Limites e regras específicas\\n\\n### Exemplo Prático\\n\\n\`\`\`\\nContexto: Sou um freelancer de design\\nTarefa: Crie 5 nomes para uma marca de café artesanal\\nFormato: Lista numerada com explicação de cada nome\\nRestrição: Nomes curtos, máximo 2 palavras\\n\`\`\`\\n\\nEsse prompt gera resultados **10x melhores** que simplesmente pedir \\"me dê nomes para café\\".",
+      "imageUrl": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800",
+      "audioUrl": "https://storage.example.com/v8/aula-01/section-02.mp3",
+      "audioDurationSeconds": 30
+    },
+    {
+      "id": "section-03",
+      "title": "Erros Comuns e Como Evitar",
+      "content": "## Erros Comuns e Como Evitar\\n\\n### ❌ Erro 1: Prompt Vago\\n\\"Escreva um texto sobre marketing\\"\\n\\n### ✅ Correção:\\n\\"Escreva um post de LinkedIn com 150 palavras sobre marketing digital para dentistas, tom profissional mas acessível\\"\\n\\n### ❌ Erro 2: Sem Formato\\n\\"Me dê dicas de produtividade\\"\\n\\n### ✅ Correção:\\n\\"Liste 7 dicas de produtividade para home office em formato de checklist com emoji\\"\\n\\n### ❌ Erro 3: Contexto Ausente\\n\\"Faça uma proposta comercial\\"\\n\\n### ✅ Correção:\\n\\"Atue como um consultor de marketing. Crie uma proposta comercial para um cliente do ramo alimentício, orçamento de R$5.000/mês\\"\\n\\n> 💡 **Regra de ouro**: Se um humano precisaria de mais contexto para executar a tarefa, a IA também precisa.",
+      "audioUrl": "https://storage.example.com/v8/aula-01/section-03.mp3",
+      "audioDurationSeconds": 28
+    }
+  ],
+
+  "inlineQuizzes": [
+    {
+      "id": "quiz-01",
+      "afterSectionIndex": 1,
+      "question": "Quais são os 4 elementos de um prompt profissional?",
+      "options": [
+        { "id": "opt-a", "text": "Contexto, Tarefa, Formato e Restrições", "isCorrect": true },
+        { "id": "opt-b", "text": "Título, Corpo, Rodapé e Assinatura", "isCorrect": false },
+        { "id": "opt-c", "text": "Início, Meio, Fim e Revisão", "isCorrect": false }
+      ],
+      "explanation": "Correto! Os 4 elementos são: Contexto (quem/cenário), Tarefa (o que fazer), Formato (como entregar) e Restrições (limites e regras).",
+      "reinforcement": "Releia a seção 'Anatomia de um Bom Prompt' — os 4 elementos estão destacados em negrito.",
+      "audioUrl": "https://storage.example.com/v8/aula-01/quiz-01.mp3"
+    }
+  ],
+
+  "exercises": [
+    {
+      "id": "ex-01",
+      "type": "true-false",
+      "title": "Verdadeiro ou Falso — Prompts",
+      "instruction": "Avalie cada afirmação sobre prompts e marque V ou F.",
+      "data": {
+        "statements": [
+          {
+            "id": "stmt-1",
+            "text": "Um prompt vago gera resultados mais criativos que um prompt detalhado.",
+            "correct": false,
+            "explanation": "Falso. Prompts vagos geram resultados genéricos. Detalhamento guia a IA para respostas mais úteis e específicas."
+          },
+          {
+            "id": "stmt-2",
+            "text": "Incluir o formato desejado no prompt melhora significativamente o resultado.",
+            "correct": true,
+            "explanation": "Verdadeiro! Especificar formato (lista, tabela, post, e-mail) ajuda a IA a estruturar a resposta exatamente como você precisa."
+          },
+          {
+            "id": "stmt-3",
+            "text": "Dar contexto sobre quem você é ajuda a IA a personalizar a resposta.",
+            "correct": true,
+            "explanation": "Verdadeiro! Quando a IA sabe que você é freelancer, professor ou empreendedor, ela adapta linguagem e exemplos."
+          }
+        ],
+        "feedback": {
+          "perfect": "🏆 Perfeito! Você domina os fundamentos de prompts!",
+          "good": "👏 Muito bem! Quase lá — revise os pontos que errou.",
+          "needsReview": "📖 Releia a aula com atenção. Os conceitos são simples mas importantes."
+        }
+      }
+    },
+    {
+      "id": "ex-02",
+      "type": "multiple-choice",
+      "title": "Qual o Melhor Prompt?",
+      "instruction": "Escolha o prompt mais eficaz para gerar um post de LinkedIn.",
+      "data": {
+        "question": "Qual destes prompts geraria o melhor post de LinkedIn?",
+        "options": [
+          "Escreva um post sobre IA",
+          "Crie um post de LinkedIn com 150 palavras sobre como freelancers podem usar IA para dobrar sua produtividade, tom inspirador com dados reais",
+          "Faça um texto de IA para rede social",
+          "Post LinkedIn IA produtividade freelancer"
+        ],
+        "correctAnswer": "Crie um post de LinkedIn com 150 palavras sobre como freelancers podem usar IA para dobrar sua produtividade, tom inspirador com dados reais",
+        "explanation": "Este prompt inclui os 4 elementos: contexto (freelancers), tarefa (post LinkedIn), formato (150 palavras, tom inspirador) e restrições (dados reais). Os outros são vagos demais."
+      }
+    }
   ]
 }`}</pre>
             </div>
@@ -328,6 +421,42 @@ export default function AdminModelos() {
               <Button
                 size="lg"
                 className="flex-1 min-w-[160px] bg-indigo-600 hover:bg-indigo-700"
+                onClick={async () => {
+                  try {
+                    const goldenV8 = {
+                      contentVersion: "v8",
+                      title: "Fundamentos de Prompts com I.A.",
+                      description: "Aprenda a criar prompts eficazes para gerar resultados profissionais com Inteligência Artificial.",
+                      sections: [
+                        { id: "section-01", title: "O que é um Prompt?", content: "## O que é um Prompt?\n\nUm **prompt** é a instrução que você dá para uma Inteligência Artificial...", imageUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800", audioUrl: "https://storage.example.com/v8/aula-01/section-01.mp3", audioDurationSeconds: 25 },
+                        { id: "section-02", title: "Anatomia de um Bom Prompt", content: "## Anatomia de um Bom Prompt\n\nTodo prompt profissional tem **4 elementos**...", imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800", audioUrl: "https://storage.example.com/v8/aula-01/section-02.mp3", audioDurationSeconds: 30 },
+                        { id: "section-03", title: "Erros Comuns e Como Evitar", content: "## Erros Comuns e Como Evitar\n\n### ❌ Erro 1: Prompt Vago...", audioUrl: "https://storage.example.com/v8/aula-01/section-03.mp3", audioDurationSeconds: 28 }
+                      ],
+                      inlineQuizzes: [{ id: "quiz-01", afterSectionIndex: 1, question: "Quais são os 4 elementos de um prompt profissional?", options: [{ id: "opt-a", text: "Contexto, Tarefa, Formato e Restrições", isCorrect: true }, { id: "opt-b", text: "Título, Corpo, Rodapé e Assinatura", isCorrect: false }, { id: "opt-c", text: "Início, Meio, Fim e Revisão", isCorrect: false }], explanation: "Correto! Os 4 elementos são: Contexto, Tarefa, Formato e Restrições.", reinforcement: "Releia a seção 'Anatomia de um Bom Prompt'.", audioUrl: "https://storage.example.com/v8/aula-01/quiz-01.mp3" }],
+                      exercises: [
+                        { id: "ex-01", type: "true-false", title: "Verdadeiro ou Falso — Prompts", instruction: "Avalie cada afirmação.", data: { statements: [{ id: "stmt-1", text: "Um prompt vago gera resultados mais criativos.", correct: false, explanation: "Falso." }, { id: "stmt-2", text: "Incluir formato melhora o resultado.", correct: true, explanation: "Verdadeiro!" }, { id: "stmt-3", text: "Dar contexto ajuda a personalizar.", correct: true, explanation: "Verdadeiro!" }], feedback: { perfect: "🏆 Perfeito!", good: "👏 Muito bem!", needsReview: "📖 Releia a aula." } } },
+                        { id: "ex-02", type: "multiple-choice", title: "Qual o Melhor Prompt?", instruction: "Escolha o prompt mais eficaz.", data: { question: "Qual prompt geraria o melhor post?", options: ["Escreva um post sobre IA", "Crie um post de LinkedIn com 150 palavras...", "Faça um texto de IA", "Post LinkedIn IA"], correctAnswer: "Crie um post de LinkedIn com 150 palavras...", explanation: "Inclui os 4 elementos." } }
+                      ]
+                    };
+                    await navigator.clipboard.writeText(JSON.stringify(goldenV8, null, 2));
+                    setCopiedV8(true);
+                    toast.success('JSON Golden V8 copiado!');
+                    setTimeout(() => setCopiedV8(false), 3000);
+                  } catch (err) {
+                    toast.error('Erro ao copiar JSON V8');
+                  }
+                }}
+              >
+                {copiedV8 ? (
+                  <><CheckCircle className="w-5 h-5 mr-2" /> Copiado!</>
+                ) : (
+                  <><Copy className="w-5 h-5 mr-2" /> Copiar JSON V8 Golden</>
+                )}
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="flex-1 min-w-[160px] border-indigo-500/50 hover:bg-indigo-500/10"
                 onClick={() => navigate('/admin/v8/create')}
               >
                 <Rocket className="w-5 h-5 mr-2" /> Abrir Criador V8
