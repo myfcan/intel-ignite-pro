@@ -38,6 +38,7 @@ const PromptLibrary = lazy(() => import("./pages/PromptLibrary"));
 const PromptCategory = lazy(() => import("./pages/PromptCategory"));
 const AIPlayground = lazy(() => import("./pages/AIPlayground"));
 const CursoExclusivo = lazy(() => import("./pages/CursoExclusivo"));
+const AllTrails = lazy(() => import("./pages/AllTrails"));
 
 // Admin pages - lazy loaded (heavy components)
 const Admin = lazy(() => import("./pages/Admin"));
@@ -158,6 +159,7 @@ const App = () => (
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/gamification" element={<AchievementsPage />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/all-trails/:type" element={<AllTrails />} />
                 <Route path="/trail/:id" element={
                   <SuspenseWithFallback fallback={<TrailDetailSkeleton />}>
                     <TrailDetail />

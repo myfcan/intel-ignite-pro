@@ -647,27 +647,43 @@ const Dashboard = () => {
                   <Crown className="w-6 h-6 text-amber-400" />
                   <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Seu Caminho de Maestria</h2>
                 </div>
-                {/* Pagination arrows */}
-                <div className="hidden sm:flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  {/* Ver todos pill */}
                   <button
-                    onClick={() => setTrailPageV8(p => Math.max(0, p - 1))}
-                    disabled={trailPageV8 === 0}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                    onClick={() => {
+                      if (v8Trails.length === 1) {
+                        navigate(`/v8-trail/${v8Trails[0].id}`);
+                      } else {
+                        navigate('/all-trails/v8');
+                      }
+                    }}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105"
+                    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
                   >
-                    ‹
+                    Ver todos ›
                   </button>
-                  <button
-                    onClick={() => setTrailPageV8(p => Math.min(totalTrailPagesV8 - 1, p + 1))}
-                    disabled={trailPageV8 >= totalTrailPagesV8 - 1}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 >= totalTrailPagesV8 - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
-                  >
-                    ›
-                  </button>
-                  <span className="text-xs text-white/60 font-medium ml-1">
-                    {trailPageV8 + 1}/{totalTrailPagesV8}
-                  </span>
+                  {/* Pagination arrows */}
+                  <div className="hidden sm:flex items-center gap-2">
+                    <button
+                      onClick={() => setTrailPageV8(p => Math.max(0, p - 1))}
+                      disabled={trailPageV8 === 0}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
+                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={() => setTrailPageV8(p => Math.min(totalTrailPagesV8 - 1, p + 1))}
+                      disabled={trailPageV8 >= totalTrailPagesV8 - 1}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 >= totalTrailPagesV8 - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
+                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                    >
+                      ›
+                    </button>
+                    <span className="text-xs text-white/60 font-medium ml-1">
+                      {trailPageV8 + 1}/{totalTrailPagesV8}
+                    </span>
+                  </div>
                 </div>
               </div>
               {/* Mobile carousel */}
@@ -789,27 +805,43 @@ const Dashboard = () => {
                   <Rocket className="w-6 h-6 text-sky-300" />
                   <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Renda Extra PRO</h2>
                 </div>
-                {/* Pagination arrows - hidden on mobile, visible on sm+ */}
-                <div className="hidden sm:flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  {/* Ver todos pill */}
                   <button
-                    onClick={() => setTrailPage(p => Math.max(0, p - 1))}
-                    disabled={trailPage === 0}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                    onClick={() => {
+                      if (v7Trails.length === 1) {
+                        navigate(`/trail/${v7Trails[0].id}`);
+                      } else {
+                        navigate('/all-trails/v7');
+                      }
+                    }}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105"
+                    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
                   >
-                    ‹
+                    Ver todos ›
                   </button>
-                  <button
-                    onClick={() => setTrailPage(p => Math.min(totalTrailPages - 1, p + 1))}
-                    disabled={trailPage >= totalTrailPages - 1}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage >= totalTrailPages - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
-                  >
-                    ›
-                  </button>
-                  <span className="text-xs text-white/60 font-medium ml-1">
-                    {trailPage + 1}/{totalTrailPages}
-                  </span>
+                  {/* Pagination arrows - hidden on mobile, visible on sm+ */}
+                  <div className="hidden sm:flex items-center gap-2">
+                    <button
+                      onClick={() => setTrailPage(p => Math.max(0, p - 1))}
+                      disabled={trailPage === 0}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
+                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={() => setTrailPage(p => Math.min(totalTrailPages - 1, p + 1))}
+                      disabled={trailPage >= totalTrailPages - 1}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage >= totalTrailPages - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
+                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                    >
+                      ›
+                    </button>
+                    <span className="text-xs text-white/60 font-medium ml-1">
+                      {trailPage + 1}/{totalTrailPages}
+                    </span>
+                  </div>
                 </div>
               </div>
 
