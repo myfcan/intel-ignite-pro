@@ -1,11 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Crown, Rocket } from "lucide-react";
+import { ArrowLeft, Crown, Rocket, BookOpen, Brain, Code, DollarSign, Lightbulb, Sparkles, Target, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { V8TrailCard } from "@/components/lessons/v8/V8TrailCard";
 import TrailCard from "@/components/TrailCard";
-import { BookOpen, Brain, Code, DollarSign, Lightbulb, Sparkles, Target, Zap } from "lucide-react";
 
 const TRAIL_ICONS = [Lightbulb, Brain, Zap, Target, Code, DollarSign, Sparkles, BookOpen];
 
@@ -57,44 +56,42 @@ const AllTrails = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Header */}
-      <div
-        className="px-5 pt-6 pb-8 sm:px-8 sm:pt-8 sm:pb-10"
-        style={{
-          background: isV8
-            ? "linear-gradient(135deg, #7C3AED 0%, #6366F1 40%, #818CF8 100%)"
-            : "linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 40%, #3B82F6 100%)",
-        }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 text-white/70 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">Voltar</span>
-          </button>
-          <div className="flex items-center gap-3">
-            {isV8 ? (
-              <Crown className="w-7 h-7 text-amber-400" />
-            ) : (
-              <Rocket className="w-7 h-7 text-sky-300" />
-            )}
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">
-              {isV8 ? "Seu Caminho de Maestria" : "Renda Extra PRO"}
-            </h1>
-          </div>
-          <p className="text-white/60 text-sm mt-2">
-            {isV8
-              ? "Todas as trilhas de leitura e escuta disponíveis"
-              : "Todas as jornadas de renda extra disponíveis"}
-          </p>
+    <div className="min-h-screen" style={{ background: '#FAFBFC' }}>
+      {/* Compact header */}
+      <div className="sticky top-0 z-20 px-4 py-3 sm:px-6 sm:py-4 flex items-center gap-3 border-b border-gray-100 bg-white/80 backdrop-blur-xl">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </button>
+        <div className="flex items-center gap-2.5">
+          {isV8 ? (
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7C3AED, #6366F1)' }}>
+              <Crown className="w-4 h-4 text-amber-300" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1E3A8A, #3B82F6)' }}>
+              <Rocket className="w-4 h-4 text-sky-200" />
+            </div>
+          )}
+          <h1 className="text-lg font-bold text-gray-900">
+            {isV8 ? "Seu Caminho de Maestria" : "Renda Extra PRO"}
+          </h1>
         </div>
       </div>
 
+      {/* Subtitle */}
+      <div className="px-5 pt-5 pb-2 sm:px-8 max-w-5xl mx-auto">
+        <p className="text-sm text-gray-500">
+          {isV8
+            ? "Todas as trilhas de leitura e escuta disponíveis"
+            : "Todas as jornadas de renda extra disponíveis"}
+        </p>
+      </div>
+
       {/* Trail grid */}
-      <div className="max-w-5xl mx-auto px-5 sm:px-8 -mt-4">
+      <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 pb-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {trails.map((trail, idx) => {
             const trailLessons = lessons.filter((l) => l.trail_id === trail.id);
@@ -108,7 +105,7 @@ const AllTrails = () => {
                   key={trail.id}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.08 }}
+                  transition={{ delay: idx * 0.06 }}
                 >
                   <V8TrailCard
                     trailId={trail.id}
@@ -133,7 +130,7 @@ const AllTrails = () => {
                 key={trail.id}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.08 }}
+                transition={{ delay: idx * 0.06 }}
               >
                 <TrailCard
                   trail={trail}
