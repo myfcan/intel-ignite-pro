@@ -1,60 +1,58 @@
 
 
-# JSON Golden Template V8 — Modelo Completo em AdminModelos
+# Centralizar Gestao de Aulas: Suporte V8 no Gerenciador
 
 ## Problema Atual
 
-A secao V8 em `src/pages/AdminModelos.tsx` (linhas 316-325) exibe um JSON minimo incorreto:
-- Usa `"text"` em vez de `"content"` (campo real no tipo `V8Section`)
-- Falta `contentVersion: "v8"` (discriminador obrigatorio em `V8LessonData`)
-- Falta `description`
-- Falta `inlineQuizzes` (campo obrigatorio em `V8LessonData`)
-- Falta `exercises` (campo obrigatorio em `V8LessonData`)
-- Falta `audioDurationSeconds` e `imageUrl` nas secoes
-- Nenhum exemplo de quiz inline ou exercicio final
+O Gerenciador de Licoes (`AdminManageLessons.tsx`) foi construido exclusivamente para o modelo V7 (3 niveis: Trilha -> Jornada -> Aula). Ele tem 3 problemas concretos para V8:
 
-## Plano
+1. **Modal "Mover" exige Jornada** (L204-216): bloqueia se a trilha nao tem cursos. V8 nao usa cursos.
+2. **Botao "Assistir" hardcoded para V7** (L332): `navigate(/admin/v7/play/${lesson.id})` — V8 usa rota `/v8/${lesson.id}`.
+3. **Hierarquia visual ignora V8**: Trilhas V8 mostram "Sem jornadas" com warning amarelo e aulas V8 sem `course_id` aparecem como "orfas" com alerta.
 
-### Arquivo: `src/pages/AdminModelos.tsx`
+Alem disso, o **Criador V8** (`AdminV8Create.tsx`) tem campos "Trilha V8" e "Ordem" (L366-408) que sao redundantes — a organizacao deve ser feita no Gerenciador.
 
-Substituir o bloco do JSON minimo (linhas 316-326) por um JSON Golden completo que inclui:
+## Plano de Execucao
 
-1. **Header**: `contentVersion: "v8"`, `title`, `description`
-2. **3 secoes completas** com todos os campos (`id`, `title`, `content` com markdown real, `imageUrl`, `audioUrl`, `audioDurationSeconds`)
-3. **1 inline quiz** entre secoes (com `afterSectionIndex`, `question`, 3 opcoes, `explanation`, `reinforcement`, `audioUrl`)
-4. **2 exercicios finais** (um `true-false` e um `multiple-choice`) demonstrando o reuso do tipo `ExerciseConfig`
+### 1. AdminV8Create.tsx — Remover campos desnecessarios
 
-O JSON sera formatado e legivel, com comentarios inline para orientar o uso.
+**Remover:**
+- State `selectedTrailId` e `orderIndex` (L129, L131)
+- Query `v8-trails-admin` (L144-157)
+- Campos "Trilha V8" e "Ordem" do grid de metadados (L366-408)
 
-Adicionalmente, trocar o label de "Exemplo minimo" para "JSON Golden Template V8 — Referencia Completa" e adicionar um botao "Copiar JSON V8" funcional (similar ao que ja existe para V7).
+**Manter:** Titulo + Tempo estimado (2 campos)
 
-### Estrutura do JSON Golden
+**Ajustar saves:** `handleGenerateAudio` e `handleSave` passam `trail_id: null`, `order_index: 0`
 
-```text
-V8LessonData
-  contentVersion: "v8"
-  title: string
-  description: string
-  sections: [
-    { id, title, content (markdown), imageUrl?, audioUrl, audioDurationSeconds }
-    x3 secoes
-  ]
-  inlineQuizzes: [
-    { id, afterSectionIndex, question, options[3], explanation, reinforcement?, audioUrl? }
-    x1 quiz
-  ]
-  exercises: [
-    { id, type: "true-false", title, instruction, data: { correctAnswer, explanation } }
-    { id, type: "multiple-choice", title, instruction, data: { options[], correctOptionId } }
-  ]
-```
+### 2. AdminManageLessons.tsx — Interface Trail
 
-### Funcionalidade adicional
+Adicionar `trail_type` a interface `Trail` (L52-56) e ao SELECT da query (L98).
 
-- Adicionar funcao `copyV8JsonToClipboard` (espelhando o padrao do V7 com `copyJsonToClipboard`)
-- Adicionar estado `copiedV8` para feedback visual do botao
-- Botao "Copiar JSON V8 Golden" com icone Copy/CheckCircle
+### 3. AdminManageLessons.tsx — Hierarquia visual V8
 
-### Resultado esperado
+Na construcao da hierarquia (L112-131), para trilhas com `trail_type === 'v8'`:
+- Mostrar aulas diretamente sob a trilha (sem nivel de Jornada)
+- Nao exibir warning "Sem jornadas" nem "Aulas sem jornada"
+- Exibir badge "V8" na trilha
+- Subtitulo mostra apenas "X aula(s)" sem mencionar jornadas
 
-Na pagina `/admin/modelos`, o card V8 exibira o JSON Golden completo, copiavel com um clique, servindo como template de referencia para criacao de aulas V8.
+### 4. AdminManageLessons.tsx — Modal "Mover" com suporte V8
+
+No modal de mover (L530-604):
+- Se a trilha selecionada tem `trail_type === 'v8'`: esconder seletor de Jornada
+- `handleMoveLesson`: se trail e V8, salvar com `course_id: null` e pular validacao de curso
+
+### 5. AdminManageLessons.tsx — Botao "Assistir" inteligente
+
+No `LessonRow` (L332):
+- `model === 'v8'` -> navega para `/v8/${lesson.id}`
+- Qualquer outro -> mantém `/admin/v7/play/${lesson.id}`
+
+## Resultado Esperado
+
+- Criador V8: formulario limpo (Titulo + Tempo + JSON). Aula nasce orfã.
+- Gerenciador: trilhas V8 mostram aulas direto, sem falso alerta de "orfã".
+- Modal Mover: permite mover aulas para trilhas V8 sem exigir Jornada.
+- Botao Assistir: abre o player correto por modelo.
+
