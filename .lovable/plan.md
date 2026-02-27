@@ -1,102 +1,112 @@
 
 
-# Identidade Visual Unificada - Icones e Banners
+# Mobile Dashboard Redesign - Analise e Reestruturacao
 
-## Problema Atual
+## Diagnostico Atual (Mobile)
 
-1. **Icones de Trilha no Dashboard (V7)**: Todas as trilhas usam o icone generico `BookOpen`, ignorando o campo `icon` que ja existe no banco de dados (Brain, Target, Zap, Rocket, etc.)
-2. **Icones de Licao**: Nenhuma licao tem icone proprio - todas usam icones genericos de status (PlayCircle, Lock, CheckCircle)
-3. **Banners internos desalinhados**: As paginas TrailDetail, CourseDetail e V8TrailDetail usam gradientes antigos (`#6CB1FF -> #837BFF`) que nao combinam com o novo design do Dashboard (Premium Blue e Indigo/Violet)
-4. **Falta de harmonia**: Cada pagina interna tem um visual diferente, sem identidade consistente
+A tela mobile atual tem **10 blocos visuais** empilhados verticalmente, exigindo 5+ scrolls para ver tudo. Elementos se repetem e competem por atencao:
 
-## Plano de Implementacao
+```text
+FLUXO ATUAL (mobile):
+1. DashboardHeader (logo + hamburger)
+2. GamificationHeader (barra roxa: Power Score, Creditos, Nivel)
+3. Link Admin
+4. Hero Banner roxo ("Pronto para aprender?") ~180px alto
+5. 4 Stat Cards (2x2: Aulas, Power Score, Creditos, Streak)
+6. Continue Learning card
+7. Secao V8 "Seu Caminho de Maestria" (carousel)
+8. Secao V7 "Renda Extra PRO" (carousel)
+9. Secao "Para Voce" (AI Playground + Desafios 21 Dias)
+10. Sidebar mobile (Sequencia Ativa + Ranking/Conquistas + Missoes Diarias)
+```
 
-### 1. Corrigir icones das trilhas no Dashboard (V7)
+### Problemas Identificados
 
-No `Dashboard.tsx`, os TrailCards V7 usam `Icon={BookOpen}` hardcoded. Vou usar o mapeamento `TRAIL_ICONS` que ja existe no arquivo para mapear o campo `trail.icon` do banco de dados ao icone Lucide correto.
+**1. Redundancia critica**: A GamificationHeader (item 2) mostra Power Score, Creditos e Nivel. Os 4 Stat Cards (item 5) repetem exatamente os mesmos dados (Power Score, Creditos, Streak). Isso e poluicao pura.
 
-**Arquivo**: `src/pages/Dashboard.tsx`
-- Trocar `Icon={BookOpen}` por `Icon={TRAIL_ICONS[trail.icon] || BookOpen}` nos dois locais (mobile carousel e desktop grid)
+**2. Hero Banner generico**: O banner "Pronto para aprender?" ocupa ~200px de viewport com texto motivacional generico e dois botoes que poderiam estar em outros locais. Ele nao agrega valor real na segunda visita do usuario.
 
-### 2. Adicionar icones semanticos por licao
+**3. Sequencia Ativa enterrada**: O card mais motivacional (streak) esta no fundo da pagina, depois de 9 blocos. Nenhum app de gamificacao serio (Duolingo, Headspace) faz isso.
 
-Criar um sistema de mapeamento de icones baseado em palavras-chave do titulo da licao. Isso atribui automaticamente icones profissionais (Lucide) relevantes ao conteudo de cada aula.
+**4. Missoes Diarias invisiveis**: Estao no fundo absoluto. O usuario precisa de 5+ scrolls para chegar ate elas.
 
-**Novo arquivo**: `src/utils/lessonIconMap.ts`
-- Funcao `getLessonIcon(title: string)` que analisa o titulo da licao e retorna um icone Lucide adequado
-- Mapeamento por palavras-chave: "fundamento" -> Brain, "video" -> Video, "prompt" -> MessageSquare, "planilha" -> Table, "renda" -> DollarSign, "venda" -> ShoppingCart, etc.
-- Fallback para BookOpen quando nao encontrar correspondencia
+---
 
-**Arquivos modificados**:
-- `src/components/lessons/v8/V8LessonCard.tsx` - Usar `getLessonIcon` para mostrar icone da licao no lugar do numero
-- `src/pages/CourseDetail.tsx` - Usar `getLessonIcon` para mostrar icone da licao no lugar de PlayCircle generico
+## Plano de Redesign Mobile
 
-### 3. Modernizar banners internos das trilhas (V7)
+### Principio: "Above the fold = Acao + Progresso"
 
-Alinhar o banner da pagina `TrailDetail.tsx` com o design premium do Dashboard.
+O usuario deve ver, sem scroll algum: onde esta, o que fazer agora, e sua motivacao (streak).
 
-**Arquivo**: `src/pages/TrailDetail.tsx`
-- Alterar gradiente do banner de `#6CB1FF -> #837BFF` para `#1E3A8A -> #1D4ED8 -> #3B82F6` (Premium Blue, alinhado com "Renda Extra PRO")
-- Adicionar badge "RENDA EXTRA PRO" no canto superior do banner
-- Usar o icone Lucide correto da trilha (mapeamento TRAIL_ICONS) ao inves de apenas o emoji
+### Nova Hierarquia Mobile
 
-### 4. Modernizar banner do CourseDetail (Jornadas)
+```text
+NOVO FLUXO (mobile):
+1. DashboardHeader (logo + hamburger) [manter]
+2. GamificationHeader (barra roxa compacta) [manter - ja e compacta]
+3. Link Admin [manter]
+4. Continue Learning card [subir - ACAO PRIMARIA]
+5. Streak inline compacto + Missoes resumidas [NOVO - substitui sidebar]
+6. Secao V8 "Seu Caminho de Maestria" [manter]
+7. Secao V7 "Renda Extra PRO" [manter]
+8. Secao "Para Voce" [manter]
+```
 
-**Arquivo**: `src/pages/CourseDetail.tsx`
-- Alterar gradiente de `#6CB1FF -> #837BFF` para gradiente alinhado com a trilha pai
-- Adicionar icone Lucide do curso ao lado do titulo
+### Mudancas Especificas
 
-### 5. Alinhar banner do V8TrailDetail
+#### 1. ELIMINAR: Hero Banner no mobile
+- O banner roxo "Pronto para aprender?" sera **oculto no mobile** (`hidden lg:block`)
+- No desktop continua visivel normalmente
+- **Motivo**: O GamificationHeader + Continue Learning ja cumprem o papel de orientacao. O banner e pura decoracao que empurra conteudo acionavel para baixo
 
-**Arquivo**: `src/pages/V8TrailDetail.tsx`
-- Manter gradiente Indigo/Violet (ja esta alinhado com "Seu Caminho de Maestria")
-- Verificar consistencia com o card V8 do Dashboard
+#### 2. ELIMINAR: 4 Stat Cards no mobile
+- Os 4 AnimatedStatCards serao **ocultos no mobile** (`hidden sm:grid`)
+- No desktop/tablet continuam visiveis no grid 2x4
+- **Motivo**: Sao 100% redundantes com a GamificationHeader. Power Score, Creditos e Streak ja aparecem na barra roxa. "Aulas Concluidas" e a unica metrica nova, mas nao justifica 4 cards
 
-### 6. Icones do CourseCard nas jornadas
+#### 3. REDESENHAR: Sidebar mobile como "Quick Stats Strip"
+- Em vez de renderizar o DashboardSidebar inteiro no mobile (Sequencia Ativa verboso + Ranking + Conquistas + Missoes), criar uma versao compacta **inline**
+- **Streak**: Vira uma faixa horizontal compacta (icone fogo + "1 dia" + barra de progresso mini) logo apos o Continue Learning
+- **Ranking + Conquistas**: Viram dois botoes pill compactos na mesma faixa
+- **Missoes Diarias**: Sobem para ficar logo abaixo do streak strip, com titulo e lista compacta
+- A sidebar completa continua visivel apenas no desktop (`hidden lg:block`)
 
-**Arquivo**: `src/pages/TrailDetail.tsx`
-- Usar o mapeamento `COURSE_ICONS` para exibir o icone correto de cada curso/jornada, consistente com o icone da trilha pai
+#### 4. SUBIR: Continue Learning
+- Sera o primeiro card visivel apos o header, posicionando a acao primaria "above the fold"
 
 ---
 
 ### Detalhes Tecnicos
 
-**Mapeamento de icones por licao (`getLessonIcon`)**:
+**Arquivo**: `src/pages/Dashboard.tsx`
+
+1. Hero Banner: Adicionar `hidden lg:block` ao container do banner (linha ~422)
+2. Stat Cards: Mudar grid de `grid-cols-2 sm:grid-cols-4` para `hidden sm:grid sm:grid-cols-4` (linha ~497)
+3. Continue Learning: Mover o bloco para ANTES do Hero Banner no JSX
+4. Mobile Sidebar: Substituir o bloco `<div className="lg:hidden mb-6"><DashboardSidebar ... /></div>` (linhas 1016-1022) por um novo componente compacto inline
+
+**Novo componente**: `src/components/dashboard/MobileQuickStats.tsx`
+- Faixa horizontal com: icone Flame + streak dias + mini progress bar + botoes Ranking/Conquistas
+- Missoes Diarias compactas logo abaixo
+- Visivel apenas no mobile (`lg:hidden`)
+
+**Arquivo**: `src/components/dashboard/DashboardSidebar.tsx`
+- Sem alteracoes - continua sendo usado no desktop
+
+### Resultado Esperado
 
 ```text
-Palavras-chave -> Icone Lucide
-"fundamento/basico/base"    -> Brain
-"ia/inteligencia"           -> Bot
-"prompt"                    -> MessageSquare
-"video"                     -> Video
-"imagem/foto"               -> Image
-"planilha/organiza"         -> Table
-"renda/dinheiro/monetiz"    -> DollarSign
-"venda/cliente"             -> ShoppingCart
-"negocio/empresa"           -> Briefcase
-"codigo/app/programa"       -> Code
-"copyright/direito"         -> Shield
-"avancado/expert"           -> Gem
-"plano/estrategia"          -> Target
-"automacao/automat"         -> Zap
-"conteudo/texto/post"       -> FileText
-"rede social/instagram"     -> Share2
-fallback                    -> BookOpen
+VIEWPORT MOBILE (sem scroll):
+[Header]
+[Barra Gamificacao]
+[Continue Learning - card compacto]
+[Streak strip + Ranking/Conquistas pills]
+[Missoes Diarias compactas]
+--- scroll ---
+[V8 Trails carousel]
+[V7 Trails carousel]
+[Para Voce]
 ```
 
-**Gradientes por contexto**:
-
-```text
-V7 Trail Banners:  linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 40%, #3B82F6 100%)  [Premium Blue]
-V8 Trail Banners:  linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%)  [Indigo/Violet]
-Course Banners:    Herdam o gradiente da trilha pai
-```
-
-**Arquivos afetados**:
-1. `src/pages/Dashboard.tsx` - Corrigir mapeamento de icones V7
-2. `src/utils/lessonIconMap.ts` - Novo arquivo com mapeamento de icones
-3. `src/components/lessons/v8/V8LessonCard.tsx` - Integrar icones por licao
-4. `src/pages/CourseDetail.tsx` - Modernizar banner + icones de licao
-5. `src/pages/TrailDetail.tsx` - Modernizar banner + icones de curso consistentes
-6. `src/pages/V8TrailDetail.tsx` - Ajustes menores de consistencia
+**Reducao**: De 10 blocos para 7 blocos, com os 3 mais acionaveis acima da dobra. Zero redundancia de dados.
 
