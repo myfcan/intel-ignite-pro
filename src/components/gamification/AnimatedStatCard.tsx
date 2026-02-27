@@ -56,70 +56,63 @@ export const AnimatedStatCard = ({
   gradientTo,
   delay = 0,
   isLoading = false,
-  variant = 'white',
 }: AnimatedStatCardProps) => {
   const animatedValue = useCounter(value, isLoading);
-  const isColored = variant === 'colored';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
-      className="rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:-translate-y-1"
+      className="rounded-2xl p-3.5 sm:p-4 transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden group"
       style={{
-        background: isColored
-          ? `linear-gradient(145deg, ${gradientFrom}, ${gradientTo})`
-          : '#FFFFFF',
-        border: isColored ? 'none' : '1px solid rgba(0,0,0,0.03)',
-        boxShadow: isColored
-          ? `0 12px 40px ${gradientFrom}35, 0 4px 16px ${gradientFrom}20`
-          : '0 12px 40px -8px rgba(0,0,0,0.12), 0 4px 16px -4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02)',
+        background: '#FFFFFF',
+        border: '1px solid hsl(220 13% 91%)',
+        boxShadow: '0 1px 3px hsl(0 0% 0% / 0.04), 0 4px 16px hsl(0 0% 0% / 0.03)',
       }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <span
-          className="text-xs sm:text-sm font-medium"
-          style={{ color: isColored ? 'rgba(255,255,255,0.8)' : '#9CA3AF' }}
-        >
-          {label}
-        </span>
+      {/* Subtle gradient accent on top */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl"
+        style={{ background: `linear-gradient(90deg, ${gradientFrom}, ${gradientTo})` }}
+      />
+
+      {/* Content */}
+      <div className="flex items-center gap-3">
+        {/* Icon */}
         <div
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center"
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{
-            background: isColored
-              ? 'rgba(255,255,255,0.2)'
-              : `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`,
-            boxShadow: isColored ? 'none' : `0 4px 12px ${gradientFrom}30`,
+            background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`,
+            boxShadow: `0 4px 12px ${gradientFrom}25`,
           }}
         >
-          <Icon
-            className="w-4 h-4 sm:w-5 sm:h-5"
-            style={{ color: isColored ? 'white' : 'white' }}
-          />
+          <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5 text-white" />
+        </div>
+
+        {/* Value + Label */}
+        <div className="flex-1 min-w-0">
+          {isLoading ? (
+            <div className="w-10 h-6 rounded animate-pulse" style={{ background: 'hsl(220 14% 96%)' }} />
+          ) : (
+            <motion.span
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: delay + 0.15, type: 'spring', stiffness: 200 }}
+              className="text-xl sm:text-2xl font-bold block leading-none"
+              style={{ color: 'hsl(215 25% 12%)' }}
+            >
+              {animatedValue.toLocaleString('pt-BR')}
+            </motion.span>
+          )}
+          <span
+            className="text-[10px] sm:text-[11px] font-medium leading-tight mt-0.5 block truncate"
+            style={{ color: 'hsl(215 16% 52%)' }}
+          >
+            {label}
+          </span>
         </div>
       </div>
-
-      {isLoading ? (
-        <div
-          className="w-12 h-8 rounded animate-pulse"
-          style={{
-            background: isColored ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
-          }}
-        />
-      ) : (
-        <motion.span
-          initial={{ scale: 0.5 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: delay + 0.15, type: 'spring', stiffness: 200 }}
-          className="text-2xl sm:text-3xl font-bold block"
-          style={{
-            color: isColored ? 'white' : gradientFrom,
-          }}
-        >
-          {animatedValue}
-        </motion.span>
-      )}
     </motion.div>
   );
 };
