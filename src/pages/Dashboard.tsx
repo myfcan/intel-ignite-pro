@@ -70,90 +70,44 @@ const Dashboard = () => {
   const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
   const totalV8Trails = v8Trails.length;
 
-  // Drag robusto (touch + mouse) para o carrossel mobile das trilhas V7
-  const trailCarouselRef = useRef<HTMLDivElement | null>(null);
-  const trailCarouselDragRef = useRef({
-    isPointerDown: false,
-    pointerId: null as number | null,
-    startX: 0,
-    startScrollLeft: 0,
-    moved: false,
-    lastDragAt: 0,
-  });
+  // Snap carousel: refs e estado do card ativo
+  const snapScrollerRef = useRef<HTMLDivElement | null>(null);
+  const snapItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [snapActiveIndex, setSnapActiveIndex] = useState(0);
 
-  const handleTrailCarouselPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+  // IntersectionObserver para detectar card ativo (>=60% visível)
+  useEffect(() => {
+    const root = snapScrollerRef.current;
+    if (!root || v7Trails.length === 0) return;
 
-    const container = trailCarouselRef.current;
-    if (!container) return;
-
-    trailCarouselDragRef.current.isPointerDown = true;
-    trailCarouselDragRef.current.pointerId = e.pointerId;
-    trailCarouselDragRef.current.startX = e.clientX;
-    trailCarouselDragRef.current.startScrollLeft = container.scrollLeft;
-    trailCarouselDragRef.current.moved = false;
-
-    if (import.meta.env.DEV) {
-      console.log('[V7:Carousel] pointerDown', {
-        at: new Date().toISOString(),
-        pointerType: e.pointerType,
-        x: e.clientX,
-        scrollLeft: container.scrollLeft,
-      });
-    }
-
-    try {
-      container.setPointerCapture(e.pointerId);
-    } catch {
-      // browsers que não suportam pointer capture
-    }
-  };
-
-  const handleTrailCarouselPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const container = trailCarouselRef.current;
-    const drag = trailCarouselDragRef.current;
-
-    if (!container || !drag.isPointerDown) return;
-
-    const deltaX = e.clientX - drag.startX;
-    if (Math.abs(deltaX) > 3) {
-      drag.moved = true;
-      drag.lastDragAt = Date.now();
-      e.preventDefault();
-    }
-
-    container.scrollLeft = drag.startScrollLeft - deltaX;
-  };
-
-  const handleTrailCarouselPointerUp = () => {
-    const container = trailCarouselRef.current;
-    const drag = trailCarouselDragRef.current;
-
-    if (container && drag.pointerId !== null) {
-      try {
-        container.releasePointerCapture(drag.pointerId);
-      } catch {
-        // noop
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let best: { idx: number; ratio: number } | null = null;
+        for (const entry of entries) {
+          const idx = Number((entry.target as HTMLElement).dataset.snapIndex);
+          if (Number.isNaN(idx)) continue;
+          if (!best || entry.intersectionRatio > best.ratio) {
+            best = { idx, ratio: entry.intersectionRatio };
+          }
+        }
+        if (best && best.ratio >= 0.6) {
+          setSnapActiveIndex(best.idx);
+        }
+      },
+      {
+        root,
+        threshold: [0.35, 0.45, 0.55, 0.6, 0.7, 0.85],
       }
-    }
+    );
 
-    if (import.meta.env.DEV) {
-      console.log('[V7:Carousel] pointerUp', {
-        at: new Date().toISOString(),
-        moved: drag.moved,
-        scrollLeft: container?.scrollLeft ?? null,
-      });
-    }
+    snapItemRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, [v7Trails]);
 
-    drag.isPointerDown = false;
-    drag.pointerId = null;
-  };
-
-  const handleTrailCarouselClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (Date.now() - trailCarouselDragRef.current.lastDragAt < 250) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const scrollToSnapIndex = (idx: number) => {
+    const el = snapItemRefs.current[idx];
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
 
   useEffect(() => {
@@ -646,55 +600,81 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Mobile: horizontal scroll carousel */}
-              <div className="relative sm:hidden">
+              {/* Mobile: Premium Snap Carousel */}
+              <div className="sm:hidden">
+                <style>{`
+                  .snap-carousel { scrollbar-width: none; -ms-overflow-style: none; }
+                  .snap-carousel::-webkit-scrollbar { display: none; }
+                  @media (prefers-reduced-motion: reduce) {
+                    .snap-item { transition: none !important; }
+                  }
+                `}</style>
                 <div
-                  ref={trailCarouselRef}
-                  onPointerDown={handleTrailCarouselPointerDown}
-                  onPointerMove={handleTrailCarouselPointerMove}
-                  onPointerUp={handleTrailCarouselPointerUp}
-                  onPointerCancel={handleTrailCarouselPointerUp}
-                  onPointerLeave={handleTrailCarouselPointerUp}
-                  onClickCapture={handleTrailCarouselClickCapture}
-                  className="trail-carousel flex gap-3 overflow-x-auto pb-4 pl-1 pr-4 -mx-1 select-none"
+                  ref={snapScrollerRef}
+                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden pb-5"
                   style={{
                     scrollSnapType: 'x mandatory',
+                    scrollPaddingLeft: 20,
+                    scrollPaddingRight: 20,
+                    padding: '0 20px 20px 20px',
                     WebkitOverflowScrolling: 'touch',
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none',
-                    touchAction: 'pan-x',
                     overscrollBehaviorX: 'contain',
-                    cursor: 'grab',
+                    touchAction: 'pan-x',
                   }}
+                  aria-label="Carrossel de trilhas"
                 >
-                  <style>{`.trail-carousel::-webkit-scrollbar { display: none; }`}</style>
-                  {v7Trails.map((trail) => {
+                  {v7Trails.map((trail, idx) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                    const isActive = idx === snapActiveIndex;
                     return (
-                      <TrailCard
+                      <div
                         key={trail.id}
-                        trail={trail}
-                        Icon={BookOpen}
-                        gradient="from-indigo-500 to-violet-500"
-                        progress={trailProgress?.progress || 0}
-                        completedLessons={trailProgress?.completedLessons || 0}
-                        totalLessons={trailProgress?.totalLessons || 0}
-                        status={trailProgress?.status || "locked"}
-                      />
+                        ref={(el) => { snapItemRefs.current[idx] = el; }}
+                        data-snap-index={idx}
+                        className="snap-item relative flex-shrink-0"
+                        style={{
+                          scrollSnapAlign: 'center',
+                          scrollSnapStop: 'always',
+                          flex: '0 0 78%',
+                          maxWidth: 340,
+                          transform: isActive ? 'scale(1)' : 'scale(0.94)',
+                          filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
+                          opacity: isActive ? 1 : 0.96,
+                          transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
+                        }}
+                      >
+                        <TrailCard
+                          trail={trail}
+                          Icon={BookOpen}
+                          gradient="from-indigo-500 to-violet-500"
+                          progress={trailProgress?.progress || 0}
+                          completedLessons={trailProgress?.completedLessons || 0}
+                          totalLessons={trailProgress?.totalLessons || 0}
+                          status={trailProgress?.status || "locked"}
+                        />
+                      </div>
                     );
                   })}
                 </div>
-                {/* Fade lateral direita + hint de arraste */}
-                <div
-                  className="pointer-events-none absolute right-0 top-0 bottom-4 w-12 z-10"
-                  style={{
-                    background: 'linear-gradient(to left, hsl(var(--background)), transparent)',
-                  }}
-                />
-                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mt-1 animate-fade-in">
-                  <span>←</span>
-                  <span>Arraste para ver mais</span>
-                  <span>→</span>
+                {/* Dots */}
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  {v7Trails.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => scrollToSnapIndex(idx)}
+                      className="rounded-full transition-all duration-200"
+                      style={{
+                        width: idx === snapActiveIndex ? 10 : 7,
+                        height: idx === snapActiveIndex ? 10 : 7,
+                        background: idx === snapActiveIndex
+                          ? 'rgba(99,102,241,1)'
+                          : 'rgba(148,163,184,0.45)',
+                        transform: idx === snapActiveIndex ? 'scale(1.15)' : 'scale(1)',
+                      }}
+                      aria-label={`Ir para trilha ${idx + 1}`}
+                    />
+                  ))}
                 </div>
               </div>
 
