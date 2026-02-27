@@ -124,8 +124,8 @@ const DEFAULT_JSON: V8LessonData = {
 const DEFAULT_V8_PIPELINE_STEPS: PipelineStep[] = [
   { id: 'validate', name: 'Validando JSON de entrada', status: 'pending' },
   { id: 'create-draft', name: 'Criando rascunho no banco', status: 'pending' },
-  { id: 'call-api', name: 'Chamando API de geração (ElevenLabs)', status: 'pending' },
-  { id: 'process-results', name: 'Processando resultados', status: 'pending' },
+  { id: 'call-api', name: 'Conectando com ElevenLabs', status: 'pending' },
+  { id: 'process-results', name: 'Processando áudios gerados', status: 'pending' },
   { id: 'update-content', name: 'Atualizando conteúdo com URLs de áudio', status: 'pending' },
   { id: 'finalize', name: 'Finalizando', status: 'pending' },
 ];
