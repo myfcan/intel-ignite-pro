@@ -16,6 +16,7 @@ import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
 import { CourseProgressCard } from "@/components/dashboard/CourseProgressCard";
 import { PointsCard } from "@/components/dashboard/PointsCard";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { MobileQuickStats } from "@/components/dashboard/MobileQuickStats";
 import { BuildBadge } from "@/components/BuildBadge";
 import { DASHBOARD_LAYOUT_ID, logRuntimeSignature } from "@/lib/runtimeSignature";
 
@@ -419,9 +420,58 @@ const Dashboard = () => {
           
           {/* ===== MAIN COLUMN ===== */}
           <div>
-            {/* ===== PURPLE HERO BANNER - Only text + CTAs + floating icons ===== */}
+            {/* ===== CONTINUE LEARNING (mobile: above the fold) ===== */}
+            <div className="lg:hidden">
+              {activeTrail && activeTrailProgress && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-bold text-gray-900">Continue Aprendendo</h2>
+                    <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
+                  </div>
+                  <div
+                    className="bg-white rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-shadow"
+                    style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 4px 16px -4px rgba(0,0,0,0.08)' }}
+                    onClick={() => navigate(`/trail/${activeTrail.id}`)}
+                  >
+                    <div
+                      className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: 'linear-gradient(135deg, #6366F1, #818CF8)',
+                        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+                      }}
+                    >
+                      {(() => {
+                        const TrailIcon = TRAIL_ICONS[activeTrail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+                        return <TrailIcon className="w-6 h-6 text-white" />;
+                      })()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold mb-0.5" style={{ background: '#6366F115', color: '#6366F1' }}>
+                        {TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
+                      </span>
+                      <h3 className="font-bold text-gray-900 text-sm truncate">{activeTrail.title}</h3>
+                      <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                        <motion.div className="h-full rounded-full" style={{ background: '#6366F1' }} initial={{ width: 0 }} animate={{ width: `${activeTrailProgress.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} />
+                      </div>
+                    </div>
+                    <button className="px-3 py-2 rounded-xl text-xs font-bold text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #7C3AED)' }}>
+                      Continuar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ===== MOBILE QUICK STATS (streak + ranking + missions) ===== */}
+            <MobileQuickStats
+              streakDays={gamificationStats?.streakDays ?? 0}
+              userName={user?.name?.split(' ')[0] || 'Aluno'}
+              isLoading={gamificationLoading}
+            />
+
+            {/* ===== PURPLE HERO BANNER - Hidden on mobile ===== */}
             <div
-              className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 mb-6 relative overflow-hidden"
+              className="hidden lg:block rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 mb-6 relative overflow-hidden"
               style={{
                 background: 'linear-gradient(135deg, #6C63FF 0%, #7C3AED 100%)',
                 boxShadow: '0 12px 40px -8px rgba(108, 99, 255, 0.3)',
@@ -493,8 +543,8 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* ===== 4 STAT CARDS - White, outside hero ===== */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            {/* ===== 4 STAT CARDS - Hidden on mobile (redundant with GamificationHeader) ===== */}
+            <div className="hidden sm:grid sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
               <AnimatedStatCard
                 value={gamificationStats?.lessonsCompleted ?? 0}
                 label="Aulas Concluídas"
@@ -537,69 +587,48 @@ const Dashboard = () => {
               />
             </div>
 
-            {/* ===== CONTINUE LEARNING ===== */}
-            {activeTrail && activeTrailProgress && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Aprendendo</h2>
-                  <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
-                </div>
-                <div
-                  className="bg-white rounded-2xl p-5 sm:p-7 flex items-center gap-5 cursor-pointer hover:shadow-lg transition-shadow"
-                  style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)', minHeight: '120px' }}
-                  onClick={() => navigate(`/trail/${activeTrail.id}`)}
-                >
-                  {/* Colored icon area (acts as thumbnail) */}
+            {/* ===== CONTINUE LEARNING (desktop/tablet only - mobile version is above) ===== */}
+            <div className="hidden lg:block">
+              {activeTrail && activeTrailProgress && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Aprendendo</h2>
+                    <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
+                  </div>
                   <div
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: 'linear-gradient(135deg, #6366F1, #818CF8)',
-                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
-                    }}
+                    className="bg-white rounded-2xl p-5 sm:p-7 flex items-center gap-5 cursor-pointer hover:shadow-lg transition-shadow"
+                    style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)', minHeight: '120px' }}
+                    onClick={() => navigate(`/trail/${activeTrail.id}`)}
                   >
-                    {(() => {
-                      const TrailIcon = TRAIL_ICONS[activeTrail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
-                      return <TrailIcon className="w-7 h-7 sm:w-9 sm:h-9 text-white" />;
-                    })()}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <span
-                      className="inline-block px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold mb-1"
-                      style={{ background: '#6366F115', color: '#6366F1' }}
+                    <div
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: 'linear-gradient(135deg, #6366F1, #818CF8)',
+                        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+                      }}
                     >
-                      {TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
-                    </span>
-                    <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">{activeTrail.title}</h3>
-                    <p className="text-gray-400 text-xs sm:text-sm">
-                      Próximo módulo: Aula {activeTrailProgress.completedLessons + 1}
-                    </p>
-                    {/* Progress bar */}
-                    <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden max-w-xs">
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{ background: '#6366F1' }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${activeTrailProgress.progress}%` }}
-                        transition={{ duration: 0.8, ease: 'easeOut' }}
-                      />
+                      {(() => {
+                        const TrailIcon = TRAIL_ICONS[activeTrail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+                        return <TrailIcon className="w-7 h-7 sm:w-9 sm:h-9 text-white" />;
+                      })()}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold mb-1" style={{ background: '#6366F115', color: '#6366F1' }}>
+                        {TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
+                      </span>
+                      <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">{activeTrail.title}</h3>
+                      <p className="text-gray-400 text-xs sm:text-sm">Próximo módulo: Aula {activeTrailProgress.completedLessons + 1}</p>
+                      <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden max-w-xs">
+                        <motion.div className="h-full rounded-full" style={{ background: '#6366F1' }} initial={{ width: 0 }} animate={{ width: `${activeTrailProgress.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} />
+                      </div>
+                    </div>
+                    <button className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white flex-shrink-0 hover:-translate-y-0.5 transition-all" style={{ background: 'linear-gradient(135deg, #6366F1, #7C3AED)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
+                      Continuar
+                    </button>
                   </div>
-
-                  {/* CTA */}
-                  <button
-                    className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white flex-shrink-0 hover:-translate-y-0.5 transition-all"
-                    style={{
-                      background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
-                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-                    }}
-                  >
-                    Continuar
-                  </button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
             {v8Trails.length > 0 && (
@@ -1012,14 +1041,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Mobile sidebar */}
-        <div className="lg:hidden mb-6">
-          <DashboardSidebar
-            streakDays={gamificationStats?.streakDays ?? 0}
-            userName={user?.name?.split(' ')[0] || 'Aluno'}
-            isLoading={gamificationLoading}
-          />
-        </div>
+        {/* Mobile sidebar replaced by MobileQuickStats inline above */}
 
       </main>
 
