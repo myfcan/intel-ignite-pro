@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface V8TrailCardProps {
@@ -9,7 +9,16 @@ interface V8TrailCardProps {
   icon?: string;
   lessonCount: number;
   completedCount: number;
+  estimatedHours?: number;
+  orderIndex?: number;
 }
+
+const V8_THEMES = [
+  { accent: '#6366F1', label: 'Read & Listen' },
+  { accent: '#7C3AED', label: 'Read & Listen' },
+  { accent: '#4F46E5', label: 'Read & Listen' },
+  { accent: '#8B5CF6', label: 'Read & Listen' },
+];
 
 export const V8TrailCard = ({
   trailId,
@@ -18,63 +27,144 @@ export const V8TrailCard = ({
   icon,
   lessonCount,
   completedCount,
+  estimatedHours = 0,
+  orderIndex = 1,
 }: V8TrailCardProps) => {
   const navigate = useNavigate();
   const progress = lessonCount > 0 ? Math.round((completedCount / lessonCount) * 100) : 0;
-  const isCompleted = progress === 100;
+  const theme = V8_THEMES[(orderIndex - 1) % V8_THEMES.length];
 
   return (
-    <motion.button
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.3 }}
       onClick={() => navigate(`/v8-trail/${trailId}`)}
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      className="w-full text-left rounded-2xl border border-white/10 p-4 sm:p-5 transition-all hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] flex items-center gap-3"
+      className="group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer w-full"
       style={{
-        background: 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-        backdropFilter: 'blur(16px)',
+        scrollSnapAlign: 'start',
+        boxShadow: '0 8px 32px -4px rgba(99, 102, 241, 0.12), 0 4px 16px -2px rgba(139, 92, 246, 0.08), 0 0 0 1px rgba(99, 102, 241, 0.1)',
       }}
     >
-      {/* Icon */}
-      <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 backdrop-blur-xl flex items-center justify-center text-xl overflow-hidden">
-        {icon && icon.length <= 2 ? icon : <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" />}
-      </div>
+      {/* Aurora border glow effect (indigo/violet) */}
+      <div
+        className="absolute inset-0 rounded-2xl z-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, #6366F1, #818CF8, #8B5CF6, #818CF8, #6366F1)',
+          backgroundSize: '300% 300%',
+          animation: 'aurora-shift 6s ease infinite',
+        }}
+      />
 
-      {/* Content */}
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <h3 className="text-sm sm:text-base font-semibold text-white leading-snug line-clamp-2">
-          {title}
-        </h3>
+      {/* Aurora ambient glow on hover */}
+      <div
+        className="absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl z-0"
+        style={{
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(129,140,248,0.12), rgba(139,92,246,0.1), rgba(129,140,248,0.15))',
+          backgroundSize: '300% 300%',
+          animation: 'aurora-shift 6s ease infinite',
+        }}
+      />
 
-        {description && (
-          <p className="text-xs text-white/40 truncate">{description}</p>
-        )}
+      {/* Inner card */}
+      <div className="relative z-10 bg-white rounded-[14px] overflow-hidden m-[2px] flex flex-col h-[calc(100%-4px)]">
+        {/* Colored header area with indigo/violet gradient */}
+        <div
+          className="h-[120px] sm:h-[148px] flex items-center justify-center relative overflow-hidden"
+          style={{
+            background: `linear-gradient(135deg, ${theme.accent}, #818CF8, #8B5CF6, ${theme.accent})`,
+            backgroundSize: '300% 300%',
+            animation: 'aurora-shift 8s ease infinite',
+          }}
+        >
+          {/* Decorative shapes */}
+          <div
+            className="absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full"
+            style={{ background: 'rgba(255,255,255,0.12)', top: '-14px', right: '-14px' }}
+          />
+          <div
+            className="absolute w-14 h-14 sm:w-20 sm:h-20 rounded-full"
+            style={{ background: 'rgba(255,255,255,0.08)', bottom: '-10px', left: '-6px' }}
+          />
+          <div
+            className="absolute w-8 h-8 sm:w-12 sm:h-12 rounded-full"
+            style={{ background: 'rgba(255,255,255,0.06)', top: '8px', left: '14px' }}
+          />
 
-        <div className="flex items-center gap-1.5 text-[11px] text-white/35">
-          <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="truncate">
-            {lessonCount} {lessonCount === 1 ? "aula" : "aulas"}
-            {isCompleted ? " • Concluída ✅" : ""}
-          </span>
-        </div>
-
-        {/* Progress bar */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 rounded-full bg-white/5">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-400"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            />
+          {/* Icon in glass container */}
+          <div className="relative">
+            <div
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-sm"
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.3)',
+              }}
+            >
+              {icon && icon.length <= 2 ? (
+                <span className="text-2xl sm:text-3xl">{icon}</span>
+              ) : (
+                <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-md" />
+              )}
+            </div>
           </div>
-          <span className="text-[11px] font-medium text-white/35 tabular-nums flex-shrink-0">
-            {progress}%
-          </span>
+        </div>
+
+        {/* Card body */}
+        <div className="px-3.5 py-3.5 sm:px-5 sm:py-5 flex-1 flex flex-col justify-between">
+          <div>
+            {/* Category badge + estimated hours */}
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className="inline-block px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wide uppercase"
+                style={{
+                  background: `${theme.accent}15`,
+                  color: theme.accent,
+                }}
+              >
+                {theme.label}
+              </span>
+              {estimatedHours > 0 && (
+                <div className="flex items-center gap-1 text-gray-400">
+                  <Clock size={12} className="sm:w-[13px] sm:h-[13px]" />
+                  <span className="text-[10px] sm:text-[11px] font-medium">~{estimatedHours}h</span>
+                </div>
+              )}
+            </div>
+
+            {/* Title */}
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-snug line-clamp-2 sm:line-clamp-1">
+              {title}
+            </h3>
+
+            {/* Description - hidden on mobile */}
+            {description && (
+              <p className="hidden sm:block text-xs text-gray-500 mt-1 leading-relaxed line-clamp-1">
+                {description}
+              </p>
+            )}
+          </div>
+
+          {/* Progress bar + count */}
+          <div className="flex items-center gap-2.5 mt-3 sm:mt-2">
+            <div className="flex-1 h-1.5 sm:h-2 rounded-full bg-gray-100 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{
+                  background: `linear-gradient(90deg, ${theme.accent}, ${theme.accent}CC)`,
+                  boxShadow: `0 0 8px ${theme.accent}40`,
+                }}
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+              />
+            </div>
+            <span className="text-[11px] sm:text-xs font-bold text-gray-500 whitespace-nowrap">
+              {completedCount}/{lessonCount}
+            </span>
+          </div>
         </div>
       </div>
-
-      {/* Arrow */}
-      <ArrowRight className="w-4 h-4 text-white/20 flex-shrink-0" />
-    </motion.button>
+    </motion.div>
   );
 };
