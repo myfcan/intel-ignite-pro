@@ -63,9 +63,9 @@ const Dashboard = () => {
   const v7Trails = trails.filter(t => t.trail_type !== 'v8');
   const v8Trails = trails.filter(t => t.trail_type === 'v8');
 
-  // Paginação das trilhas V7 (6 por página = 2 linhas de 3)
+  // Paginação das trilhas V7 (3 por página = 1 linha de 3)
   const [trailPage, setTrailPage] = useState(0);
-  const TRAILS_PER_PAGE = 6;
+  const TRAILS_PER_PAGE = 3;
   const totalTrailPages = Math.max(1, Math.ceil(v7Trails.length / TRAILS_PER_PAGE));
   const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
 

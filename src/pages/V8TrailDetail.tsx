@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { V8LessonCard } from "@/components/lessons/v8/V8LessonCard";
 
@@ -9,7 +9,6 @@ export default function V8TrailDetail() {
   const { trailId } = useParams<{ trailId: string }>();
   const navigate = useNavigate();
 
-  // Fetch trail
   const { data: trail, isLoading: trailLoading } = useQuery({
     queryKey: ["v8-trail", trailId],
     queryFn: async () => {
@@ -24,7 +23,6 @@ export default function V8TrailDetail() {
     enabled: !!trailId,
   });
 
-  // Fetch lessons for this trail (V8: direct trail_id, no course_id)
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
     queryKey: ["v8-trail-lessons", trailId],
     queryFn: async () => {
@@ -41,7 +39,6 @@ export default function V8TrailDetail() {
     enabled: !!trailId,
   });
 
-  // Fetch user progress for all lessons in this trail
   const { data: progressData } = useQuery({
     queryKey: ["v8-trail-progress", trailId],
     queryFn: async () => {
@@ -60,7 +57,6 @@ export default function V8TrailDetail() {
     enabled: !!lessons && lessons.length > 0,
   });
 
-  // Check if user is admin (for unlock bypass)
   const { data: isAdmin } = useQuery({
     queryKey: ["v8-is-admin"],
     queryFn: async () => {
@@ -78,21 +74,16 @@ export default function V8TrailDetail() {
 
   const isLoading = trailLoading || lessonsLoading;
 
-  // Build progress map
   const progressMap = new Map(
     (progressData ?? []).map((p) => [p.lesson_id, p.status])
   );
 
-  // Determine lesson status with sequential unlock
   const getLessonStatus = (index: number, lessonId: string) => {
     const status = progressMap.get(lessonId);
     if (status === "completed") return "completed" as const;
     if (status === "in_progress") return "in_progress" as const;
-    // First lesson always available
     if (index === 0) return "available" as const;
-    // Admin bypass
     if (isAdmin) return "available" as const;
-    // Check previous lesson
     const prevLesson = lessons?.[index - 1];
     if (prevLesson && progressMap.get(prevLesson.id) === "completed") {
       return "available" as const;
@@ -109,19 +100,22 @@ export default function V8TrailDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+      <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Carregando trilha...</p>
+        </div>
       </div>
     );
   }
 
   if (!trail) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 text-white">
-        <p className="text-slate-400">Trilha não encontrada</p>
+      <div className="min-h-screen bg-[#FAFBFC] flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-600">Trilha não encontrada</p>
         <button
           onClick={() => navigate("/dashboard")}
-          className="text-sm text-indigo-400 hover:text-white transition-colors"
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors"
         >
           Voltar ao Dashboard
         </button>
@@ -130,78 +124,120 @@ export default function V8TrailDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/30 to-violet-600/20" />
-        <div className="relative max-w-2xl mx-auto px-4 pt-6 pb-8 space-y-4">
-          {/* Back */}
+    <div className="min-h-screen bg-[#FAFBFC]">
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           <button
             onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-indigo-400 transition-all mb-4 sm:mb-6 shadow-sm hover:shadow-md"
           >
-            <ArrowLeft className="w-4 h-4" /> Voltar
+            <ArrowLeft className="w-4 h-4 text-indigo-500" />
+            <span className="font-medium text-sm sm:text-base text-gray-700">Voltar</span>
           </button>
 
-          {/* Trail info */}
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl flex items-center justify-center text-3xl flex-shrink-0">
-              {trail.icon || "📚"}
-            </div>
-            <div className="flex-1 min-w-0 space-y-1">
-              <h1 className="text-xl font-bold text-white">{trail.title}</h1>
-              {trail.description && (
-                <p className="text-sm text-slate-400 line-clamp-2">
-                  {trail.description}
-                </p>
-              )}
-              <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>
-                  {totalLessons} {totalLessons === 1 ? "aula" : "aulas"} • Read
-                  & Listen
-                </span>
+          <div
+            className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
+            style={{
+              background: 'linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%)',
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+            }}
+          >
+            <div
+              className="absolute inset-0 pointer-events-none opacity-20"
+              style={{
+                backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
+                backgroundSize: '20px 20px',
+              }}
+            />
+            <div className="relative z-10 p-4 sm:p-6 md:p-8">
+              <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-6 mb-4 md:mb-6">
+                <div className="flex-1 w-full">
+                  <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                    <div
+                      className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0 text-2xl sm:text-3xl md:text-4xl"
+                      style={{ background: 'rgba(255, 255, 255, 0.2)', border: '1px solid rgba(255, 255, 255, 0.3)' }}
+                    >
+                      {trail.icon || "📚"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold tracking-wide uppercase bg-white/20 text-white/90 border border-white/20">
+                          READ & LISTEN
+                        </span>
+                      </div>
+                      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-2">
+                        {trail.title}
+                      </h1>
+                      {trail.description && (
+                        <p className="text-white/90 text-sm sm:text-base md:text-lg line-clamp-2">
+                          {trail.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-4 text-white/90 text-xs sm:text-sm">
+                    <span className="flex items-center gap-1 sm:gap-1.5">
+                      <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                      {totalLessons} {totalLessons === 1 ? "aula" : "aulas"}
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className="w-full md:w-auto text-center md:text-right backdrop-blur-sm rounded-2xl p-4 sm:p-5 md:p-6 border"
+                  style={{ background: 'rgba(255, 255, 255, 0.15)', borderColor: 'rgba(255, 255, 255, 0.3)' }}
+                >
+                  <div className="text-xs sm:text-sm text-white/80 mb-1">Seu progresso</div>
+                  <div className="text-4xl sm:text-5xl font-bold text-white mb-1">{overallProgress}%</div>
+                  <div className="text-xs sm:text-sm text-white/80">{completedCount}/{totalLessons} aulas completas</div>
+                </div>
+              </div>
+              <div
+                className="h-2 sm:h-3 rounded-full overflow-hidden"
+                style={{ background: 'rgba(255, 255, 255, 0.2)', border: '1px solid rgba(255, 255, 255, 0.3)' }}
+              >
+                <motion.div
+                  className="h-full shadow-lg transition-all duration-500"
+                  style={{
+                    width: `${Math.min(100, overallProgress)}%`,
+                    background: 'linear-gradient(90deg, #10B981 0%, #06B6D4 100%)',
+                    boxShadow: '0 0 15px rgba(16, 185, 129, 0.5)',
+                  }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${overallProgress}%` }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                />
               </div>
             </div>
           </div>
+        </header>
 
-          {/* Overall progress */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-2 rounded-full bg-white/10">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
-                initial={{ width: 0 }}
-                animate={{ width: `${overallProgress}%` }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+        {/* Lesson list */}
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+            Aulas
+          </h2>
+          <div className="space-y-3">
+            {lessons?.map((lesson, index) => (
+              <V8LessonCard
+                key={lesson.id}
+                lessonId={lesson.id}
+                title={lesson.title}
+                description={lesson.description ?? undefined}
+                estimatedTime={lesson.estimated_time ?? undefined}
+                status={getLessonStatus(index, lesson.id)}
+                index={index}
+                onClick={() => navigate(`/v8/${lesson.id}`)}
               />
-            </div>
-            <span className="text-sm font-semibold text-slate-400 tabular-nums">
-              {overallProgress}%
-            </span>
-          </div>
-        </div>
-      </div>
+            ))}
 
-      {/* Lesson list */}
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-2.5">
-        {lessons?.map((lesson, index) => (
-          <V8LessonCard
-            key={lesson.id}
-            lessonId={lesson.id}
-            title={lesson.title}
-            description={lesson.description ?? undefined}
-            estimatedTime={lesson.estimated_time ?? undefined}
-            status={getLessonStatus(index, lesson.id)}
-            index={index}
-            onClick={() => navigate(`/v8/${lesson.id}`)}
-          />
-        ))}
-
-        {totalLessons === 0 && (
-          <div className="text-center py-12 text-slate-500 text-sm">
-            Nenhuma aula disponível nesta trilha ainda.
+            {totalLessons === 0 && (
+              <div className="text-center py-12 text-gray-500 text-sm">
+                Nenhuma aula disponível nesta trilha ainda.
+              </div>
+            )}
           </div>
-        )}
+        </main>
       </div>
     </div>
   );
