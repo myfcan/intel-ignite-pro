@@ -248,9 +248,8 @@ async function generateTTS(
     voice_settings: VOICE_SETTINGS,
   };
 
-  // Request stitching for natural transitions
-  if (previousText) body.previous_text = previousText;
-  if (nextText) body.next_text = nextText;
+  // Note: previous_text/next_text (request stitching) is NOT supported with eleven_v3
+  // Removed to avoid 400 errors
 
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
