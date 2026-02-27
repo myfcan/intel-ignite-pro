@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +69,92 @@ const Dashboard = () => {
   const totalTrailPages = Math.max(1, Math.ceil(v7Trails.length / TRAILS_PER_PAGE));
   const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
   const totalV8Trails = v8Trails.length;
+
+  // Drag robusto (touch + mouse) para o carrossel mobile das trilhas V7
+  const trailCarouselRef = useRef<HTMLDivElement | null>(null);
+  const trailCarouselDragRef = useRef({
+    isPointerDown: false,
+    pointerId: null as number | null,
+    startX: 0,
+    startScrollLeft: 0,
+    moved: false,
+    lastDragAt: 0,
+  });
+
+  const handleTrailCarouselPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    const container = trailCarouselRef.current;
+    if (!container) return;
+
+    trailCarouselDragRef.current.isPointerDown = true;
+    trailCarouselDragRef.current.pointerId = e.pointerId;
+    trailCarouselDragRef.current.startX = e.clientX;
+    trailCarouselDragRef.current.startScrollLeft = container.scrollLeft;
+    trailCarouselDragRef.current.moved = false;
+
+    if (import.meta.env.DEV) {
+      console.log('[V7:Carousel] pointerDown', {
+        at: new Date().toISOString(),
+        pointerType: e.pointerType,
+        x: e.clientX,
+        scrollLeft: container.scrollLeft,
+      });
+    }
+
+    try {
+      container.setPointerCapture(e.pointerId);
+    } catch {
+      // browsers que não suportam pointer capture
+    }
+  };
+
+  const handleTrailCarouselPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const container = trailCarouselRef.current;
+    const drag = trailCarouselDragRef.current;
+
+    if (!container || !drag.isPointerDown) return;
+
+    const deltaX = e.clientX - drag.startX;
+    if (Math.abs(deltaX) > 3) {
+      drag.moved = true;
+      drag.lastDragAt = Date.now();
+      e.preventDefault();
+    }
+
+    container.scrollLeft = drag.startScrollLeft - deltaX;
+  };
+
+  const handleTrailCarouselPointerUp = () => {
+    const container = trailCarouselRef.current;
+    const drag = trailCarouselDragRef.current;
+
+    if (container && drag.pointerId !== null) {
+      try {
+        container.releasePointerCapture(drag.pointerId);
+      } catch {
+        // noop
+      }
+    }
+
+    if (import.meta.env.DEV) {
+      console.log('[V7:Carousel] pointerUp', {
+        at: new Date().toISOString(),
+        moved: drag.moved,
+        scrollLeft: container?.scrollLeft ?? null,
+      });
+    }
+
+    drag.isPointerDown = false;
+    drag.pointerId = null;
+  };
+
+  const handleTrailCarouselClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (Date.now() - trailCarouselDragRef.current.lastDragAt < 250) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
 
   useEffect(() => {
     logRuntimeSignature({ route: '/dashboard', layoutId: DASHBOARD_LAYOUT_ID });
@@ -562,12 +648,22 @@ const Dashboard = () => {
 
               {/* Mobile: horizontal scroll carousel */}
               <div
-                className="trail-carousel flex sm:hidden gap-3 overflow-x-auto pb-4 pl-1 pr-4 -mx-1"
+                ref={trailCarouselRef}
+                onPointerDown={handleTrailCarouselPointerDown}
+                onPointerMove={handleTrailCarouselPointerMove}
+                onPointerUp={handleTrailCarouselPointerUp}
+                onPointerCancel={handleTrailCarouselPointerUp}
+                onPointerLeave={handleTrailCarouselPointerUp}
+                onClickCapture={handleTrailCarouselClickCapture}
+                className="trail-carousel flex sm:hidden gap-3 overflow-x-auto pb-4 pl-1 pr-4 -mx-1 select-none"
                 style={{
                   scrollSnapType: 'x mandatory',
                   WebkitOverflowScrolling: 'touch',
                   scrollbarWidth: 'none',
                   msOverflowStyle: 'none',
+                  touchAction: 'pan-x',
+                  overscrollBehaviorX: 'contain',
+                  cursor: 'grab',
                 }}
               >
                 <style>{`.trail-carousel::-webkit-scrollbar { display: none; }`}</style>
