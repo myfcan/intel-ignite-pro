@@ -126,33 +126,22 @@ const TrailCard = ({
           className="absolute w-8 h-8 sm:w-12 sm:h-12 rounded-full"
           style={{ background: 'rgba(255,255,255,0.06)', top: '8px', left: '14px' }}
         />
-        {isLocked ? (
-          <div className="relative">
-            <div
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center"
-              style={{
-                background: 'rgba(255,255,255,0.15)',
-              }}
-            >
-              <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-white/50 drop-shadow-md" />
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center">
-              <Lock className="w-3 h-3 text-white" />
-            </div>
-          </div>
-        ) : (
-          <div className="relative">
+        <div className="relative">
             <div
               className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-sm"
               style={{
-                background: 'rgba(255,255,255,0.2)',
+                background: isLocked ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.2)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.3)',
               }}
             >
-              <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-md" />
+              <Icon className={`w-6 h-6 sm:w-8 sm:h-8 drop-shadow-md ${isLocked ? 'text-white/50' : 'text-white'}`} />
             </div>
+            {isLocked && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gray-400/80 backdrop-blur-sm flex items-center justify-center shadow-sm">
+                <Lock className="w-3 h-3 text-white" />
+              </div>
+            )}
           </div>
-        )}
       </div>
 
       {/* Card body */}
