@@ -100,7 +100,7 @@ const TrailCard = ({
       )}
       {/* Colored header area with aurora gradient */}
       <div
-        className="h-24 sm:h-28 flex items-center justify-center relative overflow-hidden"
+        className="h-16 sm:h-28 flex items-center justify-center relative overflow-hidden"
         style={{
           background: isLocked
             ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
@@ -125,17 +125,17 @@ const TrailCard = ({
           style={{ background: 'rgba(255,255,255,0.06)', top: '12px', left: '20px' }}
         />
         {isLocked ? (
-          <Lock className="w-7 h-7 text-white/40" />
+          <Lock className="w-6 h-6 text-white/40" />
         ) : (
           <div className="relative">
             <div
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center backdrop-blur-sm"
+              className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-sm"
               style={{
                 background: 'rgba(255,255,255,0.2)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.3)',
               }}
             >
-              <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-md" />
+              <Icon className="w-5 h-5 sm:w-7 sm:h-7 text-white drop-shadow-md" />
             </div>
           </div>
         )}
