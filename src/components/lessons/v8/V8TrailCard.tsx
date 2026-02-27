@@ -36,8 +36,8 @@ export const V8TrailCard = ({
     >
       <div className="flex items-start gap-4 h-full">
         {/* Icon */}
-        <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 backdrop-blur-xl flex items-center justify-center text-2xl">
-          {icon || "📚"}
+        <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 backdrop-blur-xl flex items-center justify-center text-2xl overflow-hidden">
+          {icon && icon.length <= 2 ? icon : <BookOpen className="w-6 h-6 text-indigo-400" />}
         </div>
 
         {/* Content */}
