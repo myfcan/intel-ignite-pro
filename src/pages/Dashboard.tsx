@@ -727,7 +727,7 @@ const Dashboard = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:flex gap-4"
+                  className="hidden sm:grid sm:grid-cols-3 gap-4"
                 >
               {visibleTrails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
@@ -872,7 +872,7 @@ const Dashboard = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:flex gap-4"
+                  className="hidden sm:grid sm:grid-cols-3 gap-4"
                 >
                   {visibleV8Trails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
