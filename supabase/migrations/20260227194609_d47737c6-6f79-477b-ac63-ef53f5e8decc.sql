@@ -1,0 +1,1 @@
+UPDATE trails SET title = 'Tudo que voce precisa saber' WHERE id = 'efa0c22c-26fb-44d2-b1dc-721724ca5c5b';
