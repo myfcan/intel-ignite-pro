@@ -647,41 +647,55 @@ const Dashboard = () => {
               </div>
 
               {/* Mobile: horizontal scroll carousel */}
-              <div
-                ref={trailCarouselRef}
-                onPointerDown={handleTrailCarouselPointerDown}
-                onPointerMove={handleTrailCarouselPointerMove}
-                onPointerUp={handleTrailCarouselPointerUp}
-                onPointerCancel={handleTrailCarouselPointerUp}
-                onPointerLeave={handleTrailCarouselPointerUp}
-                onClickCapture={handleTrailCarouselClickCapture}
-                className="trail-carousel flex sm:hidden gap-3 overflow-x-auto pb-4 pl-1 pr-4 -mx-1 select-none"
-                style={{
-                  scrollSnapType: 'x mandatory',
-                  WebkitOverflowScrolling: 'touch',
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
-                  touchAction: 'pan-x',
-                  overscrollBehaviorX: 'contain',
-                  cursor: 'grab',
-                }}
-              >
-                <style>{`.trail-carousel::-webkit-scrollbar { display: none; }`}</style>
-                {v7Trails.map((trail) => {
-                  const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-                  return (
-                    <TrailCard
-                      key={trail.id}
-                      trail={trail}
-                      Icon={BookOpen}
-                      gradient="from-indigo-500 to-violet-500"
-                      progress={trailProgress?.progress || 0}
-                      completedLessons={trailProgress?.completedLessons || 0}
-                      totalLessons={trailProgress?.totalLessons || 0}
-                      status={trailProgress?.status || "locked"}
-                    />
-                  );
-                })}
+              <div className="relative sm:hidden">
+                <div
+                  ref={trailCarouselRef}
+                  onPointerDown={handleTrailCarouselPointerDown}
+                  onPointerMove={handleTrailCarouselPointerMove}
+                  onPointerUp={handleTrailCarouselPointerUp}
+                  onPointerCancel={handleTrailCarouselPointerUp}
+                  onPointerLeave={handleTrailCarouselPointerUp}
+                  onClickCapture={handleTrailCarouselClickCapture}
+                  className="trail-carousel flex gap-3 overflow-x-auto pb-4 pl-1 pr-4 -mx-1 select-none"
+                  style={{
+                    scrollSnapType: 'x mandatory',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    touchAction: 'pan-x',
+                    overscrollBehaviorX: 'contain',
+                    cursor: 'grab',
+                  }}
+                >
+                  <style>{`.trail-carousel::-webkit-scrollbar { display: none; }`}</style>
+                  {v7Trails.map((trail) => {
+                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                    return (
+                      <TrailCard
+                        key={trail.id}
+                        trail={trail}
+                        Icon={BookOpen}
+                        gradient="from-indigo-500 to-violet-500"
+                        progress={trailProgress?.progress || 0}
+                        completedLessons={trailProgress?.completedLessons || 0}
+                        totalLessons={trailProgress?.totalLessons || 0}
+                        status={trailProgress?.status || "locked"}
+                      />
+                    );
+                  })}
+                </div>
+                {/* Fade lateral direita + hint de arraste */}
+                <div
+                  className="pointer-events-none absolute right-0 top-0 bottom-4 w-12 z-10"
+                  style={{
+                    background: 'linear-gradient(to left, hsl(var(--background)), transparent)',
+                  }}
+                />
+                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mt-1 animate-fade-in">
+                  <span>←</span>
+                  <span>Arraste para ver mais</span>
+                  <span>→</span>
+                </div>
               </div>
 
               {/* Desktop/Tablet: paginated grid */}
