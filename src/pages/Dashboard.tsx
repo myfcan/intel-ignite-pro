@@ -821,14 +821,14 @@ const Dashboard = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
               style={{
-                background: 'linear-gradient(135deg, #047857 0%, #059669 40%, #10B981 100%)',
-                boxShadow: '0 16px 48px -12px rgba(4, 120, 87, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+                background: 'linear-gradient(135deg, hsl(258 90% 56%) 0%, hsl(258 80% 62%) 40%, hsl(270 76% 68%) 100%)',
+                boxShadow: '0 16px 48px -12px rgba(124, 58, 237, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
               }}
             >
               {/* Section header */}
               <div className="flex items-center justify-between mb-5 sm:mb-6">
                 <div className="flex items-center gap-3">
-                  <Briefcase className="w-6 h-6 text-emerald-200" />
+                  <Briefcase className="w-6 h-6 text-violet-200" />
                   <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">IA para Profissionais</h2>
                 </div>
                 <div className="flex items-center gap-2">
