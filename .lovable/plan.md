@@ -1,18 +1,64 @@
 
-# Compactar o TrailCard (Cards de Trilha)
+# TrailCards Mobile: Carrossel Vertical Estilo Stories
 
-## Problema
-O `TrailCard` tem uma area de header colorida com altura fixa de **144px (h-36)** a **160px (h-40)** apenas para exibir um icone pequeno. Isso desperdiça espaço vertical e faz o card parecer desproporcional.
+## Objetivo
+Transformar os TrailCards no mobile em cards **verticais e estreitos** dentro de um carrossel horizontal com scroll-snap -- o mesmo padrao visual usado por Duolingo, Spotify e Instagram Stories.
 
-## Solucao
-Reduzir a altura do header colorido e ajustar proporcionalmente os elementos decorativos, mantendo o design aurora/gradient intacto.
+## Resultado Visual Esperado
 
-### Mudancas no arquivo `src/components/TrailCard.tsx`:
+### Mobile (abaixo de 640px)
+```text
+  [Card1] [Card2] [Card3] [Card4] ...
+  | icon | | icon | | icon | | icon |
+  |titulo| |titulo| |titulo| |titulo|
+  | ===  | | ===  | | ===  | | lock |
+  | 2/5  | | 0/5  | | 3/5  | |      |
+  
+           o o o . . . .    <-- dots opcionais
+```
+- 2-3 cards visiveis por vez
+- Swipe horizontal com snap suave
+- Sem botoes de paginacao
 
-1. **Header height**: de `h-36 sm:h-40` para `h-24 sm:h-28` (reduzir ~40%)
-2. **Icone container**: de `w-16 h-16 sm:w-20 sm:h-20` para `w-12 h-12 sm:w-14 sm:h-14`
-3. **Icone interno**: de `w-8 h-8 sm:w-10 sm:h-10` para `w-6 h-6 sm:w-7 sm:h-7`
-4. **Circulos decorativos**: reduzir proporcionalmente para caber no header menor
-5. **Lock icon**: de `w-10 h-10` para `w-7 h-7`
+### Tablet e Desktop (640px+)
+- Manter o grid atual `sm:grid-cols-2 lg:grid-cols-3` sem mudancas
 
-Nenhuma mudanca de cor, gradiente, animacao ou estrutura. Apenas dimensoes para um card mais compacto e elegante.
+## Mudancas Tecnicas
+
+### 1. `src/pages/Dashboard.tsx` -- Layout condicional
+
+**No mobile**: substituir o `grid grid-cols-1` por um container flex horizontal:
+- `flex overflow-x-auto scroll-snap-type-x-mandatory`
+- Esconder scrollbar com CSS (`scrollbar-width: none`, `-webkit-scrollbar`)
+- Cada card com largura fixa (~140-150px) e `scroll-snap-align: start`
+- Esconder os botoes de paginacao (setas) no mobile
+- Adicionar indicadores de dots abaixo do carrossel
+
+**No desktop/tablet**: manter grid `sm:grid-cols-2 lg:grid-cols-3` como esta hoje.
+
+### 2. `src/components/TrailCard.tsx` -- Modo vertical mobile
+
+Usar classes responsivas para alternar entre layout vertical (mobile) e horizontal (desktop):
+
+**Mobile (padrao)**:
+- Largura fixa: `w-[140px]` com `flex-shrink-0`
+- Header colorido mais quadrado: `h-20`
+- Titulo: `text-xs line-clamp-2` (maximo 2 linhas)
+- Sem descricao (ocultar para economizar espaco)
+- Badge de categoria menor
+- Barra de progresso fina na base
+
+**Desktop (`sm:` e acima)**:
+- Manter layout atual: largura auto, header `h-28`, descricao visivel, etc.
+
+### 3. CSS scroll-snap nativo
+
+Implementar scroll horizontal usando CSS puro (sem Embla ou outra lib):
+- `scroll-snap-type: x mandatory` no container
+- `scroll-snap-align: start` em cada card
+- `-webkit-overflow-scrolling: touch` para suavidade no iOS
+- Padding lateral para que o primeiro e ultimo card nao colem na borda
+
+### Arquivos modificados
+1. `src/components/TrailCard.tsx` -- classes responsivas para modo vertical no mobile
+2. `src/pages/Dashboard.tsx` -- container flex com scroll-snap no mobile, grid no desktop
