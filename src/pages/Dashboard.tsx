@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -59,9 +59,8 @@ const Dashboard = () => {
   const { isAdmin, canAccessAdmin, loading: adminLoading } = useIsAdmin(user?.id);
   const { stats: gamificationStats, isLoading: gamificationLoading, refresh: refreshGamification } = useUserGamification();
   
-  // Estados para controle do scroll horizontal
-  const [activeTrailIndex, setActiveTrailIndex] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  // Detecta dispositivo touch para liberar carrossel apenas no mobile real
+  const [isCoarsePointer, setIsCoarsePointer] = useState(false);
   
   // Separar trilhas V7 e V8
   const v7Trails = trails.filter(t => t.trail_type !== 'v8');
@@ -73,10 +72,23 @@ const Dashboard = () => {
   const totalTrailPages = Math.max(1, Math.ceil(v7Trails.length / TRAILS_PER_PAGE));
   const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
   const totalV8Trails = v8Trails.length;
+  const shouldUseMobileCarousel = isCoarsePointer;
 
   useEffect(() => {
     logRuntimeSignature({ route: '/dashboard', layoutId: DASHBOARD_LAYOUT_ID });
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(hover: none), (pointer: coarse)');
+    const updatePointerMode = () => setIsCoarsePointer(mediaQuery.matches);
+
+    updatePointerMode();
+    mediaQuery.addEventListener('change', updatePointerMode);
+
+    return () => mediaQuery.removeEventListener('change', updatePointerMode);
   }, []);
 
   // REMOVIDO: refreshGamification duplicado que causava múltiplos fetches
@@ -540,7 +552,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-5 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Conquistar e Crescer</h2>
                 {/* Pagination arrows - hidden on mobile, visible on sm+ */}
-                <div className="hidden sm:flex items-center gap-2">
+                <div className={`${shouldUseMobileCarousel ? 'hidden sm:flex' : 'flex'} items-center gap-2`}>
                   <button
                     onClick={() => setTrailPage(p => Math.max(0, p - 1))}
                     disabled={trailPage === 0}
@@ -565,7 +577,7 @@ const Dashboard = () => {
 
               {/* Mobile: horizontal scroll carousel */}
               <div
-                className="trail-carousel sm:hidden flex gap-3 overflow-x-auto pb-4 pl-1 pr-4 -mx-1"
+                className={`trail-carousel ${shouldUseMobileCarousel ? 'flex' : 'hidden'} sm:hidden gap-3 overflow-x-auto pb-4 pl-1 pr-4 -mx-1`}
                 style={{
                   scrollSnapType: 'x mandatory',
                   WebkitOverflowScrolling: 'touch',
@@ -599,7 +611,7 @@ const Dashboard = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                  className={`${shouldUseMobileCarousel ? 'hidden sm:grid' : 'grid grid-cols-1'} sm:grid-cols-2 lg:grid-cols-3 gap-4`}
                 >
               {visibleTrails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
