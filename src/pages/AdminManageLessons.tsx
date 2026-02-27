@@ -53,6 +53,7 @@ interface Trail {
   id: string;
   title: string;
   order_index: number;
+  trail_type: string | null;
 }
 
 export default function AdminManageLessons() {
@@ -95,7 +96,7 @@ export default function AdminManageLessons() {
     setLoading(true);
     try {
       const [trailsRes, coursesRes, lessonsRes] = await Promise.all([
-        supabase.from('trails').select('id, title, order_index').order('order_index'),
+        supabase.from('trails').select('id, title, order_index, trail_type').order('order_index'),
         supabase.from('courses').select('id, trail_id, title, order_index, is_active').order('order_index'),
         supabase.from('lessons').select('id, title, trail_id, course_id, order_index, is_active, created_at, estimated_time, model').order('order_index'),
       ]);
@@ -201,19 +202,25 @@ export default function AdminManageLessons() {
       return;
     }
 
-    // Check if trail has courses
-    if (coursesForSelectedTrail.length === 0) {
-      toast({
-        title: '⚠️ Trilha sem Jornada',
-        description: 'Esta trilha não possui jornadas (cursos). Crie uma jornada primeiro para poder mover aulas.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    // Check if target trail is V8 (no course needed)
+    const targetTrail = trails.find(t => t.id === targetTrailId);
+    const isV8Trail = targetTrail?.trail_type === 'v8';
 
-    if (!targetCourseId) {
-      toast({ title: 'Selecione uma jornada', variant: 'destructive' });
-      return;
+    if (!isV8Trail) {
+      // V7: requires course
+      if (coursesForSelectedTrail.length === 0) {
+        toast({
+          title: '⚠️ Trilha sem Jornada',
+          description: 'Esta trilha não possui jornadas (cursos). Crie uma jornada primeiro para poder mover aulas.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!targetCourseId) {
+        toast({ title: 'Selecione uma jornada', variant: 'destructive' });
+        return;
+      }
     }
 
     setMoving(true);
@@ -222,7 +229,7 @@ export default function AdminManageLessons() {
         .from('lessons')
         .update({
           trail_id: targetTrailId,
-          course_id: targetCourseId,
+          course_id: isV8Trail ? null : targetCourseId,
           order_index: targetOrderIndex,
         })
         .eq('id', lessonId);
@@ -329,7 +336,7 @@ export default function AdminManageLessons() {
             <Power className="w-3 h-3 mr-1" />
             {activating === lesson.id ? '...' : lesson.is_active ? 'Off' : 'On'}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/v7/play/${lesson.id}`)}>
+          <Button variant="outline" size="sm" onClick={() => navigate(lesson.model === 'v8' ? `/v8/${lesson.id}` : `/admin/v7/play/${lesson.id}`)}>
             <Play className="w-3 h-3 mr-1" />
             Assistir
           </Button>
@@ -355,7 +362,7 @@ export default function AdminManageLessons() {
               Gerenciar Lições
             </h1>
             <p className="text-muted-foreground text-sm">
-              Trilhas → Jornadas → Aulas • Hierarquia completa
+              Trilhas → Jornadas → Aulas • Hierarquia completa (V7 + V8)
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -394,17 +401,26 @@ export default function AdminManageLessons() {
                     <CardHeader className="cursor-pointer hover:bg-accent/30 transition-colors py-3 px-4">
                       <div className="flex items-center gap-3">
                         {expandedTrails.has(trail.id) ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                        <GraduationCap className="w-5 h-5 text-primary" />
+                         <GraduationCap className="w-5 h-5 text-primary" />
                         <div className="flex-1">
-                          <CardTitle className="text-base">{trail.title}</CardTitle>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            {trail.title}
+                            {trail.trail_type === 'v8' && <Badge className="text-xs bg-indigo-500/20 text-indigo-400 border-indigo-500/30">V8</Badge>}
+                          </CardTitle>
                           <CardDescription className="text-xs">
-                            {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)
-                            {trail.orphanedLessons.length > 0 && (
-                              <span className="text-amber-500 ml-2">⚠️ {trail.orphanedLessons.length} aula(s) sem jornada</span>
+                            {trail.trail_type === 'v8' ? (
+                              <>{trail.orphanedLessons.length + trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)</>
+                            ) : (
+                              <>
+                                {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)
+                                {trail.orphanedLessons.length > 0 && (
+                                  <span className="text-amber-500 ml-2">⚠️ {trail.orphanedLessons.length} aula(s) sem jornada</span>
+                                )}
+                              </>
                             )}
                           </CardDescription>
                         </div>
-                        {trail.courses.length === 0 && (
+                        {trail.trail_type !== 'v8' && trail.courses.length === 0 && (
                           <Badge variant="outline" className="border-amber-400 text-amber-600 text-xs">
                             Sem jornadas
                           </Badge>
@@ -413,9 +429,20 @@ export default function AdminManageLessons() {
                     </CardHeader>
                   </CollapsibleTrigger>
 
-                  <CollapsibleContent>
+                   <CollapsibleContent>
                     <CardContent className="pt-0 pb-3 px-4 space-y-3">
-                      {/* Courses inside trail */}
+                      {/* V8 trails: show lessons directly */}
+                      {trail.trail_type === 'v8' ? (
+                        <div className="space-y-1">
+                          {[...trail.orphanedLessons, ...trail.courses.flatMap(c => c.lessons)].sort((a, b) => a.order_index - b.order_index).length === 0 ? (
+                            <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma aula nesta trilha V8</p>
+                          ) : (
+                            [...trail.orphanedLessons, ...trail.courses.flatMap(c => c.lessons)].sort((a, b) => a.order_index - b.order_index).map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)
+                          )}
+                        </div>
+                      ) : (
+                      <>
+                      {/* V7: Courses inside trail */}
                       {trail.courses.length === 0 && (
                         <div className="p-4 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-center">
                           <p className="text-sm text-amber-700 mb-2">
@@ -458,7 +485,7 @@ export default function AdminManageLessons() {
                         </Collapsible>
                       ))}
 
-                      {/* Orphaned lessons in this trail */}
+                      {/* Orphaned lessons in this trail (V7 only) */}
                       {trail.orphanedLessons.length > 0 && (
                         <div className="ml-4 mt-2">
                           <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-md mb-1">
@@ -469,6 +496,8 @@ export default function AdminManageLessons() {
                             {trail.orphanedLessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
                           </div>
                         </div>
+                      )}
+                      </>
                       )}
                     </CardContent>
                   </CollapsibleContent>
@@ -557,8 +586,8 @@ export default function AdminManageLessons() {
                 </Select>
               </div>
 
-              {/* Course (Jornada) */}
-              {targetTrailId && (
+              {/* Course (Jornada) - hidden for V8 trails */}
+              {targetTrailId && trails.find(t => t.id === targetTrailId)?.trail_type !== 'v8' && (
                 <div>
                   <label className="text-sm font-medium mb-2 block">Jornada</label>
                   {coursesForSelectedTrail.length === 0 ? (
@@ -586,6 +615,11 @@ export default function AdminManageLessons() {
                   )}
                 </div>
               )}
+              {targetTrailId && trails.find(t => t.id === targetTrailId)?.trail_type === 'v8' && (
+                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                  <p className="text-sm text-indigo-300">✅ Trilha V8 — aula será movida diretamente (sem jornada).</p>
+                </div>
+              )}
 
               {/* Order */}
               <div>
@@ -596,7 +630,7 @@ export default function AdminManageLessons() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowMoveModal(false)} disabled={moving}>Cancelar</Button>
-              <Button onClick={handleMoveLesson} disabled={moving || !targetCourseId}>
+              <Button onClick={handleMoveLesson} disabled={moving || (!targetCourseId && trails.find(t => t.id === targetTrailId)?.trail_type !== 'v8')}>
                 {moving ? 'Movendo...' : 'Confirmar'}
               </Button>
             </DialogFooter>
