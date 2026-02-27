@@ -629,6 +629,11 @@ const Dashboard = () => {
               )}
             </div>
 
+            {/* ===== SECTION TITLE: TRILHAS ===== */}
+            {(v8Trails.length > 0 || v7Trails.length > 0) && (
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
+            )}
+
             {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
             {v8Trails.length > 0 && (
             <motion.div
@@ -657,7 +662,7 @@ const Dashboard = () => {
                         navigate('/all-trails/v8');
                       }
                     }}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
                     style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
                   >
                     Ver todos ›
@@ -815,7 +820,7 @@ const Dashboard = () => {
                         navigate('/all-trails/v7');
                       }
                     }}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
                     style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
                   >
                     Ver todos ›
