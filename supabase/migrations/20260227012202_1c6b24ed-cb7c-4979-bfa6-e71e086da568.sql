@@ -1,0 +1,2 @@
+ALTER TABLE public.lessons DROP CONSTRAINT IF EXISTS lessons_model_check;
+ALTER TABLE public.lessons ADD CONSTRAINT lessons_model_check CHECK (model IS NULL OR model IN ('v1', 'v2', 'v3', 'v4', 'v5', 'v7', 'v8'));
