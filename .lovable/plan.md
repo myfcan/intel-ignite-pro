@@ -1,71 +1,57 @@
 
-# Redesign da V8TrailDetail: Arvore Vertical de Aulas
+# Animacoes de Progresso na Arvore de Habilidades
 
-## Problema
-A pagina de detalhe da jornada V8 (`/v8-trail/:id`) usa um layout de lista simples (cards empilhados verticalmente), identico aos modelos anteriores (V5, V7). O usuario quer um layout de **arvore vertical com nos conectados** (estilo skill-tree / Duolingo), onde cada aula eh um no visual conectado por linhas, criando um caminho de progressao visual.
+## Objetivo
+Adicionar animacoes visuais que celebram a conclusao de aulas: o no completado pulsa com um efeito de "celebracao" e a linha conectora se preenche com cor de forma animada ate o proximo no.
 
-## Referencia Visual
-A segunda screenshot do usuario mostra o modelo desejado:
-- Nos (icones) dispostos em zigzag vertical (esquerda-centro-direita)
-- Linhas conectando os nos de cima para baixo
-- Ao clicar em um no, aparece um popover/card com titulo, descricao e botao "Iniciar a aula"
-- Nos completados com cor diferente dos bloqueados
-- Certificado ao final do caminho
+---
 
-## Solucao
+## Mudancas Planejadas
 
-### 1. Novo componente: `V8SkillTree`
-Substituir a lista de `V8LessonCard` por um componente de arvore vertical:
+### 1. V8SkillNode.tsx - Animacao de Pulso no No Completado
 
-- Cada aula eh um **no circular** (~60x60px) com icone dentro
-- Nos posicionados em padrao **zigzag**: centro, direita, centro, esquerda, centro...
-- **Linhas SVG** conectando cada no ao proximo (path curvo ou reto)
-- Estados visuais dos nos:
-  - **Completado**: fundo indigo/verde solido, icone check branco
-  - **Disponivel/Em progresso**: fundo indigo com animacao pulse, icone play
-  - **Bloqueado**: fundo cinza, icone cadeado, opacity reduzida
-- Ao clicar em um no disponivel, abre um **popover/card flutuante** com:
-  - Titulo da aula
-  - Descricao breve
-  - Botao "Iniciar a aula" (gradiente indigo)
-- Nos bloqueados nao respondem a clique
+Adicionar um efeito de pulso radiante nos nos com status `completed`:
+- Um anel externo que pulsa suavemente (escala 1 a 1.3, opacidade ciclica) com cor violeta
+- Um segundo anel mais externo com pulso mais lento e sutil para criar efeito de "ondas"
+- Isso complementa o pulso ja existente no estado `in_progress`, mas com estilo diferente (celebratorio vs. indicativo)
 
-### 2. Manter o header existente
-O header com gradiente roxo, titulo da trilha e barra de progresso permanece como esta (esta bem feito).
+### 2. V8SkillTree.tsx - Animacao de Preenchimento nas Linhas
 
-### 3. Card de Certificado
-Ao final da arvore, adicionar um card visual de "Obtenha seu certificado" com icone de cadeado (desbloqueavel ao completar todas as aulas).
+Melhorar as linhas SVG conectoras entre nos completados:
+- Adicionar um gradiente animado nas linhas de nos completados (violeta vibrante)
+- Usar uma segunda `path` sobreposta com `strokeDashoffset` animado para criar efeito de "preenchimento fluido" da cor ao longo da curva
+- A linha completada tera uma animacao de brilho sutil (glow pulsante via filtro SVG ou opacidade ciclica)
+- As linhas entre nos nao completados permanecem tracejadas e cinza (sem mudanca)
 
-## Arquivos Modificados
+### 3. Efeito de Brilho (Glow) nas Linhas Completadas
 
-1. **`src/components/lessons/v8/V8SkillTree.tsx`** (NOVO)
-   - Componente principal da arvore
-   - Recebe array de aulas com status
-   - Renderiza nos em zigzag com SVG paths conectando-os
-   - Gerencia estado do popover (qual no esta aberto)
+Adicionar um `filter` SVG com `feGaussianBlur` para criar um efeito de glow nas linhas completadas, dando a impressao de energia fluindo pela arvore.
 
-2. **`src/components/lessons/v8/V8SkillNode.tsx`** (NOVO)
-   - Componente individual de cada no
-   - Recebe status (completed/available/in_progress/locked)
-   - Estilizacao condicional baseada no status
-   - onClick para abrir popover
-
-3. **`src/pages/V8TrailDetail.tsx`** (MODIFICADO)
-   - Substituir a secao `<main>` que usa `V8LessonCard` pelo novo `V8SkillTree`
-   - Manter toda a logica de queries e calculo de status
+---
 
 ## Detalhes Tecnicos
 
-### Layout Zigzag
-Os nos serao posicionados usando `flexbox` com alinhamento variavel:
-- Indice par: `items-center` (centro)
-- Indice impar alternando: `items-end` (direita) e `items-start` (esquerda)
+### V8SkillNode.tsx
+```
+- Adicionar bloco condicional `isCompleted` com dois `motion.div` absolutos:
+  - Anel 1: scale [1, 1.25, 1], opacity [0.4, 0, 0.4], duracao 2.5s, repeat infinito
+  - Anel 2: scale [1, 1.4, 1], opacity [0.2, 0, 0.2], duracao 3.5s, repeat infinito
+  - Ambos com border violeta e rounded-full
+```
 
-As linhas de conexao usarao SVG `<path>` com curvas bezier entre os centros dos nos.
+### V8SkillTree.tsx
+```
+- No SVG, adicionar <defs> com filtro de glow:
+  <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge>...</feMerge></filter>
 
-### Popover
-Usar `framer-motion` para animar a entrada do card flutuante (scale + opacity). Posicionado relativamente ao no clicado. Click fora fecha o popover.
+- Para linhas completadas, renderizar duas paths sobrepostas:
+  1. Path base (cor solida, strokeWidth 3) - ja existe
+  2. Path de glow (mesmo path, filter="url(#glow)", opacity animada 0.4-0.8)
+  
+- A animacao de pathLength nas linhas completadas tera duracao maior (0.8s)
+  para parecer que a "energia" flui pela linha
+```
 
-### Responsividade
-- Mobile: zigzag mais suave (menos offset lateral)
-- Desktop: offset lateral mais pronunciado (~120px)
+### Arquivos Modificados
+- `src/components/lessons/v8/V8SkillNode.tsx`
+- `src/components/lessons/v8/V8SkillTree.tsx`
