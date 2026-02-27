@@ -611,12 +611,12 @@ const Dashboard = () => {
                 `}</style>
                 <div
                   ref={snapScrollerRef}
-                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden pb-5"
+                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden"
                   style={{
                     scrollSnapType: 'x mandatory',
                     scrollPaddingLeft: 20,
                     scrollPaddingRight: 20,
-                    padding: '0 20px 20px 20px',
+                    padding: '0 20px 10px 20px',
                     WebkitOverflowScrolling: 'touch',
                     overscrollBehaviorX: 'contain',
                     touchAction: 'pan-x',
@@ -657,7 +657,7 @@ const Dashboard = () => {
                   })}
                 </div>
                 {/* Dots */}
-                <div className="flex items-center justify-center gap-2 mt-1">
+                <div className="flex items-center justify-center gap-2 mt-0">
                   {v7Trails.map((_, idx) => (
                     <button
                       key={idx}
