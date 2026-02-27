@@ -1,61 +1,53 @@
 
 
-# Monitor de Pipeline V8 + Correcao do Botao
+# Correcao PGRST203: Drop da funcao ambigua + params explicitos
 
-## Alteracoes em `src/pages/AdminV8Create.tsx`
+## Contexto do Problema
 
-### 1. Texto do botao
-Linha 445: trocar `Gerar Áudios ({validation.sectionCount} seções + {validation.quizCount} quizzes)` por **"Gerar Aula"**.
+Existem duas versoes da funcao `create_lesson_draft` no banco:
+- Versao A: 5 parametros (p_title, p_trail_id, p_order_index, p_estimated_time, p_content)
+- Versao B: 8 parametros (mesmos 5 + p_exercises, p_audio_url, p_word_timestamps com defaults)
 
-### 2. Importar V7PipelineMonitor
-Importar `V7PipelineMonitor`, `PipelineStep`, `PipelineLog` de `@/components/admin/V7PipelineMonitor`.
+PostgREST retorna PGRST203 quando chamada com 5 ou 6 params porque ambas sao candidatas validas.
 
-### 3. Adicionar estados do pipeline
-```text
-pipelineSteps: PipelineStep[]   (6 steps V8)
-pipelineLogs: PipelineLog[]     (logs em tempo real)
-pipelineProgress: number        (0-100)
-pipelineError: string | null
+## Analise de Impacto
+
+4 chamadas existentes no codigo:
+- Pipeline V1 (step7-consolidate.ts): ja passa 8 params — sem impacto
+- Pipeline V7 (step6-consolidate.ts): ja passa 8 params — sem impacto
+- AdminV8Create handleGenerateAudio (L216): passa 5 params — AFETADO (causa do erro)
+- AdminV8Create handleSaveLesson (L342): passa 6 params — AFETADO
+
+## Plano de Execucao
+
+### 1. Migracao SQL: Drop da funcao de 5 parametros
+
+```sql
+DROP FUNCTION IF EXISTS public.create_lesson_draft(text, uuid, integer, integer, jsonb);
 ```
 
-### 4. Definir steps padrao V8
-```text
-1. validate       — Validando JSON de entrada
-2. create-draft   — Criando rascunho no banco
-3. call-api       — Chamando API de geracao (ElevenLabs)
-4. process-results — Processando resultados
-5. update-content — Atualizando conteudo com URLs de audio
-6. finalize       — Finalizando
-```
+A versao de 8 params (com defaults) continua aceitando chamadas com 5 params apos o drop, pois PostgREST resolve os defaults quando ha apenas uma funcao candidata.
 
-### 5. Instrumentar handleGenerateAudio
-Adicionar helpers `updateStep(id, status, message?)` e `addLog(level, message)` para atualizar os estados em cada etapa do fluxo existente (linhas 159-239). O fluxo ja tem as etapas certas — so precisa emitir eventos para o monitor:
+### 2. AdminV8Create.tsx: Passar todos os params explicitamente
 
-- Antes do parse: step `validate` running -> completed
-- Antes do `create_lesson_draft`: step `create-draft` running -> completed
-- Antes do fetch `v8-generate`: step `call-api` running
-- Apos response ok: step `call-api` completed, `process-results` running -> completed
-- Apos atualizar JSON com URLs: step `update-content` completed
-- Final: step `finalize` completed, progress 100%
-- Em caso de erro: marcar step atual como error, adicionar log de erro
+Duas chamadas precisam ser atualizadas:
 
-### 6. Fix do erro [object Object]
-No catch (L233-236), erros do Supabase podem ser objetos. Corrigir:
-```
-const msg = err instanceof Error ? err.message :
-            typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err);
-```
-(Ja esta correto na L234 atual — manter)
+**Linha 216-222 (handleGenerateAudio):** Adicionar `p_exercises`, `p_audio_url`, `p_word_timestamps` com valores padrao.
 
-### 7. Substituir spinner generico pelo V7PipelineMonitor
-Remover o bloco de spinner (L449-455) e colocar o componente `V7PipelineMonitor` no lugar, passando `isRunning={isGenerating}`, `steps={pipelineSteps}`, `logs={pipelineLogs}`, `progress={pipelineProgress}`, `error={pipelineError}`.
+**Linha 342-349 (handleSaveLesson):** Adicionar `p_audio_url`, `p_word_timestamps` com valores padrao (ja tem p_exercises).
 
-O monitor aparecera abaixo do botao "Gerar Aula" com o mesmo design padrao do V7: barra de progresso, etapas com icones de status, e logs em tempo real.
+Isso garante defesa em profundidade — mesmo que alguem recrie a funcao de 5 params no futuro, o codigo nao quebraria.
 
-### Resultado
-- Botao diz apenas "Gerar Aula"
-- Ao clicar, o monitor aparece com 6 etapas visuais
-- Cada etapa muda de pending -> running -> completed em tempo real
-- Erros sao exibidos com detalhes no monitor
-- Mesmo design do Pipeline V7
+### 3. Regeneracao automatica do types.ts
+
+Apos o drop, o `types.ts` sera regenerado automaticamente com apenas uma overload de `create_lesson_draft`, eliminando a union type ambigua.
+
+## Arquivos alterados
+
+- Migracao SQL (1 statement)
+- `src/pages/AdminV8Create.tsx` (2 chamadas RPC atualizadas)
+
+## Risco
+
+Zero. Todos os callers existentes (V1, V7, V8) passam params compativeis com a versao de 8 params.
 
