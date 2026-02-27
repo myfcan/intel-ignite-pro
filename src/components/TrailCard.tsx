@@ -100,7 +100,7 @@ const TrailCard = ({
       )}
       {/* Colored header area with aurora gradient */}
       <div
-        className="h-36 sm:h-40 flex items-center justify-center relative overflow-hidden"
+        className="h-24 sm:h-28 flex items-center justify-center relative overflow-hidden"
         style={{
           background: isLocked
             ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
@@ -113,29 +113,29 @@ const TrailCard = ({
       >
         {/* Decorative shapes */}
         <div
-          className="absolute w-40 h-40 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.12)', top: '-30px', right: '-30px' }}
-        />
-        <div
           className="absolute w-28 h-28 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.08)', bottom: '-20px', left: '-10px' }}
+          style={{ background: 'rgba(255,255,255,0.12)', top: '-20px', right: '-20px' }}
         />
         <div
-          className="absolute w-16 h-16 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.06)', top: '20px', left: '30px' }}
+          className="absolute w-20 h-20 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.08)', bottom: '-14px', left: '-8px' }}
+        />
+        <div
+          className="absolute w-12 h-12 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.06)', top: '12px', left: '20px' }}
         />
         {isLocked ? (
-          <Lock className="w-10 h-10 text-white/40" />
+          <Lock className="w-7 h-7 text-white/40" />
         ) : (
           <div className="relative">
             <div
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center backdrop-blur-sm"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center backdrop-blur-sm"
               style={{
                 background: 'rgba(255,255,255,0.2)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.3)',
               }}
             >
-              <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-md" />
+              <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-md" />
             </div>
           </div>
         )}
