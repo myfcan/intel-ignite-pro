@@ -49,6 +49,17 @@ interface TrailProgress {
   status: 'active' | 'completed' | 'locked';
 }
 
+interface V8Course {
+  id: string;
+  title: string;
+  description: string | null;
+  icon: string | null;
+  order_index: number;
+  trail_id: string;
+  completedLessons: number;
+  totalLessons: number;
+}
+
 const PROFESSIONAL_CHALLENGES = [
   { id: 'pro-1', title: 'IA para Corretores', description: 'Domine IA no mercado imobiliário', icon: '🏢', order_index: 2 },
   { id: 'pro-2', title: 'IA para Advogados', description: 'Automatize processos jurídicos', icon: '⚖️', order_index: 2 },
@@ -78,6 +89,9 @@ const Dashboard = () => {
   const { isAdmin, canAccessAdmin, loading: adminLoading } = useIsAdmin(user?.id);
   const { stats: gamificationStats, isLoading: gamificationLoading, refresh: refreshGamification } = useUserGamification();
   
+  // V8 courses (jornadas dentro da trilha V8)
+  const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
+  
   // Separar trilhas V7 e V8
   const v7Trails = trails.filter(t => t.trail_type !== 'v8');
   const v8Trails = trails.filter(t => t.trail_type === 'v8');
@@ -88,10 +102,10 @@ const Dashboard = () => {
   const totalTrailPages = Math.max(1, Math.ceil(v7Trails.length / TRAILS_PER_PAGE));
   const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
 
-  // Paginação das trilhas V8
+  // Paginação das jornadas V8 (courses)
   const [trailPageV8, setTrailPageV8] = useState(0);
-  const totalTrailPagesV8 = Math.max(1, Math.ceil(v8Trails.length / TRAILS_PER_PAGE));
-  const visibleV8Trails = v8Trails.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
+  const totalTrailPagesV8 = Math.max(1, Math.ceil(v8Courses.length / TRAILS_PER_PAGE));
+  const visibleV8Courses = v8Courses.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
 
   // Paginação dos desafios profissionais
   const [trailPagePro, setTrailPagePro] = useState(0);
@@ -146,7 +160,7 @@ const Dashboard = () => {
   // IntersectionObserver V8
   useEffect(() => {
     const root = snapScrollerRefV8.current;
-    if (!root || v8Trails.length === 0) return;
+    if (!root || v8Courses.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -167,7 +181,7 @@ const Dashboard = () => {
 
     snapItemRefsV8.current.forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
-  }, [v8Trails]);
+  }, [v8Courses]);
 
   const scrollToSnapIndexV8 = (idx: number) => {
     const el = snapItemRefsV8.current[idx];
@@ -345,6 +359,43 @@ const Dashboard = () => {
       }
 
       setTrailsProgress(progressData);
+
+      // Fetch V8 courses (jornadas) para mostrar como cards individuais
+      const v8TrailIds = (trailsData || []).filter(t => t.trail_type === 'v8').map(t => t.id);
+      if (v8TrailIds.length > 0) {
+        const { data: coursesData } = await supabase
+          .from('courses')
+          .select('*')
+          .in('trail_id', v8TrailIds)
+          .eq('is_active', true)
+          .order('order_index');
+
+        if (coursesData && coursesData.length > 0) {
+          // Fetch lessons by course_id for progress
+          const courseIds = coursesData.map(c => c.id);
+          const { data: courseLessons } = await supabase
+            .from('lessons')
+            .select('id, course_id')
+            .in('course_id', courseIds)
+            .eq('is_active', true);
+
+          const v8CoursesWithProgress: V8Course[] = coursesData.map(course => {
+            const lessons = (courseLessons || []).filter(l => l.course_id === course.id);
+            const completed = lessons.filter(l => completedLessonIds.has(l.id)).length;
+            return {
+              id: course.id,
+              title: course.title,
+              description: course.description,
+              icon: course.icon,
+              order_index: course.order_index,
+              trail_id: course.trail_id,
+              completedLessons: completed,
+              totalLessons: lessons.length,
+            };
+          });
+          setV8Courses(v8CoursesWithProgress);
+        }
+      }
     } catch (error: any) {
       console.error('Error fetching trails with progress:', error);
     }
@@ -658,7 +709,7 @@ const Dashboard = () => {
             )}
 
             {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
-            {v8Trails.length > 0 && (
+            {v8Courses.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -730,12 +781,11 @@ const Dashboard = () => {
                   }}
                   aria-label="Carrossel de trilhas V8"
                 >
-                  {v8Trails.map((trail, idx) => {
-                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                  {v8Courses.map((course, idx) => {
                     const isActive = idx === snapActiveIndexV8;
                     return (
                       <div
-                        key={trail.id}
+                        key={course.id}
                         ref={(el) => { snapItemRefsV8.current[idx] = el; }}
                         data-snap-index={idx}
                         className="snap-item relative flex-shrink-0"
@@ -751,20 +801,20 @@ const Dashboard = () => {
                         }}
                       >
                         <V8TrailCard
-                          trailId={trail.id}
-                          title={trail.title}
-                          description={trail.description}
-                          icon={trail.icon}
-                          lessonCount={trailProgress?.totalLessons || 0}
-                          completedCount={trailProgress?.completedLessons || 0}
-                          orderIndex={trail.order_index}
+                          trailId={course.trail_id}
+                          title={course.title}
+                          description={course.description || ''}
+                          icon={course.icon || '📘'}
+                          lessonCount={course.totalLessons}
+                          completedCount={course.completedLessons}
+                          orderIndex={course.order_index}
                         />
                       </div>
                     );
                   })}
                 </div>
                 <div className="flex items-center justify-center gap-2 mt-0">
-                  {v8Trails.map((_, idx) => (
+                  {v8Courses.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -778,7 +828,7 @@ const Dashboard = () => {
                           : 'rgba(148,163,184,0.45)',
                         transform: idx === snapActiveIndexV8 ? 'scale(1.15)' : 'scale(1)',
                       }}
-                      aria-label={`Ir para trilha V8 ${idx + 1}`}
+                      aria-label={`Ir para jornada V8 ${idx + 1}`}
                     />
                   ))}
                 </div>
@@ -793,22 +843,19 @@ const Dashboard = () => {
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                   className="hidden sm:grid sm:grid-cols-3 gap-4"
                 >
-                  {visibleV8Trails.map((trail) => {
-                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-                      return (
-                        <div key={trail.id} className="flex-1 min-w-0">
-                          <V8TrailCard
-                            trailId={trail.id}
-                            title={trail.title}
-                            description={trail.description}
-                            icon={trail.icon}
-                            lessonCount={trailProgress?.totalLessons || 0}
-                            completedCount={trailProgress?.completedLessons || 0}
-                            orderIndex={trail.order_index}
-                          />
-                        </div>
-                      );
-                  })}
+                  {visibleV8Courses.map((course) => (
+                    <div key={course.id} className="flex-1 min-w-0">
+                      <V8TrailCard
+                        trailId={course.trail_id}
+                        title={course.title}
+                        description={course.description || ''}
+                        icon={course.icon || '📘'}
+                        lessonCount={course.totalLessons}
+                        completedCount={course.completedLessons}
+                        orderIndex={course.order_index}
+                      />
+                    </div>
+                  ))}
                 </motion.div>
               </AnimatePresence>
             </motion.div>
