@@ -1,4 +1,4 @@
-import { LucideIcon, Lock, ChevronRight } from 'lucide-react';
+import { LucideIcon, Lock, ChevronRight, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -102,7 +102,7 @@ const TrailCard = ({
       )}
       {/* Colored header area with aurora gradient */}
       <div
-        className="h-20 sm:h-28 flex items-center justify-center relative overflow-hidden"
+        className="h-[100px] sm:h-[132px] flex items-center justify-center relative overflow-hidden"
         style={{
           background: isLocked
             ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
@@ -144,7 +144,7 @@ const TrailCard = ({
       </div>
 
       {/* Card body */}
-      <div className="px-2.5 py-2 sm:px-4 sm:py-3 flex-1 flex flex-col justify-between">
+      <div className="px-2.5 py-3 sm:px-4 sm:py-4 flex-1 flex flex-col justify-between">
         {/* Category badge */}
         <div>
           <span
@@ -156,6 +156,14 @@ const TrailCard = ({
           >
             {theme.label}
           </span>
+
+          {/* Estimated time */}
+          {!isLocked && (
+            <div className="flex items-center gap-1 text-gray-400 mb-1">
+              <Clock size={10} className="sm:w-[11px] sm:h-[11px]" />
+              <span className="text-[9px] sm:text-[10px] font-medium">~{estimatedTime} min</span>
+            </div>
+          )}
 
           {/* Title */}
           <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-snug line-clamp-2 sm:line-clamp-1 mb-0.5">
