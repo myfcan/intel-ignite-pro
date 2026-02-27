@@ -1,49 +1,99 @@
 
 
-# Adicionar Titulos de Secao + Link "Ver Todos" nas Trilhas
+# Reestruturar Hierarquia + Nova Trilha "IA para Profissionais"
 
-## O Que Falta Hoje
+## Parte 1 -- Unificar Arquitetura (Trilha -> Jornada -> Aula)
 
-Os containers de trilha (V8 "Seu Caminho de Maestria" e V7 "Renda Extra PRO") tem headers internos, mas faltam:
-1. Um titulo de secao **acima** do container gradiente (ex: "Trilhas")
-2. Um link **"Ver todos"** no header de cada container que leva a uma pagina listando todas as jornadas daquela trilha
+A hierarquia passa a ser a mesma para TODOS os modelos (V7 e V8):
 
-## Plano
+```text
+Trilha (container visual no Dashboard)
+  └── Jornada (cards clicaveis = tabela "courses")
+        └── Aulas/Licoes (tabela "lessons")
+```
 
-### 1. Adicionar "Ver todos" no header de cada container
+### O que muda no codigo
 
-Dentro de cada section header (linhas 645-671 para V8, linhas 787-830 para V7), adicionar um link "Ver todos >" ao lado das setas de paginacao:
+**V8 deixa de ser 2 niveis e passa a 3 niveis como o V7.** Isso significa:
 
-- **V8**: Link navega para `/v8-trail/{primeiraTrilaV8Id}` (mostra todas as aulas da trilha)
-- **V7**: Link navega para `/trail/{primeiraTrilaV7Id}` (mostra todas as jornadas da trilha)
+1. **Dashboard (`src/pages/Dashboard.tsx`)**: Os cards dentro de cada container de trilha passam a representar **Jornadas** (courses), nao trilhas. Cada card mostra titulo da jornada, icone, progresso (aulas concluidas / total de aulas da jornada). Ao clicar, navega para a pagina de detalhe da jornada com suas aulas.
 
-Se houver apenas 1 trilha em cada secao, o link vai direto para o detalhe dela. Se houver multiplas, criaremos uma pagina de listagem.
+2. **Queries no Dashboard**: Em vez de buscar `trails` e renderizar cada trail como card, o fluxo sera:
+   - Buscar trails (para obter o nome do container)
+   - Buscar courses de cada trail (para renderizar como cards)
+   - Buscar lessons de cada course (para calcular progresso)
 
-### 2. Nova Pagina de Listagem (se necessario)
+3. **V8TrailCard**: Sera renomeado/adaptado para representar uma **Jornada** (course), nao uma trilha. O componente continua visualmente o mesmo, mas recebe dados de `courses` em vez de `trails`.
 
-Caso existam multiplas trilhas V8 ou V7, criar uma pagina simples `/trails?type=v8` e `/trails?type=v7` que lista todas as trilhas daquele tipo com seus cursos/aulas.
+4. **Pagina de detalhe V8** (`/v8-trail/:id`): Sera ajustada para mostrar aulas de uma jornada (course), nao de uma trilha inteira.
 
-### 3. Design do Link "Ver todos"
+5. **Admin**: O modal de criacao inline ja suporta courses para V7. Precisamos garantir que V8 tambem passe a usar courses.
 
-Seguindo o estilo glassmorphism existente:
-- Texto "Ver todos" com seta para direita
-- Cor: `text-white/70 hover:text-white`
-- Fundo semi-transparente pill: `bg-white/10 hover:bg-white/15 backdrop-blur`
-- Posicionado no canto direito do header, ao lado das setas de paginacao (desktop) ou sozinho (mobile)
+### Banco de dados
 
-### Detalhes Tecnicos
+Nenhuma mudanca de schema necessaria. A tabela `courses` ja existe com `trail_id`, `title`, `description`, `icon`, `order_index`. A tabela `lessons` ja tem `course_id`. Basta popular os dados e ajustar as queries.
 
-**Arquivo principal**: `src/pages/Dashboard.tsx`
+---
 
-- Linhas 645-671 (V8 header): Adicionar link "Ver todos" com `onClick={() => navigate('/v8-trail/...')}`
-- Linhas 787-830 (V7 header): Adicionar link "Ver todos" com `onClick(() => navigate('/trail/...'))`
-- O link sera um `<button>` estilizado como pill compacta, visivel tanto no mobile quanto desktop
+## Parte 2 -- Nova Trilha "IA para Profissionais"
 
-**Nova pagina (se multiplas trilhas)**: `src/pages/AllTrails.tsx`
-- Rota: `/all-trails/:type` (v7 ou v8)
-- Lista todas as trilhas do tipo selecionado com cards e progresso
-- Reutiliza `V8TrailCard` e `CourseCard` existentes
+Adicionar um **novo container** no Dashboard, abaixo de "Seu Caminho de Maestria", com:
 
-**Arquivo de rotas**: `src/App.tsx`
-- Adicionar rota `/all-trails/:type` se necessario
+- Gradiente em tons de **emerald/teal** para diferenciar visualmente
+- Icone: `Briefcase` (lucide)
+- Titulo: **"IA para Profissionais"**
+- Botao "Ver todos" no header (mesmo estilo glassmorphism)
 
+### 6 Cards de Desafios (hardcoded inicialmente)
+
+Como esses desafios ainda nao existem no banco, serao renderizados como **cards estaticos** no Dashboard com status "Em breve" / locked:
+
+| # | Titulo | Icone sugerido |
+|---|--------|---------------|
+| 1 | IA para Corretores | Building |
+| 2 | IA para Advogados | Scale |
+| 3 | Automacoes com Calendly | Calendar |
+| 4 | IA para Medicos | Stethoscope |
+| 5 | 10X mais Produtivo com IA | Zap |
+| 6 | Criando Modelo de Negocios com IA | Lightbulb |
+
+Cada card tera o mesmo visual dos TrailCards existentes, mas com estado **locked** (opacidade reduzida, icone de cadeado, sem navegacao).
+
+---
+
+## Detalhes Tecnicos
+
+### Arquivos modificados
+
+1. **`src/pages/Dashboard.tsx`**
+   - Refatorar secoes V8 e V7 para buscar `courses` dentro de cada trail e renderizar courses como cards
+   - Adicionar nova secao "IA para Profissionais" com gradiente emerald entre V8 e V7
+   - Renderizar 6 cards estaticos locked com os desafios listados
+
+2. **`src/components/lessons/v8/V8TrailCard.tsx`**
+   - Ajustar props para aceitar dados de course (jornada) em vez de trail
+   - Manter design visual identico
+
+3. **`src/components/TrailCard.tsx`**
+   - Garantir que aceita dados de course com status locked
+
+4. **`src/pages/AllTrails.tsx`**
+   - Ajustar para listar jornadas (courses) de uma trilha, nao trilhas
+
+### Queries refatoradas no Dashboard
+
+```text
+1. trails (containers) -> SELECT * FROM trails WHERE is_active = true
+2. courses (jornadas) -> SELECT * FROM courses WHERE trail_id IN (...) AND is_active = true
+3. lessons (aulas)    -> SELECT id, course_id FROM lessons WHERE course_id IN (...) AND is_active = true
+4. user_progress      -> SELECT lesson_id, status FROM user_progress WHERE user_id = ...
+```
+
+### Nova secao visual (entre V8 e V7)
+
+O container seguira o mesmo padrao dos existentes:
+- `rounded-3xl p-5 sm:p-7 md:p-8`
+- Gradiente: `linear-gradient(135deg, #047857, #059669, #10B981)`
+- Icone `Briefcase` em branco
+- Carousel mobile + grid 3 colunas desktop
+- Cards com estado locked (cadeado, opacity-40, cursor-not-allowed)
