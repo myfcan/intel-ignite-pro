@@ -1,37 +1,55 @@
 
+# Unificar Design dos Cards V8 com V7
 
-# Ajustes de Design nos Cards de Trilha
-
-## Resumo
-Tres ajustes cirurgicos no TrailCard conforme solicitado, sem alterar nada mais.
+## Objetivo
+Substituir o card V8 atual (horizontal, glass-morphism, dark) pelo mesmo layout visual do TrailCard V7 (card vertical com header colorido, icone central, badge, barra de progresso), mantendo a paleta de cores V8 (indigo/violet).
 
 ## Alteracoes
 
-### 1. TrailCard.tsx - Dimensoes do card
-- **Altura +20px**: O header colorido atual e `h-20` (80px) no mobile. Aumentar para `h-[100px]` (mobile) e `sm:h-[132px]` (desktop, atual 112px + 20px).
-- **Largura -10px**: No Dashboard.tsx, o `maxWidth` do snap-item e `340px`. Reduzir para `330px`.
+### 1. V8TrailCard.tsx - Redesign completo
+Reescrever o componente para usar a mesma estrutura visual do TrailCard V7:
+- Header colorido grande (h-[120px] / sm:h-[148px]) com gradiente indigo/violet em vez de aurora
+- Icone centralizado em container glassmorphism
+- Circulos decorativos no header
+- Body com badge de categoria ("READ & LISTEN"), titulo, descricao (hidden mobile), barra de progresso com contagem (completedCount/lessonCount)
+- Borda aurora animada (usando paleta indigo/violet)
+- Hover com scale(1.01)
+- Exibir horas estimadas (nova prop `estimatedHours`) conforme regra: V8 trail card mostra horas
 
-### 2. TrailCard.tsx - Altura do container interno (body)
-- O body do card usa `px-2.5 py-2 sm:px-4 sm:py-3`. Aumentar o padding vertical para `py-3 sm:py-4` para preencher o espaco adicional de forma homogenea.
+### 2. Dashboard.tsx - Secao V8
+Substituir o container dark atual por um layout identico ao da secao V7:
+- **Mobile**: Snap carousel com mesma logica (scroll-snap, IntersectionObserver, dots, scale/saturate transitions)
+- **Desktop/Tablet**: Grid paginado (sm:grid-cols-2 lg:grid-cols-3) com animacao de pagina
+- Manter o titulo "Seu Caminho de Maestria" e badge "READ & LISTEN" no header da secao
+- Remover o fundo dark (#1e1b4b) e usar o mesmo estilo de container da secao V7
 
-### 3. TrailCard.tsx - Tempo medio de aula
-- Adicionar a prop `estimatedTime` (ja existe na interface, default 45) como informacao visivel no card.
-- Exibir abaixo do badge de categoria e acima do titulo, com icone de relogio (Clock do lucide-react).
-- Formato: `~45 min` em texto discreto (text-[9px] sm:text-[10px], cor cinza).
+### Detalhes Tecnicos
 
-## Arquivos modificados
+**V8TrailCard.tsx** - Estrutura do card:
+```text
++--[aurora border glow (indigo/violet)]--+
+|  +--[inner white card]---------------+ |
+|  | [Header: gradient indigo->violet]  | |
+|  |   [decorative circles]            | |
+|  |   [icon in glass container]       | |
+|  |                                   | |
+|  | [Body]                            | |
+|  |   [READ & LISTEN badge] [~Xh]    | |
+|  |   [Title]                         | |
+|  |   [Description (desktop only)]    | |
+|  |   [progress bar] [X/Y]           | |
+|  +-----------------------------------+ |
++-----------------------------------------+
+```
 
-1. **`src/components/TrailCard.tsx`**:
-   - Header: `h-20` para `h-[100px]`, `sm:h-28` para `sm:h-[132px]`
-   - Body padding: `py-2` para `py-3`, `sm:py-3` para `sm:py-4`
-   - Adicionar linha com icone Clock + `~{estimatedTime} min` entre o badge e o titulo
+**Props**: Adicionar `estimatedHours?: number` (opcional, default 0). Reutilizar `order_index` via nova prop para selecionar tema. Navegar para `/v8-trail/{trailId}`.
 
-2. **`src/pages/Dashboard.tsx`**:
-   - Snap-item `maxWidth`: `340` para `330`
-   - Passar `estimatedTime` ao TrailCard (valor padrao ja existe como 45)
+**Dashboard.tsx** - Secao V8:
+- Adicionar refs para snap carousel V8 (snapScrollerRefV8, snapActiveIndexV8, etc.)
+- Reutilizar a mesma logica de IntersectionObserver
+- Grid paginado no desktop com paginacao propria (trailPageV8)
+- Passar dados como objeto `trail` compativel com a interface do card
 
-## O que NAO sera alterado
-- Carrossel snap (CSS, IntersectionObserver, dots)
-- Cores, gradientes, efeitos aurora
-- Layout desktop/grid
-- Nenhuma outra secao do Dashboard
+### Arquivos modificados
+1. `src/components/lessons/v8/V8TrailCard.tsx` - Redesign completo
+2. `src/pages/Dashboard.tsx` - Layout da secao V8 (carousel mobile + grid desktop)
