@@ -12,6 +12,7 @@ import { Json } from "@/integrations/supabase/types";
 export default function V8Lesson() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
+  const hasSavedProgress = useRef(false);
 
   // Fetch lesson
   const { data: lesson, isLoading, error } = useQuery({
@@ -110,6 +111,14 @@ export default function V8Lesson() {
     }
   };
 
+  // Mark as in_progress on first render
+  useEffect(() => {
+    if (!hasSavedProgress.current && playerData) {
+      hasSavedProgress.current = true;
+      saveProgress("in_progress");
+    }
+  }, [playerData, lessonId]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -133,15 +142,6 @@ export default function V8Lesson() {
       </div>
     );
   }
-
-  // Mark as in_progress on first render (useEffect prevents infinite loop)
-  const hasSavedProgress = useRef(false);
-  useEffect(() => {
-    if (!hasSavedProgress.current && playerData) {
-      hasSavedProgress.current = true;
-      saveProgress("in_progress");
-    }
-  }, [playerData, lessonId]);
 
   return (
     <V8LessonPlayer
