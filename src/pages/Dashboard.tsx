@@ -601,10 +601,9 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* ===== CONQUISTAR E CRESCER (V7) ===== */}
-            {v7Trails.length > 0 && (
+            {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
+            {v8Trails.length > 0 && (
             <motion.div
-              id="suas-trilhas"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
@@ -616,7 +615,152 @@ const Dashboard = () => {
             >
               {/* Section header */}
               <div className="flex items-center justify-between mb-5 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Conquistar e Crescer</h2>
+                <div className="flex items-center gap-3">
+                  <Crown className="w-6 h-6 text-amber-400" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Seu Caminho de Maestria</h2>
+                </div>
+                {/* Pagination arrows */}
+                <div className="hidden sm:flex items-center gap-2">
+                  <button
+                    onClick={() => setTrailPageV8(p => Math.max(0, p - 1))}
+                    disabled={trailPageV8 === 0}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
+                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    onClick={() => setTrailPageV8(p => Math.min(totalTrailPagesV8 - 1, p + 1))}
+                    disabled={trailPageV8 >= totalTrailPagesV8 - 1}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 >= totalTrailPagesV8 - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
+                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                  >
+                    ›
+                  </button>
+                  <span className="text-xs text-white/60 font-medium ml-1">
+                    {trailPageV8 + 1}/{totalTrailPagesV8}
+                  </span>
+                </div>
+              </div>
+              {/* Mobile carousel */}
+              <div className="sm:hidden">
+                <div
+                  ref={snapScrollerRefV8}
+                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden"
+                  style={{
+                    scrollSnapType: 'x mandatory',
+                    scrollPaddingLeft: 20,
+                    scrollPaddingRight: 20,
+                    padding: '0 20px 10px 20px',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehaviorX: 'contain',
+                    touchAction: 'pan-x',
+                  }}
+                  aria-label="Carrossel de trilhas V8"
+                >
+                  {v8Trails.map((trail, idx) => {
+                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                    const isActive = idx === snapActiveIndexV8;
+                    return (
+                      <div
+                        key={trail.id}
+                        ref={(el) => { snapItemRefsV8.current[idx] = el; }}
+                        data-snap-index={idx}
+                        className="snap-item relative flex-shrink-0"
+                        style={{
+                          scrollSnapAlign: 'center',
+                          scrollSnapStop: 'always',
+                          flex: '0 0 82%',
+                          maxWidth: 360,
+                          transform: isActive ? 'scale(1)' : 'scale(0.94)',
+                          filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
+                          opacity: isActive ? 1 : 0.96,
+                          transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
+                        }}
+                      >
+                        <V8TrailCard
+                          trailId={trail.id}
+                          title={trail.title}
+                          description={trail.description}
+                          icon={trail.icon}
+                          lessonCount={trailProgress?.totalLessons || 0}
+                          completedCount={trailProgress?.completedLessons || 0}
+                          orderIndex={trail.order_index}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-center gap-2 mt-0">
+                  {v8Trails.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => scrollToSnapIndexV8(idx)}
+                      className="rounded-full transition-all duration-200"
+                      style={{
+                        width: idx === snapActiveIndexV8 ? 10 : 7,
+                        height: idx === snapActiveIndexV8 ? 10 : 7,
+                        background: idx === snapActiveIndexV8
+                          ? 'rgba(99,102,241,1)'
+                          : 'rgba(148,163,184,0.45)',
+                        transform: idx === snapActiveIndexV8 ? 'scale(1.15)' : 'scale(1)',
+                      }}
+                      aria-label={`Ir para trilha V8 ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Desktop grid */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={trailPageV8}
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -40 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="hidden sm:grid sm:grid-cols-3 gap-4"
+                >
+                  {visibleV8Trails.map((trail) => {
+                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                      return (
+                        <div key={trail.id} className="flex-1 min-w-0">
+                          <V8TrailCard
+                            trailId={trail.id}
+                            title={trail.title}
+                            description={trail.description}
+                            icon={trail.icon}
+                            lessonCount={trailProgress?.totalLessons || 0}
+                            completedCount={trailProgress?.completedLessons || 0}
+                            orderIndex={trail.order_index}
+                          />
+                        </div>
+                      );
+                  })}
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+            )}
+
+            {/* ===== RENDA EXTRA PRO (V7) ===== */}
+            {v7Trails.length > 0 && (
+            <motion.div
+              id="suas-trilhas"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
+              style={{
+                background: 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 40%, #3B82F6 100%)',
+                boxShadow: '0 16px 48px -12px rgba(30, 58, 138, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+              }}
+            >
+              {/* Section header */}
+              <div className="flex items-center justify-between mb-5 sm:mb-6">
+                <div className="flex items-center gap-3">
+                  <Rocket className="w-6 h-6 text-sky-300" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Renda Extra PRO</h2>
+                </div>
                 {/* Pagination arrows - hidden on mobile, visible on sm+ */}
                 <div className="hidden sm:flex items-center gap-2">
                   <button
@@ -742,150 +886,6 @@ const Dashboard = () => {
                             completedLessons={trailProgress?.completedLessons || 0}
                             totalLessons={trailProgress?.totalLessons || 0}
                             status={trailProgress?.status || "locked"}
-                          />
-                        </div>
-                      );
-                  })}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-            )}
-
-            {/* ===== SEU CAMINHO DE MAESTRIA (V8) ===== */}
-            {v8Trails.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.25 }}
-              className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
-              style={{
-                background: 'linear-gradient(135deg, #7C3AED 0%, #6366F1 40%, #818CF8 100%)',
-                boxShadow: '0 16px 48px -12px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
-              }}
-            >
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-5 sm:mb-6">
-                <div className="flex items-center gap-3">
-                  <Crown className="w-6 h-6 text-amber-400" />
-                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Seu Caminho de Maestria</h2>
-                </div>
-                {/* Pagination arrows - hidden on mobile, visible on sm+ */}
-                <div className="hidden sm:flex items-center gap-2">
-                  <button
-                    onClick={() => setTrailPageV8(p => Math.max(0, p - 1))}
-                    disabled={trailPageV8 === 0}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
-                  >
-                    ‹
-                  </button>
-                  <button
-                    onClick={() => setTrailPageV8(p => Math.min(totalTrailPagesV8 - 1, p + 1))}
-                    disabled={trailPageV8 >= totalTrailPagesV8 - 1}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 >= totalTrailPagesV8 - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
-                  >
-                    ›
-                  </button>
-                  <span className="text-xs text-white/60 font-medium ml-1">
-                    {trailPageV8 + 1}/{totalTrailPagesV8}
-                  </span>
-                </div>
-              </div>
-
-              {/* Mobile: Premium Snap Carousel */}
-              <div className="sm:hidden">
-                <div
-                  ref={snapScrollerRefV8}
-                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden"
-                  style={{
-                    scrollSnapType: 'x mandatory',
-                    scrollPaddingLeft: 20,
-                    scrollPaddingRight: 20,
-                    padding: '0 20px 10px 20px',
-                    WebkitOverflowScrolling: 'touch',
-                    overscrollBehaviorX: 'contain',
-                    touchAction: 'pan-x',
-                  }}
-                  aria-label="Carrossel de trilhas V8"
-                >
-                  {v8Trails.map((trail, idx) => {
-                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-                    const isActive = idx === snapActiveIndexV8;
-                    return (
-                      <div
-                        key={trail.id}
-                        ref={(el) => { snapItemRefsV8.current[idx] = el; }}
-                        data-snap-index={idx}
-                        className="snap-item relative flex-shrink-0"
-                        style={{
-                          scrollSnapAlign: 'center',
-                          scrollSnapStop: 'always',
-                          flex: '0 0 82%',
-                          maxWidth: 360,
-                          transform: isActive ? 'scale(1)' : 'scale(0.94)',
-                          filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
-                          opacity: isActive ? 1 : 0.96,
-                          transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
-                        }}
-                      >
-                        <V8TrailCard
-                          trailId={trail.id}
-                          title={trail.title}
-                          description={trail.description}
-                          icon={trail.icon}
-                          lessonCount={trailProgress?.totalLessons || 0}
-                          completedCount={trailProgress?.completedLessons || 0}
-                          orderIndex={trail.order_index}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Dots */}
-                <div className="flex items-center justify-center gap-2 mt-0">
-                  {v8Trails.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => scrollToSnapIndexV8(idx)}
-                      className="rounded-full transition-all duration-200"
-                      style={{
-                        width: idx === snapActiveIndexV8 ? 10 : 7,
-                        height: idx === snapActiveIndexV8 ? 10 : 7,
-                        background: idx === snapActiveIndexV8
-                          ? 'rgba(99,102,241,1)'
-                          : 'rgba(148,163,184,0.45)',
-                        transform: idx === snapActiveIndexV8 ? 'scale(1.15)' : 'scale(1)',
-                      }}
-                      aria-label={`Ir para trilha V8 ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Desktop/Tablet: paginated grid */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={trailPageV8}
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:grid sm:grid-cols-3 gap-4"
-                >
-                  {visibleV8Trails.map((trail) => {
-                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-                      return (
-                        <div key={trail.id} className="flex-1 min-w-0">
-                          <V8TrailCard
-                            trailId={trail.id}
-                            title={trail.title}
-                            description={trail.description}
-                            icon={trail.icon}
-                            lessonCount={trailProgress?.totalLessons || 0}
-                            completedCount={trailProgress?.completedLessons || 0}
-                            orderIndex={trail.order_index}
                           />
                         </div>
                       );
