@@ -6,6 +6,7 @@ import { ArrowLeft, Check, AlertTriangle, Loader2, Play, Pause, Upload, Save, Za
 import { motion } from "framer-motion";
 import { V8LessonData, V8Section, V8InlineQuiz } from "@/types/v8Lesson";
 import { Json } from "@/integrations/supabase/types";
+import { V7PipelineMonitor, PipelineStep, PipelineLog } from "@/components/admin/V7PipelineMonitor";
 
 // ─── Types ───
 interface AudioResult {
@@ -119,6 +120,16 @@ const DEFAULT_JSON: V8LessonData = {
   exercises: [],
 };
 
+// ─── Default V8 Pipeline Steps ───
+const DEFAULT_V8_PIPELINE_STEPS: PipelineStep[] = [
+  { id: 'validate', name: 'Validando JSON de entrada', status: 'pending' },
+  { id: 'create-draft', name: 'Criando rascunho no banco', status: 'pending' },
+  { id: 'call-api', name: 'Chamando API de geração (ElevenLabs)', status: 'pending' },
+  { id: 'process-results', name: 'Processando resultados', status: 'pending' },
+  { id: 'update-content', name: 'Atualizando conteúdo com URLs de áudio', status: 'pending' },
+  { id: 'finalize', name: 'Finalizando', status: 'pending' },
+];
+
 // ─── Component ───
 export default function AdminV8Create() {
   const navigate = useNavigate();
@@ -136,6 +147,28 @@ export default function AdminV8Create() {
   const [savedLessonId, setSavedLessonId] = useState<string | null>(null);
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+
+  // Pipeline monitor state
+  const [pipelineSteps, setPipelineSteps] = useState<PipelineStep[]>([]);
+  const [pipelineLogs, setPipelineLogs] = useState<PipelineLog[]>([]);
+  const [pipelineProgress, setPipelineProgress] = useState(0);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+
+  // Pipeline helpers
+  const updateStep = useCallback((id: string, status: PipelineStep['status'], message?: string) => {
+    setPipelineSteps(prev => prev.map(s => s.id === id ? { ...s, status, message } : s));
+  }, []);
+
+  const addLog = useCallback((level: PipelineLog['level'], message: string) => {
+    setPipelineLogs(prev => [...prev, { timestamp: new Date(), level, message }]);
+  }, []);
+
+  const resetPipeline = useCallback(() => {
+    setPipelineSteps(DEFAULT_V8_PIPELINE_STEPS.map(s => ({ ...s })));
+    setPipelineLogs([]);
+    setPipelineProgress(0);
+    setPipelineError(null);
+  }, []);
 
   // ─── Handlers ───
   const handleValidate = useCallback(() => {
@@ -161,15 +194,23 @@ export default function AdminV8Create() {
 
     setIsGenerating(true);
     setStep("generate");
+    resetPipeline();
 
     try {
+      // Step 1: Validate
+      updateStep('validate', 'running');
+      addLog('info', 'Validando JSON de entrada...');
       const parsed: V8LessonData = JSON.parse(jsonText);
-      
-      // First, save as draft to get a lessonId
+      updateStep('validate', 'completed', `${parsed.sections.length} seções`);
+      addLog('success', `JSON válido: ${parsed.sections.length} seções, ${parsed.inlineQuizzes?.length || 0} quizzes`);
+      setPipelineProgress(10);
+
+      // Step 2: Create draft
+      updateStep('create-draft', 'running');
+      addLog('info', 'Criando rascunho no banco de dados...');
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      // Create temporary lesson draft
       let lessonId = savedLessonId;
       if (!lessonId) {
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
@@ -183,8 +224,13 @@ export default function AdminV8Create() {
         lessonId = draftId;
         setSavedLessonId(lessonId);
       }
+      updateStep('create-draft', 'completed', `ID: ${lessonId?.slice(0, 8)}...`);
+      addLog('success', `Rascunho criado: ${lessonId}`);
+      setPipelineProgress(25);
 
-      // Call v8-generate edge function
+      // Step 3: Call API
+      updateStep('call-api', 'running');
+      addLog('info', 'Enviando requisição para ElevenLabs...');
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate`,
         {
@@ -207,10 +253,25 @@ export default function AdminV8Create() {
         throw new Error(`v8-generate failed: ${response.status} - ${errBody}`);
       }
 
+      updateStep('call-api', 'completed');
+      addLog('success', 'Resposta recebida da API');
+      setPipelineProgress(60);
+
+      // Step 4: Process results
+      updateStep('process-results', 'running');
+      addLog('info', 'Processando resultados...');
       const result: GenerateResponse = await response.json();
       setGenerateResult(result);
+      updateStep('process-results', 'completed', `${result.stats.totalAudios} áudios`);
+      addLog('success', `${result.stats.totalAudios} áudios gerados (${result.stats.totalSizeKB}KB)`);
+      if (result.errors && result.errors.length > 0) {
+        result.errors.forEach(e => addLog('warning', `Erro em ${e.type} ${e.index}: ${e.error}`));
+      }
+      setPipelineProgress(80);
 
-      // Update JSON with generated audio URLs
+      // Step 5: Update content
+      updateStep('update-content', 'running');
+      addLog('info', 'Atualizando JSON com URLs de áudio...');
       const updatedData = { ...parsed };
       for (const r of result.results) {
         if (r.type === "section" && updatedData.sections[r.index]) {
@@ -222,22 +283,38 @@ export default function AdminV8Create() {
           updatedData.inlineQuizzes[r.index].reinforcementAudioUrl = r.audioUrl;
         }
       }
-
       setJsonText(JSON.stringify(updatedData, null, 2));
+      updateStep('update-content', 'completed');
+      addLog('success', 'Conteúdo atualizado com URLs de áudio');
+      setPipelineProgress(95);
+
+      // Step 6: Finalize
+      updateStep('finalize', 'running');
+      addLog('info', 'Finalizando...');
       setStep("preview");
+      updateStep('finalize', 'completed');
+      addLog('success', `Pipeline concluído em ${(result.stats.elapsedMs / 1000).toFixed(1)}s`);
+      setPipelineProgress(100);
 
       toast({
         title: result.success ? "✅ Áudios gerados!" : "⚠️ Gerado com erros",
         description: `${result.stats.totalAudios} áudios (${result.stats.totalSizeKB}KB) em ${(result.stats.elapsedMs / 1000).toFixed(1)}s`,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = err instanceof Error ? err.message : 
+                  typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err);
+      
+      // Mark current running step as error
+      setPipelineSteps(prev => prev.map(s => s.status === 'running' ? { ...s, status: 'error' as const } : s));
+      setPipelineError(msg);
+      addLog('error', msg);
+      
       toast({ title: "❌ Erro na geração", description: msg, variant: "destructive" });
       setStep("validate");
     } finally {
       setIsGenerating(false);
     }
-  }, [validation, jsonText, lessonTitle, estimatedTime, savedLessonId, toast]);
+  }, [validation, jsonText, lessonTitle, estimatedTime, savedLessonId, toast, resetPipeline, updateStep, addLog]);
 
   const handleSave = useCallback(async (activate: boolean) => {
     setIsSaving(true);
@@ -245,7 +322,6 @@ export default function AdminV8Create() {
       const parsed: V8LessonData = JSON.parse(jsonText);
 
       if (savedLessonId) {
-        // Update existing draft
         const { error } = await supabase
           .from("lessons")
           .update({
@@ -263,7 +339,6 @@ export default function AdminV8Create() {
           .eq("id", savedLessonId);
         if (error) throw error;
       } else {
-        // Create new
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
           p_title: lessonTitle,
           p_trail_id: null as unknown as string,
@@ -289,7 +364,8 @@ export default function AdminV8Create() {
         description: activate ? "A aula está ativa e visível para os alunos." : "Salvo como rascunho.",
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = err instanceof Error ? err.message : 
+                  typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err);
       toast({ title: "❌ Erro ao salvar", description: msg, variant: "destructive" });
     } finally {
       setIsSaving(false);
@@ -442,17 +518,18 @@ export default function AdminV8Create() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 <Zap className="w-4 h-4" />
-                Gerar Áudios ({validation.sectionCount} seções + {validation.quizCount} quizzes)
+                Gerar Aula
               </button>
             )}
 
-            {isGenerating && (
-              <div className="flex flex-col items-center gap-3 py-6">
-                <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
-                <p className="text-sm text-slate-400">Gerando áudios via ElevenLabs...</p>
-                <p className="text-xs text-slate-600">Isso pode levar alguns minutos</p>
-              </div>
-            )}
+            {/* Pipeline Monitor */}
+            <V7PipelineMonitor
+              isRunning={isGenerating}
+              steps={pipelineSteps}
+              logs={pipelineLogs}
+              progress={pipelineProgress}
+              error={pipelineError}
+            />
           </motion.div>
         )}
 
