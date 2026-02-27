@@ -57,6 +57,15 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
         viewBox={`0 0 300 ${totalHeight}`}
         preserveAspectRatio="xMidYMin meet"
       >
+        <defs>
+          <filter id="line-glow">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
         {lessons.map((_, i) => {
           if (i === lessons.length - 1) return null;
           const x1 = 150 + getXOffset(i) * OFFSET_PX_SM;
@@ -68,20 +77,35 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
 
           const isCompleted = lessons[i].status === "completed";
           const nextAvailable = lessons[i + 1].status !== "locked";
+          const pathD = `M ${x1} ${y1} C ${x1} ${cp1y}, ${x2} ${cp2y}, ${x2} ${y2}`;
 
           return (
-            <motion.path
-              key={`line-${i}`}
-              d={`M ${x1} ${y1} C ${x1} ${cp1y}, ${x2} ${cp2y}, ${x2} ${y2}`}
-              fill="none"
-              stroke={isCompleted ? "hsl(258, 90%, 56%)" : nextAvailable ? "hsl(258, 60%, 75%)" : "hsl(220, 14%, 85%)"}
-              strokeWidth={isCompleted ? 3 : 2}
-              strokeLinecap="round"
-              strokeDasharray={isCompleted ? "none" : "6 4"}
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-            />
+            <g key={`line-${i}`}>
+              <motion.path
+                d={pathD}
+                fill="none"
+                stroke={isCompleted ? "hsl(258, 90%, 56%)" : nextAvailable ? "hsl(258, 60%, 75%)" : "hsl(220, 14%, 85%)"}
+                strokeWidth={isCompleted ? 3 : 2}
+                strokeLinecap="round"
+                strokeDasharray={isCompleted ? "none" : "6 4"}
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.8, delay: i * 0.08 }}
+              />
+              {isCompleted && (
+                <motion.path
+                  d={pathD}
+                  fill="none"
+                  stroke="hsl(258, 90%, 66%)"
+                  strokeWidth={6}
+                  strokeLinecap="round"
+                  filter="url(#line-glow)"
+                  initial={{ opacity: 0.3 }}
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+              )}
+            </g>
           );
         })}
 

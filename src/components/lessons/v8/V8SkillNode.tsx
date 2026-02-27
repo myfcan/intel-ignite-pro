@@ -79,6 +79,21 @@ export const V8SkillNode = ({ title, status, index, isSelected, onClick }: V8Ski
         />
       )}
 
+      {isCompleted && (
+        <>
+          <motion.div
+            className="absolute inset-0 rounded-full border-2 border-violet-400"
+            animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0, 0.4] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute inset-0 rounded-full border border-violet-300"
+            animate={{ scale: [1, 1.4, 1], opacity: [0.2, 0, 0.2] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </>
+      )}
+
       {/* Small index badge */}
       <span
         className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${
