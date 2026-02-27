@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem, ChevronRight } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 import { V8TrailCard } from "@/components/lessons/v8/V8TrailCard";
@@ -420,21 +420,29 @@ const Dashboard = () => {
           
           {/* ===== MAIN COLUMN ===== */}
           <div>
-            {/* ===== CONTINUE LEARNING (mobile: above the fold) ===== */}
+            {/* ===== MOBILE: Greeting Card + Quick Stats ===== */}
+            <MobileQuickStats
+              streakDays={gamificationStats?.streakDays ?? 0}
+              userName={user?.name?.split(' ')[0] || 'Aluno'}
+              isLoading={gamificationLoading}
+            />
+
+            {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
             <div className="lg:hidden">
               {activeTrail && activeTrailProgress && (
                 <div className="mb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-bold text-gray-900">Continue Aprendendo</h2>
-                    <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
-                  </div>
                   <div
-                    className="bg-white rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-shadow"
-                    style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 4px 16px -4px rgba(0,0,0,0.08)' }}
+                    className="rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-shadow active:scale-[0.99]"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.85)',
+                      backdropFilter: 'blur(16px)',
+                      border: '1px solid hsl(220 13% 91% / 0.8)',
+                      boxShadow: '0 4px 16px -4px rgba(0,0,0,0.06)',
+                    }}
                     onClick={() => navigate(`/trail/${activeTrail.id}`)}
                   >
                     <div
-                      className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{
                         background: 'linear-gradient(135deg, #6366F1, #818CF8)',
                         boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
@@ -442,32 +450,23 @@ const Dashboard = () => {
                     >
                       {(() => {
                         const TrailIcon = TRAIL_ICONS[activeTrail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
-                        return <TrailIcon className="w-6 h-6 text-white" />;
+                        return <TrailIcon className="w-5 h-5 text-white" />;
                       })()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold mb-0.5" style={{ background: '#6366F115', color: '#6366F1' }}>
-                        {TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
-                      </span>
-                      <h3 className="font-bold text-gray-900 text-sm truncate">{activeTrail.title}</h3>
-                      <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                        <motion.div className="h-full rounded-full" style={{ background: '#6366F1' }} initial={{ width: 0 }} animate={{ width: `${activeTrailProgress.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} />
+                      <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'hsl(215 16% 47%)' }}>
+                        Continue aprendendo
+                      </p>
+                      <h3 className="font-bold text-sm truncate" style={{ color: 'hsl(215 25% 9%)' }}>{activeTrail.title}</h3>
+                      <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(220 14% 96%)' }}>
+                        <motion.div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366F1, #818CF8)' }} initial={{ width: 0 }} animate={{ width: `${activeTrailProgress.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} />
                       </div>
                     </div>
-                    <button className="px-3 py-2 rounded-xl text-xs font-bold text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg, #6366F1, #7C3AED)' }}>
-                      Continuar
-                    </button>
+                    <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(215 16% 47%)' }} />
                   </div>
                 </div>
               )}
             </div>
-
-            {/* ===== MOBILE QUICK STATS (streak + ranking + missions) ===== */}
-            <MobileQuickStats
-              streakDays={gamificationStats?.streakDays ?? 0}
-              userName={user?.name?.split(' ')[0] || 'Aluno'}
-              isLoading={gamificationLoading}
-            />
 
             {/* ===== PURPLE HERO BANNER - Hidden on mobile ===== */}
             <div
