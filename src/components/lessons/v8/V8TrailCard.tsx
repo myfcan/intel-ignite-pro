@@ -28,19 +28,19 @@ export const V8TrailCard = ({
       onClick={() => navigate(`/v8-trail/${trailId}`)}
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
-      className="w-full text-left rounded-2xl border border-white/10 p-5 sm:p-6 min-h-[140px] transition-all hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] flex items-center gap-4"
+      className="w-full text-left rounded-2xl border border-white/10 p-4 sm:p-5 transition-all hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] flex items-center gap-3"
       style={{
         background: 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
         backdropFilter: 'blur(16px)',
       }}
     >
       {/* Icon */}
-      <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 backdrop-blur-xl flex items-center justify-center text-xl overflow-hidden">
+      <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 backdrop-blur-xl flex items-center justify-center text-xl overflow-hidden">
         {icon && icon.length <= 2 ? icon : <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" />}
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 space-y-2">
+      <div className="flex-1 min-w-0 space-y-1.5">
         <h3 className="text-sm sm:text-base font-semibold text-white leading-snug line-clamp-2">
           {title}
         </h3>
