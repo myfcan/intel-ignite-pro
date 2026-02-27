@@ -1,9 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, Loader2, Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, type LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { V8LessonCard } from "@/components/lessons/v8/V8LessonCard";
+
+const TRAIL_ICONS: Record<string, LucideIcon> = {
+  Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, BookOpen,
+};
 
 export default function V8TrailDetail() {
   const { trailId } = useParams<{ trailId: string }>();
@@ -158,7 +162,10 @@ export default function V8TrailDetail() {
                       className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0 text-2xl sm:text-3xl md:text-4xl"
                       style={{ background: 'rgba(255, 255, 255, 0.2)', border: '1px solid rgba(255, 255, 255, 0.3)' }}
                     >
-                      {trail.icon || "📚"}
+                      {(() => {
+                        const TrailIcon = TRAIL_ICONS[trail.icon || ''] || GraduationCap;
+                        return <TrailIcon className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />;
+                      })()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
