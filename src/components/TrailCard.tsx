@@ -157,12 +157,6 @@ const TrailCard = ({
             >
               {theme.label}
             </span>
-            {!isLocked && (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Clock size={12} className="sm:w-[13px] sm:h-[13px]" />
-                <span className="text-[10px] sm:text-[11px] font-medium">~{estimatedTime} min</span>
-              </div>
-            )}
           </div>
 
           {/* Title */}
