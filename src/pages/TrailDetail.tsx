@@ -163,7 +163,7 @@ const TrailDetail = () => {
             <div
               className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
               style={{
-                background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+                background: 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 40%, #3B82F6 100%)',
                 borderColor: 'rgba(255, 255, 255, 0.3)',
               }}
             >

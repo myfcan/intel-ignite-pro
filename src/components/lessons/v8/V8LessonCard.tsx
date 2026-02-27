@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Lock, Play, BookOpen, Clock } from "lucide-react";
+import { getLessonIcon } from "@/utils/lessonIconMap";
 
 interface V8LessonCardProps {
   lessonId: string;
@@ -67,9 +68,7 @@ export const V8LessonCard = ({
           ) : isCompleted ? (
             <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           ) : (
-            <span className="text-sm sm:text-base font-bold text-white tabular-nums">
-              {index + 1}
-            </span>
+            (() => { const LIcon = getLessonIcon(title); return <LIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />; })()
           )}
         </div>
 

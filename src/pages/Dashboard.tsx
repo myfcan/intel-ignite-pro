@@ -830,7 +830,7 @@ const Dashboard = () => {
                       >
                         <TrailCard
                           trail={trail}
-                          Icon={BookOpen}
+                          Icon={TRAIL_ICONS[trail.icon] || BookOpen}
                           gradient="from-indigo-500 to-violet-500"
                           progress={trailProgress?.progress || 0}
                           completedLessons={trailProgress?.completedLessons || 0}
@@ -880,7 +880,7 @@ const Dashboard = () => {
                         <div key={trail.id} className="flex-1 min-w-0">
                           <TrailCard
                             trail={trail}
-                            Icon={BookOpen}
+                            Icon={TRAIL_ICONS[trail.icon] || BookOpen}
                             gradient="from-indigo-500 to-violet-500"
                             progress={trailProgress?.progress || 0}
                             completedLessons={trailProgress?.completedLessons || 0}

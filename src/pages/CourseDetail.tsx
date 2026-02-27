@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Lock, CheckCircle2, PlayCircle, Clock, Play, Trophy } from 'lucide-react';
+import { ArrowLeft, Lock, CheckCircle2, Clock, Play, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getLessonIcon } from '@/utils/lessonIconMap';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 interface Lesson {
@@ -164,7 +165,7 @@ const CourseDetail = () => {
           <div
             className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
             style={{
-              background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+              background: 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 40%, #3B82F6 100%)',
               borderColor: 'rgba(255, 255, 255, 0.3)',
             }}
           >
@@ -263,7 +264,7 @@ const CourseDetail = () => {
                         ) : isLocked ? (
                           <Lock className="w-8 h-8 text-slate-400" />
                         ) : (
-                          <PlayCircle className="w-8 h-8 text-primary" />
+                          (() => { const LIcon = getLessonIcon(lesson.title); return <LIcon className="w-8 h-8 text-primary" />; })()
                         )}
                         {!isLocked && !isCompleted && (
                           <div
@@ -321,7 +322,7 @@ const CourseDetail = () => {
                             ) : isLocked ? (
                               <Lock className="w-4 h-4 text-gray-400" />
                             ) : (
-                              <PlayCircle className="w-4 h-4 text-primary" />
+                              (() => { const LIcon = getLessonIcon(lesson.title); return <LIcon className="w-4 h-4 text-primary" />; })()
                             )}
                             <span className={`text-xs font-medium ${isCompleted ? 'text-emerald-600' : isLocked ? 'text-gray-400' : 'text-primary'}`}>
                               {isCompleted ? 'Concluído' : isLocked ? 'Não Iniciado' : 'Cursando'}
