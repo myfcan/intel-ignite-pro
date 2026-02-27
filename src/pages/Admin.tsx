@@ -272,6 +272,37 @@ export default function Admin() {
             </CardContent>
           </Card>
 
+          {/* CRIAÇÃO V8 */}
+          <Card className="border-2 border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/v8/create')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Rocket className="w-6 h-6 text-indigo-500" />
+                Criar Aula V8
+              </CardTitle>
+              <CardDescription>
+                Read & Listen com trilha → aula direta
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm space-y-1 text-muted-foreground">
+                <p>🎧 Áudio segmentado por seção</p>
+                <p>📜 Modo Ler e Ouvir</p>
+                <p>🧩 Sem camada de curso (2 níveis)</p>
+                <p>⚡ Fluxo determinístico de progresso</p>
+              </div>
+              <Button
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/v8/create');
+                }}
+              >
+                <Rocket className="w-4 h-4 mr-2" />
+                Abrir Criador V8
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* AI IMAGE LAB */}
           <Card className="border-2 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/image-lab')}>
             <CardHeader>

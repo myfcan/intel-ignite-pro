@@ -286,13 +286,55 @@ export default function AdminModelos() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
               <FolderOpen className="w-7 h-7 text-emerald-500" />
-              Guia de Modelos V7
+              Guia de Modelos V7 + V8
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Templates JSON, tipos canônicos e documentação técnica
+              Templates JSON e documentação técnica dos formatos V7-vv e V8 Read & Listen
             </p>
           </div>
         </div>
+
+        {/* GUIA RÁPIDO V8 */}
+        <Card className="border-2 border-indigo-500/50 bg-gradient-to-r from-indigo-500/10 to-violet-500/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Zap className="w-7 h-7 text-indigo-500" />
+              Modelo V8 — Read & Listen
+              <span className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">NOVO</span>
+            </CardTitle>
+            <CardDescription>
+              Formato simplificado: trilha → aula direta, com áudio por seção e modo Ler/Ouvir
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm space-y-1.5">
+              <p>✅ Hierarquia 2 níveis (sem curso/jornada)</p>
+              <p>✅ Aula V8 com <code>model: "v8"</code> e <code>course_id: null</code></p>
+              <p>✅ Seções com áudio curto (15–30s) e avanço determinístico por fim de áudio</p>
+              <p>✅ Modo Ler (manual) e Ouvir (autoplay)</p>
+            </div>
+            <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
+              <p className="text-xs text-muted-foreground mb-2">Exemplo mínimo (estrutura de aula V8):</p>
+              <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-foreground/90">{`{
+  "title": "Minha Aula V8",
+  "model": "v8",
+  "course_id": null,
+  "sections": [
+    { "id": "s1", "title": "Introdução", "text": "...", "audioUrl": "..." }
+  ]
+}`}</pre>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="lg"
+                className="flex-1 min-w-[160px] bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => navigate('/admin/v8/create')}
+              >
+                <Rocket className="w-5 h-5 mr-2" /> Abrir Criador V8
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* JSON MODELO — DESTAQUE */}
         <Card className="border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-500/10 to-green-500/10">
