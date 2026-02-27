@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check, AlertTriangle, Loader2, Play, Pause, Upload, Save, Zap } from "lucide-react";
@@ -126,9 +125,7 @@ export default function AdminV8Create() {
   const { toast } = useToast();
 
   // State
-  const [selectedTrailId, setSelectedTrailId] = useState<string>("");
   const [lessonTitle, setLessonTitle] = useState("Nova Aula V8");
-  const [orderIndex, setOrderIndex] = useState(1);
   const [estimatedTime, setEstimatedTime] = useState(10);
   const [jsonText, setJsonText] = useState(JSON.stringify(DEFAULT_JSON, null, 2));
   const [validation, setValidation] = useState<ValidationResult | null>(null);
@@ -139,22 +136,6 @@ export default function AdminV8Create() {
   const [savedLessonId, setSavedLessonId] = useState<string | null>(null);
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-
-  // Fetch V8 trails
-  const { data: trails = [] } = useQuery({
-    queryKey: ["v8-trails-admin"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("trails")
-        .select("id, title, order_index, trail_type")
-        .eq("is_active", true)
-        .order("order_index");
-      if (error) throw error;
-      // Filter V8 trails (trail_type = 'v8'), but also show all if none are v8 yet
-      const v8Trails = (data || []).filter((t) => t.trail_type === "v8");
-      return v8Trails.length > 0 ? v8Trails : data || [];
-    },
-  });
 
   // ─── Handlers ───
   const handleValidate = useCallback(() => {
@@ -193,8 +174,8 @@ export default function AdminV8Create() {
       if (!lessonId) {
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
           p_title: lessonTitle,
-          p_trail_id: selectedTrailId || trails[0]?.id,
-          p_order_index: orderIndex,
+          p_trail_id: null as unknown as string,
+          p_order_index: 0,
           p_estimated_time: estimatedTime,
           p_content: parsed as unknown as Json,
         });
@@ -256,7 +237,7 @@ export default function AdminV8Create() {
     } finally {
       setIsGenerating(false);
     }
-  }, [validation, jsonText, selectedTrailId, trails, lessonTitle, orderIndex, estimatedTime, savedLessonId, toast]);
+  }, [validation, jsonText, lessonTitle, estimatedTime, savedLessonId, toast]);
 
   const handleSave = useCallback(async (activate: boolean) => {
     setIsSaving(true);
@@ -272,8 +253,8 @@ export default function AdminV8Create() {
             content: parsed as unknown as Json,
             exercises: (parsed.exercises || []) as unknown as Json,
             estimated_time: estimatedTime,
-            order_index: orderIndex,
-            trail_id: selectedTrailId || trails[0]?.id,
+            order_index: 0,
+            trail_id: null,
             model: "v8",
             lesson_type: "guided",
             is_active: activate,
@@ -285,8 +266,8 @@ export default function AdminV8Create() {
         // Create new
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
           p_title: lessonTitle,
-          p_trail_id: selectedTrailId || trails[0]?.id,
-          p_order_index: orderIndex,
+          p_trail_id: null as unknown as string,
+          p_order_index: 0,
           p_estimated_time: estimatedTime,
           p_content: parsed as unknown as Json,
           p_exercises: (parsed.exercises || []) as unknown as Json,
@@ -313,7 +294,7 @@ export default function AdminV8Create() {
     } finally {
       setIsSaving(false);
     }
-  }, [jsonText, savedLessonId, lessonTitle, selectedTrailId, trails, estimatedTime, orderIndex, toast]);
+  }, [jsonText, savedLessonId, lessonTitle, estimatedTime, toast]);
 
   const toggleAudioPreview = (url: string) => {
     if (playingAudioUrl === url && audioElement) {
@@ -365,34 +346,11 @@ export default function AdminV8Create() {
           <h2 className="text-sm font-semibold text-slate-300 mb-3">Metadados</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-[11px] font-medium text-slate-500 mb-1 block">Trilha V8</label>
-              <select
-                value={selectedTrailId}
-                onChange={(e) => setSelectedTrailId(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-              >
-                <option value="">Selecione...</option>
-                {trails.map((t) => (
-                  <option key={t.id} value={t.id}>{t.title}</option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título</label>
               <input
                 value={lessonTitle}
                 onChange={(e) => setLessonTitle(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-medium text-slate-500 mb-1 block">Ordem</label>
-              <input
-                type="number"
-                value={orderIndex}
-                onChange={(e) => setOrderIndex(Number(e.target.value))}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-                min={1}
               />
             </div>
             <div>
@@ -406,6 +364,7 @@ export default function AdminV8Create() {
               />
             </div>
           </div>
+          <p className="text-[10px] text-slate-600 mt-2">💡 Após criar, use o Gerenciador de Lições para mover a aula para uma trilha.</p>
         </motion.div>
 
         {/* ─── JSON EDITOR ─── */}
@@ -479,7 +438,7 @@ export default function AdminV8Create() {
             {!generateResult && !isGenerating && (
               <button
                 onClick={handleGenerateAudio}
-                disabled={!selectedTrailId || trails.length === 0}
+                disabled={!validation?.valid}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 <Zap className="w-4 h-4" />
