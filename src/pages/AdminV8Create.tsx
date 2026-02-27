@@ -219,6 +219,9 @@ export default function AdminV8Create() {
           p_order_index: 0,
           p_estimated_time: estimatedTime,
           p_content: parsed as unknown as Json,
+          p_exercises: [] as unknown as Json,
+          p_audio_url: null as unknown as string,
+          p_word_timestamps: null as unknown as Json,
         });
         if (draftError) throw draftError;
         lessonId = draftId;
@@ -346,6 +349,8 @@ export default function AdminV8Create() {
           p_estimated_time: estimatedTime,
           p_content: parsed as unknown as Json,
           p_exercises: (parsed.exercises || []) as unknown as Json,
+          p_audio_url: null as unknown as string,
+          p_word_timestamps: null as unknown as Json,
         });
         if (draftError) throw draftError;
         setSavedLessonId(draftId);
