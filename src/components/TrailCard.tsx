@@ -58,7 +58,7 @@ const TrailCard = ({
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={!isLocked ? { y: -4, scale: 1.01 } : undefined}
+      whileHover={!isLocked ? { scale: 1.01 } : undefined}
       transition={{ duration: 0.3 }}
       onClick={handleClick}
       className={`group relative rounded-2xl overflow-hidden transition-all duration-300
