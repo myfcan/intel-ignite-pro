@@ -727,23 +727,24 @@ const Dashboard = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                  className="hidden sm:flex gap-4"
                 >
               {visibleTrails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
 
-                    return (
-                      <TrailCard
-                        key={trail.id}
-                        trail={trail}
-                        Icon={BookOpen}
-                        gradient="from-indigo-500 to-violet-500"
-                        progress={trailProgress?.progress || 0}
-                        completedLessons={trailProgress?.completedLessons || 0}
-                        totalLessons={trailProgress?.totalLessons || 0}
-                        status={trailProgress?.status || "locked"}
-                      />
-                    );
+                      return (
+                        <div key={trail.id} className="flex-1 min-w-0">
+                          <TrailCard
+                            trail={trail}
+                            Icon={BookOpen}
+                            gradient="from-indigo-500 to-violet-500"
+                            progress={trailProgress?.progress || 0}
+                            completedLessons={trailProgress?.completedLessons || 0}
+                            totalLessons={trailProgress?.totalLessons || 0}
+                            status={trailProgress?.status || "locked"}
+                          />
+                        </div>
+                      );
                   })}
                 </motion.div>
               </AnimatePresence>
@@ -871,22 +872,23 @@ const Dashboard = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                  className="hidden sm:flex gap-4"
                 >
                   {visibleV8Trails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-                    return (
-                      <V8TrailCard
-                        key={trail.id}
-                        trailId={trail.id}
-                        title={trail.title}
-                        description={trail.description}
-                        icon={trail.icon}
-                        lessonCount={trailProgress?.totalLessons || 0}
-                        completedCount={trailProgress?.completedLessons || 0}
-                        orderIndex={trail.order_index}
-                      />
-                    );
+                      return (
+                        <div key={trail.id} className="flex-1 min-w-0">
+                          <V8TrailCard
+                            trailId={trail.id}
+                            title={trail.title}
+                            description={trail.description}
+                            icon={trail.icon}
+                            lessonCount={trailProgress?.totalLessons || 0}
+                            completedCount={trailProgress?.completedLessons || 0}
+                            orderIndex={trail.order_index}
+                          />
+                        </div>
+                      );
                   })}
                 </motion.div>
               </AnimatePresence>
