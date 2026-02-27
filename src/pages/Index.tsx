@@ -112,7 +112,7 @@ const Index = () => {
             </div>
 
             <h1 className="mb-6 text-balance animate-fade-in" style={{animationDelay: '0.2s'}}>
-              Domine a IA em <span className="gradient-hero bg-clip-text text-transparent">28 Dias</span> e Transforme Seu Futuro Profissional
+              Domine a IA em <span className="gradient-text-hero">28 Dias</span> e Transforme Seu Futuro Profissional
             </h1>
             
             <p className="text-xl text-muted-foreground mb-8 text-balance max-w-3xl mx-auto animate-fade-in" style={{animationDelay: '0.4s'}}>
