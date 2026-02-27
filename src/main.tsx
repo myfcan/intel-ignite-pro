@@ -8,7 +8,7 @@ import "./index.css";
 // O SW será reativado quando o app estiver estável para produção
 
 // 🧹 Limpar qualquer Service Worker antigo e caches obsoletos
-const APP_VERSION = '2026-02-25-v4';
+const APP_VERSION = '2026-02-27-v5';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(registrations => {
