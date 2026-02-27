@@ -1,58 +1,61 @@
 
 
-# Centralizar Gestao de Aulas: Suporte V8 no Gerenciador
+# Monitor de Pipeline V8 + Correcao do Botao
 
-## Problema Atual
+## Alteracoes em `src/pages/AdminV8Create.tsx`
 
-O Gerenciador de Licoes (`AdminManageLessons.tsx`) foi construido exclusivamente para o modelo V7 (3 niveis: Trilha -> Jornada -> Aula). Ele tem 3 problemas concretos para V8:
+### 1. Texto do botao
+Linha 445: trocar `Gerar Áudios ({validation.sectionCount} seções + {validation.quizCount} quizzes)` por **"Gerar Aula"**.
 
-1. **Modal "Mover" exige Jornada** (L204-216): bloqueia se a trilha nao tem cursos. V8 nao usa cursos.
-2. **Botao "Assistir" hardcoded para V7** (L332): `navigate(/admin/v7/play/${lesson.id})` — V8 usa rota `/v8/${lesson.id}`.
-3. **Hierarquia visual ignora V8**: Trilhas V8 mostram "Sem jornadas" com warning amarelo e aulas V8 sem `course_id` aparecem como "orfas" com alerta.
+### 2. Importar V7PipelineMonitor
+Importar `V7PipelineMonitor`, `PipelineStep`, `PipelineLog` de `@/components/admin/V7PipelineMonitor`.
 
-Alem disso, o **Criador V8** (`AdminV8Create.tsx`) tem campos "Trilha V8" e "Ordem" (L366-408) que sao redundantes — a organizacao deve ser feita no Gerenciador.
+### 3. Adicionar estados do pipeline
+```text
+pipelineSteps: PipelineStep[]   (6 steps V8)
+pipelineLogs: PipelineLog[]     (logs em tempo real)
+pipelineProgress: number        (0-100)
+pipelineError: string | null
+```
 
-## Plano de Execucao
+### 4. Definir steps padrao V8
+```text
+1. validate       — Validando JSON de entrada
+2. create-draft   — Criando rascunho no banco
+3. call-api       — Chamando API de geracao (ElevenLabs)
+4. process-results — Processando resultados
+5. update-content — Atualizando conteudo com URLs de audio
+6. finalize       — Finalizando
+```
 
-### 1. AdminV8Create.tsx — Remover campos desnecessarios
+### 5. Instrumentar handleGenerateAudio
+Adicionar helpers `updateStep(id, status, message?)` e `addLog(level, message)` para atualizar os estados em cada etapa do fluxo existente (linhas 159-239). O fluxo ja tem as etapas certas — so precisa emitir eventos para o monitor:
 
-**Remover:**
-- State `selectedTrailId` e `orderIndex` (L129, L131)
-- Query `v8-trails-admin` (L144-157)
-- Campos "Trilha V8" e "Ordem" do grid de metadados (L366-408)
+- Antes do parse: step `validate` running -> completed
+- Antes do `create_lesson_draft`: step `create-draft` running -> completed
+- Antes do fetch `v8-generate`: step `call-api` running
+- Apos response ok: step `call-api` completed, `process-results` running -> completed
+- Apos atualizar JSON com URLs: step `update-content` completed
+- Final: step `finalize` completed, progress 100%
+- Em caso de erro: marcar step atual como error, adicionar log de erro
 
-**Manter:** Titulo + Tempo estimado (2 campos)
+### 6. Fix do erro [object Object]
+No catch (L233-236), erros do Supabase podem ser objetos. Corrigir:
+```
+const msg = err instanceof Error ? err.message :
+            typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err);
+```
+(Ja esta correto na L234 atual — manter)
 
-**Ajustar saves:** `handleGenerateAudio` e `handleSave` passam `trail_id: null`, `order_index: 0`
+### 7. Substituir spinner generico pelo V7PipelineMonitor
+Remover o bloco de spinner (L449-455) e colocar o componente `V7PipelineMonitor` no lugar, passando `isRunning={isGenerating}`, `steps={pipelineSteps}`, `logs={pipelineLogs}`, `progress={pipelineProgress}`, `error={pipelineError}`.
 
-### 2. AdminManageLessons.tsx — Interface Trail
+O monitor aparecera abaixo do botao "Gerar Aula" com o mesmo design padrao do V7: barra de progresso, etapas com icones de status, e logs em tempo real.
 
-Adicionar `trail_type` a interface `Trail` (L52-56) e ao SELECT da query (L98).
-
-### 3. AdminManageLessons.tsx — Hierarquia visual V8
-
-Na construcao da hierarquia (L112-131), para trilhas com `trail_type === 'v8'`:
-- Mostrar aulas diretamente sob a trilha (sem nivel de Jornada)
-- Nao exibir warning "Sem jornadas" nem "Aulas sem jornada"
-- Exibir badge "V8" na trilha
-- Subtitulo mostra apenas "X aula(s)" sem mencionar jornadas
-
-### 4. AdminManageLessons.tsx — Modal "Mover" com suporte V8
-
-No modal de mover (L530-604):
-- Se a trilha selecionada tem `trail_type === 'v8'`: esconder seletor de Jornada
-- `handleMoveLesson`: se trail e V8, salvar com `course_id: null` e pular validacao de curso
-
-### 5. AdminManageLessons.tsx — Botao "Assistir" inteligente
-
-No `LessonRow` (L332):
-- `model === 'v8'` -> navega para `/v8/${lesson.id}`
-- Qualquer outro -> mantém `/admin/v7/play/${lesson.id}`
-
-## Resultado Esperado
-
-- Criador V8: formulario limpo (Titulo + Tempo + JSON). Aula nasce orfã.
-- Gerenciador: trilhas V8 mostram aulas direto, sem falso alerta de "orfã".
-- Modal Mover: permite mover aulas para trilhas V8 sem exigir Jornada.
-- Botao Assistir: abre o player correto por modelo.
+### Resultado
+- Botao diz apenas "Gerar Aula"
+- Ao clicar, o monitor aparece com 6 etapas visuais
+- Cada etapa muda de pending -> running -> completed em tempo real
+- Erros sao exibidos com detalhes no monitor
+- Mesmo design do Pipeline V7
 
