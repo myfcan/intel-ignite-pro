@@ -646,7 +646,7 @@ const Index = () => {
                   {opportunity.icon}
                 </div>
                 <h3 className="text-lg font-bold mb-2">{opportunity.title}</h3>
-                <div className="text-2xl font-bold gradient-hero bg-clip-text text-transparent mb-2">
+                <div className="text-2xl font-bold gradient-text-hero mb-2">
                   {opportunity.income}
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">{opportunity.description}</p>
@@ -660,19 +660,19 @@ const Index = () => {
           <Card className="p-8 max-w-4xl mx-auto bg-gradient-to-br from-primary/5 to-accent/5">
             <div className="grid md:grid-cols-3 gap-6 text-center">
               <div>
-                <div className="text-3xl font-bold gradient-hero bg-clip-text text-transparent mb-2">
+                <div className="text-3xl font-bold gradient-text-hero mb-2">
                   R$2.847/mês
                 </div>
                 <div className="text-sm text-muted-foreground">💰 Renda média extra</div>
               </div>
               <div>
-                <div className="text-3xl font-bold gradient-hero bg-clip-text text-transparent mb-2">
+                <div className="text-3xl font-bold gradient-text-hero mb-2">
                   67%
                 </div>
                 <div className="text-sm text-muted-foreground">📈 faturam no 1º mês</div>
               </div>
               <div>
-                <div className="text-3xl font-bold gradient-hero bg-clip-text text-transparent mb-2">
+                <div className="text-3xl font-bold gradient-text-hero mb-2">
                   Ilimitado
                 </div>
                 <div className="text-sm text-muted-foreground">🚀 Potencial de crescimento</div>
@@ -756,7 +756,7 @@ const Index = () => {
                   <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                   <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-4xl font-bold gradient-hero bg-clip-text text-transparent">
+                    <span className="text-4xl font-bold gradient-text-hero">
                       {plan.price}
                     </span>
                     <span className="text-muted-foreground">{plan.period}</span>
@@ -847,7 +847,7 @@ const Index = () => {
                 <div className="w-8 h-8 gradient-hero rounded-lg flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-bold gradient-hero bg-clip-text text-transparent">
+                <span className="font-bold gradient-text-hero">
                   Inteligência Ignite
                 </span>
               </div>
