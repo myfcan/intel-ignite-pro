@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.create_lesson_draft(text, uuid, integer, integer, jsonb);
