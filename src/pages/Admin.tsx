@@ -120,6 +120,38 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        {/* ========== CRIAR AULA V8 ========== */}
+        <Card className="border-2 border-indigo-500/50 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 shadow-lg shadow-indigo-500/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Rocket className="w-8 h-8 text-indigo-500" />
+              Criar Aula V8
+              <span className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">READ & LISTEN</span>
+            </CardTitle>
+            <CardDescription className="text-base">
+              Read & Listen com trilha → aula direta (2 níveis, sem camada de curso)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              <p>🎧 Áudio segmentado</p>
+              <p>📜 Modo Ler e Ouvir</p>
+              <p>🧩 Hierarquia 2 níveis</p>
+              <p>⚡ Fluxo determinístico</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="lg"
+                className="flex-1 min-w-[180px] bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => navigate('/admin/v8/create')}
+              >
+                <Rocket className="w-5 h-5 mr-2" />
+                Abrir Criador V8
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* ========== GESTÃO DE USUÁRIOS (somente admin) ========== */}
         {isAdminRole && (
         <Card className="border-2 border-blue-500/50 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 shadow-lg shadow-blue-500/10">
@@ -272,36 +304,6 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          {/* CRIAÇÃO V8 */}
-          <Card className="border-2 border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/v8/create')}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Rocket className="w-6 h-6 text-indigo-500" />
-                Criar Aula V8
-              </CardTitle>
-              <CardDescription>
-                Read & Listen com trilha → aula direta
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-sm space-y-1 text-muted-foreground">
-                <p>🎧 Áudio segmentado por seção</p>
-                <p>📜 Modo Ler e Ouvir</p>
-                <p>🧩 Sem camada de curso (2 níveis)</p>
-                <p>⚡ Fluxo determinístico de progresso</p>
-              </div>
-              <Button
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/admin/v8/create');
-                }}
-              >
-                <Rocket className="w-4 h-4 mr-2" />
-                Abrir Criador V8
-              </Button>
-            </CardContent>
-          </Card>
 
           {/* AI IMAGE LAB */}
           <Card className="border-2 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/image-lab')}>
