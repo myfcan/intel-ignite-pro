@@ -127,7 +127,19 @@ const TrailCard = ({
           style={{ background: 'rgba(255,255,255,0.06)', top: '8px', left: '14px' }}
         />
         {isLocked ? (
-          <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-white/40" />
+          <div className="relative">
+            <div
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center"
+              style={{
+                background: 'rgba(255,255,255,0.15)',
+              }}
+            >
+              <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-white/50 drop-shadow-md" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center">
+              <Lock className="w-3 h-3 text-white" />
+            </div>
+          </div>
         ) : (
           <div className="relative">
             <div
