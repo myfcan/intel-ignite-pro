@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Flame, Clock, TrendingUp, ChevronRight, Zap } from 'lucide-react';
-import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { Flame, ChevronRight, Zap } from 'lucide-react';
 import { MissoesDiarias } from '@/components/gamification/MissoesDiarias';
 
 interface DashboardSidebarProps {
@@ -9,34 +8,6 @@ interface DashboardSidebarProps {
   userName: string;
   isLoading?: boolean;
 }
-
-const learningHoursData = [
-  { name: 'S1', hours: 12 },
-  { name: 'S2', hours: 28 },
-  { name: 'S3', hours: 45 },
-  { name: 'S4', hours: 62 },
-];
-
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div
-        className="px-3 py-2 rounded-xl text-xs font-semibold"
-        style={{
-          background: 'hsl(0 0% 100% / 0.95)',
-          color: 'hsl(215 25% 9%)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid hsl(220 13% 91%)',
-          boxShadow: '0 8px 24px hsl(0 0% 0% / 0.08)',
-        }}
-      >
-        <span className="text-[10px]" style={{ color: 'hsl(215 16% 47%)' }}>Horas</span>
-        <span className="text-sm font-bold block" style={{ color: 'hsl(215 25% 9%)' }}>{payload[0].value}h</span>
-      </div>
-    );
-  }
-  return null;
-};
 
 const cardStyle = {
   background: 'hsl(0 0% 100%)',
