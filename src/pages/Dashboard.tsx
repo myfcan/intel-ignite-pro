@@ -999,49 +999,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.25 }}
-                onClick={() => navigate('/leaderboard')}
-                className="cursor-pointer bg-white rounded-2xl p-5 flex items-center gap-4 transition-all hover:-translate-y-1 group"
-                style={{
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  boxShadow: '0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
-                }}
-              >
-                <div className="rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
-                     style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.25)' }}>
-                  <Crown className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-sm sm:text-base">Ranking Global</h3>
-                  <p className="text-gray-400 text-xs sm:text-sm">Compare-se com outros aprendizes</p>
-                </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.3 }}
-                onClick={() => navigate('/achievements')}
-                className="cursor-pointer bg-white rounded-2xl p-5 flex items-center gap-4 transition-all hover:-translate-y-1 group"
-                style={{
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  boxShadow: '0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
-                }}
-              >
-                <div className="rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
-                     style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)', boxShadow: '0 4px 14px rgba(139, 92, 246, 0.25)' }}>
-                  <Gem className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-sm sm:text-base">Suas Conquistas</h3>
-                  <p className="text-gray-400 text-xs sm:text-sm">Desbloqueie badges e recompensas</p>
-                </div>
-              </motion.div>
-            </div>
+
           </div>
 
           {/* ===== SIDEBAR ===== */}
