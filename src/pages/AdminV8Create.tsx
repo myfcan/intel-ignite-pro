@@ -233,7 +233,7 @@ export default function AdminV8Create() {
 
       // Step 3: Call API
       updateStep('call-api', 'running');
-      addLog('info', 'Enviando requisição para ElevenLabs...');
+      addLog('info', 'Conectando com ElevenLabs...');
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate`,
         {
@@ -257,7 +257,7 @@ export default function AdminV8Create() {
       }
 
       updateStep('call-api', 'completed');
-      addLog('success', 'Resposta recebida da API');
+      addLog('success', 'Conectado — resposta recebida');
       setPipelineProgress(60);
 
       // Step 4: Process results
