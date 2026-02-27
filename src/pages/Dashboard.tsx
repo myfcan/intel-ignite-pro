@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem, ChevronRight } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem, ChevronRight, Building2, Scale, Stethoscope, Lightbulb } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 import { V8TrailCard } from "@/components/lessons/v8/V8TrailCard";
@@ -49,6 +49,24 @@ interface TrailProgress {
   status: 'active' | 'completed' | 'locked';
 }
 
+const PROFESSIONAL_CHALLENGES = [
+  { id: 'pro-1', title: 'IA para Corretores', description: 'Domine IA no mercado imobiliário', icon: '🏢', order_index: 2 },
+  { id: 'pro-2', title: 'IA para Advogados', description: 'Automatize processos jurídicos', icon: '⚖️', order_index: 2 },
+  { id: 'pro-3', title: 'Automações com Calendly', description: 'Automatize agendamentos com IA', icon: '📅', order_index: 2 },
+  { id: 'pro-4', title: 'IA para Médicos', description: 'IA aplicada à saúde', icon: '🩺', order_index: 2 },
+  { id: 'pro-5', title: '10X mais Produtivo com IA', description: 'Multiplique sua produtividade', icon: '⚡', order_index: 2 },
+  { id: 'pro-6', title: 'Criando Modelo de Negócios com IA', description: 'Monte seu negócio com IA', icon: '💡', order_index: 2 },
+];
+
+const PRO_ICONS: Record<string, any> = {
+  'pro-1': Building2,
+  'pro-2': Scale,
+  'pro-3': Calendar,
+  'pro-4': Stethoscope,
+  'pro-5': Zap,
+  'pro-6': Lightbulb,
+};
+
 // Dashboard component - main user dashboard
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -74,6 +92,11 @@ const Dashboard = () => {
   const [trailPageV8, setTrailPageV8] = useState(0);
   const totalTrailPagesV8 = Math.max(1, Math.ceil(v8Trails.length / TRAILS_PER_PAGE));
   const visibleV8Trails = v8Trails.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
+
+  // Paginação dos desafios profissionais
+  const [trailPagePro, setTrailPagePro] = useState(0);
+  const totalTrailPagesPro = Math.max(1, Math.ceil(PROFESSIONAL_CHALLENGES.length / TRAILS_PER_PAGE));
+  const visibleProChallenges = PROFESSIONAL_CHALLENGES.slice(trailPagePro * TRAILS_PER_PAGE, (trailPagePro + 1) * TRAILS_PER_PAGE);
 
   // Snap carousel V7: refs e estado do card ativo
   const snapScrollerRef = useRef<HTMLDivElement | null>(null);
@@ -790,6 +813,115 @@ const Dashboard = () => {
               </AnimatePresence>
             </motion.div>
             )}
+
+            {/* ===== IA PARA PROFISSIONAIS ===== */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
+              style={{
+                background: 'linear-gradient(135deg, #047857 0%, #059669 40%, #10B981 100%)',
+                boxShadow: '0 16px 48px -12px rgba(4, 120, 87, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+              }}
+            >
+              {/* Section header */}
+              <div className="flex items-center justify-between mb-5 sm:mb-6">
+                <div className="flex items-center gap-3">
+                  <Briefcase className="w-6 h-6 text-emerald-200" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">IA para Profissionais</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
+                  >
+                    Ver todos ›
+                  </button>
+                  <div className="hidden sm:flex items-center gap-2">
+                    <button
+                      onClick={() => setTrailPagePro(p => Math.max(0, p - 1))}
+                      disabled={trailPagePro === 0}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPagePro === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
+                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={() => setTrailPagePro(p => Math.min(totalTrailPagesPro - 1, p + 1))}
+                      disabled={trailPagePro >= totalTrailPagesPro - 1}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPagePro >= totalTrailPagesPro - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
+                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                    >
+                      ›
+                    </button>
+                    <span className="text-xs text-white/60 font-medium ml-1">
+                      {trailPagePro + 1}/{totalTrailPagesPro}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile carousel */}
+              <div className="sm:hidden">
+                <div
+                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden"
+                  style={{
+                    scrollSnapType: 'x mandatory',
+                    scrollPaddingLeft: 20,
+                    scrollPaddingRight: 20,
+                    padding: '0 20px 10px 20px',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehaviorX: 'contain',
+                    touchAction: 'pan-x',
+                  }}
+                >
+                  {PROFESSIONAL_CHALLENGES.map((challenge) => (
+                    <div
+                      key={challenge.id}
+                      className="snap-item flex-shrink-0"
+                      style={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 82%', maxWidth: 360 }}
+                    >
+                      <TrailCard
+                        trail={challenge}
+                        Icon={PRO_ICONS[challenge.id] || Briefcase}
+                        progress={0}
+                        completedLessons={0}
+                        totalLessons={0}
+                        status="locked"
+                        gradient=""
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop grid */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={trailPagePro}
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -40 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="hidden sm:grid sm:grid-cols-3 gap-4"
+                >
+                  {visibleProChallenges.map((challenge) => (
+                    <div key={challenge.id} className="flex-1 min-w-0">
+                      <TrailCard
+                        trail={challenge}
+                        Icon={PRO_ICONS[challenge.id] || Briefcase}
+                        progress={0}
+                        completedLessons={0}
+                        totalLessons={0}
+                        status="locked"
+                        gradient=""
+                      />
+                    </div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
 
             {/* ===== RENDA EXTRA PRO (V7) ===== */}
             {v7Trails.length > 0 && (

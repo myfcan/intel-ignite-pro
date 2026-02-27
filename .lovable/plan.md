@@ -35,52 +35,38 @@ Nenhuma mudanca de schema necessaria. A tabela `courses` ja existe com `trail_id
 
 ---
 
-## Parte 2 -- Nova Trilha "IA para Profissionais"
+## Parte 2 -- Nova Trilha "IA para Profissionais" ✅ IMPLEMENTADO
 
-Adicionar um **novo container** no Dashboard, abaixo de "Seu Caminho de Maestria", com:
+Container emerald adicionado ao Dashboard entre V8 e V7 com:
 
-- Gradiente em tons de **emerald/teal** para diferenciar visualmente
-- Icone: `Briefcase` (lucide)
+- Gradiente: `linear-gradient(135deg, #047857, #059669, #10B981)`
+- Icone: `Briefcase` em emerald-200
 - Titulo: **"IA para Profissionais"**
-- Botao "Ver todos" no header (mesmo estilo glassmorphism)
+- Botao "Ver todos ›" em glassmorphism
+- Carousel mobile (snap) + grid 3 colunas desktop (paginado)
+- 6 cards hardcoded em estado **locked**:
 
-### 6 Cards de Desafios (hardcoded inicialmente)
-
-Como esses desafios ainda nao existem no banco, serao renderizados como **cards estaticos** no Dashboard com status "Em breve" / locked:
-
-| # | Titulo | Icone sugerido |
-|---|--------|---------------|
-| 1 | IA para Corretores | Building |
+| # | Titulo | Icone |
+|---|--------|-------|
+| 1 | IA para Corretores | Building2 |
 | 2 | IA para Advogados | Scale |
-| 3 | Automacoes com Calendly | Calendar |
-| 4 | IA para Medicos | Stethoscope |
+| 3 | Automações com Calendly | Calendar |
+| 4 | IA para Médicos | Stethoscope |
 | 5 | 10X mais Produtivo com IA | Zap |
-| 6 | Criando Modelo de Negocios com IA | Lightbulb |
-
-Cada card tera o mesmo visual dos TrailCards existentes, mas com estado **locked** (opacidade reduzida, icone de cadeado, sem navegacao).
+| 6 | Criando Modelo de Negócios com IA | Lightbulb |
 
 ---
 
-## Detalhes Tecnicos
+## Parte 3 -- Pendente: Refatorar Queries para Courses
 
-### Arquivos modificados
+Para completar a unificacao, falta:
 
-1. **`src/pages/Dashboard.tsx`**
-   - Refatorar secoes V8 e V7 para buscar `courses` dentro de cada trail e renderizar courses como cards
-   - Adicionar nova secao "IA para Profissionais" com gradiente emerald entre V8 e V7
-   - Renderizar 6 cards estaticos locked com os desafios listados
+1. **Dashboard**: Refatorar V8 e V7 para buscar `courses` de cada trail e renderizar como cards (com fallback se nao houver courses)
+2. **Rotas**: Criar rota `/course/:id` para detalhe da jornada
+3. **AllTrails**: Ajustar para listar courses em vez de trails
+4. **Popular DB**: Criar courses no banco para as trilhas V8 existentes
 
-2. **`src/components/lessons/v8/V8TrailCard.tsx`**
-   - Ajustar props para aceitar dados de course (jornada) em vez de trail
-   - Manter design visual identico
-
-3. **`src/components/TrailCard.tsx`**
-   - Garantir que aceita dados de course com status locked
-
-4. **`src/pages/AllTrails.tsx`**
-   - Ajustar para listar jornadas (courses) de uma trilha, nao trilhas
-
-### Queries refatoradas no Dashboard
+### Queries alvo
 
 ```text
 1. trails (containers) -> SELECT * FROM trails WHERE is_active = true
@@ -88,12 +74,3 @@ Cada card tera o mesmo visual dos TrailCards existentes, mas com estado **locked
 3. lessons (aulas)    -> SELECT id, course_id FROM lessons WHERE course_id IN (...) AND is_active = true
 4. user_progress      -> SELECT lesson_id, status FROM user_progress WHERE user_id = ...
 ```
-
-### Nova secao visual (entre V8 e V7)
-
-O container seguira o mesmo padrao dos existentes:
-- `rounded-3xl p-5 sm:p-7 md:p-8`
-- Gradiente: `linear-gradient(135deg, #047857, #059669, #10B981)`
-- Icone `Briefcase` em branco
-- Carousel mobile + grid 3 colunas desktop
-- Cards com estado locked (cadeado, opacity-40, cursor-not-allowed)
