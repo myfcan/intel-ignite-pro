@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft, BookOpen, Clock, Loader2, Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, type LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { V8LessonCard } from "@/components/lessons/v8/V8LessonCard";
+import { V8SkillTree } from "@/components/lessons/v8/V8SkillTree";
 
 const TRAIL_ICONS: Record<string, LucideIcon> = {
   Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, BookOpen,
@@ -219,31 +219,25 @@ export default function V8TrailDetail() {
           </div>
         </header>
 
-        {/* Lesson list */}
+        {/* Skill Tree */}
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-            Aulas
-          </h2>
-          <div className="space-y-3">
-            {lessons?.map((lesson, index) => (
-              <V8LessonCard
-                key={lesson.id}
-                lessonId={lesson.id}
-                title={lesson.title}
-                description={lesson.description ?? undefined}
-                estimatedTime={lesson.estimated_time ?? undefined}
-                status={getLessonStatus(index, lesson.id)}
-                index={index}
-                onClick={() => navigate(`/v8/${lesson.id}`)}
-              />
-            ))}
-
-            {totalLessons === 0 && (
-              <div className="text-center py-12 text-gray-500 text-sm">
-                Nenhuma aula disponível nesta trilha ainda.
-              </div>
-            )}
-          </div>
+          {totalLessons > 0 ? (
+            <V8SkillTree
+              lessons={(lessons ?? []).map((lesson, index) => ({
+                id: lesson.id,
+                title: lesson.title,
+                description: lesson.description ?? undefined,
+                estimatedTime: lesson.estimated_time ?? undefined,
+                status: getLessonStatus(index, lesson.id),
+              }))}
+              onLessonClick={(id) => navigate(`/v8/${id}`)}
+              allCompleted={completedCount === totalLessons && totalLessons > 0}
+            />
+          ) : (
+            <div className="text-center py-12 text-gray-500 text-sm">
+              Nenhuma aula disponível nesta trilha ainda.
+            </div>
+          )}
         </main>
       </div>
     </div>
