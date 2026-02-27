@@ -142,10 +142,10 @@ const TrailCard = ({
       </div>
 
       {/* Card body */}
-      <div className="p-4 sm:p-5">
+      <div className="px-3.5 py-2.5 sm:px-4 sm:py-3">
         {/* Category badge */}
         <span
-          className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold mb-2.5 tracking-wide uppercase"
+          className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-1.5 tracking-wide uppercase"
           style={{
             background: isLocked ? '#F3F4F6' : `${theme.accent}10`,
             color: isLocked ? '#9CA3AF' : theme.accent,
@@ -155,25 +155,20 @@ const TrailCard = ({
         </span>
 
         {/* Title */}
-        <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-0.5 leading-snug line-clamp-2">
+        <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1 mb-0.5">
           {trail.title}
         </h3>
 
         {/* Subtitle / Description */}
         {trail.description && (
-          <p className="text-[11px] sm:text-xs text-gray-500 mb-2.5 leading-relaxed line-clamp-2">
+          <p className="text-[11px] text-gray-500 mb-2 leading-relaxed line-clamp-1">
             {trail.description}
           </p>
         )}
 
-        {/* Lesson count */}
-        <p className="text-xs text-gray-400 mb-3">
-          {totalLessons} aulas
-        </p>
-
-        {/* Progress bar */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+        {/* Progress bar + count */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
             <motion.div
               className="h-full rounded-full"
               style={{
@@ -185,7 +180,7 @@ const TrailCard = ({
               transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
             />
           </div>
-          <span className="text-[11px] font-bold text-gray-500">
+          <span className="text-[10px] font-bold text-gray-400">
             {completedLessons}/{totalLessons}
           </span>
         </div>
