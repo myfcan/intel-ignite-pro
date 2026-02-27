@@ -41,7 +41,7 @@ export const V8TrailCard = ({
 
       {/* Content */}
       <div className="flex-1 min-w-0 space-y-2">
-        <h3 className="text-sm sm:text-base font-semibold text-white truncate leading-tight">
+        <h3 className="text-sm sm:text-base font-semibold text-white leading-snug line-clamp-2">
           {title}
         </h3>
 
