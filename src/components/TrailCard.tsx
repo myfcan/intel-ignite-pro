@@ -62,7 +62,7 @@ const TrailCard = ({
       transition={{ duration: 0.3 }}
       onClick={handleClick}
       className={`group relative rounded-2xl overflow-hidden transition-all duration-300
-        w-[130px] sm:w-auto flex-shrink-0 sm:flex-shrink
+        w-full
         ${isLocked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}
       `}
       style={{
