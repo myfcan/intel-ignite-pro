@@ -271,7 +271,12 @@ export default function AdminManageLessons() {
       }
     }
 
-    if (!newCourseTitle.trim()) {
+    // Determine if V8
+    const effectiveIsV8 = createNewTrail
+      ? newTrailType === 'v8'
+      : trails.find(t => t.id === trailId)?.trail_type === 'v8';
+
+    if (!effectiveIsV8 && !newCourseTitle.trim()) {
       toast({ title: 'Nome da jornada obrigatório', variant: 'destructive' });
       return;
     }
@@ -293,22 +298,27 @@ export default function AdminManageLessons() {
         toast({ title: 'Trilha criada', description: `"${newTrailTitle.trim()}"` });
       }
 
-      const existingCourses = courses.filter(c => c.trail_id === trailId);
-      const nextOrder = existingCourses.length > 0
-        ? Math.max(...existingCourses.map(c => c.order_index)) + 1
-        : 1;
+      // V8: only create trail, no course/jornada needed
+      if (effectiveIsV8) {
+        toast({ title: 'Trilha V8 pronta', description: 'Aulas podem ser adicionadas diretamente.' });
+      } else {
+        const existingCourses = courses.filter(c => c.trail_id === trailId);
+        const nextOrder = existingCourses.length > 0
+          ? Math.max(...existingCourses.map(c => c.order_index)) + 1
+          : 1;
 
-      const { error } = await supabase.from('courses').insert({
-        trail_id: trailId,
-        title: newCourseTitle.trim(),
-        icon: newCourseIcon.trim() || null,
-        order_index: nextOrder,
-        is_active: true,
-      });
+        const { error } = await supabase.from('courses').insert({
+          trail_id: trailId,
+          title: newCourseTitle.trim(),
+          icon: newCourseIcon.trim() || null,
+          order_index: nextOrder,
+          is_active: true,
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({ title: 'Jornada criada', description: `"${newCourseTitle.trim()}"` });
+        toast({ title: 'Jornada criada', description: `"${newCourseTitle.trim()}"` });
+      }
       setShowCreateCourseModal(false);
       setNewCourseTitle('');
       setNewCourseIcon('');
@@ -679,9 +689,17 @@ export default function AdminManageLessons() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="w-5 h-5 text-green-500" />
-                Criar Nova Jornada
+                {(() => {
+                  const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
+                  return isV8Modal ? 'Criar Nova Trilha V8' : 'Criar Nova Jornada';
+                })()}
               </DialogTitle>
-              <DialogDescription>Uma jornada agrupa aulas dentro de uma trilha</DialogDescription>
+              <DialogDescription>
+                {(() => {
+                  const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
+                  return isV8Modal ? 'Trilha V8: aulas são adicionadas diretamente (sem jornada)' : 'Uma jornada agrupa aulas dentro de uma trilha';
+                })()}
+              </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -738,23 +756,34 @@ export default function AdminManageLessons() {
                 </div>
               )}
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">Nome da Jornada</label>
-                <Input value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} placeholder="Ex: Fundamentos da IA" />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
-                <Input value={newCourseIcon} onChange={(e) => setNewCourseIcon(e.target.value)} placeholder="Ex: Brain, Zap, Rocket..." />
-                <p className="text-xs text-muted-foreground mt-1">Nome do ícone Lucide</p>
-              </div>
+              {/* Journey fields — hidden for V8 */}
+              {!(createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8') && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Nome da Jornada</label>
+                    <Input value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} placeholder="Ex: Fundamentos da IA" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
+                    <Input value={newCourseIcon} onChange={(e) => setNewCourseIcon(e.target.value)} placeholder="Ex: Brain, Zap, Rocket..." />
+                    <p className="text-xs text-muted-foreground mt-1">Nome do ícone Lucide</p>
+                  </div>
+                </>
+              )}
             </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateCourseModal(false)} disabled={creatingCourse}>Cancelar</Button>
-              <Button onClick={handleCreateCourse} disabled={creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim()) || !newCourseTitle.trim()}>
-                {creatingCourse ? 'Criando...' : 'Criar Jornada'}
-              </Button>
+              {(() => {
+                const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
+                const baseDisabled = creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim());
+                const needsCourseTitle = !isV8Modal && !newCourseTitle.trim();
+                return (
+                  <Button onClick={handleCreateCourse} disabled={baseDisabled || needsCourseTitle}>
+                    {creatingCourse ? 'Criando...' : isV8Modal ? 'Criar Trilha' : 'Criar Jornada'}
+                  </Button>
+                );
+              })()}
             </DialogFooter>
           </DialogContent>
         </Dialog>
