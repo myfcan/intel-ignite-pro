@@ -504,30 +504,30 @@ export default function AdminV8Create() {
         )}
 
         {/* ─── GENERATE AUDIO ─── */}
-        {validation?.valid && step !== "edit" && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cardStyle}>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-slate-300">Gerar Áudios</h2>
-              {isGenerating && (
-                <span className="flex items-center gap-1.5 text-xs text-indigo-300">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Gerando...
-                </span>
-              )}
-            </div>
-
-            {!generateResult && !isGenerating && (
-              <button
-                onClick={handleGenerateAudio}
-                disabled={!validation?.valid}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                <Zap className="w-4 h-4" />
-                Gerar Aula
-              </button>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cardStyle}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-slate-300">Gerar Áudios</h2>
+            {isGenerating && (
+              <span className="flex items-center gap-1.5 text-xs text-indigo-300">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Gerando...
+              </span>
             )}
+          </div>
 
-            {/* Pipeline Monitor */}
+          {!generateResult && !isGenerating && (
+            <button
+              onClick={handleGenerateAudio}
+              disabled={!validation?.valid || step === "edit"}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Zap className="w-4 h-4" />
+              {!validation?.valid ? "Valide o JSON primeiro" : "Gerar Aula"}
+            </button>
+          )}
+
+          {/* Pipeline Monitor */}
+          {pipelineSteps.length > 0 && (
             <V7PipelineMonitor
               isRunning={isGenerating}
               steps={pipelineSteps}
@@ -535,8 +535,8 @@ export default function AdminV8Create() {
               progress={pipelineProgress}
               error={pipelineError}
             />
-          </motion.div>
-        )}
+          )}
+        </motion.div>
 
         {/* ─── AUDIO PREVIEW ─── */}
         {generateResult && step === "preview" && (
@@ -580,20 +580,20 @@ export default function AdminV8Create() {
         )}
 
         {/* ─── SAVE ACTIONS ─── */}
-        {(step === "preview" || step === "validate") && (
+        {step !== "saved" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
             <button
               onClick={() => handleSave(false)}
-              disabled={isSaving}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-slate-300 hover:bg-white/10 transition-colors disabled:opacity-50"
+              disabled={isSaving || !validation?.valid}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-slate-300 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Salvar Rascunho
             </button>
             <button
               onClick={() => handleSave(true)}
-              disabled={isSaving}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+              disabled={isSaving || !validation?.valid}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Salvar e Ativar
