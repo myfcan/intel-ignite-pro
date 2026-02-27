@@ -63,12 +63,16 @@ const Dashboard = () => {
   const [activeTrailIndex, setActiveTrailIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // Paginação das trilhas (6 por página = 2 linhas de 3)
+  // Separar trilhas V7 e V8
+  const v7Trails = trails.filter(t => t.trail_type !== 'v8');
+  const v8Trails = trails.filter(t => t.trail_type === 'v8');
+
+  // Paginação das trilhas V7 (6 por página = 2 linhas de 3)
   const [trailPage, setTrailPage] = useState(0);
   const TRAILS_PER_PAGE = 6;
-  const totalTrailPages = Math.ceil(trails.length / TRAILS_PER_PAGE);
-  const visibleTrails = trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
-  const totalV8Trails = trails.filter((trail) => trail.trail_type === 'v8').length;
+  const totalTrailPages = Math.max(1, Math.ceil(v7Trails.length / TRAILS_PER_PAGE));
+  const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
+  const totalV8Trails = v8Trails.length;
 
   useEffect(() => {
     logRuntimeSignature({ route: '/dashboard', layoutId: DASHBOARD_LAYOUT_ID });
@@ -519,7 +523,8 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* ===== SUAS TRILHAS ===== */}
+            {/* ===== CONQUISTAR E CRESCER (V7) ===== */}
+            {v7Trails.length > 0 && (
             <motion.div
               id="suas-trilhas"
               initial={{ opacity: 0, y: 20 }}
@@ -533,7 +538,7 @@ const Dashboard = () => {
             >
               {/* Section header */}
               <div className="flex items-center justify-between mb-5 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Suas Trilhas</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Conquistar e Crescer</h2>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setTrailPage(p => Math.max(0, p - 1))}
@@ -557,12 +562,6 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {totalV8Trails === 0 && (
-                <div className="mb-4 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-sm text-white/90">
-                  Nenhuma trilha V8 publicada no momento. Use <strong>/admin/v8/create</strong> para criar e publicar.
-                </div>
-              )}
-
               {/* Trail cards grid */}
               <AnimatePresence mode="wait">
                 <motion.div
@@ -576,22 +575,6 @@ const Dashboard = () => {
               {visibleTrails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
 
-                    // Segregar V7 vs V8 pelo trail_type real do banco
-                    if (trail.trail_type === 'v8') {
-                      return (
-                        <V8TrailCard
-                          key={trail.id}
-                          trailId={trail.id}
-                          title={trail.title}
-                          description={trail.description}
-                          icon={trail.icon}
-                          lessonCount={trailProgress?.totalLessons || 0}
-                          completedCount={trailProgress?.completedLessons || 0}
-                        />
-                      );
-                    }
-
-                    // V7 (default) — usa TrailCard original
                     return (
                       <TrailCard
                         key={trail.id}
@@ -608,6 +591,48 @@ const Dashboard = () => {
                 </motion.div>
               </AnimatePresence>
             </motion.div>
+            )}
+
+            {/* ===== SEU CAMINHO DE MAESTRIA (V8) ===== */}
+            {v8Trails.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
+              style={{
+                background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #3730a3 100%)',
+                boxShadow: '0 16px 48px -12px rgba(30, 27, 75, 0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-5 sm:mb-6">
+                <div className="flex items-center gap-3">
+                  <Crown className="w-6 h-6 text-amber-400" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Seu Caminho de Maestria</h2>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-500/30">
+                  READ & LISTEN
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {v8Trails.map((trail) => {
+                  const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                  return (
+                    <V8TrailCard
+                      key={trail.id}
+                      trailId={trail.id}
+                      title={trail.title}
+                      description={trail.description}
+                      icon={trail.icon}
+                      lessonCount={trailProgress?.totalLessons || 0}
+                      completedCount={trailProgress?.completedLessons || 0}
+                    />
+                  );
+                })}
+              </div>
+            </motion.div>
+            )}
 
             {/* ===== FOR YOU - Feature Cards ===== */}
             <div className="mb-6">
