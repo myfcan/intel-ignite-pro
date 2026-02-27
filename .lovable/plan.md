@@ -1,31 +1,16 @@
 
-# Fix: Esconder campos de Jornada quando tipo V8 for selecionado
+# Refinamento de tamanho do V8TrailCard
 
-## Problema
-O modal "Criar Nova Jornada" sempre mostra os campos "Nome da Jornada" e "Icone da Jornada", mesmo quando o tipo V8 e selecionado. No modelo V8, a hierarquia e Trilha -> Aula direta (sem Jornada/Curso), entao esses campos nao fazem sentido.
+## O que muda
+Ajuste fino no `V8TrailCard` para ficar mais compacto e elegante, sem alterar o design:
 
-## Solucao
+- **Padding**: reduzir de `p-5 sm:p-6` para `p-4 sm:p-5`
+- **min-h**: remover o `min-h-[140px]` (deixar o conteudo definir a altura naturalmente)
+- **Icon**: reduzir de `w-12 h-12 sm:w-14 sm:h-14` para `w-10 h-10 sm:w-12 sm:h-12`, com rounded menor (`rounded-lg`)
+- **Spacing interno**: reduzir `space-y-2` para `space-y-1.5`
+- **Gap principal**: reduzir de `gap-4` para `gap-3`
 
-Modificar `src/pages/AdminManageLessons.tsx` para:
+## Arquivo alterado
+- `src/components/lessons/v8/V8TrailCard.tsx` (apenas ajustes de classes CSS)
 
-### 1. Detectar o tipo efetivo da trilha selecionada
-- Quando "Trilha existente" estiver ativo, verificar o `trail_type` da trilha selecionada
-- Quando "Criar trilha nova" estiver ativo, usar o valor do seletor `newTrailType`
-- Derivar uma variavel `isV8` para controlar a visibilidade
-
-### 2. Esconder campos de Jornada quando V8
-- Os campos "Nome da Jornada" e "Icone (opcional)" ficam visiveis apenas quando `isV8 === false`
-- O titulo do modal muda para "Criar Nova Trilha V8" quando V8, ou permanece "Criar Nova Jornada" para V7
-
-### 3. Adaptar a logica de submit (`handleCreateCourse`)
-- Quando V8: criar apenas a trilha (sem inserir na tabela `courses`), ja que V8 nao usa jornadas
-- Quando V7: manter o comportamento atual (criar trilha + jornada)
-- Remover a validacao de `newCourseTitle` quando V8
-
-### 4. Adaptar o botao de submit
-- V8: texto "Criar Trilha"
-- V7: texto "Criar Jornada"
-- Ajustar a condicao `disabled` para nao exigir `newCourseTitle` quando V8
-
-## Arquivos alterados
-- `src/pages/AdminManageLessons.tsx` (unico arquivo)
+Resultado: card mais compacto, sem espaço desperdicado, mantendo toda a elegancia premium.
