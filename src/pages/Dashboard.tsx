@@ -635,8 +635,8 @@ const Dashboard = () => {
                         style={{
                           scrollSnapAlign: 'center',
                           scrollSnapStop: 'always',
-                          flex: '0 0 78%',
-                          maxWidth: 330,
+                          flex: '0 0 82%',
+                          maxWidth: 360,
                           transform: isActive ? 'scale(1)' : 'scale(0.94)',
                           filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
                           opacity: isActive ? 1 : 0.96,
