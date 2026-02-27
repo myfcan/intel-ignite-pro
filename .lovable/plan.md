@@ -1,16 +1,18 @@
 
-# Refinamento de tamanho do V8TrailCard
+# Compactar o TrailCard (Cards de Trilha)
 
-## O que muda
-Ajuste fino no `V8TrailCard` para ficar mais compacto e elegante, sem alterar o design:
+## Problema
+O `TrailCard` tem uma area de header colorida com altura fixa de **144px (h-36)** a **160px (h-40)** apenas para exibir um icone pequeno. Isso desperdiça espaço vertical e faz o card parecer desproporcional.
 
-- **Padding**: reduzir de `p-5 sm:p-6` para `p-4 sm:p-5`
-- **min-h**: remover o `min-h-[140px]` (deixar o conteudo definir a altura naturalmente)
-- **Icon**: reduzir de `w-12 h-12 sm:w-14 sm:h-14` para `w-10 h-10 sm:w-12 sm:h-12`, com rounded menor (`rounded-lg`)
-- **Spacing interno**: reduzir `space-y-2` para `space-y-1.5`
-- **Gap principal**: reduzir de `gap-4` para `gap-3`
+## Solucao
+Reduzir a altura do header colorido e ajustar proporcionalmente os elementos decorativos, mantendo o design aurora/gradient intacto.
 
-## Arquivo alterado
-- `src/components/lessons/v8/V8TrailCard.tsx` (apenas ajustes de classes CSS)
+### Mudancas no arquivo `src/components/TrailCard.tsx`:
 
-Resultado: card mais compacto, sem espaço desperdicado, mantendo toda a elegancia premium.
+1. **Header height**: de `h-36 sm:h-40` para `h-24 sm:h-28` (reduzir ~40%)
+2. **Icone container**: de `w-16 h-16 sm:w-20 sm:h-20` para `w-12 h-12 sm:w-14 sm:h-14`
+3. **Icone interno**: de `w-8 h-8 sm:w-10 sm:h-10` para `w-6 h-6 sm:w-7 sm:h-7`
+4. **Circulos decorativos**: reduzir proporcionalmente para caber no header menor
+5. **Lock icon**: de `w-10 h-10` para `w-7 h-7`
+
+Nenhuma mudanca de cor, gradiente, animacao ou estrutura. Apenas dimensoes para um card mais compacto e elegante.
