@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ChevronRight, Zap } from 'lucide-react';
+import { Flame, ChevronRight, Zap, Crown, Gem } from 'lucide-react';
 import { MissoesDiarias } from '@/components/gamification/MissoesDiarias';
 
 interface DashboardSidebarProps {
@@ -129,6 +129,47 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
         </div>
       </motion.div>
 
+      {/* ════════ RANKING + CONQUISTAS ════════ */}
+      <div className="grid grid-cols-2 gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.15 }}
+          onClick={() => navigate('/leaderboard')}
+          className="cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2.5 transition-all hover:-translate-y-1 group"
+          style={cardStyle}
+        >
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform"
+            style={{ background: 'linear-gradient(135deg, hsl(38 92% 50%), hsl(28 80% 52%))', boxShadow: '0 4px 12px hsl(38 92% 50% / 0.25)' }}
+          >
+            <Crown className="w-5 h-5 text-white" />
+          </div>
+          <div className="text-center">
+            <h3 className="font-bold text-[13px]" style={{ color: 'hsl(215 25% 9%)' }}>Ranking</h3>
+            <p className="text-[11px]" style={{ color: 'hsl(215 16% 47%)' }}>Global</p>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.2 }}
+          onClick={() => navigate('/achievements')}
+          className="cursor-pointer rounded-2xl p-4 flex flex-col items-center gap-2.5 transition-all hover:-translate-y-1 group"
+          style={cardStyle}
+        >
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform"
+            style={{ background: 'linear-gradient(135deg, hsl(258 90% 66%), hsl(270 76% 70%))', boxShadow: '0 4px 12px hsl(258 90% 66% / 0.25)' }}
+          >
+            <Gem className="w-5 h-5 text-white" />
+          </div>
+          <div className="text-center">
+            <h3 className="font-bold text-[13px]" style={{ color: 'hsl(215 25% 9%)' }}>Conquistas</h3>
+            <p className="text-[11px]" style={{ color: 'hsl(215 16% 47%)' }}>Badges</p>
+          </div>
+        </motion.div>
+      </div>
 
       {/* ════════ MISSÕES DIÁRIAS ════════ */}
       <motion.div
