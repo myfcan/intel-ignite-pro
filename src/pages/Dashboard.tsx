@@ -935,7 +935,7 @@ const Dashboard = () => {
                         progress={0}
                         completedLessons={0}
                         totalLessons={0}
-                        status="locked"
+                        status={isAdmin ? "active" : "locked"}
                         gradient=""
                       />
                     </div>
@@ -961,7 +961,7 @@ const Dashboard = () => {
                         progress={0}
                         completedLessons={0}
                         totalLessons={0}
-                        status="locked"
+                        status={isAdmin ? "active" : "locked"}
                         gradient=""
                       />
                     </div>
