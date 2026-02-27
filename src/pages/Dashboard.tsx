@@ -68,6 +68,7 @@ const Dashboard = () => {
   const TRAILS_PER_PAGE = 6;
   const totalTrailPages = Math.ceil(trails.length / TRAILS_PER_PAGE);
   const visibleTrails = trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
+  const totalV8Trails = trails.filter((trail) => trail.trail_type === 'v8').length;
 
   useEffect(() => {
     logRuntimeSignature({ route: '/dashboard', layoutId: DASHBOARD_LAYOUT_ID });
@@ -555,6 +556,12 @@ const Dashboard = () => {
                   </span>
                 </div>
               </div>
+
+              {totalV8Trails === 0 && (
+                <div className="mb-4 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-sm text-white/90">
+                  Nenhuma trilha V8 publicada no momento. Use <strong>/admin/v8/create</strong> para criar e publicar.
+                </div>
+              )}
 
               {/* Trail cards grid */}
               <AnimatePresence mode="wait">
