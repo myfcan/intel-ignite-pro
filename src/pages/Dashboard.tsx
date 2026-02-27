@@ -964,7 +964,6 @@ const Dashboard = () => {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900">Para Você</h2>
-                <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todos</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* AI Playground - Premium */}
