@@ -88,6 +88,12 @@ export default function AdminManageLessons() {
   const [newCourseIcon, setNewCourseIcon] = useState('');
   const [creatingCourse, setCreatingCourse] = useState(false);
 
+  // Create trail inline
+  const [createNewTrail, setCreateNewTrail] = useState(false);
+  const [newTrailTitle, setNewTrailTitle] = useState('');
+  const [newTrailIcon, setNewTrailIcon] = useState('');
+  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8'>('v7');
+
   useEffect(() => {
     loadData();
   }, []);
@@ -250,24 +256,50 @@ export default function AdminManageLessons() {
 
   // Create course (jornada)
   async function handleCreateCourse() {
-    if (!newCourseTrailId) {
-      toast({ title: 'Selecione uma trilha', variant: 'destructive' });
-      return;
+    let trailId = newCourseTrailId;
+
+    // If creating a new trail first
+    if (createNewTrail) {
+      if (!newTrailTitle.trim()) {
+        toast({ title: 'Nome da trilha obrigatório', variant: 'destructive' });
+        return;
+      }
+    } else {
+      if (!trailId) {
+        toast({ title: 'Selecione uma trilha', variant: 'destructive' });
+        return;
+      }
     }
+
     if (!newCourseTitle.trim()) {
-      toast({ title: 'Nome obrigatório', variant: 'destructive' });
+      toast({ title: 'Nome da jornada obrigatório', variant: 'destructive' });
       return;
     }
 
     setCreatingCourse(true);
     try {
-      const existingCourses = courses.filter(c => c.trail_id === newCourseTrailId);
+      // Create trail if needed
+      if (createNewTrail) {
+        const maxOrder = trails.length > 0 ? Math.max(...trails.map(t => t.order_index)) + 1 : 1;
+        const { data: newTrail, error: trailError } = await supabase.from('trails').insert({
+          title: newTrailTitle.trim(),
+          icon: newTrailIcon.trim() || null,
+          order_index: maxOrder,
+          is_active: true,
+          trail_type: newTrailType,
+        }).select('id').single();
+        if (trailError) throw trailError;
+        trailId = newTrail.id;
+        toast({ title: 'Trilha criada', description: `"${newTrailTitle.trim()}"` });
+      }
+
+      const existingCourses = courses.filter(c => c.trail_id === trailId);
       const nextOrder = existingCourses.length > 0
         ? Math.max(...existingCourses.map(c => c.order_index)) + 1
         : 1;
 
       const { error } = await supabase.from('courses').insert({
-        trail_id: newCourseTrailId,
+        trail_id: trailId,
         title: newCourseTitle.trim(),
         icon: newCourseIcon.trim() || null,
         order_index: nextOrder,
@@ -281,6 +313,10 @@ export default function AdminManageLessons() {
       setNewCourseTitle('');
       setNewCourseIcon('');
       setNewCourseTrailId('');
+      setCreateNewTrail(false);
+      setNewTrailTitle('');
+      setNewTrailIcon('');
+      setNewTrailType('v7');
       await loadData();
     } catch (error: any) {
       toast({ title: 'Erro ao criar jornada', description: error.message, variant: 'destructive' });
@@ -649,15 +685,58 @@ export default function AdminManageLessons() {
             </DialogHeader>
 
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Trilha</label>
-                <Select value={newCourseTrailId} onValueChange={setNewCourseTrailId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a trilha" /></SelectTrigger>
-                  <SelectContent>
-                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              {/* Toggle: usar existente ou criar nova */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={!createNewTrail ? 'default' : 'outline'}
+                  onClick={() => setCreateNewTrail(false)}
+                >
+                  Trilha existente
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={createNewTrail ? 'default' : 'outline'}
+                  onClick={() => { setCreateNewTrail(true); setNewCourseTrailId(''); }}
+                >
+                  + Criar trilha nova
+                </Button>
               </div>
+
+              {!createNewTrail ? (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Trilha</label>
+                  <Select value={newCourseTrailId} onValueChange={setNewCourseTrailId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a trilha" /></SelectTrigger>
+                    <SelectContent>
+                      {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-3 rounded-lg border border-dashed border-primary/30 p-3">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Nome da Trilha</label>
+                    <Input value={newTrailTitle} onChange={(e) => setNewTrailTitle(e.target.value)} placeholder="Ex: Dominando IA Generativa" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Tipo</label>
+                    <Select value={newTrailType} onValueChange={(v) => setNewTrailType(v as 'v7' | 'v8')}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="v7">V7 (Trilha → Jornada → Aula)</SelectItem>
+                        <SelectItem value="v8">V8 (Trilha → Aula direta)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Ícone da Trilha (opcional)</label>
+                    <Input value={newTrailIcon} onChange={(e) => setNewTrailIcon(e.target.value)} placeholder="Ex: 🚀 ou Brain" />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Nome da Jornada</label>
@@ -673,7 +752,7 @@ export default function AdminManageLessons() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateCourseModal(false)} disabled={creatingCourse}>Cancelar</Button>
-              <Button onClick={handleCreateCourse} disabled={creatingCourse || !newCourseTrailId || !newCourseTitle.trim()}>
+              <Button onClick={handleCreateCourse} disabled={creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim()) || !newCourseTitle.trim()}>
                 {creatingCourse ? 'Criando...' : 'Criar Jornada'}
               </Button>
             </DialogFooter>
