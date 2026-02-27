@@ -61,10 +61,12 @@ const TrailCard = ({
       whileHover={!isLocked ? { y: -6, scale: 1.02 } : undefined}
       transition={{ duration: 0.3 }}
       onClick={handleClick}
-      className={`group relative rounded-2xl overflow-hidden transition-all duration-300 ${
-        isLocked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
-      }`}
+      className={`group relative rounded-2xl overflow-hidden transition-all duration-300
+        w-[130px] sm:w-auto flex-shrink-0 sm:flex-shrink
+        ${isLocked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}
+      `}
       style={{
+        scrollSnapAlign: 'start',
         boxShadow: isGold
           ? '0 0 0 2px #D4A017, 0 0 24px rgba(212, 160, 23, 0.25), 0 8px 32px -4px rgba(212, 160, 23, 0.2), 0 2px 8px -2px rgba(0,0,0,0.05)'
           : isLocked
@@ -100,7 +102,7 @@ const TrailCard = ({
       )}
       {/* Colored header area with aurora gradient */}
       <div
-        className="h-16 sm:h-28 flex items-center justify-center relative overflow-hidden"
+        className="h-20 sm:h-28 flex items-center justify-center relative overflow-hidden"
         style={{
           background: isLocked
             ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
@@ -113,19 +115,19 @@ const TrailCard = ({
       >
         {/* Decorative shapes */}
         <div
-          className="absolute w-28 h-28 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.12)', top: '-20px', right: '-20px' }}
+          className="absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.12)', top: '-14px', right: '-14px' }}
         />
         <div
-          className="absolute w-20 h-20 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.08)', bottom: '-14px', left: '-8px' }}
+          className="absolute w-14 h-14 sm:w-20 sm:h-20 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.08)', bottom: '-10px', left: '-6px' }}
         />
         <div
-          className="absolute w-12 h-12 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.06)', top: '12px', left: '20px' }}
+          className="absolute w-8 h-8 sm:w-12 sm:h-12 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.06)', top: '8px', left: '14px' }}
         />
         {isLocked ? (
-          <Lock className="w-6 h-6 text-white/40" />
+          <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-white/40" />
         ) : (
           <div className="relative">
             <div
@@ -142,33 +144,35 @@ const TrailCard = ({
       </div>
 
       {/* Card body */}
-      <div className="px-3.5 py-2.5 sm:px-4 sm:py-3">
+      <div className="px-2.5 py-2 sm:px-4 sm:py-3 flex-1 flex flex-col justify-between">
         {/* Category badge */}
-        <span
-          className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-1.5 tracking-wide uppercase"
-          style={{
-            background: isLocked ? '#F3F4F6' : `${theme.accent}10`,
-            color: isLocked ? '#9CA3AF' : theme.accent,
-          }}
-        >
-          {theme.label}
-        </span>
+        <div>
+          <span
+            className="inline-block px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold mb-1 tracking-wide uppercase"
+            style={{
+              background: isLocked ? '#F3F4F6' : `${theme.accent}10`,
+              color: isLocked ? '#9CA3AF' : theme.accent,
+            }}
+          >
+            {theme.label}
+          </span>
 
-        {/* Title */}
-        <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1 mb-0.5">
-          {trail.title}
-        </h3>
+          {/* Title */}
+          <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-snug line-clamp-2 sm:line-clamp-1 mb-0.5">
+            {trail.title}
+          </h3>
 
-        {/* Subtitle / Description */}
-        {trail.description && (
-          <p className="text-[11px] text-gray-500 mb-2 leading-relaxed line-clamp-1">
-            {trail.description}
-          </p>
-        )}
+          {/* Subtitle / Description - hidden on mobile */}
+          {trail.description && (
+            <p className="hidden sm:block text-[11px] text-gray-500 mb-2 leading-relaxed line-clamp-1">
+              {trail.description}
+            </p>
+          )}
+        </div>
 
         {/* Progress bar + count */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+        <div className="flex items-center gap-2 mt-1.5 sm:mt-0">
+          <div className="flex-1 h-1 sm:h-1.5 rounded-full bg-gray-100 overflow-hidden">
             <motion.div
               className="h-full rounded-full"
               style={{
@@ -180,7 +184,7 @@ const TrailCard = ({
               transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
             />
           </div>
-          <span className="text-[10px] font-bold text-gray-400">
+          <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 whitespace-nowrap">
             {completedLessons}/{totalLessons}
           </span>
         </div>

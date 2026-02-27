@@ -539,7 +539,8 @@ const Dashboard = () => {
               {/* Section header */}
               <div className="flex items-center justify-between mb-5 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Conquistar e Crescer</h2>
-                <div className="flex items-center gap-2">
+                {/* Pagination arrows - hidden on mobile, visible on sm+ */}
+                <div className="hidden sm:flex items-center gap-2">
                   <button
                     onClick={() => setTrailPage(p => Math.max(0, p - 1))}
                     disabled={trailPage === 0}
@@ -562,7 +563,35 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Trail cards grid */}
+              {/* Mobile: horizontal scroll carousel */}
+              <div
+                className="trail-carousel sm:hidden flex gap-3 overflow-x-auto pb-4 pl-1 pr-4 -mx-1"
+                style={{
+                  scrollSnapType: 'x mandatory',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                }}
+              >
+                <style>{`.trail-carousel::-webkit-scrollbar { display: none; }`}</style>
+                {v7Trails.map((trail) => {
+                  const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                  return (
+                    <TrailCard
+                      key={trail.id}
+                      trail={trail}
+                      Icon={BookOpen}
+                      gradient="from-indigo-500 to-violet-500"
+                      progress={trailProgress?.progress || 0}
+                      completedLessons={trailProgress?.completedLessons || 0}
+                      totalLessons={trailProgress?.totalLessons || 0}
+                      status={trailProgress?.status || "locked"}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Desktop/Tablet: paginated grid */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={trailPage}
@@ -570,7 +599,7 @@ const Dashboard = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                  className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
               {visibleTrails.map((trail) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
