@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, Clock } from "lucide-react";
+import { BookOpen, Clock, Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot, LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface V8TrailCardProps {
@@ -19,6 +19,17 @@ const V8_THEMES = [
   { accent: '#4F46E5', label: 'Read & Listen' },
   { accent: '#8B5CF6', label: 'Read & Listen' },
 ];
+
+// Mapeamento de ícones profissionais por order_index
+const V8_ICONS: Record<number, LucideIcon> = {
+  2: Compass,       // Aterrizando nas IAs
+  3: MessageSquare,  // ChatGPT no máximo
+  4: Sparkles,       // Dissecando o Gemini
+  5: Brain,          // Claude O melhor
+  6: Palette,        // Midjourney
+  7: Zap,            // Grok
+  8: Bot,            // Manus
+};
 
 export const V8TrailCard = ({
   trailId,
@@ -101,11 +112,10 @@ export const V8TrailCard = ({
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.3)',
               }}
             >
-              {icon && icon.length <= 2 ? (
-                <span className="text-2xl sm:text-3xl">{icon}</span>
-              ) : (
-                <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-md" />
-              )}
+              {(() => {
+                const IconComponent = V8_ICONS[orderIndex] || BookOpen;
+                return <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-md" />;
+              })()}
             </div>
           </div>
         </div>
