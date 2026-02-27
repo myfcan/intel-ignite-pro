@@ -1,42 +1,60 @@
 
 
-# Correção Definitiva: gradient-hero text-clipping quebrado
+# JSON Golden Template V8 — Modelo Completo em AdminModelos
 
-## Causa Raiz
+## Problema Atual
 
-A classe `.gradient-hero` em `src/index.css` (L229) usa `background: var(--gradient-hero)` (shorthand). Quando combinada com as classes Tailwind `bg-clip-text text-transparent`, o resultado e imprevisivel entre browsers -- o texto pode aparecer como um bloco solido roxo em vez de texto com gradiente.
+A secao V8 em `src/pages/AdminModelos.tsx` (linhas 316-325) exibe um JSON minimo incorreto:
+- Usa `"text"` em vez de `"content"` (campo real no tipo `V8Section`)
+- Falta `contentVersion: "v8"` (discriminador obrigatorio em `V8LessonData`)
+- Falta `description`
+- Falta `inlineQuizzes` (campo obrigatorio em `V8LessonData`)
+- Falta `exercises` (campo obrigatorio em `V8LessonData`)
+- Falta `audioDurationSeconds` e `imageUrl` nas secoes
+- Nenhum exemplo de quiz inline ou exercicio final
 
-A classe `.gradient-text-hero` (L233-240) foi criada corretamente com `background-image` + `background-clip: text` + `-webkit-text-fill-color: transparent`, mas so foi aplicada em 1 lugar (L115, "28 Dias"). Os outros 6 lugares continuam usando o padrao quebrado.
+## Plano
 
-## Ocorrencias Quebradas (dados reais)
+### Arquivo: `src/pages/AdminModelos.tsx`
 
-| Linha | Conteudo renderizado | Classe atual (QUEBRADA) |
-|-------|---------------------|------------------------|
-| 649 | Income values (oportunidades) | `gradient-hero bg-clip-text text-transparent` |
-| 663 | "R$2.847/mes" | `gradient-hero bg-clip-text text-transparent` |
-| 669 | "67%" | `gradient-hero bg-clip-text text-transparent` |
-| 675 | "Ilimitado" | `gradient-hero bg-clip-text text-transparent` |
-| 759 | Plan price | `gradient-hero bg-clip-text text-transparent` |
-| 850 | "Inteligencia Ignite" | `gradient-hero bg-clip-text text-transparent` |
+Substituir o bloco do JSON minimo (linhas 316-326) por um JSON Golden completo que inclui:
 
-## Plano de Correcao
+1. **Header**: `contentVersion: "v8"`, `title`, `description`
+2. **3 secoes completas** com todos os campos (`id`, `title`, `content` com markdown real, `imageUrl`, `audioUrl`, `audioDurationSeconds`)
+3. **1 inline quiz** entre secoes (com `afterSectionIndex`, `question`, 3 opcoes, `explanation`, `reinforcement`, `audioUrl`)
+4. **2 exercicios finais** (um `true-false` e um `multiple-choice`) demonstrando o reuso do tipo `ExerciseConfig`
 
-### Arquivo: `src/pages/Index.tsx`
+O JSON sera formatado e legivel, com comentarios inline para orientar o uso.
 
-Substituir todas as 6 ocorrencias de `gradient-hero bg-clip-text text-transparent` por `gradient-text-hero`.
+Adicionalmente, trocar o label de "Exemplo minimo" para "JSON Golden Template V8 — Referencia Completa" e adicionar um botao "Copiar JSON V8" funcional (similar ao que ja existe para V7).
 
-Cada linha sera editada para trocar:
+### Estrutura do JSON Golden
+
 ```text
-ANTES: className="... gradient-hero bg-clip-text text-transparent ..."
-DEPOIS: className="... gradient-text-hero ..."
+V8LessonData
+  contentVersion: "v8"
+  title: string
+  description: string
+  sections: [
+    { id, title, content (markdown), imageUrl?, audioUrl, audioDurationSeconds }
+    x3 secoes
+  ]
+  inlineQuizzes: [
+    { id, afterSectionIndex, question, options[3], explanation, reinforcement?, audioUrl? }
+    x1 quiz
+  ]
+  exercises: [
+    { id, type: "true-false", title, instruction, data: { correctAnswer, explanation } }
+    { id, type: "multiple-choice", title, instruction, data: { options[], correctOptionId } }
+  ]
 ```
 
-### Validacao
+### Funcionalidade adicional
 
-- As classes `bg-clip-text` e `text-transparent` do Tailwind se tornam redundantes quando `gradient-text-hero` e usado (ja inclui `background-clip`, `color: transparent` e `-webkit-text-fill-color`), portanto devem ser removidas.
-- Nenhum outro arquivo precisa ser alterado -- a busca confirmou que todas as ocorrencias estao em `Index.tsx`.
+- Adicionar funcao `copyV8JsonToClipboard` (espelhando o padrao do V7 com `copyJsonToClipboard`)
+- Adicionar estado `copiedV8` para feedback visual do botao
+- Botao "Copiar JSON V8 Golden" com icone Copy/CheckCircle
 
 ### Resultado esperado
 
-Todos os textos com gradiente na landing page renderizam corretamente como texto transparente com gradiente visivel por tras, sem blocos solidos de cor.
-
+Na pagina `/admin/modelos`, o card V8 exibira o JSON Golden completo, copiavel com um clique, servindo como template de referencia para criacao de aulas V8.
