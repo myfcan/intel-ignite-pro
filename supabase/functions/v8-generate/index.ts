@@ -45,7 +45,7 @@ interface GenerateRequest {
 
 interface AudioResult {
   index: number;
-  type: 'section' | 'quiz' | 'quiz-reinforcement';
+  type: 'section' | 'quiz' | 'quiz-reinforcement' | 'playground';
   audioUrl: string;
   durationEstimate: number;
   sizeKB: number;
@@ -222,7 +222,7 @@ serve(async (req) => {
 
         results.push({
           index: i,
-          type: 'playground' as any,
+          type: 'playground',
           audioUrl: publicUrl,
           durationEstimate,
           sizeKB: Math.round(audioBuffer.byteLength / 1024),

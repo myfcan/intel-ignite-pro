@@ -1,9 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+const TIMEOUT_MS = 10_000;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,6 +14,29 @@ serve(async (req) => {
   }
 
   try {
+    // ─── AUTH: verify JWT ───
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return jsonResp({ error: 'Unauthorized' }, 401);
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    const token = authHeader.replace('Bearer ', '');
+    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey,
+      },
+    });
+
+    if (!userRes.ok) {
+      await userRes.text();
+      return jsonResp({ error: 'Invalid token' }, 401);
+    }
+
+    // User is authenticated — proceed
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -20,8 +46,9 @@ serve(async (req) => {
     let messages: Array<{ role: string; content: string }>;
 
     if (mode === "generate-result") {
-      // Generate a simulated AI result for a given prompt
       const { prompt } = body;
+      if (!prompt?.trim()) return jsonResp({ error: "prompt is required" }, 400);
+
       messages = [
         {
           role: "system",
@@ -30,8 +57,8 @@ serve(async (req) => {
         { role: "user", content: prompt },
       ];
     } else if (mode === "evaluate") {
-      // Evaluate a user's prompt against criteria
       const { userPrompt, evaluationCriteria, rubric, maxScore } = body;
+      if (!userPrompt?.trim()) return jsonResp({ error: "userPrompt is required" }, 400);
 
       const criteriaText = (evaluationCriteria || []).map((c: string, i: number) => `${i + 1}. ${c}`).join("\n");
       const rubricText = rubric
@@ -58,36 +85,44 @@ Seja justo mas exigente. Feedback deve ser acionável, nunca genérico.`,
         { role: "user", content: `Prompt para avaliar: "${userPrompt}"` },
       ];
     } else {
-      return new Response(
-        JSON.stringify({ error: "Invalid mode. Use 'generate-result' or 'evaluate'" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResp({ error: "Invalid mode. Use 'generate-result' or 'evaluate'" }, 400);
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        messages,
-      }),
-    });
+    // ─── Call AI with timeout ───
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-lite",
+          messages,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        console.error("[v8-evaluate-prompt] Timeout after", TIMEOUT_MS, "ms");
+        return jsonResp({ error: "AI request timed out. Try again.", score: 0, feedback: "Timeout — tente novamente." }, 504);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResp({ error: "Rate limit exceeded. Try again later." }, 429);
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResp({ error: "Payment required." }, 402);
       }
       const errText = await response.text();
       throw new Error(`AI gateway error ${response.status}: ${errText.slice(0, 200)}`);
@@ -97,37 +132,31 @@ Seja justo mas exigente. Feedback deve ser acionável, nunca genérico.`,
     const content = aiResponse.choices?.[0]?.message?.content || "";
 
     if (mode === "generate-result") {
-      return new Response(
-        JSON.stringify({ result: content }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResp({ result: content });
     }
 
     // Parse evaluation response
     try {
-      // Try to extract JSON from response
       const jsonMatch = content.match(/\{[\s\S]*?"score"[\s\S]*?"feedback"[\s\S]*?\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        return new Response(
-          JSON.stringify({ score: parsed.score, feedback: parsed.feedback }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResp({ score: parsed.score, feedback: parsed.feedback });
       }
     } catch {
-      // Fallback
+      // Fallback below
     }
 
-    return new Response(
-      JSON.stringify({ score: 50, feedback: content.slice(0, 300) }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResp({ score: 50, feedback: content.slice(0, 300) });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[v8-evaluate-prompt] Error:", msg);
-    return new Response(
-      JSON.stringify({ error: msg }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResp({ error: msg }, 500);
   }
 });
+
+function jsonResp(body: Record<string, unknown>, status = 200) {
+  return new Response(
+    JSON.stringify(body),
+    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
