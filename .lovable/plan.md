@@ -1,47 +1,41 @@
 
+Objetivo do ajuste aprovado: aumentar em 25% o certificado mobile (inclusive o “com cadeado/loader”) sem quebrar o layout premium.
 
-# Redesign das Conexoes da Skill Tree — De Pontos Fracos para Linhas Premium
+1) Diagnóstico do problema atual
+- Hoje o bloco esquerdo do card mobile está em `width: 156`, mas o documento interno (`CertificateDocument` em modo `compact`) usa tamanhos fixos (selo, tipografia, espaçamentos), então ele não cresce proporcionalmente.
+- Resultado: mesmo com área maior, o certificado ainda parece pequeno/amador porque o conteúdo útil continua “mini”.
 
-## Problema
+2) Ajuste principal (25% real no certificado mobile)
+- Arquivo: `src/components/lessons/v8/V8CertificateCard.tsx`.
+- Implementar escala explícita para o modo compacto:
+  - Criar fator `compactScale = 1.25`.
+  - Aplicar esse fator nos principais tokens do `CertificateDocument` quando `compact=true`:
+    - selo e ícone do selo,
+    - tamanhos de fonte (título/subtítulo/textos internos),
+    - paddings/margens/chamfer do documento,
+    - espessura de linhas/divisor no compacto.
+- Isso garante que o próprio documento fique 25% maior visualmente (não só o container).
 
-As conexoes entre os nos da skill tree sao apenas 6 pontos minusculos (raio 2-3px) ao longo de um bezier. Na tela real, parecem quase invisiveis e amadoras — nao comunicam progressao nem conexao visual entre as aulas.
+3) Ajuste do container mobile para acompanhar o crescimento
+- No card mobile:
+  - `width` da coluna esquerda: `156 -> 195` (+25%).
+  - `maxHeight` do card: `210 -> ~262` (ou 260/264 arredondado, mantendo proporção de +25%).
+- Ajustar padding da coluna esquerda para manter moldura premium sem “apertar” o documento.
 
-## Solucao
+4) Compatibilidade em telas menores (evitar quebra em 320px)
+- Em vez de valor rígido puro, usar limite responsivo para não esmagar o texto do lado direito:
+  - Exemplo de abordagem: `width: min(195px, 58vw)` para a coluna do mini-certificado.
+- Mantém o aumento forte em mobile comum (375/390), sem quebrar em devices muito estreitos.
 
-Substituir os pontos por **linhas curvas SVG reais** (paths) com estilo premium:
+5) O que não será alterado
+- Desktop do certificado permanece igual.
+- Fluxo do modal, progresso e estados (locked/in_progress/completed) continuam os mesmos.
+- Sem mudanças de backend.
 
-### Conexao visual
-
-- **Linha principal**: Path SVG curvo (quadratic bezier) com `stroke-width: 3px` para segmentos completos, `2.5px` para ativos, `2px` para locked
-- **Stroke dasharray** para locked: `8 6` (tracejado elegante, nao pontilhado)
-- **Cores**:
-  - Completado: `hsl(258, 70%, 58%)` — violeta solido, opacity 0.9
-  - Ativo (proximo desbloqueado): `hsl(258, 50%, 70%)` — violeta medio, com animacao de dash
-  - Locked: `hsl(220, 10%, 82%)` — cinza claro, opacity 0.5, tracejado
-
-### Animacao no segmento ativo
-
-- `stroke-dashoffset` animado (efeito de "fluxo" ao longo da linha) para o segmento entre a aula atual e a proxima
-- Duracao: 2s, loop infinito, ease linear
-- Sem pulsacao de escala (evitar layout shift)
-
-### Pontos decorativos (opcional, sutis)
-
-- Manter 3 pontos (nao 6) apenas nos segmentos completados como "checkpoints"
-- Raio: 3.5px com borda de 1px branca para destacar
-- Remover pontos dos segmentos locked
-
-## Arquivo Modificado
-
-| Arquivo | Acao |
-|---------|------|
-| `src/components/lessons/v8/V8SkillTree.tsx` | **Editar** — substituir logica de dots por paths SVG curvos |
-
-## Detalhes Tecnicos
-
-- Usar `<motion.path>` do framer-motion para animar `strokeDashoffset`
-- Path: `M x1,y1 Q cx,cy x2,y2` (quadratic bezier, mesmo calculo atual)
-- `stroke-linecap: round` para acabamento suave
-- `fill: none` — apenas stroke
-- Manter mesma logica de `getXOffset` e `ROW_HEIGHT`
-- Zero mudancas no V8SkillNode ou V8TrailDetail
+6) Validação após implementação
+- Verificar em mobile (390x844, 375x812, 320x568):
+  - mini-certificado claramente maior (~25%),
+  - estado bloqueado com cadeado ainda legível e premium,
+  - sem corte/clipping no card,
+  - primeira aula continua visível logo abaixo (ou com impacto mínimo aceitável).
+- Verificar que no desktop não houve regressão visual.
