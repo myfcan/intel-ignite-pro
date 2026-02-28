@@ -485,18 +485,18 @@ export default function AdminV8Create() {
   };
 
   // ─── Render ───
-  const cardStyle = "rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5";
+  const cardStyle = "rounded-2xl border border-slate-200 bg-white shadow-sm p-5";
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-[#FAFBFC] text-slate-900">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/10">
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => navigate("/admin")} className="p-2 rounded-xl hover:bg-white/10 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-400" />
+          <button onClick={() => navigate("/admin")} className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-slate-500" />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-bold">Criar Aula V8</h1>
+            <h1 className="text-lg font-bold text-slate-900">Criar Aula V8</h1>
             <p className="text-xs text-slate-500">Read & Listen Premium</p>
           </div>
           {/* Step indicator */}
@@ -505,7 +505,7 @@ export default function AdminV8Create() {
               <div
                 key={s}
                 className={`w-2 h-2 rounded-full transition-colors ${
-                  step === s ? "bg-indigo-500" : i < ["edit", "setup", "validate", "generate", "preview", "saved"].indexOf(step) ? "bg-emerald-500" : "bg-white/10"
+                  step === s ? "bg-indigo-500" : i < ["edit", "setup", "validate", "generate", "preview", "saved"].indexOf(step) ? "bg-emerald-500" : "bg-slate-200"
                 }`}
               />
             ))}
@@ -516,14 +516,14 @@ export default function AdminV8Create() {
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-5">
         {/* ─── METADATA ─── */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={cardStyle}>
-          <h2 className="text-sm font-semibold text-slate-300 mb-3">Metadados</h2>
+          <h2 className="text-sm font-semibold text-slate-700 mb-3">Metadados</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título</label>
               <input
                 value={lessonTitle}
                 onChange={(e) => setLessonTitle(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-indigo-500"
               />
             </div>
             <div>
@@ -532,29 +532,29 @@ export default function AdminV8Create() {
                 type="number"
                 value={estimatedTime}
                 onChange={(e) => setEstimatedTime(Number(e.target.value))}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-indigo-500"
                 min={1}
               />
             </div>
           </div>
-          <p className="text-[10px] text-slate-600 mt-2">💡 Após criar, use o Gerenciador de Lições para mover a aula para uma trilha.</p>
+          <p className="text-[10px] text-slate-500 mt-2">💡 Após criar, use o Gerenciador de Lições para mover a aula para uma trilha.</p>
         </motion.div>
 
         {/* ─── EDITOR (Content / JSON toggle) ─── */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className={cardStyle}>
           <div className="flex items-center justify-between mb-3">
             {/* Toggle */}
-            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-white/5 border border-white/10">
+            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100 border border-slate-200">
               <button
                 onClick={() => setEditorMode("content")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${editorMode === "content" ? "bg-indigo-500/30 text-indigo-300" : "text-slate-500 hover:text-slate-300"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${editorMode === "content" ? "bg-indigo-500/20 text-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
               >
                 <FileText className="w-3.5 h-3.5" />
                 Conteúdo
               </button>
               <button
                 onClick={() => setEditorMode("json")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${editorMode === "json" ? "bg-indigo-500/30 text-indigo-300" : "text-slate-500 hover:text-slate-300"}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${editorMode === "json" ? "bg-indigo-500/20 text-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
               >
                 <Code className="w-3.5 h-3.5" />
                 JSON
@@ -565,7 +565,7 @@ export default function AdminV8Create() {
               <button
                 onClick={handleConvertContent}
                 disabled={!contentText.trim()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 text-xs font-semibold hover:bg-emerald-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Zap className="w-3.5 h-3.5" />
                 Converter para JSON
@@ -573,7 +573,7 @@ export default function AdminV8Create() {
             ) : (
               <button
                 onClick={handleValidate}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-semibold hover:bg-indigo-500/30 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/15 text-indigo-600 text-xs font-semibold hover:bg-indigo-500/25 transition-colors"
               >
                 <Check className="w-3.5 h-3.5" />
                 Validar JSON
@@ -587,18 +587,18 @@ export default function AdminV8Create() {
                 value={contentText}
                 onChange={(e) => setContentText(e.target.value)}
                 placeholder={"# Título da Aula\n\nDescrição opcional...\n\n## Seção 1 — Introdução\nConteúdo markdown aqui...\n\n[PLAYGROUND]\ntitle: Teste na Prática\ninstruction: Compare os dois prompts...\n...\n\n[QUIZ]\nquestion: Qual a diferença?\noptions:\n- [x] Resposta correta\n- [ ] Errada\nexplanation: Porque..."}
-                className="w-full h-96 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 resize-y placeholder:text-slate-700"
+                className="w-full h-96 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 resize-y placeholder:text-slate-600"
                 spellCheck={false}
               />
-              <p className="text-[10px] text-slate-600 mt-2">
-                💡 Use <code className="text-slate-500">## Título</code> para seções, <code className="text-slate-500">[PLAYGROUND]</code> e <code className="text-slate-500">[QUIZ]</code> para interações inline. Clique "Converter" para gerar o JSON automaticamente.
+              <p className="text-[10px] text-slate-500 mt-2">
+                💡 Use <code className="text-slate-600">## Título</code> para seções, <code className="text-slate-600">[PLAYGROUND]</code> e <code className="text-slate-600">[QUIZ]</code> para interações inline. Clique "Converter" para gerar o JSON automaticamente.
               </p>
             </>
           ) : (
             <textarea
               value={jsonText}
               onChange={(e) => { setJsonText(e.target.value); setValidation(null); setStep("edit"); }}
-              className="w-full h-80 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 resize-y"
+              className="w-full h-80 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 resize-y"
               spellCheck={false}
             />
           )}
@@ -618,9 +618,9 @@ export default function AdminV8Create() {
         {/* ─── VALIDATION RESULT ─── */}
         {validation && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cardStyle}>
-            <h2 className="text-sm font-semibold text-slate-300 mb-3">Validação</h2>
+            <h2 className="text-sm font-semibold text-slate-700 mb-3">Validação</h2>
             <div className="flex items-center gap-4 mb-3">
-              <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${validation.valid ? "bg-emerald-500/20 text-emerald-300" : "bg-red-500/20 text-red-300"}`}>
+              <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${validation.valid ? "bg-emerald-500/15 text-emerald-600" : "bg-red-500/15 text-red-600"}`}>
                 {validation.valid ? "✅ Válido" : "❌ Inválido"}
               </span>
               <span className="text-xs text-slate-500">
@@ -653,9 +653,9 @@ export default function AdminV8Create() {
         {/* ─── GENERATE AUDIO ─── */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cardStyle}>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-300">Gerar Áudios</h2>
+            <h2 className="text-sm font-semibold text-slate-700">Gerar Áudios</h2>
             {isGenerating && (
-              <span className="flex items-center gap-1.5 text-xs text-indigo-300">
+              <span className="flex items-center gap-1.5 text-xs text-indigo-600">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Gerando...
               </span>
@@ -688,22 +688,22 @@ export default function AdminV8Create() {
         {/* ─── AUDIO PREVIEW ─── */}
         {generateResult && step === "preview" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cardStyle}>
-            <h2 className="text-sm font-semibold text-slate-300 mb-3">Preview de Áudios</h2>
+            <h2 className="text-sm font-semibold text-slate-700 mb-3">Preview de Áudios</h2>
             <div className="space-y-2">
               {generateResult.results.map((r) => (
-                <div key={`${r.type}-${r.index}`} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
+                <div key={`${r.type}-${r.index}`} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
                   <button
                     onClick={() => toggleAudioPreview(r.audioUrl)}
-                    className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center hover:bg-indigo-500/30 transition-colors flex-shrink-0"
+                    className="w-8 h-8 rounded-full bg-indigo-500/15 flex items-center justify-center hover:bg-indigo-500/25 transition-colors flex-shrink-0"
                   >
                     {playingAudioUrl === r.audioUrl ? (
-                      <Pause className="w-3.5 h-3.5 text-indigo-300" />
+                      <Pause className="w-3.5 h-3.5 text-indigo-600" />
                     ) : (
-                      <Play className="w-3.5 h-3.5 text-indigo-300 ml-0.5" />
+                      <Play className="w-3.5 h-3.5 text-indigo-600 ml-0.5" />
                     )}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-white truncate">
+                    <p className="text-xs font-medium text-slate-900 truncate">
                       {r.type === "section" ? `Seção ${r.index + 1}` : r.type === "quiz" ? `Quiz ${r.index + 1}` : r.type === "playground" ? `Playground ${r.index + 1}` : `Quiz ${r.index + 1} (reforço)`}
                     </p>
                     <p className="text-[10px] text-slate-500">~{r.durationEstimate}s · {r.sizeKB}KB</p>
@@ -732,7 +732,7 @@ export default function AdminV8Create() {
             <button
               onClick={() => handleSave(false)}
               disabled={isSaving || !validation?.valid}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-slate-300 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Salvar Rascunho
@@ -751,15 +751,15 @@ export default function AdminV8Create() {
         {/* ─── SAVED CONFIRMATION ─── */}
         {step === "saved" && savedLessonId && (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`${cardStyle} text-center`}>
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-              <Check className="w-7 h-7 text-emerald-400" />
+            <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-7 h-7 text-emerald-500" />
             </div>
-            <h2 className="text-lg font-bold mb-1">Aula salva com sucesso!</h2>
-            <p className="text-sm text-slate-400 mb-4">ID: {savedLessonId}</p>
+            <h2 className="text-lg font-bold text-slate-900 mb-1">Aula salva com sucesso!</h2>
+            <p className="text-sm text-slate-500 mb-4">ID: {savedLessonId}</p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => navigate(`/v8/${savedLessonId}`)}
-                className="px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-300 text-sm font-semibold hover:bg-indigo-500/30 transition-colors"
+                className="px-4 py-2 rounded-xl bg-indigo-500/15 text-indigo-600 text-sm font-semibold hover:bg-indigo-500/25 transition-colors"
               >
                 Preview da Aula
               </button>
@@ -771,7 +771,7 @@ export default function AdminV8Create() {
                   setValidation(null);
                   setJsonText(JSON.stringify(DEFAULT_JSON, null, 2));
                 }}
-                className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 text-sm font-semibold hover:bg-white/10 transition-colors"
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition-colors"
               >
                 Criar Outra
               </button>
