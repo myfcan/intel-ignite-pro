@@ -1,68 +1,65 @@
 
 
-# Setup Wizard de Seções — Configuração Visual Pós-Parse
+# Geração de Imagens no Setup Wizard V8
 
-## Contexto
+## Resumo
 
-Hoje o fluxo no Admin V8 é: colar conteúdo bruto -> converter para JSON -> editar JSON manualmente -> validar -> gerar áudio -> salvar.
+Adicionar duas opcoes de geracoo de imagem por secao no wizard de setup, utilizando a infraestrutura existente do Lovable AI Gateway (modelo `google/gemini-2.5-flash-image`).
 
-O problema: nao existe momento visual para configurar **o que cada secao terá** (imagem, quiz, playground). O usuario precisa saber a sintaxe do parser ou editar JSON cru.
+## Opcoes para o usuario
 
-## Solucao
+- **Opcao A - Automatica**: O sistema le o conteudo da secao, monta um prompt cinematografico automaticamente e gera a imagem. O usuario so clica um botao.
+- **Opcao B - Prompt customizado**: O usuario digita um texto descritivo (ex: "logo do ChatGPT pegando fogo") e a imagem e gerada a partir desse texto.
 
-Adicionar um passo intermediário **"Setup"** entre a conversão do conteúdo bruto e a validação do JSON. Esse passo mostra cada seção detectada como um card visual onde o usuário configura o que ela terá.
+## Fluxo no Setup Wizard
 
-## Fluxo Novo (5 passos)
+1. Usuario ativa "Imagem" na secao
+2. Dois sub-botoes aparecem:
+   - "Gerar do Conteudo" (Opcao A)
+   - "Descrever Imagem" (Opcao B) - abre campo de texto
+3. Ao clicar em gerar, chama a edge function
+4. Imagem aparece como preview dentro do card da secao
+5. URL do storage e injetada no `imageUrl` da secao
 
-```text
-Conteúdo Bruto -> [Converter] -> SETUP (novo) -> Validar JSON -> Gerar Áudio -> Salvar
-```
-
-## O que o Setup mostra
-
-Para cada seção detectada, um card com:
-
-1. **Titulo da seção** (readonly, vem do parse)
-2. **Preview do conteúdo** (primeiras 2-3 linhas, truncado)
-3. **Toggles/checkboxes de elementos**:
-   - Imagem (toggle + campo URL quando ativo)
-   - Quiz após esta seção (toggle — se já existe quiz no parse, vem ativo)
-   - Playground após esta seção (toggle — se já existe, vem ativo)
-4. **Indicadores visuais**: badges coloridos mostrando o que está ativo (ex: "Imagem", "Quiz", "Playground")
-
-## Comportamento
-
-- Ao ativar "Imagem" em uma seção: abre campo de URL. O valor é injetado no `imageUrl` da seção no JSON.
-- Ao ativar "Quiz": se já existe quiz com `afterSectionIndex` correspondente, mostra resumo. Se nao existe, mostra aviso "Adicione o bloco [QUIZ] no conteúdo bruto para esta seção".
-- Ao ativar "Playground": mesma lógica do quiz.
-- Botao "Aplicar Setup" atualiza o JSON e avança para a tela de validação.
-
-## Arquivos
+## Arquivos a criar/editar
 
 | Arquivo | Acao |
 |---------|------|
-| `src/components/admin/V8SectionSetup.tsx` | **Criar** — Componente do wizard de setup por seção |
-| `src/pages/AdminV8Create.tsx` | **Editar** — Adicionar step "setup" entre convert e validate, renderizar o novo componente |
+| `supabase/functions/v8-generate-section-image/index.ts` | **Criar** - Edge function que recebe prompt (ou conteudo), gera imagem via Lovable AI Gateway, faz upload no bucket `lesson-audios` (pasta `v8-images/`), retorna URL publica |
+| `src/components/admin/V8SectionSetup.tsx` | **Editar** - Substituir campo de URL por dois modos de geracao (A e B), estado de loading por secao, preview da imagem gerada |
 
-## Detalhes Tecnicos
+## Detalhes tecnicos
 
-### V8SectionSetup.tsx
+### Edge Function `v8-generate-section-image`
 
-- Props: `sections: V8Section[]`, `quizzes: V8InlineQuiz[]`, `playgrounds: V8InlinePlayground[]`, `onApply: (updatedSections, updatedQuizzes, updatedPlaygrounds) => void`
-- Estado local: array de configs por secao `{ hasImage: boolean, imageUrl: string, hasQuiz: boolean, hasPlayground: boolean }`
-- Inicializa a partir dos dados parseados (se secao já tem imageUrl, toggle vem ativo)
-- `onApply` injeta os imageUrls nas secoes e retorna os dados atualizados
+- Recebe: `{ mode: 'auto' | 'custom', content?: string, customPrompt?: string, lessonId: string, sectionIndex: number }`
+- Modo `auto`: monta prompt a partir do `content` (extrai tema principal, gera prompt cinematografico educacional)
+- Modo `custom`: usa `customPrompt` direto como input
+- Gera imagem via `google/gemini-2.5-flash-image` (mesmo padrao do Image Lab)
+- Upload para storage bucket `lesson-audios` no path `v8-images/{lessonId}/section-{index}.png`
+- Retorna `{ imageUrl: string }` (URL publica do storage)
+- Usa `LOVABLE_API_KEY` (ja configurada automaticamente)
 
-### AdminV8Create.tsx
+### V8SectionSetup.tsx - Mudancas
 
-- Novo step type: `"setup"` adicionado ao union `Step`
-- Após `handleConvertContent`, em vez de ir direto para JSON, vai para step `"setup"`
-- Renderiza `V8SectionSetup` quando `step === "setup"`
-- Callback do setup atualiza o `jsonText` e avança para validação
+- Novo estado por secao: `imageMode: 'none' | 'auto' | 'custom'`, `customPrompt: string`, `isGenerating: boolean`, `generatedPreview: string`
+- Quando ativa imagem: mostra dois botoes (A e B)
+- Opcao A: botao "Gerar do Conteudo" com loading spinner
+- Opcao B: textarea para digitar descricao + botao "Gerar"
+- Apos geracao: mostra thumbnail da imagem com opcao de regenerar
+- O `imageUrl` final (URL do storage) e injetado no `handleApply`
 
-### Escopo limitado (V1 do wizard)
+### Prompt automatico (Opcao A)
 
-- Imagens: configurável via URL manual (futuro: upload direto)
-- Quizzes e Playgrounds: apenas indicação visual de presença (edição completa continua no JSON ou conteúdo bruto)
-- Nao gera quizzes/playgrounds automaticamente nesta versão — apenas mostra o que já existe e permite adicionar imageUrl
+O sistema extrai as primeiras 200 palavras do `section.content`, remove markdown, e monta:
 
+```text
+Professional educational illustration: [resumo do conteudo].
+Style: modern, clean, cinematic lighting, no text in image, 16:9 landscape, editorial quality.
+```
+
+### Limitacoes reais
+
+- Imagens com logos ou texto especifico (ex: "logo do ChatGPT") podem ter distorcoes tipograficas - limitacao do modelo generativo
+- Tempo de geracao: 5-15 segundos por imagem
+- Custo: utiliza creditos do Lovable AI (inclusos no plano)
