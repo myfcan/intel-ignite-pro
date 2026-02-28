@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.image-lab-health]
 verify_jwt = false
+
+[functions.v8-evaluate-prompt]
+verify_jwt = false

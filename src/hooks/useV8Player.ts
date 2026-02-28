@@ -1,15 +1,18 @@
 import { useState, useCallback, useMemo } from "react";
-import { V8LessonData, V8PlayerState, V8InlineQuiz } from "@/types/v8Lesson";
+import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground } from "@/types/v8Lesson";
 
 /**
  * useV8Player — State machine for V8 lesson navigation.
  *
- * Builds a flat timeline of items (sections + inline quizzes sorted by position)
+ * Builds a flat timeline of items (sections + inline quizzes + playgrounds sorted by position)
  * and manages phase transitions: mode-select → content → exercises → completion.
+ *
+ * Deterministic ordering when same afterSectionIndex: playground BEFORE quiz
  */
 
 export type TimelineItem =
   | { type: "section"; index: number }
+  | { type: "playground"; playground: V8InlinePlayground }
   | { type: "quiz"; quiz: V8InlineQuiz };
 
 export const useV8Player = (lessonData: V8LessonData) => {
@@ -22,10 +25,11 @@ export const useV8Player = (lessonData: V8LessonData) => {
     scores: [],
   });
 
-  // Build flat timeline: sections interleaved with quizzes at correct positions
+  // Build flat timeline: sections interleaved with playgrounds + quizzes
   const timeline = useMemo<TimelineItem[]>(() => {
     const items: TimelineItem[] = [];
     const quizMap = new Map<number, V8InlineQuiz[]>();
+    const playgroundMap = new Map<number, V8InlinePlayground[]>();
 
     // Group quizzes by afterSectionIndex
     for (const quiz of lessonData.inlineQuizzes) {
@@ -34,9 +38,26 @@ export const useV8Player = (lessonData: V8LessonData) => {
       quizMap.set(quiz.afterSectionIndex, existing);
     }
 
-    // Interleave
+    // Group playgrounds by afterSectionIndex
+    for (const pg of (lessonData.inlinePlaygrounds || [])) {
+      const existing = playgroundMap.get(pg.afterSectionIndex) || [];
+      existing.push(pg);
+      playgroundMap.set(pg.afterSectionIndex, existing);
+    }
+
+    // Interleave: section → playgrounds → quizzes (deterministic order)
     for (let i = 0; i < lessonData.sections.length; i++) {
       items.push({ type: "section", index: i });
+
+      // Playgrounds first (practice before test)
+      const playgrounds = playgroundMap.get(i);
+      if (playgrounds) {
+        for (const pg of playgrounds) {
+          items.push({ type: "playground", playground: pg });
+        }
+      }
+
+      // Then quizzes
       const quizzes = quizMap.get(i);
       if (quizzes) {
         for (const quiz of quizzes) {

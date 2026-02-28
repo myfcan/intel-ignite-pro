@@ -6,6 +6,7 @@ import { V8Header } from "./V8Header";
 import { V8ModeSelector } from "./V8ModeSelector";
 import { V8ContentSection } from "./V8ContentSection";
 import { V8QuizInline } from "./V8QuizInline";
+import { V8PlaygroundInline } from "./V8PlaygroundInline";
 
 interface V8LessonPlayerProps {
   lessonData: V8LessonData;
@@ -106,6 +107,14 @@ export const V8LessonPlayer = ({
                     quiz={currentItem.quiz}
                     onAnswer={handleQuizAnswer}
                     onContinue={next}
+                  />
+                )}
+                {currentItem.type === "playground" && (
+                  <V8PlaygroundInline
+                    key={`playground-${currentItem.playground.id}`}
+                    playground={currentItem.playground}
+                    onContinue={next}
+                    onScore={(s) => addScore(s)}
                   />
                 )}
               </>
