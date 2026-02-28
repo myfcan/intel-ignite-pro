@@ -58,7 +58,7 @@ function CertificateDocument({
 }) {
   const done = state === "completed";
   const locked = state === "locked";
-  const docOpacity = done ? 1 : locked ? 0.6 : 0.85;
+  const docOpacity = done ? 1 : locked ? 0.78 : 0.92;
 
   const borderColor = done ? "hsl(43, 55%, 65%)" : locked ? "hsl(0, 0%, 88%)" : "hsl(258, 30%, 85%)";
 
@@ -129,7 +129,7 @@ function CertificateDocument({
             {done ? (
               <Trophy style={{ width: sealIconSize, height: sealIconSize }} className="text-amber-100 drop-shadow-sm" />
             ) : locked ? (
-              <Lock style={{ width: sealIconSize, height: sealIconSize }} className="text-gray-400" />
+              <Lock style={{ width: sealIconSize, height: sealIconSize }} className="text-gray-500" />
             ) : (
               <GraduationCap style={{ width: sealIconSize, height: sealIconSize }} className="text-violet-400" />
             )}
@@ -139,7 +139,7 @@ function CertificateDocument({
         {/* Title */}
         <p
           className={`text-center font-semibold uppercase ${
-            done ? "text-amber-800" : locked ? "text-gray-400" : "text-gray-500"
+            done ? "text-amber-800" : locked ? "text-gray-500" : "text-gray-600"
           }`}
           style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
@@ -152,7 +152,7 @@ function CertificateDocument({
         </p>
         <p
           className={`text-center uppercase ${
-            done ? "text-amber-700/80" : locked ? "text-gray-400/70" : "text-gray-400"
+            done ? "text-amber-700/80" : locked ? "text-gray-500/80" : "text-gray-500"
           }`}
           style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
@@ -174,7 +174,7 @@ function CertificateDocument({
           /* Compact: mini text lines to look like a full document */
           <div className="w-full flex flex-col items-center" style={{ gap: 2, marginTop: 2 }}>
             <p
-              className={`italic ${done ? "text-amber-700/50" : "text-gray-400/50"}`}
+              className={`italic ${done ? "text-amber-700/60" : "text-gray-500/60"}`}
               style={{ fontFamily: "'Georgia', serif", fontSize: 5.5 }}
             >
               Concedido a
@@ -184,14 +184,14 @@ function CertificateDocument({
               style={{ width: "60%", height: 0.7, borderRadius: 1 }}
             />
             <p
-              className={`italic text-center leading-tight ${done ? "text-amber-700/40" : "text-gray-400/40"}`}
+              className={`italic text-center leading-tight ${done ? "text-amber-700/50" : "text-gray-500/50"}`}
               style={{ fontFamily: "'Georgia', serif", fontSize: 5, marginTop: 1 }}
             >
               "{trailTitle}"
             </p>
             <div style={{ marginTop: 3, width: "40%", borderTop: `0.5px dashed ${done ? "hsl(43,50%,70%)" : "hsl(0,0%,85%)"}` }} />
             <p
-              className={`${done ? "text-amber-600/50" : "text-gray-300"}`}
+              className={`${done ? "text-amber-600/60" : "text-gray-400"}`}
               style={{ fontFamily: "'Georgia', serif", fontSize: 7.5, letterSpacing: "0.08em", marginTop: 2 }}
             >
               AIliv Academy
@@ -304,7 +304,7 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
             borderRadius: 18,
             boxShadow: cardShadow,
             background: "#FDFCFA",
-            maxHeight: 180,
+            maxHeight: 210,
             overflow: "hidden",
           }}
         >
@@ -313,7 +313,7 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
             <div
               className="flex-shrink-0 flex items-center justify-center"
               style={{
-                width: 130,
+                width: 156,
                 padding: 8,
                 borderRight: "1px solid rgba(0,0,0,0.04)",
                 boxShadow: "inset -1px 0 3px rgba(0,0,0,0.02)",
