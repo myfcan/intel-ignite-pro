@@ -1,196 +1,129 @@
 
 
-# Playground Mid-Lesson V8 — Plano Revisado com os 8 Pontos
+# Plano: Modo "Conteudo Bruto" no Admin V8
 
-Plano atualizado incorporando todas as correcoes criticas levantadas na revisao.
+## Problema
+
+A tela `AdminV8Create` so aceita JSON puro colado manualmente. O parser (`v8ContentParser.ts`) so converte blocos `[PLAYGROUND]` e nunca foi integrado na UI. Falta:
+1. Parser para secoes (`## Titulo`)
+2. Parser para quizzes (`[QUIZ]`)
+3. Funcao master `parseFullContent` que gera o JSON completo
+4. UI com toggle "Conteudo | JSON" e botao "Converter"
 
 ---
 
-## 1. Modelo de Dados (`src/types/v8Lesson.ts`)
-
-Novo tipo `V8InlinePlayground` com todos os campos corrigidos:
+## Fluxo do Usuario
 
 ```text
-V8InlinePlayground {
-  id: string                          // 'playground-01'
-  afterSectionIndex: number           // 0-based, validado: 0 <= x < sections.length
-  
-  // UI (exibido na tela)
-  title: string                       // "Teste na Pratica"
-  subtitle?: string
-  instruction: string                 // Texto curto de UI (>= 40 chars)
-  
-  // Narracao (separada da UI — ponto 6)
-  narration?: string                  // Texto narrado com tags de emocao
-  audioUrl?: string                   // Audio gerado a partir de narration
-  
-  // Prompts comparativos
-  amateurPrompt: string               // != professionalPrompt (validado)
-  professionalPrompt: string
-  amateurResult?: string              // Se preenchido: usa direto (ponto 1.2)
-  professionalResult?: string         // Se vazio: chama IA na hora
-  
-  // Desafio do usuario
-  userChallenge?: {
-    instruction: string
-    challengePrompt: string
-    hints: string[]                   // max 3 (validado)
-    evaluationCriteria: string[]      // ex: "tem objetivo claro", "pede formato"
-    scoring?: {
-      maxScore: number
-      rubric: { criterion: string; points: number }[]
-    }
-    maxAttempts?: number              // default 3 (ponto 8)
-  }
-  
-  // Feedback explicito (ponto 4)
-  successMessage: string              // Acao, nao motivacao vazia
-  tryAgainMessage: string
-  hintOnFail?: string[]
-  
-  // Fallback offline (ponto 1.4)
-  offlineFallback?: {
-    message: string
-    exampleAnswer: string
-  }
-}
-```
-
-Adicionar ao `V8LessonData`:
-```typescript
-inlinePlaygrounds: V8InlinePlayground[];  // default: []
++---------------------------+
+| Colar conteudo bruto      |
+| (textarea grande)         |
++---------------------------+
+          |
+    [Converter para JSON]
+          |
++---------------------------+
+| JSON gerado (editavel)    |
+| Resumo: 3 secoes, 1 quiz  |
++---------------------------+
+          |
+    [Validar JSON]  (fluxo existente)
+          |
+    [Gerar Aula]    (pipeline existente)
+          |
+    [Salvar]        (existente)
 ```
 
 ---
 
-## 2. Timeline — Ordenacao Deterministica (`src/hooks/useV8Player.ts`)
-
-Expandir `TimelineItem`:
-```typescript
-type TimelineItem =
-  | { type: "section"; index: number }
-  | { type: "playground"; playground: V8InlinePlayground }
-  | { type: "quiz"; quiz: V8InlineQuiz };
-```
-
-Regra fixa quando `afterSectionIndex` conflita: **playground antes de quiz** (pratica antes de teste).
-
-No builder da timeline, apos cada secao:
-1. Inserir playgrounds com esse `afterSectionIndex`
-2. Depois inserir quizzes com esse `afterSectionIndex`
-
----
-
-## 3. Componente `V8PlaygroundInline.tsx` (novo)
-
-Estrutura UX seguindo o ritmo recomendado:
+## Formato do Conteudo Bruto Esperado
 
 ```text
-[1] Micro-contexto narrado (~10s)     -> narration com tags de emocao
-[2] Prompt amador + resultado (~20s)  -> amateurPrompt + amateurResult (ou IA)
-[3] Prompt profissional + resultado   -> professionalPrompt + professionalResult (ou IA)
-[4] Comparacao com descobertas        -> 2-3 bullets gerados ou fixos
-[5] Desafio do usuario (se houver)    -> textarea + hints + avaliacao
-[6] Fechamento + "Continuar"          -> successMessage ou tryAgainMessage
-```
+# Titulo da Aula
 
-Logica de resultado (hibrida — ponto 1.2):
-- Se `amateurResult`/`professionalResult` preenchidos: exibe direto
-- Se vazios: chama IA via edge function para gerar na hora
-- Se IA falhar: exibe `offlineFallback` e permite continuar
+Descricao opcional da aula aqui.
 
-Logica de avaliacao do desafio:
-- Envia prompt do usuario + `evaluationCriteria` para IA
-- IA retorna score baseado na rubrica
-- Feedback usa `successMessage` / `tryAgainMessage` / `hintOnFail`
-- Maximo de `maxAttempts` tentativas (default 3)
+## Secao 1 — Titulo da Secao
+Conteudo markdown aqui...
+Pode ter **bold**, listas, etc.
 
----
+## Secao 2 — Outro Titulo
+Mais conteudo...
 
-## 4. Player (`src/components/lessons/v8/V8LessonPlayer.tsx`)
-
-Adicionar case para playground na fase "content":
-```tsx
-{currentItem.type === "playground" && (
-  <V8PlaygroundInline
-    playground={currentItem.playground}
-    onContinue={next}
-    onScore={addScore}
-  />
-)}
-```
-
----
-
-## 5. Validacao no Admin (`src/pages/AdminV8Create.tsx`)
-
-Adicionar na funcao `validateV8Json`:
-
-- `afterSectionIndex`: 0-based, `0 <= x < sections.length`
-- `instruction.length >= 40`
-- `amateurPrompt !== professionalPrompt`
-- `hints.length <= 3` (se houver challenge)
-- `successMessage` e `tryAgainMessage` obrigatorios
-- Limite de tamanho dos prompts (ex: max 2000 chars cada)
-- Contar playgrounds no resumo: "X secoes, Y quizzes, Z playgrounds"
-
----
-
-## 6. Pipeline de Audio (`supabase/functions/v8-generate`)
-
-Mudancas:
-- Processar campo `narration` dos playgrounds (nao `instruction`)
-- Se `narration` estiver vazio, pular geracao de audio para esse playground
-- Storage path: `v8/{lessonId}/playground-{i}.mp3`
-- Resultado: `type: 'playground'` no array de results
-- No `AdminV8Create`, mapear resultado de volta para `playground.audioUrl`
-
----
-
-## 7. Content-to-JSON Parser (`src/lib/v8ContentParser.ts`)
-
-Suportar bloco `[PLAYGROUND]` inline no texto:
-
-```text
 [PLAYGROUND]
 title: Teste na Pratica
-instruction: Compare os dois prompts e sinta a diferenca.
-narration: [excited] Agora voce vai sentir na pele a diferenca...
+instruction: Compare os dois prompts...
+narration: [animado] Agora voce vai sentir...
 amateurPrompt: me fala sobre marketing
-professionalPrompt: Crie 3 estrategias de marketing digital...
-successMessage: Boa! Voce acabou de destravar a habilidade de prompts.
-tryAgainMessage: Quase la. Tente adicionar o formato de saida.
+professionalPrompt: Crie 3 estrategias...
+successMessage: Boa!
+tryAgainMessage: Quase.
 hints:
-- Diga o objetivo em 1 linha
-- De 2 detalhes de contexto
-- Peca o formato do retorno
+- Diga o objetivo
+- De contexto
+- Peca formato
+userChallengeInstruction: Agora e sua vez.
+userChallengePrompt: Escreva aqui...
+evaluationCriteria:
+- Tem objetivo claro
+- Tem contexto
+- Pede formato
+maxAttempts: 3
+offlineFallbackMessage: Continue assim...
+offlineFallbackExampleAnswer: Exemplo...
+
+## Secao 3 — Continuacao
+Conteudo apos o playground...
+
+[QUIZ]
+question: Qual a diferenca entre prompt vago e profissional?
+options:
+- [x] O profissional tem contexto, objetivo e formato
+- [ ] O profissional e mais longo
+- [ ] Nao tem diferenca
+explanation: O prompt profissional especifica...
+reinforcement: Lembre que contexto e...
 ```
 
-Parser extrai campos linha a linha, atribui `afterSectionIndex` baseado na secao anterior, gera ID automatico.
-
 ---
 
-## 8. Edge Function para Avaliacao de Prompt (nova)
+## Etapas Tecnicas
 
-Nova edge function `v8-evaluate-prompt` para avaliar o desafio do usuario em tempo real:
-- Recebe: prompt do usuario + evaluationCriteria + rubrica
-- Usa modelo Lovable AI (gemini-2.5-flash para custo baixo)
-- Retorna: score + feedback textual
-- Rate limit: max 3 chamadas por bloco por sessao
-- Timeout: 10s, se falhar usa `offlineFallback`
+### 1. Expandir `src/lib/v8ContentParser.ts`
 
----
+Adicionar 3 funcoes novas:
 
-## Resumo de Arquivos
+- **`parseSections(rawText)`**: Extrai secoes delimitadas por `## Titulo`. Tudo entre dois `##` vira o `content` (markdown). Retorna array com `{ title, content, position }`.
 
-| Arquivo | Acao |
-|---------|------|
-| `src/types/v8Lesson.ts` | Adicionar V8InlinePlayground + campo em V8LessonData |
-| `src/hooks/useV8Player.ts` | Timeline com playground + ordenacao deterministica |
-| `src/components/lessons/v8/V8PlaygroundInline.tsx` | Novo componente |
-| `src/components/lessons/v8/V8LessonPlayer.tsx` | Renderizar playground |
-| `src/pages/AdminV8Create.tsx` | Validacao expandida + audio mapping |
-| `supabase/functions/v8-generate/index.ts` | Audio para narration dos playgrounds |
-| `supabase/functions/v8-evaluate-prompt/index.ts` | Nova — avaliacao IA do desafio |
-| `src/lib/v8ContentParser.ts` | Novo — suporte a bloco [PLAYGROUND] |
+- **`parseQuizBlocks(rawText)`**: Extrai blocos `[QUIZ]`. Campos: `question`, `options` (com `[x]` para correta, `[ ]` para errada), `explanation`, `reinforcement`. Retorna array com `{ quiz, position }`.
+
+- **`parseFullContent(rawText)`**: Funcao master que:
+  1. Extrai titulo da primeira linha `# Titulo`
+  2. Extrai descricao (texto entre `#` e primeiro `##`)
+  3. Chama `parseSections` para secoes
+  4. Chama `parsePlaygroundBlocks` (ja existe) para playgrounds
+  5. Chama `parseQuizBlocks` para quizzes
+  6. Calcula `afterSectionIndex` para cada playground/quiz baseado na posicao no texto
+  7. Gera IDs automaticos (`section-01`, `quiz-01`, `playground-01`)
+  8. Retorna `V8LessonData` completo com `contentVersion: 'v8'` e `audioUrl: ""` em cada secao
+
+### 2. Atualizar `src/pages/AdminV8Create.tsx`
+
+- Novo estado: `editorMode: 'content' | 'json'` (default: `'content'`)
+- Novo estado: `contentText: string` (textarea do conteudo bruto)
+- Toggle visual entre "Conteudo" e "JSON" no topo do editor
+- Modo "Conteudo":
+  - Textarea grande para colar texto bruto
+  - Botao **"Converter para JSON"** que chama `parseFullContent(contentText)`
+  - Se sucesso: preenche `jsonText`, muda para modo JSON, mostra toast com resumo
+  - Se erro: mostra toast com o problema
+- Modo "JSON": editor atual (inalterado)
+- O fluxo pos-conversao (validar, gerar audios, salvar) permanece identico
+
+### Arquivos modificados
+
+| Arquivo | Mudanca |
+|---|---|
+| `src/lib/v8ContentParser.ts` | Adicionar `parseSections`, `parseQuizBlocks`, `parseFullContent` |
+| `src/pages/AdminV8Create.tsx` | Toggle content/json, textarea de conteudo, botao converter |
 
