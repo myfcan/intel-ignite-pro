@@ -49,6 +49,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
 
           const isCompleted = lessons[i].status === "completed";
           const nextAvailable = lessons[i + 1].status !== "locked";
+          const isActiveSegment = isCompleted && nextAvailable && lessons[i + 1].status !== "completed";
           const pathD = `M ${x1} ${y1} C ${x1} ${cpy}, ${x2} ${cpy}, ${x2} ${y2}`;
 
           return (
@@ -56,13 +57,20 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
               key={`line-${i}`}
               d={pathD}
               fill="none"
-              stroke={isCompleted ? "hsl(258, 80%, 60%)" : nextAvailable ? "hsl(258, 50%, 78%)" : "hsl(220, 14%, 88%)"}
-              strokeWidth={isCompleted ? 2.5 : 1.5}
+              stroke={isCompleted ? "hsl(258, 70%, 58%)" : nextAvailable ? "hsl(258, 45%, 72%)" : "hsl(220, 10%, 85%)"}
+              strokeWidth={isCompleted ? 3.5 : nextAvailable ? 2.5 : 2}
               strokeLinecap="round"
-              strokeDasharray={isCompleted ? "none" : "5 4"}
+              strokeDasharray={isActiveSegment ? "8 4" : "none"}
+              opacity={!isCompleted && !nextAvailable ? 0.6 : 1}
               initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.6, delay: i * 0.06 }}
+              animate={{ 
+                pathLength: 1,
+                ...(isActiveSegment ? { strokeDashoffset: [0, -24] } : {})
+              }}
+              transition={isActiveSegment 
+                ? { pathLength: { duration: 0.6, delay: i * 0.06 }, strokeDashoffset: { duration: 1.5, repeat: Infinity, ease: "linear" } }
+                : { duration: 0.6, delay: i * 0.06 }
+              }
             />
           );
         })}
