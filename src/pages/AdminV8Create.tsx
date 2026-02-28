@@ -596,7 +596,7 @@ export default function AdminV8Create() {
                   </button>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-white truncate">
-                      {r.type === "section" ? `Seção ${r.index + 1}` : r.type === "quiz" ? `Quiz ${r.index + 1}` : `Quiz ${r.index + 1} (reforço)`}
+                      {r.type === "section" ? `Seção ${r.index + 1}` : r.type === "quiz" ? `Quiz ${r.index + 1}` : r.type === "playground" ? `Playground ${r.index + 1}` : `Quiz ${r.index + 1} (reforço)`}
                     </p>
                     <p className="text-[10px] text-slate-500">~{r.durationEstimate}s · {r.sizeKB}KB</p>
                   </div>
