@@ -43,7 +43,9 @@ export function parseFullContent(rawText: string): V8LessonData {
   const parsedSections = parseSections(rawText);
 
   // 3.1 If there's intro content between # and first ##, create a "Section 0"
-  if (description && description.trim().length > 20) {
+  // Filter out meta-comments that are instructions, not real content
+  const META_KEYWORDS = /\b(parser|fix|aplicar|opcional|discutimos|TODO|FIXME|implementar|corrigir|descrição opcional)\b/i;
+  if (description && description.trim().length > 20 && !META_KEYWORDS.test(description)) {
     const introSection: ParsedSection = {
       title: "Abertura",
       content: description,

@@ -40,10 +40,7 @@ export const V8CompletionScreen = ({
 
     const register = async () => {
       try {
-        const result = await registerGamificationEvent(
-          "lesson_completed",
-          lessonId
-        );
+        const result = await registerGamificationEvent("lesson_completed", lessonId);
         if (result) {
           setGamificationResult({
             xpDelta: result.xp_delta ?? 0,
@@ -53,9 +50,8 @@ export const V8CompletionScreen = ({
           });
         }
       } catch {
-        // Silently fail — UI still works
+        // Silently fail
       }
-
       try {
         await updateMissionProgress("aulas", 1);
       } catch {
@@ -65,7 +61,6 @@ export const V8CompletionScreen = ({
 
     register();
 
-    // Fire confetti if score >= 70%
     if (avgScore >= 70) {
       setTimeout(() => {
         confetti({
@@ -78,7 +73,7 @@ export const V8CompletionScreen = ({
     }
   }, [lessonId, avgScore]);
 
-  // Fetch real streak from user_streaks table
+  // Fetch real streak
   useEffect(() => {
     const fetchStreak = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -107,9 +102,9 @@ export const V8CompletionScreen = ({
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-        className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 flex items-center justify-center"
+        className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-indigo-200 flex items-center justify-center"
       >
-        <Trophy className="w-10 h-10 text-indigo-400" />
+        <Trophy className="w-10 h-10 text-indigo-500" />
       </motion.div>
 
       {/* Title */}
@@ -118,7 +113,7 @@ export const V8CompletionScreen = ({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-3xl font-bold text-white"
+          className="text-3xl font-bold text-slate-900"
         >
           Aula Concluída!
         </motion.h2>
@@ -127,7 +122,7 @@ export const V8CompletionScreen = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="text-slate-400 text-sm"
+            className="text-slate-500 text-sm"
           >
             Score médio: {avgScore}%
           </motion.p>
@@ -142,23 +137,23 @@ export const V8CompletionScreen = ({
         className="grid grid-cols-3 gap-3 w-full max-w-sm"
       >
         {/* XP */}
-        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-white/10 bg-white/5">
-          <Zap className="w-5 h-5 text-indigo-400" />
+        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+          <Zap className="w-5 h-5 text-indigo-500" />
           <CountUp value={xp} delay={600} />
           <span className="text-[11px] text-slate-500 font-medium">XP</span>
         </div>
 
         {/* Coins */}
-        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-white/10 bg-white/5">
-          <Coins className="w-5 h-5 text-amber-400" />
+        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+          <Coins className="w-5 h-5 text-amber-500" />
           <CountUp value={coins} delay={800} />
           <span className="text-[11px] text-slate-500 font-medium">Moedas</span>
         </div>
 
         {/* Streak */}
-        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-white/10 bg-white/5">
-          <Flame className="w-5 h-5 text-emerald-400" />
-          <span className="text-xl font-bold text-white tabular-nums">
+        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+          <Flame className="w-5 h-5 text-emerald-500" />
+          <span className="text-xl font-bold text-slate-900 tabular-nums">
             {streakDays}
           </span>
           <span className="text-[11px] text-slate-500 font-medium">Dias</span>
@@ -171,9 +166,9 @@ export const V8CompletionScreen = ({
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 1.2, type: "spring" }}
-          className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-500/20 to-violet-500/20 border border-indigo-500/30"
+          className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-100 to-violet-100 border border-indigo-200"
         >
-          <span className="text-sm font-semibold text-indigo-300">
+          <span className="text-sm font-semibold text-indigo-600">
             🎖️ Nova patente: {gamificationResult.patentName}
           </span>
         </motion.div>
@@ -188,7 +183,7 @@ export const V8CompletionScreen = ({
       >
         <button
           onClick={onContinue}
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow"
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-shadow"
         >
           Próxima Aula <ArrowRight className="w-4 h-4" />
         </button>
@@ -196,7 +191,7 @@ export const V8CompletionScreen = ({
         {onBackToTrail && (
           <button
             onClick={onBackToTrail}
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 text-sm transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-sm transition-colors"
           >
             <RotateCcw className="w-4 h-4" /> Voltar à Trilha
           </button>
@@ -226,6 +221,6 @@ const CountUp = ({ value, delay = 0 }: { value: number; delay?: number }) => {
   }, [value, delay]);
 
   return (
-    <span className="text-xl font-bold text-white tabular-nums">+{display}</span>
+    <span className="text-xl font-bold text-slate-900 tabular-nums">+{display}</span>
   );
 };
