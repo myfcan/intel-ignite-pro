@@ -31,17 +31,17 @@ function DiamondDivider({ done, compact = false }: { done: boolean; compact?: bo
   const diamondColor = done ? "hsl(43, 55%, 55%)" : "hsl(0, 0%, 75%)";
 
   return (
-    <div className="flex items-center" style={{ gap: compact ? 3 : 8, margin: compact ? "3px 0" : "10px 0" }}>
-      <div className={`flex-1 ${lineClass}`} style={{ height: compact ? 0.5 : 1 }} />
+    <div className="flex items-center" style={{ gap: compact ? 4 : 8, margin: compact ? "4px 0" : "10px 0" }}>
+      <div className={`flex-1 ${lineClass}`} style={{ height: compact ? 0.6 : 1 }} />
       <div
         style={{
-          width: compact ? 4 : 8,
-          height: compact ? 4 : 8,
+          width: compact ? 5 : 8,
+          height: compact ? 5 : 8,
           backgroundColor: diamondColor,
           transform: "rotate(45deg)",
         }}
       />
-      <div className={`flex-1 ${lineClass}`} style={{ height: compact ? 0.5 : 1 }} />
+      <div className={`flex-1 ${lineClass}`} style={{ height: compact ? 0.6 : 1 }} />
     </div>
   );
 }
@@ -62,8 +62,8 @@ function CertificateDocument({
 
   const borderColor = done ? "hsl(43, 55%, 65%)" : locked ? "hsl(0, 0%, 88%)" : "hsl(258, 30%, 85%)";
 
-  const sealSize = compact ? 36 : 52;
-  const sealIconSize = compact ? 16 : 24;
+  const sealSize = compact ? 45 : 52;
+  const sealIconSize = compact ? 20 : 24;
 
   return (
     <div
@@ -71,8 +71,8 @@ function CertificateDocument({
       style={{
         opacity: docOpacity,
         background: "radial-gradient(ellipse at 30% 20%, #FFFEF8, #FBF9F4)",
-        padding: compact ? 12 : 20,
-        borderRadius: compact ? 10 : 14,
+        padding: compact ? 15 : 20,
+        borderRadius: compact ? 12 : 14,
       }}
     >
       {/* Double border effect */}
@@ -88,15 +88,15 @@ function CertificateDocument({
         style={{
           borderRadius: "inherit",
           border: `1px solid ${borderColor}`,
-          inset: compact ? 4 : 6,
+          inset: compact ? 5 : 6,
           opacity: 0.5,
         }}
       />
 
       {/* Content */}
-      <div className="relative flex flex-col items-center" style={{ padding: compact ? "2px 0" : "8px 0" }}>
+      <div className="relative flex flex-col items-center" style={{ padding: compact ? "3px 0" : "8px 0" }}>
         {/* Seal / Emblem */}
-        <div className="relative" style={{ marginBottom: compact ? 6 : 16 }}>
+        <div className="relative" style={{ marginBottom: compact ? 8 : 16 }}>
           {done && !compact && (
             <motion.div
               className="absolute rounded-full"
@@ -122,8 +122,8 @@ function CertificateDocument({
               boxShadow: done
                 ? "inset 0 2px 4px rgba(255,255,255,0.35), 0 4px 14px rgba(180,130,20,0.25)"
                 : "inset 0 1px 2px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.06)",
-              outline: `${compact ? 1.5 : 2.5}px solid ${borderColor}`,
-              outlineOffset: compact ? 2 : 3,
+              outline: `${compact ? 2 : 2.5}px solid ${borderColor}`,
+              outlineOffset: compact ? 2.5 : 3,
             }}
           >
             {done ? (
@@ -143,8 +143,8 @@ function CertificateDocument({
           }`}
           style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
-            fontSize: compact ? 9 : 14,
-            letterSpacing: compact ? "0.12em" : "0.2em",
+            fontSize: compact ? 11 : 14,
+            letterSpacing: compact ? "0.14em" : "0.2em",
             lineHeight: 1.3,
           }}
         >
@@ -156,8 +156,8 @@ function CertificateDocument({
           }`}
           style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
-            fontSize: compact ? 7.5 : 12,
-            letterSpacing: compact ? "0.1em" : "0.15em",
+            fontSize: compact ? 9.5 : 12,
+            letterSpacing: compact ? "0.12em" : "0.15em",
             marginTop: compact ? 1 : 2,
           }}
         >
@@ -172,27 +172,27 @@ function CertificateDocument({
         {/* Real text content */}
         {compact ? (
           /* Compact: mini text lines to look like a full document */
-          <div className="w-full flex flex-col items-center" style={{ gap: 2, marginTop: 2 }}>
+          <div className="w-full flex flex-col items-center" style={{ gap: 3, marginTop: 3 }}>
             <p
-              className={`italic ${done ? "text-amber-700/60" : "text-gray-500/60"}`}
-              style={{ fontFamily: "'Georgia', serif", fontSize: 5.5 }}
+              className={`italic ${done ? "text-amber-700/70" : "text-gray-500/70"}`}
+              style={{ fontFamily: "'Georgia', serif", fontSize: 7 }}
             >
               Concedido a
             </p>
             <div
               className={`${done ? "bg-amber-300/30" : "bg-gray-300/25"}`}
-              style={{ width: "60%", height: 0.7, borderRadius: 1 }}
+              style={{ width: "60%", height: 0.8, borderRadius: 1 }}
             />
             <p
-              className={`italic text-center leading-tight ${done ? "text-amber-700/50" : "text-gray-500/50"}`}
-              style={{ fontFamily: "'Georgia', serif", fontSize: 5, marginTop: 1 }}
+              className={`italic text-center leading-tight ${done ? "text-amber-700/60" : "text-gray-500/60"}`}
+              style={{ fontFamily: "'Georgia', serif", fontSize: 6.5, marginTop: 1 }}
             >
               "{trailTitle}"
             </p>
-            <div style={{ marginTop: 3, width: "40%", borderTop: `0.5px dashed ${done ? "hsl(43,50%,70%)" : "hsl(0,0%,85%)"}` }} />
+            <div style={{ marginTop: 4, width: "40%", borderTop: `0.5px dashed ${done ? "hsl(43,50%,70%)" : "hsl(0,0%,85%)"}` }} />
             <p
-              className={`${done ? "text-amber-600/60" : "text-gray-400"}`}
-              style={{ fontFamily: "'Georgia', serif", fontSize: 7.5, letterSpacing: "0.08em", marginTop: 2 }}
+              className={`${done ? "text-amber-600/70" : "text-gray-400"}`}
+              style={{ fontFamily: "'Georgia', serif", fontSize: 9.5, letterSpacing: "0.08em", marginTop: 3 }}
             >
               AIliv Academy
             </p>
@@ -304,7 +304,7 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
             borderRadius: 18,
             boxShadow: cardShadow,
             background: "#FDFCFA",
-            maxHeight: 210,
+            maxHeight: 262,
             overflow: "hidden",
           }}
         >
@@ -313,8 +313,8 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
             <div
               className="flex-shrink-0 flex items-center justify-center"
               style={{
-                width: 156,
-                padding: 8,
+                width: "min(195px, 58vw)",
+                padding: 10,
                 borderRight: "1px solid rgba(0,0,0,0.04)",
                 boxShadow: "inset -1px 0 3px rgba(0,0,0,0.02)",
               }}
