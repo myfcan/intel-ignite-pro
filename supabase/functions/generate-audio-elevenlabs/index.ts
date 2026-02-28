@@ -35,7 +35,7 @@ serve(async (req) => {
     const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2';
     
     // Model ID padrão: eleven_multilingual_v2 (melhor para português)
-    const modelId = model_id || 'eleven_multilingual_v2';
+    const modelId = model_id || 'eleven_v3';
 
     console.log('Gerando áudio com ElevenLabs (com timestamps)...');
     console.log('Voice ID:', voiceId);

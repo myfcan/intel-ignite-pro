@@ -558,6 +558,7 @@ export type Database = {
           exercises_version: number | null
           fase_criacao: string | null
           id: string
+          image_url: string | null
           is_active: boolean | null
           lesson_type: string | null
           model: string | null
@@ -585,6 +586,7 @@ export type Database = {
           exercises_version?: number | null
           fase_criacao?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           lesson_type?: string | null
           model?: string | null
@@ -612,6 +614,7 @@ export type Database = {
           exercises_version?: number | null
           fase_criacao?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           lesson_type?: string | null
           model?: string | null

@@ -64,12 +64,22 @@ export function parseFullContent(rawText: string): V8LessonData {
   };
 
   // 7. Build V8Sections
-  const sections: V8Section[] = parsedSections.map((s, i) => ({
-    id: `section-${String(i + 1).padStart(2, "0")}`,
-    title: s.title,
-    content: s.content,
-    audioUrl: "",
-  }));
+  const sections: V8Section[] = parsedSections.map((s, i) => {
+    // Extract imageUrl from section content if present
+    const imageMatch = s.content.match(/^imageUrl:\s*(.+)$/m);
+    const imageUrl = imageMatch ? imageMatch[1].trim() : undefined;
+    const cleanContent = imageMatch
+      ? s.content.replace(/^imageUrl:\s*.+$/m, "").trim()
+      : s.content;
+
+    return {
+      id: `section-${String(i + 1).padStart(2, "0")}`,
+      title: s.title,
+      content: cleanContent,
+      audioUrl: "",
+      ...(imageUrl ? { imageUrl } : {}),
+    };
+  });
 
   // 8. Build V8InlinePlaygrounds
   const inlinePlaygrounds: V8InlinePlayground[] = parsedPlaygrounds.map((pg, i) => ({

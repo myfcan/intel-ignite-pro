@@ -210,7 +210,7 @@ async function gerarAudioComRetry(texto: string, supabase: any, tentativa = 1): 
         },
         body: JSON.stringify({
           text: texto,
-          model_id: 'eleven_multilingual_v2',
+          model_id: 'eleven_v3',
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,

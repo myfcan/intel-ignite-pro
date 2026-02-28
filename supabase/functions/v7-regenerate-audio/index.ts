@@ -188,7 +188,7 @@ async function generateAudioWithElevenLabs(
   const cleanedText = cleanTextForTTS(text);
   
   const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - good for Portuguese
-  const modelId = 'eleven_multilingual_v2';
+  const modelId = 'eleven_v3';
   
   console.log('[V7RegenerateAudio:Audio] Generating audio...');
   console.log('[V7RegenerateAudio:Audio] Voice ID:', voice);
