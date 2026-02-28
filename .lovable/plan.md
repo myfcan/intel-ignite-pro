@@ -1,95 +1,74 @@
 
 
-# Redesign Premium do Certificado — Compacto, Realista e Responsivo
+# Redesign Completo do Certificado — Design Premium Real
 
-## Resumo
+## Problemas Diagnosticados
 
-Redesenhar completamente o card de certificado na pagina V8TrailDetail para parecer um documento real e premium, sem competir visualmente com as aulas. No mobile, o certificado sera compacto (max 170px de altura) com modal para visualizacao ampliada.
+O card atual parece um wireframe/placeholder por causa de:
+- Cantos L-shapes artificiais que nao existem em certificados reais
+- Selo circular generico sem peso visual
+- Texto "CERTIFICADO DE CONCLUSAO" minusculo (7px no compact) sem presenca
+- Linhas retangulares simulando texto parecem mockup de Figma, nao documento
+- Fundo flat sem profundidade real
+- **Mini-preview mobile com apenas 90px de largura — muito pequeno, parece thumbnail amador**
 
 ---
 
-## Mudancas Principais
+## Nova Direcao de Design
 
-### 1. Componente Separado: `V8CertificateCard`
+### Mobile: Mini-preview maior e com presenca real
 
-Extrair o certificado para `src/components/lessons/v8/V8CertificateCard.tsx` com:
+O mini-preview do certificado no mobile sera significativamente ampliado:
 
-- **Props**: `completedCount`, `totalLessons`, `allCompleted`, `trailTitle`
-- **3 estados visuais**: bloqueado, em progresso, liberado
-- **Modal integrado** para visualizacao ampliada no mobile
-
-### 2. Layout Mobile Compacto (max 170px altura)
-
-- Card horizontal compacto com mini-preview do certificado a esquerda e info a direita
-- Altura maxima: `max-h-[170px]`
-- Largura: `w-full` com padding lateral do container
-- Toque abre modal com certificado em tamanho real
-- Garantir que a primeira aula fique visivel acima da dobra
-
-### 3. Layout Desktop (lateral, 280px)
-
-- Manter posicao sticky lateral
-- Reduzir de 300px para 280px para dar mais espaco a skill tree
-- Proporcao vertical ~4:5
-- Hover sutil com elevacao minima
-
-### 4. Design Premium do Certificado
-
-**Estrutura visual:**
+- **Largura do preview: 130px** (antes 90px) — ganho de 44% de area visual
+- **Padding interno do preview: 12px** (antes 10px)
+- **Selo compact: 36px** (antes 28px) — mais presenca
+- **Titulo compact: 9px** (antes 7px) — legivel de verdade
+- **"AIliv Academy" compact: 7.5px** (antes 6px)
+- **Icones compact: 16px** (antes 12-13px)
+- **Altura maxima do card: 180px** (antes 170px) — ligeiro aumento para acomodar preview maior
+- **Borda do preview**: sombra inset sutil + borda dourada/cinza fina para dar "moldura" ao documento
+- Incluir divisor estrela e mini-linhas de texto mesmo no compact (versao reduzida) para parecer documento completo em miniatura
 
 ```text
-+------------------------------------------+
-|  [Header fino: icone + "Certificado"]    |
-+------------------------------------------+
-|                                          |
-|   ┌─ borda interna fina ──────────────┐  |
-|   │                                    │  |
-|   │      [Selo circular discreto]      │  |
-|   │                                    │  |
-|   │   CERTIFICADO DE CONCLUSAO         │  |
-|   │   (serifada, tracking largo)       │  |
-|   │                                    │  |
-|   │   ─── ✦ ───                        │  |
-|   │                                    │  |
-|   │   [Linhas simulando texto]         │  |
-|   │   (cinza sutil, nao placeholder)   │  |
-|   │                                    │  |
-|   │   ─────────────────                │  |
-|   │   AIliv Academy                    │  |
-|   └────────────────────────────────────┘  |
-|                                          |
-|   2 aulas restantes        ████░░ 0/2   |
-+------------------------------------------+
++----------------------------------------------------------+
+|  ┌────────────────┐                                      |
+|  │                │                                      |
+|  │   [Selo 36px]  │  [Medal] CERTIFICADO                 |
+|  │                │                                      |
+|  │  CERTIFICADO   │  Complete as aulas para liberar      |
+|  │  DE CONCLUSAO  │                                      |
+|  │   ── ◆ ──     │  ████████████░░░░░░░  0/2            |
+|  │  ──────────   │                                      |
+|  │  AIliv Academy │                                      |
+|  │                │                                      |
+|  └────────────────┘                                      |
++----------------------------------------------------------+
 ```
 
-**Detalhes de acabamento:**
+### Desktop: Documento com texto real, sem placeholders
 
-- Fundo: branco quente `#FDFCFA` com textura SVG noise muito sutil (opacity 0.02)
-- Borda externa: `1px solid rgba(0,0,0,0.08)` — discreta, sem dourado exagerado
-- Borda interna ornamental: `1px solid` cinza/dourado conforme estado
-- Cantos ornamentais: L-shapes nos 4 cantos, finos (1.5px)
-- Selo: circulo de 48px (reduzido de 64px), gradiente metalico sutil
-- Sombra: `0 4px 20px rgba(0,0,0,0.06)` — suave, sem glow
-- Border radius: 20px
-- Tipografia "CERTIFICADO DE CONCLUSAO": Georgia serif, 11px, tracking 0.12em
-- Linhas de texto simulado: retangulos com cantos arredondados, opacity 0.35
-- "AIliv Academy": 9px, Georgia, cor suave
+Substituir as linhas retangulares por texto real formatado:
 
-### 5. Estados do Card
+- **Remover**: L-shapes nos cantos, linhas retangulares cinza
+- **Adicionar**: texto real com `trailTitle`, "Concedido a", linha de assinatura
+- **Selo**: 52px com borda dupla (outline + border)
+- **Tipografia**: "CERTIFICADO" 14px tracking 0.2em, "DE CONCLUSAO" 12px tracking 0.15em
+- **Fundo**: gradiente radial `radial-gradient(ellipse at 30% 20%, #FFFEF8, #FBF9F4)`
+- **Divisor**: linha fina com losango central em CSS puro
 
-| Estado | Selo | CTA | Opacidade |
-|--------|------|-----|-----------|
-| Bloqueado | Cadeado cinza, selo opacity 0.6 | "Complete as aulas" (texto discreto) | Certificado com opacity 0.7 |
-| Em progresso | Sem cadeado, selo neutro | Barra de progresso ativa | Certificado com opacity 0.85 |
-| Liberado | Trofeu dourado, selo brilho sutil | "Ver certificado" primario | Certificado opacity 1, borda dourada fina |
+### Estados
 
-### 6. Modal de Certificado (Mobile)
+| Estado | Selo | Borda doc | Opacidade |
+|--------|------|-----------|-----------|
+| Bloqueado | Lock cinza 20px, selo opacity 0.6 | cinza `hsl(0,0%,88%)` | 0.6 + overlay Lock central |
+| Em progresso | Award violeta | violeta sutil | 0.85 |
+| Completo | Trophy dourado com glow ring | dourada `hsl(43,55%,65%)` | 1.0, sombra dourada |
 
-- Usa componente Dialog existente do projeto
-- Certificado renderizado em tamanho completo dentro do modal
-- Fundo escurecido `bg-black/60`
-- Botao fechar no topo
-- Se liberado: botoes "Baixar" e "Fechar"
+### Barra de progresso
+- Cores violeta (consistente com app)
+- Altura: 2px desktop, 1.5px mobile
+- Track: `bg-violet-100`
 
 ---
 
@@ -97,17 +76,18 @@ Extrair o certificado para `src/components/lessons/v8/V8CertificateCard.tsx` com
 
 | Arquivo | Acao |
 |---------|------|
-| `src/components/lessons/v8/V8CertificateCard.tsx` | **Criar** — componente extraido |
-| `src/pages/V8TrailDetail.tsx` | **Editar** — substituir bloco inline pelo novo componente |
+| `src/components/lessons/v8/V8CertificateCard.tsx` | **Reescrever** — novo design completo com preview mobile maior |
+
+Nenhuma mudanca em V8TrailDetail.tsx (props e importacao ja estao corretos).
 
 ---
 
 ## Detalhes Tecnicos
 
-- Usar `framer-motion` para animacoes sutis (entrada, hover)
-- Usar Dialog do `@radix-ui/react-dialog` (ja disponivel) para modal mobile
-- Breakpoint mobile/desktop: `lg:` (1024px) — consistente com layout atual
-- No mobile: card usa `flex-row` com mini-preview (80px de largura) + texto ao lado
-- No desktop: card usa layout vertical completo
-- Zero layout shift — sem animacoes que alterem dimensoes
+- Manter mesma interface de props (zero breaking changes)
+- Usar `trailTitle` para texto real no documento desktop
+- Compact mode renderiza documento completo em miniatura (com divisor, linhas, assinatura) em vez de versao cortada
+- Sem dependencias novas
+- Manter modal mobile com mesmo fluxo
+- Remover toda logica de L-shapes e noise SVG
 
