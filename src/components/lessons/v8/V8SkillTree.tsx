@@ -45,6 +45,8 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
           const y1 = 20 + i * ROW_HEIGHT + 34;
           const x2 = 200 + getXOffset(i + 1) * 70;
           const y2 = 20 + (i + 1) * ROW_HEIGHT;
+          const cx = (x1 + x2) / 2;
+          const cy = y1 + (y2 - y1) * 0.5;
 
           const isCompleted = lessons[i].status === "completed";
           const nextStatus = lessons[i + 1].status;
@@ -56,53 +58,55 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
               currentStatus === "available" ||
               currentStatus === "in_progress");
 
-          // Generate dots along a quadratic bezier path
-          const dotCount = 6;
-          const dots: { x: number; y: number }[] = [];
-          for (let d = 1; d <= dotCount; d++) {
-            const t = d / (dotCount + 1);
-            const cx = (x1 + x2) / 2;
-            const cy = y1 + (y2 - y1) * 0.5;
-            const px = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2;
-            const py = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2;
-            dots.push({ x: px, y: py });
-          }
+          const pathD = `M ${x1},${y1} Q ${cx},${cy} ${x2},${y2}`;
 
-          const dotColor = isCompleted
+          const strokeColor = isCompleted
             ? "hsl(258, 70%, 58%)"
             : nextAvailable
-              ? "hsl(258, 45%, 68%)"
+              ? "hsl(258, 50%, 70%)"
               : "hsl(220, 10%, 82%)";
-          const dotR = isCompleted ? 3 : nextAvailable ? 2.5 : 2;
+          const strokeWidth = isCompleted ? 3 : nextAvailable ? 2.5 : 2;
+          const strokeOpacity = isCompleted ? 0.9 : nextAvailable ? 0.8 : 0.5;
 
           return (
-            <g key={`dots-${i}`}>
-              {dots.map((dot, di) => (
-                <motion.circle
-                  key={di}
-                  cx={dot.x}
-                  cy={dot.y}
-                  r={dotR}
-                  fill={dotColor}
-                  initial={{ scale: 0 }}
-                  animate={{
-                    scale: 1,
-                    opacity: !isCompleted && !nextAvailable ? 0.4 : 0.8,
-                    ...(isActiveSegment ? {
-                      r: [dotR, dotR * 1.6, dotR],
-                      opacity: [0.5, 1, 0.5],
-                    } : {})
-                  }}
-                  transition={isActiveSegment
-                    ? {
-                        scale: { duration: 0.3, delay: i * 0.06 + di * 0.05 },
-                        r: { duration: 1.2, repeat: Infinity, delay: di * 0.15, ease: "easeInOut" },
-                        opacity: { duration: 1.2, repeat: Infinity, delay: di * 0.15, ease: "easeInOut" },
-                      }
-                    : { duration: 0.4, delay: i * 0.06 + di * 0.05 }
-                  }
+            <g key={`conn-${i}`}>
+              {/* Main path */}
+              {isActiveSegment ? (
+                <motion.path
+                  d={pathD}
+                  fill="none"
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  strokeDasharray="12 8"
+                  initial={{ strokeDashoffset: 0 }}
+                  animate={{ strokeDashoffset: -40 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  opacity={strokeOpacity}
                 />
-              ))}
+              ) : (
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  opacity={strokeOpacity}
+                  {...(!isCompleted && !nextAvailable ? { strokeDasharray: "8 6" } : {})}
+                />
+              )}
+
+              {/* Checkpoint dots on completed segments */}
+              {isCompleted && [0.25, 0.5, 0.75].map((t, di) => {
+                const px = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2;
+                const py = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2;
+                return (
+                  <g key={`cp-${di}`}>
+                    <circle cx={px} cy={py} r={4.5} fill="white" />
+                    <circle cx={px} cy={py} r={3.5} fill="hsl(258, 70%, 58%)" opacity={0.9} />
+                  </g>
+                );
+              })}
             </g>
           );
         })}
