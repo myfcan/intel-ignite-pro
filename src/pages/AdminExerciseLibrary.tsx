@@ -212,23 +212,23 @@ interface ExerciseTypeEntry {
   name: string;
   icon: React.ReactNode;
   description: string;
-  version: ('V5' | 'V7')[];
+  version: ('V5' | 'V7' | 'V8')[];
   features: string[];
   color: string;
 }
 
 const EXERCISE_TYPES: ExerciseTypeEntry[] = [
-  { type: 'multiple-choice', name: 'Múltipla Escolha', icon: <ListChecks className="w-5 h-5" />, description: 'Pergunta com opções de resposta e feedback.', version: ['V5', 'V7'], features: ['Feedback imediato', 'Explicação pós-resposta', 'Score automático'], color: 'blue' },
-  { type: 'timed-quiz', name: 'Timed Quiz (Desafio Relâmpago)', icon: <Timer className="w-5 h-5" />, description: 'Quiz com timer regressivo, bônus por velocidade e urgência visual.', version: ['V7'], features: ['Timer com urgência', 'Bônus velocidade', 'Sons dinâmicos'], color: 'red' },
-  { type: 'flipcard-quiz', name: 'FlipCard Quiz', icon: <Layers className="w-5 h-5" />, description: 'Cards com flip 3D para antecipação e recordação ativa.', version: ['V5', 'V7'], features: ['Flip 3D', 'Glow reveal', 'Confetti', 'Sons vitória/derrota'], color: 'purple' },
-  { type: 'drag-drop', name: 'Drag & Drop', icon: <GripVertical className="w-5 h-5" />, description: 'Arrastar itens para a ordem ou categoria correta.', version: ['V5', 'V7'], features: ['Categorias dinâmicas', 'Validação visual', 'Score por categoria'], color: 'emerald' },
-  { type: 'fill-in-blanks', name: 'Preencher Lacunas', icon: <PenLine className="w-5 h-5" />, description: 'Completar frases com palavras corretas.', version: ['V5', 'V7'], features: ['Input de texto', 'Validação case-insensitive', 'Feedback por sentença'], color: 'amber' },
-  { type: 'complete-sentence', name: 'Completar Sentença', icon: <PenLine className="w-5 h-5" />, description: 'Escolher a palavra certa para completar sentenças.', version: ['V5', 'V7'], features: ['Opções por lacuna', 'Feedback instantâneo'], color: 'teal' },
-  { type: 'scenario-selection', name: 'Seleção de Cenário', icon: <Target className="w-5 h-5" />, description: 'Escolher cenários adequados entre opções contextuais.', version: ['V5', 'V7'], features: ['Cenários contextuais', 'Explicação do correto'], color: 'pink' },
-  { type: 'true-false', name: 'Verdadeiro ou Falso', icon: <ToggleLeft className="w-5 h-5" />, description: 'Avaliar afirmações como V ou F com explicações.', version: ['V5', 'V7'], features: ['Toggle V/F', 'Explicação por item', 'Score automático'], color: 'orange' },
-  { type: 'platform-match', name: 'Platform Match', icon: <BarChart3 className="w-5 h-5" />, description: 'Associar cenários à plataforma mais adequada.', version: ['V5', 'V7'], features: ['Match cenário↔plataforma', 'Validação visual'], color: 'indigo' },
-  { type: 'data-collection', name: 'Coleta de Dados', icon: <CheckSquare className="w-5 h-5" />, description: 'Exercício com coleta e análise de dados em cenário.', version: ['V5', 'V7'], features: ['Cenário contextual', 'Coleta estruturada'], color: 'cyan' },
-  { type: 'playground', name: 'Playground Interativo', icon: <Sparkles className="w-5 h-5" />, description: 'Espaço para experimentar prompts com IA.', version: ['V5', 'V7'], features: ['Chat com IA', 'Contexto da aula', 'Token tracking'], color: 'violet' },
+  { type: 'multiple-choice', name: 'Múltipla Escolha', icon: <ListChecks className="w-5 h-5" />, description: 'Pergunta com opções de resposta e feedback.', version: ['V5', 'V7', 'V8'], features: ['Feedback imediato', 'Explicação pós-resposta', 'Score automático'], color: 'blue' },
+  { type: 'timed-quiz', name: 'Timed Quiz (Desafio Relâmpago)', icon: <Timer className="w-5 h-5" />, description: 'Quiz com timer regressivo, bônus por velocidade e urgência visual.', version: ['V7', 'V8'], features: ['Timer com urgência', 'Bônus velocidade', 'Sons dinâmicos'], color: 'red' },
+  { type: 'flipcard-quiz', name: 'FlipCard Quiz', icon: <Layers className="w-5 h-5" />, description: 'Cards com flip 3D para antecipação e recordação ativa.', version: ['V5', 'V7', 'V8'], features: ['Flip 3D', 'Glow reveal', 'Confetti', 'Sons vitória/derrota'], color: 'purple' },
+  { type: 'drag-drop', name: 'Drag & Drop', icon: <GripVertical className="w-5 h-5" />, description: 'Arrastar itens para a ordem ou categoria correta.', version: ['V5', 'V7', 'V8'], features: ['Categorias dinâmicas', 'Validação visual', 'Score por categoria'], color: 'emerald' },
+  { type: 'fill-in-blanks', name: 'Preencher Lacunas', icon: <PenLine className="w-5 h-5" />, description: 'Completar frases com palavras corretas.', version: ['V5', 'V7', 'V8'], features: ['Input de texto', 'Validação case-insensitive', 'Feedback por sentença'], color: 'amber' },
+  { type: 'complete-sentence', name: 'Completar Sentença', icon: <PenLine className="w-5 h-5" />, description: 'Escolher a palavra certa para completar sentenças.', version: ['V5', 'V7', 'V8'], features: ['Opções por lacuna', 'Feedback instantâneo'], color: 'teal' },
+  { type: 'scenario-selection', name: 'Seleção de Cenário', icon: <Target className="w-5 h-5" />, description: 'Escolher cenários adequados entre opções contextuais.', version: ['V5', 'V7', 'V8'], features: ['Cenários contextuais', 'Explicação do correto'], color: 'pink' },
+  { type: 'true-false', name: 'Verdadeiro ou Falso', icon: <ToggleLeft className="w-5 h-5" />, description: 'Avaliar afirmações como V ou F com explicações.', version: ['V5', 'V7', 'V8'], features: ['Toggle V/F', 'Explicação por item', 'Score automático'], color: 'orange' },
+  { type: 'platform-match', name: 'Platform Match', icon: <BarChart3 className="w-5 h-5" />, description: 'Associar cenários à plataforma mais adequada.', version: ['V5', 'V7', 'V8'], features: ['Match cenário↔plataforma', 'Validação visual'], color: 'indigo' },
+  { type: 'data-collection', name: 'Coleta de Dados', icon: <CheckSquare className="w-5 h-5" />, description: 'Exercício com coleta e análise de dados em cenário.', version: ['V5', 'V7', 'V8'], features: ['Cenário contextual', 'Coleta estruturada'], color: 'cyan' },
+  { type: 'playground', name: 'Playground Interativo', icon: <Sparkles className="w-5 h-5" />, description: 'Espaço para experimentar prompts com IA.', version: ['V5', 'V7', 'V8'], features: ['Chat com IA', 'Contexto da aula', 'Token tracking'], color: 'violet' },
 ];
 
 // ── Demo Renderer Component ──────────────────────────────────
