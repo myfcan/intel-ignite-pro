@@ -144,7 +144,7 @@ export default function V8TrailDetail() {
     <div className="min-h-screen bg-[#FAFBFC]">
       {/* ── Compact App Header ── */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-3xl mx-auto flex items-center justify-between px-4 h-14">
+        <div className="max-w-4xl mx-auto flex items-center justify-between px-4 h-14">
           <button
             onClick={() => navigate("/dashboard")}
             className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors"
@@ -160,7 +160,7 @@ export default function V8TrailDetail() {
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-8">
         {/* ── Unit Card ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
           <div className="flex items-center gap-3">
@@ -185,13 +185,19 @@ export default function V8TrailDetail() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="lg:w-[260px] flex-shrink-0 lg:sticky lg:top-[72px] lg:self-start"
+            className="lg:w-[300px] flex-shrink-0 lg:sticky lg:top-[72px] lg:self-start"
           >
             <div className={`rounded-2xl overflow-hidden ${
               allCompleted
-                ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-xl ring-1 ring-amber-200/50"
-                : "bg-white shadow-md ring-1 ring-gray-100"
-            }`}>
+                ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-xl ring-2 ring-amber-300/70"
+                : "bg-white shadow-lg ring-2 ring-amber-200/40"
+            }`}
+              style={{
+                boxShadow: allCompleted
+                  ? '0 8px 32px rgba(217, 168, 42, 0.25), inset 0 1px 0 rgba(255,255,255,0.6)'
+                  : '0 4px 20px rgba(217, 168, 42, 0.1), inset 0 1px 0 rgba(255,255,255,0.6)'
+              }}
+            >
               {/* Certificate Header Band */}
               <div className={`px-4 py-3 ${
                 allCompleted
