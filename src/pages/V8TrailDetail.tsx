@@ -87,7 +87,7 @@ export default function V8TrailDetail() {
     const status = progressMap.get(lessonId);
     if (status === "completed") return "completed" as const;
     if (status === "in_progress") return "in_progress" as const;
-    if (index === 0) return "available" as const;
+    if (index === 0) return "in_progress" as const;
     if (isAdmin) return "available" as const;
     const prevLesson = lessons?.[index - 1];
     if (prevLesson && progressMap.get(prevLesson.id) === "completed") {
@@ -135,7 +135,7 @@ export default function V8TrailDetail() {
     <div className="min-h-screen bg-[#FAFBFC]">
       {/* ── Compact App Header ── */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-lg mx-auto flex items-center justify-between px-4 h-14">
+        <div className="max-w-xl mx-auto flex items-center justify-between px-4 h-14">
           <button
             onClick={() => navigate("/dashboard")}
             className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors"
@@ -151,7 +151,7 @@ export default function V8TrailDetail() {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
+      <div className="max-w-xl mx-auto px-4 pt-4 pb-8">
         {/* ── Unit Card ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3">
           <div className="flex items-center gap-3">

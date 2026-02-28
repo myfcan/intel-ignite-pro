@@ -22,7 +22,7 @@ const getXOffset = (index: number): number => {
   return pattern[index % 4];
 };
 
-const ROW_HEIGHT = 120;
+const ROW_HEIGHT = 160;
 
 export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTreeProps) => {
   const totalHeight = lessons.length * ROW_HEIGHT + 40;
@@ -34,7 +34,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
     <div className="relative w-full flex flex-col items-center py-4">
       {/* SVG connector lines */}
       <svg
-        className="absolute inset-0 w-full pointer-events-none"
+        className="absolute inset-0 w-full pointer-events-none z-0"
         style={{ height: totalHeight }}
         viewBox={`0 0 300 ${totalHeight}`}
         preserveAspectRatio="xMidYMin meet"
@@ -48,8 +48,14 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
           const cpy = y1 + (y2 - y1) * 0.5;
 
           const isCompleted = lessons[i].status === "completed";
-          const nextAvailable = lessons[i + 1].status !== "locked";
-          const isActiveSegment = isCompleted && nextAvailable && lessons[i + 1].status !== "completed";
+          const nextStatus = lessons[i + 1].status;
+          const nextAvailable = nextStatus !== "locked";
+          const currentStatus = lessons[i].status;
+          const isActiveSegment =
+            nextAvailable &&
+            ((currentStatus === "completed" && nextStatus !== "completed") ||
+              currentStatus === "available" ||
+              currentStatus === "in_progress");
           const pathD = `M ${x1} ${y1} C ${x1} ${cpy}, ${x2} ${cpy}, ${x2} ${y2}`;
 
           return (
@@ -57,19 +63,19 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
               key={`line-${i}`}
               d={pathD}
               fill="none"
-              stroke={isCompleted ? "hsl(258, 70%, 55%)" : nextAvailable ? "hsl(258, 50%, 65%)" : "hsl(220, 10%, 82%)"}
-              strokeWidth={isCompleted ? 4.5 : nextAvailable ? 3.5 : 2.5}
+              stroke={isCompleted ? "hsl(258, 70%, 58%)" : nextAvailable ? "hsl(258, 45%, 68%)" : "hsl(220, 10%, 82%)"}
+              strokeWidth={isCompleted ? 3.5 : nextAvailable ? 2.5 : 2}
               strokeLinecap="round"
-              strokeDasharray={isActiveSegment ? "8 4" : "none"}
-              opacity={!isCompleted && !nextAvailable ? 0.6 : 1}
+              strokeDasharray={isActiveSegment ? "5 7" : "none"}
+              opacity={!isCompleted && !nextAvailable ? 0.65 : 1}
               initial={{ pathLength: 0 }}
-              animate={{ 
+              animate={{
                 pathLength: 1,
-                ...(isActiveSegment ? { strokeDashoffset: [0, -24] } : {})
+                ...(isActiveSegment ? { strokeDashoffset: [0, -56] } : {})
               }}
-              transition={isActiveSegment 
-                ? { pathLength: { duration: 0.6, delay: i * 0.06 }, strokeDashoffset: { duration: 1.5, repeat: Infinity, ease: "linear" } }
-                : { duration: 0.6, delay: i * 0.06 }
+              transition={isActiveSegment
+                ? { pathLength: { duration: 0.65, delay: i * 0.06 }, strokeDashoffset: { duration: 0.75, repeat: Infinity, ease: "linear" } }
+                : { duration: 0.65, delay: i * 0.06 }
               }
             />
           );
@@ -77,7 +83,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
       </svg>
 
       {/* Nodes with labels */}
-      <div className="relative w-full" style={{ height: totalHeight }}>
+      <div className="relative w-full z-10" style={{ height: totalHeight }}>
         {lessons.map((lesson, i) => {
           const xPercent = 50 + getXOffset(i) * 16;
           const yPx = 20 + i * ROW_HEIGHT;
@@ -94,7 +100,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
                 transform: "translateX(-50%)",
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 {/* Label on left side */}
                 {labelSide === "right" && (
                   <LessonLabel lesson={lesson} isFirst={isFirst} align="right" />
@@ -131,7 +137,7 @@ function LessonLabel({ lesson, isFirst, align }: { lesson: LessonItem; isFirst: 
       initial={{ opacity: 0, x: align === "left" ? -8 : 8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
-      className={`w-[140px] sm:w-[170px] ${align === "right" ? "text-right" : "text-left"}`}
+      className={`relative z-20 px-3 py-1.5 rounded-xl bg-[#FAFBFC] w-[190px] sm:w-[250px] ${align === "right" ? "mr-6 text-right" : "ml-6 text-left"}`}
     >
       {isFirst && (
         <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-violet-100 text-violet-600 mb-1">
@@ -144,7 +150,7 @@ function LessonLabel({ lesson, isFirst, align }: { lesson: LessonItem; isFirst: 
         {lesson.title}
       </p>
       {lesson.estimatedTime && (
-        <p className={`text-[11px] mt-0.5 ${isLocked ? "text-gray-300" : "text-gray-400"}`}>
+        <p className={`text-sm mt-0.5 ${isLocked ? "text-gray-300" : "text-gray-400"}`}>
           {lesson.estimatedTime} min
         </p>
       )}
