@@ -8,6 +8,7 @@ import { V8LessonData, V8Section, V8InlineQuiz, V8InlinePlayground } from "@/typ
 import { Json } from "@/integrations/supabase/types";
 import { V7PipelineMonitor, PipelineStep, PipelineLog } from "@/components/admin/V7PipelineMonitor";
 import { parseFullContent } from "@/lib/v8ContentParser";
+import { V8SectionSetup } from "@/components/admin/V8SectionSetup";
 
 // ─── Types ───
 interface AudioResult {
@@ -26,7 +27,7 @@ interface GenerateResponse {
   stats: { totalAudios: number; totalErrors: number; totalSizeKB: number; elapsedMs: number };
 }
 
-type Step = "edit" | "validate" | "generate" | "preview" | "saved";
+type Step = "edit" | "setup" | "validate" | "generate" | "preview" | "saved";
 
 // ─── Validation ───
 interface ValidationResult {
@@ -188,6 +189,11 @@ export default function AdminV8Create() {
   // Content mode
   const [editorMode, setEditorMode] = useState<"content" | "json">("content");
   const [contentText, setContentText] = useState("");
+  
+  // Parsed data for setup wizard
+  const [parsedSections, setParsedSections] = useState<V8Section[]>([]);
+  const [parsedQuizzes, setParsedQuizzes] = useState<V8InlineQuiz[]>([]);
+  const [parsedPlaygrounds, setParsedPlaygrounds] = useState<V8InlinePlayground[]>([]);
 
   // Pipeline monitor state
   const [pipelineSteps, setPipelineSteps] = useState<PipelineStep[]>([]);
@@ -428,19 +434,40 @@ export default function AdminV8Create() {
     }
     try {
       const data = parseFullContent(contentText);
-      setJsonText(JSON.stringify(data, null, 2));
+      setParsedSections(data.sections);
+      setParsedQuizzes(data.inlineQuizzes);
+      setParsedPlaygrounds(data.inlinePlaygrounds || []);
       setLessonTitle(data.title);
-      setEditorMode("json");
-      setValidation(null);
-      setStep("edit");
+      setStep("setup");
       toast({
         title: "✅ Conteúdo convertido!",
-        description: `${data.sections.length} seções, ${data.inlineQuizzes.length} quizzes, ${data.inlinePlaygrounds?.length || 0} playgrounds extraídos`,
+        description: `${data.sections.length} seções detectadas — configure o setup`,
       });
     } catch (e) {
       toast({ title: "❌ Erro na conversão", description: (e as Error).message, variant: "destructive" });
     }
   }, [contentText, toast]);
+
+  const handleSetupApply = useCallback((
+    updatedSections: V8Section[],
+    updatedQuizzes: V8InlineQuiz[],
+    updatedPlaygrounds: V8InlinePlayground[]
+  ) => {
+    const data: V8LessonData = {
+      contentVersion: "v8",
+      title: lessonTitle,
+      description: "",
+      sections: updatedSections,
+      inlineQuizzes: updatedQuizzes,
+      inlinePlaygrounds: updatedPlaygrounds,
+      exercises: [],
+    };
+    setJsonText(JSON.stringify(data, null, 2));
+    setEditorMode("json");
+    setValidation(null);
+    setStep("edit");
+    toast({ title: "✅ Setup aplicado!", description: "JSON atualizado — valide para continuar" });
+  }, [lessonTitle, toast]);
 
   const toggleAudioPreview = (url: string) => {
     if (playingAudioUrl === url && audioElement) {
@@ -474,11 +501,11 @@ export default function AdminV8Create() {
           </div>
           {/* Step indicator */}
           <div className="flex items-center gap-1.5">
-            {(["edit", "validate", "generate", "preview", "saved"] as Step[]).map((s, i) => (
+            {(["edit", "setup", "validate", "generate", "preview", "saved"] as Step[]).map((s, i) => (
               <div
                 key={s}
                 className={`w-2 h-2 rounded-full transition-colors ${
-                  step === s ? "bg-indigo-500" : i < ["edit", "validate", "generate", "preview", "saved"].indexOf(step) ? "bg-emerald-500" : "bg-white/10"
+                  step === s ? "bg-indigo-500" : i < ["edit", "setup", "validate", "generate", "preview", "saved"].indexOf(step) ? "bg-emerald-500" : "bg-white/10"
                 }`}
               />
             ))}
@@ -576,6 +603,17 @@ export default function AdminV8Create() {
             />
           )}
         </motion.div>
+
+        {/* ─── SETUP WIZARD ─── */}
+        {step === "setup" && parsedSections.length > 0 && (
+          <V8SectionSetup
+            sections={parsedSections}
+            quizzes={parsedQuizzes}
+            playgrounds={parsedPlaygrounds}
+            onApply={handleSetupApply}
+            onBack={() => { setStep("edit"); setEditorMode("content"); }}
+          />
+        )}
 
         {/* ─── VALIDATION RESULT ─── */}
         {validation && (
