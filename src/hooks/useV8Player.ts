@@ -7,7 +7,8 @@ import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground } from "@
  * Builds a flat timeline of items (sections + inline quizzes + playgrounds sorted by position)
  * and manages phase transitions: mode-select → content → exercises → completion.
  *
- * Deterministic ordering when same afterSectionIndex: playground BEFORE quiz
+ * V8 uses vertical scroll — currentIndex tracks the most-advanced section seen (for progress),
+ * not which section is rendered (all are rendered).
  */
 
 export type TimelineItem =
@@ -31,25 +32,21 @@ export const useV8Player = (lessonData: V8LessonData) => {
     const quizMap = new Map<number, V8InlineQuiz[]>();
     const playgroundMap = new Map<number, V8InlinePlayground[]>();
 
-    // Group quizzes by afterSectionIndex
     for (const quiz of lessonData.inlineQuizzes) {
       const existing = quizMap.get(quiz.afterSectionIndex) || [];
       existing.push(quiz);
       quizMap.set(quiz.afterSectionIndex, existing);
     }
 
-    // Group playgrounds by afterSectionIndex
     for (const pg of (lessonData.inlinePlaygrounds || [])) {
       const existing = playgroundMap.get(pg.afterSectionIndex) || [];
       existing.push(pg);
       playgroundMap.set(pg.afterSectionIndex, existing);
     }
 
-    // Interleave: section → playgrounds → quizzes (deterministic order)
     for (let i = 0; i < lessonData.sections.length; i++) {
       items.push({ type: "section", index: i });
 
-      // Playgrounds first (practice before test)
       const playgrounds = playgroundMap.get(i);
       if (playgrounds) {
         for (const pg of playgrounds) {
@@ -57,7 +54,6 @@ export const useV8Player = (lessonData: V8LessonData) => {
         }
       }
 
-      // Then quizzes
       const quizzes = quizMap.get(i);
       if (quizzes) {
         for (const quiz of quizzes) {
@@ -77,19 +73,21 @@ export const useV8Player = (lessonData: V8LessonData) => {
     setState((prev) => ({ ...prev, mode, phase: "content" }));
   }, []);
 
+  // In vertical scroll mode, "next" moves to exercises/completion
   const next = useCallback(() => {
-    setState((prev) => {
-      const nextIndex = prev.currentIndex + 1;
-      if (nextIndex < totalContentSteps) {
-        return { ...prev, currentIndex: nextIndex };
-      }
-      // Content finished — go to exercises or completion
-      return {
-        ...prev,
-        phase: hasExercises ? "exercises" : "completion",
-      };
-    });
-  }, [totalContentSteps, hasExercises]);
+    setState((prev) => ({
+      ...prev,
+      phase: hasExercises ? "exercises" : "completion",
+    }));
+  }, [hasExercises]);
+
+  // Update progress based on scroll position (highest index seen)
+  const goToIndex = useCallback((index: number) => {
+    setState((prev) => ({
+      ...prev,
+      currentIndex: Math.max(prev.currentIndex, index),
+    }));
+  }, []);
 
   const goToExercises = useCallback(() => {
     setState((prev) => ({ ...prev, phase: "exercises" }));
@@ -118,6 +116,7 @@ export const useV8Player = (lessonData: V8LessonData) => {
     totalContentSteps,
     selectMode,
     next,
+    goToIndex,
     goToExercises,
     goToCompletion,
     addScore,
