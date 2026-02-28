@@ -12,6 +12,10 @@ interface V8ContentSectionProps {
   isLast?: boolean;
 }
 
+/** Strip "Seção X — " prefix from section titles */
+const cleanSectionTitle = (title: string) =>
+  title.replace(/^Seção\s*\d+\s*[—–\-]\s*/i, "");
+
 export const V8ContentSection = ({
   section,
   mode,
@@ -23,12 +27,12 @@ export const V8ContentSection = ({
   const handleAudioEnded = () => {
     setAudioEnded(true);
     if (mode === "listen") {
-      // Auto-advance after short delay in listen mode
       setTimeout(onContinue, 800);
     }
   };
 
   const canContinue = mode === "read" || audioEnded;
+  const cleanTitle = cleanSectionTitle(section.title);
 
   return (
     <motion.div
@@ -36,45 +40,41 @@ export const V8ContentSection = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex flex-col gap-6 pb-32"
+      className={`flex flex-col gap-6 ${section.audioUrl ? "pb-48" : "pb-8"}`}
     >
       {/* Section title */}
-      <h2
-        className="text-[28px] font-bold leading-[1.2] text-white"
-        style={{ letterSpacing: "-0.01em" }}
-      >
-        {section.title}
+      <h2 className="text-xl font-bold leading-snug text-slate-900">
+        {cleanTitle}
       </h2>
 
-      {/* Image with gradient overlay */}
+      {/* Image — floating style (no container, no gradient) */}
       {section.imageUrl && (
-        <div className="relative rounded-2xl overflow-hidden">
+        <div className="flex justify-center -mx-4">
           <img
             src={section.imageUrl}
-            alt={section.title}
-            className="w-full h-48 sm:h-56 object-cover"
+            alt={cleanTitle}
+            className="max-w-[85%] h-auto object-contain"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
         </div>
       )}
 
       {/* Markdown body */}
-      <div className="v8-markdown text-[17px] leading-[1.75] text-slate-300">
+      <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700">
         <ReactMarkdown
           components={{
             h1: ({ children }) => (
-              <h1 className="text-2xl font-bold text-white mt-6 mb-3">
+              <h1 className="text-2xl font-bold text-slate-900 mt-6 mb-3">
                 {children}
               </h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-xl font-semibold text-white mt-5 mb-2">
+              <h2 className="text-xl font-semibold text-slate-900 mt-5 mb-2">
                 {children}
               </h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-lg font-semibold text-slate-200 mt-4 mb-2">
+              <h3 className="text-lg font-semibold text-slate-800 mt-4 mb-2">
                 {children}
               </h3>
             ),
@@ -90,28 +90,28 @@ export const V8ContentSection = ({
               </ol>
             ),
             li: ({ children }) => (
-              <li className="text-slate-300">{children}</li>
+              <li className="text-slate-700">{children}</li>
             ),
             strong: ({ children }) => (
-              <strong className="text-white font-semibold">{children}</strong>
+              <strong className="text-slate-900 font-semibold">{children}</strong>
             ),
             em: ({ children }) => (
-              <em className="text-indigo-300">{children}</em>
+              <em className="text-indigo-600">{children}</em>
             ),
             code: ({ children, className }) => {
               const isInline = !className;
               return isInline ? (
-                <code className="px-1.5 py-0.5 rounded-md bg-white/10 text-indigo-300 text-[15px] font-mono">
+                <code className="px-1.5 py-0.5 rounded-md bg-slate-100 text-indigo-600 text-[15px] font-mono">
                   {children}
                 </code>
               ) : (
-                <code className="block p-4 rounded-xl bg-white/5 border border-white/10 text-sm font-mono text-slate-300 overflow-x-auto mb-4">
+                <code className="block p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-700 overflow-x-auto mb-4">
                   {children}
                 </code>
               );
             },
             blockquote: ({ children }) => (
-              <blockquote className="border-l-2 border-indigo-500/50 pl-4 py-1 mb-4 text-slate-400 italic">
+              <blockquote className="border-l-2 border-indigo-500/50 pl-4 py-1 mb-4 text-slate-500 italic">
                 {children}
               </blockquote>
             ),
@@ -123,29 +123,45 @@ export const V8ContentSection = ({
 
       {/* Audio player — sticky at bottom */}
       {section.audioUrl && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-2 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
-          <div className="max-w-2xl mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-2 bg-gradient-to-t from-white via-white/95 to-transparent">
+          <div className="max-w-2xl mx-auto space-y-3">
             <V8AudioPlayer
               audioUrl={section.audioUrl}
               autoPlay={mode === "listen"}
               onEnded={handleAudioEnded}
             />
+            {/* Continue button inside fixed bar */}
+            {mode === "read" && (
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: canContinue ? 1 : 0.4 }}
+                onClick={canContinue ? onContinue : undefined}
+                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors disabled:opacity-40"
+                disabled={!canContinue}
+              >
+                {isLast ? "Finalizar conteúdo" : "Continuar"}
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+            )}
           </div>
         </div>
       )}
 
-      {/* Continue button (read mode or after audio ends) */}
-      {mode === "read" && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: canContinue ? 1 : 0.4 }}
-          onClick={canContinue ? onContinue : undefined}
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow disabled:opacity-40"
-          disabled={!canContinue}
-        >
-          {isLast ? "Finalizar conteúdo" : "Continuar"}
-          <ArrowRight className="w-4 h-4" />
-        </motion.button>
+      {/* Continue button when no audio — fixed at bottom */}
+      {!section.audioUrl && mode === "read" && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-6 pt-3 bg-gradient-to-t from-white via-white/95 to-transparent">
+          <div className="max-w-2xl mx-auto">
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={onContinue}
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
+            >
+              {isLast ? "Finalizar conteúdo" : "Continuar"}
+              <ArrowRight className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </div>
       )}
     </motion.div>
   );

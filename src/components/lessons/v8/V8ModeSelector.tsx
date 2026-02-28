@@ -32,12 +32,12 @@ export const V8ModeSelector = ({ onSelectMode, title }: V8ModeSelectorProps) => 
       {/* Title */}
       <div className="text-center space-y-2">
         {title && (
-          <p className="text-sm text-indigo-400 font-medium">{title}</p>
+          <p className="text-sm text-indigo-500 font-medium">{title}</p>
         )}
-        <h2 className="text-2xl sm:text-3xl font-bold text-white">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
           Como você quer aprender?
         </h2>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-500">
           Escolha o modo que melhor combina com você
         </p>
       </div>
@@ -53,15 +53,15 @@ export const V8ModeSelector = ({ onSelectMode, title }: V8ModeSelectorProps) => 
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => onSelectMode(mode.id)}
-            className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:border-indigo-500/30 transition-colors"
+            className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-slate-200 bg-white shadow-sm backdrop-blur-xl hover:bg-slate-50 hover:border-indigo-500/30 transition-colors"
           >
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 flex items-center justify-center">
-              <mode.icon className="w-6 h-6 text-indigo-400" />
+              <mode.icon className="w-6 h-6 text-indigo-500" />
             </div>
-            <span className="text-base font-semibold text-white">
+            <span className="text-base font-semibold text-slate-900">
               {mode.label}
             </span>
-            <span className="text-[11px] text-slate-400 text-center leading-snug">
+            <span className="text-[11px] text-slate-500 text-center leading-snug">
               {mode.description}
             </span>
           </motion.button>

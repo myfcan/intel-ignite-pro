@@ -48,16 +48,16 @@ export const V8QuizInline = ({
     >
       {/* Header badge */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30">
-          <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="text-[11px] font-semibold text-indigo-300 uppercase tracking-wider">
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200">
+          <HelpCircle className="w-3.5 h-3.5 text-indigo-500" />
+          <span className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">
             Quiz Rápido
           </span>
         </div>
       </div>
 
       {/* Question */}
-      <h3 className="text-xl font-bold text-white leading-snug">
+      <h3 className="text-xl font-bold text-slate-900 leading-snug">
         {quiz.question}
       </h3>
 
@@ -69,26 +69,26 @@ export const V8QuizInline = ({
       {/* Options */}
       <div className="flex flex-col gap-2.5">
         {quiz.options.map((option) => {
-          let borderColor = "border-white/10";
-          let bgColor = "bg-white/5";
-          let textColor = "text-slate-300";
+          let borderColor = "border-slate-200";
+          let bgColor = "bg-white";
+          let textColor = "text-slate-700";
 
           if (isAnswered) {
             if (option.isCorrect) {
               borderColor = "border-emerald-500/50";
-              bgColor = "bg-emerald-500/10";
-              textColor = "text-emerald-300";
+              bgColor = "bg-emerald-50";
+              textColor = "text-emerald-700";
             } else if (option.id === selected && !option.isCorrect) {
               borderColor = "border-red-500/50";
-              bgColor = "bg-red-500/10";
-              textColor = "text-red-300";
+              bgColor = "bg-red-50";
+              textColor = "text-red-700";
             } else {
-              textColor = "text-slate-500";
+              textColor = "text-slate-400";
             }
           } else if (option.id === selected) {
             borderColor = "border-indigo-500/50";
-            bgColor = "bg-indigo-500/10";
-            textColor = "text-white";
+            bgColor = "bg-indigo-50";
+            textColor = "text-slate-900";
           }
 
           return (
@@ -102,10 +102,10 @@ export const V8QuizInline = ({
               <div className="flex items-center gap-3">
                 <span className="flex-1">{option.text}</span>
                 {isAnswered && option.isCorrect && (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                 )}
                 {isAnswered && option.id === selected && !option.isCorrect && (
-                  <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                 )}
               </div>
             </motion.button>
@@ -121,7 +121,7 @@ export const V8QuizInline = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             onClick={handleConfirm}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25"
+            className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25"
           >
             Confirmar
           </motion.button>
@@ -134,20 +134,20 @@ export const V8QuizInline = ({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-3"
+            className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3"
           >
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <span className="font-semibold text-emerald-300 text-sm">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <span className="font-semibold text-emerald-700 text-sm">
                 Correto!
               </span>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-700 leading-relaxed">
               {quiz.explanation}
             </p>
             <button
               onClick={onContinue}
-              className="flex items-center gap-2 text-sm font-semibold text-indigo-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
             >
               Continuar <ArrowRight className="w-4 h-4" />
             </button>
@@ -161,29 +161,29 @@ export const V8QuizInline = ({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 space-y-3"
+            className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3"
           >
             <div className="flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-400" />
-              <span className="font-semibold text-red-300 text-sm">
+              <XCircle className="w-5 h-5 text-red-500" />
+              <span className="font-semibold text-red-700 text-sm">
                 Não foi dessa vez
               </span>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-700 leading-relaxed">
               {quiz.explanation}
             </p>
             <div className="flex items-center gap-4">
               {quiz.reinforcement && (
                 <button
                   onClick={handleShowReinforcement}
-                  className="text-sm font-semibold text-indigo-300 hover:text-white transition-colors"
+                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
                 >
                   Aprender mais
                 </button>
               )}
               <button
                 onClick={onContinue}
-                className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
               >
                 Continuar <ArrowRight className="w-4 h-4" />
               </button>
@@ -198,12 +198,12 @@ export const V8QuizInline = ({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-4 space-y-3"
+            className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-3"
           >
-            <span className="text-[11px] font-semibold text-indigo-300 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">
               Reforço
             </span>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-700 leading-relaxed">
               {quiz.reinforcement}
             </p>
             {quiz.reinforcementAudioUrl && (
@@ -211,7 +211,7 @@ export const V8QuizInline = ({
             )}
             <button
               onClick={onContinue}
-              className="flex items-center gap-2 text-sm font-semibold text-indigo-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
             >
               Continuar <ArrowRight className="w-4 h-4" />
             </button>
