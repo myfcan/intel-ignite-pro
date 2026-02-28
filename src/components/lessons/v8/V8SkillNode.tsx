@@ -59,7 +59,7 @@ export const V8SkillNode = ({ title, status, index, isFirst, onClick }: V8SkillN
       whileTap={!isLocked ? { scale: 0.94 } : undefined}
       onClick={isLocked ? undefined : onClick}
       disabled={isLocked}
-    className={`relative w-[72px] h-[72px] rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+      className={`relative w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
         isLocked ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
       }`}
       style={{
@@ -69,7 +69,7 @@ export const V8SkillNode = ({ title, status, index, isFirst, onClick }: V8SkillN
       }}
       aria-label={`Aula ${index + 1}: ${title}`}
     >
-      <IconComponent className={`w-8 h-8 ${isLocked ? "text-gray-400" : status === "available" ? "text-violet-600" : "text-white"}`} />
+      <IconComponent className={`w-9 h-9 ${isLocked ? "text-gray-400" : status === "available" ? "text-violet-600" : "text-white"}`} />
 
       {/* Pulse ring for in-progress */}
       {isInProgress && (
