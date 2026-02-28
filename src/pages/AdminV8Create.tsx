@@ -2,11 +2,12 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, AlertTriangle, Loader2, Play, Pause, Upload, Save, Zap } from "lucide-react";
+import { ArrowLeft, Check, AlertTriangle, Loader2, Play, Pause, Upload, Save, Zap, FileText, Code } from "lucide-react";
 import { motion } from "framer-motion";
 import { V8LessonData, V8Section, V8InlineQuiz, V8InlinePlayground } from "@/types/v8Lesson";
 import { Json } from "@/integrations/supabase/types";
 import { V7PipelineMonitor, PipelineStep, PipelineLog } from "@/components/admin/V7PipelineMonitor";
+import { parseFullContent } from "@/lib/v8ContentParser";
 
 // ─── Types ───
 interface AudioResult {
@@ -183,6 +184,10 @@ export default function AdminV8Create() {
   const [savedLessonId, setSavedLessonId] = useState<string | null>(null);
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+
+  // Content mode
+  const [editorMode, setEditorMode] = useState<"content" | "json">("content");
+  const [contentText, setContentText] = useState("");
 
   // Pipeline monitor state
   const [pipelineSteps, setPipelineSteps] = useState<PipelineStep[]>([]);
@@ -416,6 +421,27 @@ export default function AdminV8Create() {
     }
   }, [jsonText, savedLessonId, lessonTitle, estimatedTime, toast]);
 
+  const handleConvertContent = useCallback(() => {
+    if (!contentText.trim()) {
+      toast({ title: "❌ Conteúdo vazio", description: "Cole o conteúdo bruto no editor.", variant: "destructive" });
+      return;
+    }
+    try {
+      const data = parseFullContent(contentText);
+      setJsonText(JSON.stringify(data, null, 2));
+      setLessonTitle(data.title);
+      setEditorMode("json");
+      setValidation(null);
+      setStep("edit");
+      toast({
+        title: "✅ Conteúdo convertido!",
+        description: `${data.sections.length} seções, ${data.inlineQuizzes.length} quizzes, ${data.inlinePlaygrounds?.length || 0} playgrounds extraídos`,
+      });
+    } catch (e) {
+      toast({ title: "❌ Erro na conversão", description: (e as Error).message, variant: "destructive" });
+    }
+  }, [contentText, toast]);
+
   const toggleAudioPreview = (url: string) => {
     if (playingAudioUrl === url && audioElement) {
       audioElement.pause();
@@ -487,24 +513,68 @@ export default function AdminV8Create() {
           <p className="text-[10px] text-slate-600 mt-2">💡 Após criar, use o Gerenciador de Lições para mover a aula para uma trilha.</p>
         </motion.div>
 
-        {/* ─── JSON EDITOR ─── */}
+        {/* ─── EDITOR (Content / JSON toggle) ─── */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className={cardStyle}>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-300">JSON (V8LessonData)</h2>
-            <button
-              onClick={handleValidate}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-semibold hover:bg-indigo-500/30 transition-colors"
-            >
-              <Check className="w-3.5 h-3.5" />
-              Validar JSON
-            </button>
+            {/* Toggle */}
+            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-white/5 border border-white/10">
+              <button
+                onClick={() => setEditorMode("content")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${editorMode === "content" ? "bg-indigo-500/30 text-indigo-300" : "text-slate-500 hover:text-slate-300"}`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Conteúdo
+              </button>
+              <button
+                onClick={() => setEditorMode("json")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${editorMode === "json" ? "bg-indigo-500/30 text-indigo-300" : "text-slate-500 hover:text-slate-300"}`}
+              >
+                <Code className="w-3.5 h-3.5" />
+                JSON
+              </button>
+            </div>
+
+            {editorMode === "content" ? (
+              <button
+                onClick={handleConvertContent}
+                disabled={!contentText.trim()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                Converter para JSON
+              </button>
+            ) : (
+              <button
+                onClick={handleValidate}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-semibold hover:bg-indigo-500/30 transition-colors"
+              >
+                <Check className="w-3.5 h-3.5" />
+                Validar JSON
+              </button>
+            )}
           </div>
-          <textarea
-            value={jsonText}
-            onChange={(e) => { setJsonText(e.target.value); setValidation(null); setStep("edit"); }}
-            className="w-full h-80 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 resize-y"
-            spellCheck={false}
-          />
+
+          {editorMode === "content" ? (
+            <>
+              <textarea
+                value={contentText}
+                onChange={(e) => setContentText(e.target.value)}
+                placeholder={"# Título da Aula\n\nDescrição opcional...\n\n## Seção 1 — Introdução\nConteúdo markdown aqui...\n\n[PLAYGROUND]\ntitle: Teste na Prática\ninstruction: Compare os dois prompts...\n...\n\n[QUIZ]\nquestion: Qual a diferença?\noptions:\n- [x] Resposta correta\n- [ ] Errada\nexplanation: Porque..."}
+                className="w-full h-96 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 resize-y placeholder:text-slate-700"
+                spellCheck={false}
+              />
+              <p className="text-[10px] text-slate-600 mt-2">
+                💡 Use <code className="text-slate-500">## Título</code> para seções, <code className="text-slate-500">[PLAYGROUND]</code> e <code className="text-slate-500">[QUIZ]</code> para interações inline. Clique "Converter" para gerar o JSON automaticamente.
+              </p>
+            </>
+          ) : (
+            <textarea
+              value={jsonText}
+              onChange={(e) => { setJsonText(e.target.value); setValidation(null); setStep("edit"); }}
+              className="w-full h-80 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500 resize-y"
+              spellCheck={false}
+            />
+          )}
         </motion.div>
 
         {/* ─── VALIDATION RESULT ─── */}
