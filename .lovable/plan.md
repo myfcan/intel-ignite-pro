@@ -1,138 +1,116 @@
 
 
-# Plano em 3 Partes: Re-design + Voz + Imagens V8
+# Plano: Upgrade Visual da Skill Tree V8 (Inspirado no Coursiv)
+
+Comparando as screenshots do Coursiv com o estado atual do nosso codigo, existem 5 melhorias especificas a implementar.
 
 ---
 
-## PARTE 1: Re-design da Jornada V8 (Estilo App Mobile Premium)
+## O Que Muda (5 Pontos)
 
-### Estado Atual (dados reais do codigo)
+### 1. Conexoes mais perceptiveis e grossas
 
-**V8TrailDetail.tsx** (L130-244):
-- Banner gigante de ~220px com gradiente `#6366F1 → #7C3AED → #8B5CF6`
-- Icone de 80px dentro de container glassmorphism
-- Badge "READ & LISTEN" no header
-- Box separado de progresso com texto "4/5 aulas completas"
-- Barra de progresso grossa (h-3)
+**Atual** (`V8SkillTree.tsx` L59-60):
+- `strokeWidth`: 2.5 (completed) ou 1.5 (outros)
+- Cores fracas: `hsl(258, 50%, 78%)` para available, `hsl(220, 14%, 88%)` para locked
 
-**V8SkillTree.tsx** (L30-324):
-- Circulos de 60x68px em zigzag (pattern: center, right, center, left)
-- Popover ao clicar (AnimatePresence, 240-280px de largura)
-- Sem titulo visivel nos nos — precisa clicar para ver nome da aula
-- Certificado como circulo grande no final
+**Coursiv**: Linhas visivelmente mais grossas (~3-4px), com cor solida violeta para ativas e cinza claro para locked.
 
-**V8SkillNode.tsx** (L38-111):
-- Circulos com gradiente violeta, sem label
-- Badge de indice numerico no canto inferior direito
-- Icone generico por status (Lock/CheckCircle2/Play)
+**Correcao**:
+- `strokeWidth`: 3.5 para completed, 2.5 para available, 2 para locked
+- Cores mais fortes: violeta-500 solido para completed, violeta-300 para available, gray-300 para locked
+- Remover `strokeDasharray` (tracejado) -- linhas solidas como no Coursiv
 
-### O Que Sera Feito
+### 2. Icones maiores (mantendo nosso estilo moderno)
 
-**V8TrailDetail.tsx — Header compacto estilo app**
-- Remover banner gradiente de 220px
-- Header fixo compacto (~56px): botao voltar + titulo centralizado + pill de progresso %
-- Card horizontal compacto de "Unidade" (icone 40px + label "UNIDADE 1" + titulo da trilha)
-- Card de certificado/progresso slim (icone trophy/lock, barra fina, texto motivacional)
-- Body com padding-top para compensar header fixo
-- Fundo limpo `#FAFBFC` sem ruido visual
+**Atual** (`V8SkillNode.tsx` L62):
+- Container: `w-14 h-14` (56px)
+- Icone interno: `w-6 h-6` (24px)
 
-**V8SkillTree.tsx — Nos com labels visiveis e navegacao direta**
-- REMOVER popover intermediario (AnimatePresence + selectedId)
-- Titulo da aula VISIVEL ao lado do no, alternando esquerda/direita no zigzag
-- Click direto dispara `onLessonClick` (sem etapa intermediaria)
-- Certificado movido para V8TrailDetail como card separado (nao mais dentro da arvore)
-- SVG connectors simplificados: sem glow excessivo, cores limpas
+**Coursiv**: Icones visivelmente maiores (~64-72px container)
 
-**V8SkillNode.tsx — Containers premium com icone contextual**
-- Mudar de circulo (60x68) para container arredondado (56x56 `rounded-2xl`)
-- Manter icone contextual via `getLessonIcon(title)` para nos disponiveis
-- Badge "Inicio" condicional no primeiro no disponivel (substitui badge numerico)
-- Remover badge numerico no canto
-- Opacity e cursor corretos para locked
+**Correcao**:
+- Container: `w-16 h-16` (64px) -- maior mas ainda arredondado `rounded-2xl`
+- Icone interno: `w-7 h-7` (28px)
+- Manter nosso gradiente violeta premium (mais moderno que o Coursiv)
 
-### Arquivos modificados
+### 3. Licoes nao iniciadas ficam desativadas visualmente
 
-| Arquivo | Acao |
+**Atual** (`V8SkillNode.tsx` L62-63):
+- Locked: `opacity-50` -- muito sutil
+- Available (nao iniciado): mesma intensidade visual que in_progress -- NAO diferencia
+
+**Coursiv**: Licoes bloqueadas aparecem com cor palida/lavanda, claramente diferentes das ativas.
+
+**Correcao**:
+- Locked: `opacity-40` + background `hsl(250, 20%, 92%)` (lavanda palido) + border mais clara
+- Available (nao iniciado ainda): background lavanda medio `hsl(258, 40%, 85%)` -- mais suave que o in_progress/completed que usa violeta forte
+- Apenas `in_progress` e `completed` usam o gradiente violeta intenso
+
+### 4. Card de certificado mais realista (mockup visual)
+
+**Atual** (`V8TrailDetail.tsx` L172-208):
+- Card simples com icone Lock/Trophy + texto + barra de progresso
+- Visual basico, sem impacto
+
+**Coursiv (screenshot 1)**: Card aberto com mockup visual de certificado -- moldura com icone de medalha, texto "Obtenha seu certificado", linhas decorativas simulando o documento.
+
+**Correcao**:
+- Redesenhar o card de certificado com um mockup visual inline:
+  - Container com borda tracejada fina (simula moldura de certificado)
+  - Icone de medalha/award centralizado no topo
+  - Texto "Obtenha seu certificado" em bold
+  - 2-3 linhas horizontais cinza simulando texto do certificado
+  - Abaixo do mockup: texto motivacional + barra de progresso
+  - Quando completo: moldura dourada, icone trophy, visual celebratorio
+
+### 5. Efeito de pulso nas linhas de conexao (caminho a seguir)
+
+**Atual**: Linhas estaticas apos animacao inicial de `pathLength`.
+
+**Coursiv**: Sugere visualmente que as linhas sao um caminho ativo.
+
+**Correcao**:
+- Adicionar SVG `<animate>` nos segmentos entre o ultimo no concluido e o proximo disponivel
+- Efeito: `strokeDashoffset` animado continuamente (dash moving effect) -- simula "energia fluindo" pelo caminho
+- Apenas no segmento ATIVO (entre completed e available/in_progress)
+- Segmentos ja concluidos: linha solida sem animacao
+- Segmentos bloqueados: linha fina estatica
+
+---
+
+## Arquivos Modificados
+
+| Arquivo | Mudancas |
 |---|---|
-| `src/pages/V8TrailDetail.tsx` | Reescrever header + card unidade + card certificado |
-| `src/components/lessons/v8/V8SkillTree.tsx` | Remover popover, adicionar labels laterais, click direto |
-| `src/components/lessons/v8/V8SkillNode.tsx` | Container rounded-2xl, remover badge numerico, badge "Inicio" |
+| `src/components/lessons/v8/V8SkillTree.tsx` | Linhas mais grossas, cores mais fortes, efeito pulse no segmento ativo |
+| `src/components/lessons/v8/V8SkillNode.tsx` | Icones maiores (64px), estados visuais diferenciados (locked vs available vs active) |
+| `src/pages/V8TrailDetail.tsx` | Card de certificado com mockup visual realista |
 
----
+## Detalhes Tecnicos
 
-## PARTE 2: Padronizar Voz (Mesma ID + Mesmo Modelo em TUDO)
+### V8SkillTree.tsx - Linhas e Pulse
 
-### Estado Atual (dados reais — voice IDs e model_ids)
-
-| Edge Function | Voice ID | model_id | Status |
-|---|---|---|---|
-| `v8-generate/index.ts` (L10-11) | `Xb7hH8MSUJpSbSDYk0k2` (Alice) | `eleven_v3` | OK |
-| `v7-vv/index.ts` (L6872, L3245) | `Xb7hH8MSUJpSbSDYk0k2` (Alice) | `eleven_v3` | OK |
-| `elevenlabs-tts-contextual/index.ts` (L96, L124) | `Xb7hH8MSUJpSbSDYk0k2` (Alice) | `eleven_v3` | OK |
-| `generate-lesson-audio/index.ts` (L151, L161) | `Xb7hH8MSUJpSbSDYk0k2` (Alice) | `eleven_multilingual_v2` | **ERRADO** |
-| `processar-aula/index.ts` (L20, L213) | `Xb7hH8MSUJpSbSDYk0k2` (Alice) | `eleven_multilingual_v2` | **ERRADO** |
-| `generate-multiple-audios/index.ts` (L28, L47) | `Xb7hH8MSUJpSbSDYk0k2` (Alice) | `eleven_multilingual_v2` | **ERRADO** |
-| `generate-audio-elevenlabs/index.ts` (L38) | `Xb7hH8MSUJpSbSDYk0k2` (default) | `eleven_multilingual_v2` | **ERRADO** |
-| `v7-generate-secret-audio/index.ts` (L46) | `Xb7hH8MSUJpSbSDYk0k2` (Alice) | `eleven_multilingual_v2` | **ERRADO** |
-| `v7-regenerate-audio/index.ts` (L190-191) | `Xb7hH8MSUJpSbSDYk0k2` (Alice) | `eleven_multilingual_v2` | **ERRADO** |
-
-**Resumo**: Voice ID e o MESMO em todos (Alice `Xb7hH8MSUJpSbSDYk0k2`). O problema e EXCLUSIVAMENTE o `model_id`: 5 funcoes usam `eleven_multilingual_v2` em vez de `eleven_v3`. Isso gera vozes com timbre, prosódia e estilo COMPLETAMENTE diferentes mesmo usando a mesma Alice.
-
-### O Que Sera Feito
-
-Atualizar `model_id` de `eleven_multilingual_v2` para `eleven_v3` em 5 edge functions:
-
-| Arquivo | Linha | De | Para |
-|---|---|---|---|
-| `generate-lesson-audio/index.ts` | L161 | `eleven_multilingual_v2` | `eleven_v3` |
-| `processar-aula/index.ts` | L213 | `eleven_multilingual_v2` | `eleven_v3` |
-| `generate-multiple-audios/index.ts` | L47 | `eleven_multilingual_v2` | `eleven_v3` |
-| `generate-audio-elevenlabs/index.ts` | L38 | `eleven_multilingual_v2` | `eleven_v3` |
-| `v7-generate-secret-audio/index.ts` | L46 | `eleven_multilingual_v2` | `eleven_v3` |
-| `v7-regenerate-audio/index.ts` | L191 | `eleven_multilingual_v2` | `eleven_v3` |
-
-Nenhuma mudanca de Voice ID necessaria — ja e a mesma Alice em tudo.
-
----
-
-## PARTE 3: Imagens por Sessao nas Aulas V8
-
-### Estado Atual (dados reais)
-
-**Tipo V8Section** (`src/types/v8Lesson.ts` L15):
-```typescript
-imageUrl?: string;  // Imagem com gradient overlay
+```text
+Segmento COMPLETED:  stroke violet-500, width 3.5, solido
+Segmento ATIVO:      stroke violet-400, width 3, dasharray "8 4", dashoffset animado (pulse)
+Segmento LOCKED:     stroke gray-300, width 2, solido, opacity 0.6
 ```
-O campo JA EXISTE no tipo.
 
-**V8ContentSection.tsx** (L50-55):
-```typescript
-{section.imageUrl && (
-  <div className="relative rounded-2xl overflow-hidden">
-    <img src={section.imageUrl} alt={section.title}
-         className="w-full h-48 sm:h-56 object-cover" />
+O efeito pulse sera implementado com SVG `strokeDasharray` + `strokeDashoffset` animado via framer-motion `animate={{ strokeDashoffset: [0, -24] }}` em loop infinito -- cria a ilusao de fluxo no caminho.
+
+### V8SkillNode.tsx - Estados Visuais
+
+```text
+completed:   bg violeta forte + check icon + sombra violeta
+in_progress: bg violeta forte + play icon + pulse ring (ja existe)
+available:   bg lavanda medio (hsl 258, 40%, 85%) + icon contextual + sombra leve
+locked:      bg cinza palido (hsl 250, 15%, 92%) + lock icon + opacity 40%
 ```
-O componente de renderizacao JA EXISTE e ja renderiza imagens quando `imageUrl` esta preenchido.
 
-**v8ContentParser.ts**: NAO LOCALIZADO no parser — o campo `imageUrl` nunca e extraido do conteudo bruto. Ou seja, mesmo que o usuario escreva `imageUrl: https://...` no conteudo, o parser ignora.
+### V8TrailDetail.tsx - Certificado Mockup
 
-**Tabela `lessons`**: NAO TEM coluna `image_url`. A imagem da aula (capa/thumbnail) nao tem onde ser armazenada no banco fora do JSON `content`.
-
-### O Que Sera Feito
-
-1. **Parser** (`src/lib/v8ContentParser.ts`): Adicionar extracao do campo `imageUrl` dentro de cada secao. No conteudo bruto, o usuario pode escrever `imageUrl: https://...` logo apos o `## Titulo`. O parser mapeia para `V8Section.imageUrl`.
-
-2. **Migracao SQL**: Adicionar coluna `image_url TEXT` na tabela `lessons` para armazenar thumbnail/capa da aula (usada no SkillTree/lista).
-
-3. **V8TrailDetail.tsx**: Atualizar query para incluir `image_url` no select e passar para o componente de lista/arvore para exibir thumbnails.
-
-4. **Admin (AdminV8Create.tsx)**: O JSON ja aceita `imageUrl` por secao. Nenhuma mudanca necessaria no editor JSON. O parser precisa apenas da linha adicional.
-
-### Arquivos modificados
-
-| Arquivo | Acao |
-|---|---|
-| Migracao SQL | `ALTER TABLE lessons ADD COLUMN image_url TEXT` |
-| `src/lib/v8ContentParser.ts` | Extrair `imageUrl` de cada secao |
-| `src/pages/V8TrailDetail.tsx` | Incluir `image_url` na query + passar para componente |
+Novo layout do card de certificado com visual de documento:
+- Borda `border-dashed border-gray-200` (nao completo) ou `border-amber-300` (completo)
+- Interior com icone Award centralizado, linhas decorativas, e barra de progresso no rodape
 
