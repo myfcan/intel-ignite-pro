@@ -100,7 +100,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
                 transform: "translateX(-50%)",
               }}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
                 {/* Label on left side */}
                 {labelSide === "right" && (
                   <LessonLabel lesson={lesson} isFirst={isFirst} align="right" />
@@ -137,7 +137,7 @@ function LessonLabel({ lesson, isFirst, align }: { lesson: LessonItem; isFirst: 
       initial={{ opacity: 0, x: align === "left" ? -8 : 8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
-      className={`relative z-20 px-3 py-1.5 rounded-xl bg-[#FAFBFC] w-[220px] sm:w-[280px] ${align === "right" ? "mr-2 text-right" : "ml-2 text-left"}`}
+      className={`relative z-20 px-3 py-1.5 rounded-xl bg-[#FAFBFC] w-[220px] sm:w-[280px] ${align === "right" ? "mr-0 text-right" : "ml-0 text-left"}`}
     >
       {isFirst && (
         <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-violet-100 text-violet-600 mb-1">
