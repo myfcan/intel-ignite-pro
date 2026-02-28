@@ -16,23 +16,23 @@ interface V8SkillNodeProps {
 const STATUS_STYLES: Record<NodeStatus, { bg: string; shadow: string; border: string }> = {
   completed: {
     bg: "linear-gradient(135deg, hsl(258 90% 56%), hsl(270 76% 68%))",
-    shadow: "0 4px 16px rgba(124, 58, 237, 0.3)",
-    border: "2px solid hsl(258, 70%, 75%)",
+    shadow: "0 6px 20px rgba(124, 58, 237, 0.35)",
+    border: "2.5px solid hsl(258, 70%, 75%)",
   },
   in_progress: {
     bg: "linear-gradient(135deg, hsl(258 90% 56%), hsl(270 76% 68%))",
-    shadow: "0 4px 20px rgba(124, 58, 237, 0.4)",
-    border: "2px solid hsl(258, 80%, 70%)",
+    shadow: "0 6px 24px rgba(124, 58, 237, 0.45)",
+    border: "2.5px solid hsl(258, 80%, 70%)",
   },
   available: {
-    bg: "linear-gradient(135deg, hsl(258 75% 62%), hsl(270 65% 72%))",
-    shadow: "0 4px 12px rgba(124, 58, 237, 0.2)",
-    border: "2px solid hsl(258, 50%, 80%)",
+    bg: "hsl(258, 40%, 85%)",
+    shadow: "0 3px 10px rgba(124, 58, 237, 0.12)",
+    border: "2px solid hsl(258, 30%, 88%)",
   },
   locked: {
-    bg: "linear-gradient(135deg, hsl(220 10% 88%), hsl(220 10% 92%))",
-    shadow: "0 2px 6px rgba(0,0,0,0.06)",
-    border: "1.5px solid hsl(220, 14%, 85%)",
+    bg: "hsl(250, 15%, 92%)",
+    shadow: "0 2px 4px rgba(0,0,0,0.04)",
+    border: "1.5px solid hsl(250, 10%, 88%)",
   },
 };
 
@@ -59,8 +59,8 @@ export const V8SkillNode = ({ title, status, index, isFirst, onClick }: V8SkillN
       whileTap={!isLocked ? { scale: 0.94 } : undefined}
       onClick={isLocked ? undefined : onClick}
       disabled={isLocked}
-      className={`relative w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-        isLocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+      className={`relative w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+        isLocked ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
       }`}
       style={{
         background: style.bg,
@@ -69,7 +69,7 @@ export const V8SkillNode = ({ title, status, index, isFirst, onClick }: V8SkillN
       }}
       aria-label={`Aula ${index + 1}: ${title}`}
     >
-      <IconComponent className={`w-6 h-6 ${isLocked ? "text-gray-500" : "text-white"}`} />
+      <IconComponent className={`w-7 h-7 ${isLocked ? "text-gray-400" : status === "available" ? "text-violet-600" : "text-white"}`} />
 
       {/* Pulse ring for in-progress */}
       {isInProgress && (

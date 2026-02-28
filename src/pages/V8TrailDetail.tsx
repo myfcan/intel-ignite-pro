@@ -169,36 +169,45 @@ export default function V8TrailDetail() {
           </div>
         </div>
 
-        {/* ── Certificate / Progress Card ── */}
-        <div className={`rounded-2xl border p-4 mb-6 ${
+        {/* ── Certificate Mockup Card ── */}
+        <div className={`rounded-2xl p-5 mb-6 ${
           allCompleted 
-            ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200/60 shadow-md"
-            : "bg-white border-gray-100 shadow-sm"
+            ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-lg"
+            : "bg-white shadow-sm"
         }`}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-              allCompleted
-                ? "bg-amber-100"
-                : "bg-gray-100"
-            }`}>
-              {allCompleted ? (
-                <Trophy className="w-5 h-5 text-amber-600" />
-              ) : (
-                <Lock className="w-4 h-4 text-gray-400" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm font-semibold ${allCompleted ? "text-amber-800" : "text-gray-700"}`}>
-                {allCompleted ? "🎉 Certificado disponível!" : "Obtenha seu certificado"}
+          {/* Certificate document mockup */}
+          <div className={`rounded-xl p-4 mb-4 border-2 border-dashed ${
+            allCompleted ? "border-amber-300 bg-white/70" : "border-gray-200 bg-gray-50/50"
+          }`}>
+            <div className="flex flex-col items-center text-center py-2">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                allCompleted ? "bg-amber-100" : "bg-gray-100"
+              }`}>
+                {allCompleted ? (
+                  <Trophy className="w-6 h-6 text-amber-500" />
+                ) : (
+                  <Award className="w-6 h-6 text-gray-400" />
+                )}
+              </div>
+              <p className={`text-sm font-bold mb-1 ${allCompleted ? "text-amber-800" : "text-gray-600"}`}>
+                {allCompleted ? "🎉 Certificado Disponível!" : "Obtenha seu certificado"}
               </p>
-              <p className={`text-xs ${allCompleted ? "text-amber-600" : "text-gray-400"}`}>
-                {allCompleted 
-                  ? "Parabéns! Você completou todas as aulas." 
-                  : `Complete ${totalLessons - completedCount} aula${totalLessons - completedCount !== 1 ? 's' : ''} restante${totalLessons - completedCount !== 1 ? 's' : ''}`
-                }
-              </p>
+              {/* Decorative lines simulating certificate text */}
+              <div className="w-full space-y-1.5 mt-2 px-4">
+                <div className={`h-1.5 rounded-full mx-auto ${allCompleted ? "bg-amber-200 w-3/4" : "bg-gray-200 w-3/4"}`} />
+                <div className={`h-1.5 rounded-full mx-auto ${allCompleted ? "bg-amber-100 w-1/2" : "bg-gray-150 w-1/2"}`} style={{ backgroundColor: allCompleted ? undefined : 'hsl(220, 14%, 92%)' }} />
+                <div className={`h-1.5 rounded-full mx-auto ${allCompleted ? "bg-amber-100 w-2/3" : "bg-gray-150 w-2/3"}`} style={{ backgroundColor: allCompleted ? undefined : 'hsl(220, 14%, 94%)' }} />
+              </div>
             </div>
           </div>
+          
+          {/* Progress footer */}
+          <p className={`text-xs mb-2 ${allCompleted ? "text-amber-600 font-semibold" : "text-gray-400"}`}>
+            {allCompleted 
+              ? "Parabéns! Todas as aulas concluídas." 
+              : `Complete ${totalLessons - completedCount} aula${totalLessons - completedCount !== 1 ? 's' : ''} restante${totalLessons - completedCount !== 1 ? 's' : ''}`
+            }
+          </p>
           <div className="flex items-center gap-3">
             <Progress value={overallProgress} className="flex-1 h-2" />
             <span className={`text-xs font-bold ${allCompleted ? "text-amber-700" : "text-gray-500"}`}>
