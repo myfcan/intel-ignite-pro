@@ -36,6 +36,11 @@ interface GenerateRequest {
   lessonId: string;
   sections: V8Section[];
   quizzes?: V8InlineQuiz[];
+  playgrounds?: Array<{
+    id: string;
+    narration?: string;
+    instruction: string;
+  }>;
 }
 
 interface AudioResult {
@@ -96,13 +101,13 @@ serve(async (req) => {
 
     // ─── 2. PARSE & VALIDATE INPUT ───
     const body: GenerateRequest = await req.json();
-    const { lessonId, sections, quizzes = [] } = body;
+    const { lessonId, sections, quizzes = [], playgrounds = [] } = body;
 
     if (!lessonId || !sections?.length) {
       return jsonError('lessonId and sections[] are required', 400);
     }
 
-    console.log(`[v8-generate] 🚀 Starting for lesson ${lessonId}: ${sections.length} sections, ${quizzes.length} quizzes`);
+    console.log(`[v8-generate] 🚀 Starting for lesson ${lessonId}: ${sections.length} sections, ${quizzes.length} quizzes, ${playgrounds.length} playgrounds`);
 
     // ─── 3. ELEVENLABS API KEY ───
     const elevenLabsKey = Deno.env.get('ELEVENLABS_API_KEY_1') || Deno.env.get('ELEVENLABS_API_KEY');
@@ -197,6 +202,37 @@ serve(async (req) => {
           const msg = err instanceof Error ? err.message : String(err);
           errors.push({ index: i, type: 'quiz-reinforcement', error: msg });
         }
+      }
+    }
+
+    // ─── 5b. GENERATE AUDIO FOR PLAYGROUNDS (narration field) ───
+    for (let i = 0; i < playgrounds.length; i++) {
+      const pg = playgrounds[i];
+      const narrationText = pg.narration?.trim();
+      if (!narrationText) {
+        console.log(`[v8-generate] ⏭️ Skipping playground ${i} (no narration)`);
+        continue;
+      }
+
+      try {
+        const audioBuffer = await generateTTS(elevenLabsKey, narrationText);
+        const storagePath = `v8/${lessonId}/playground-${i}.mp3`;
+        const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
+        const durationEstimate = estimateDuration(audioBuffer.byteLength);
+
+        results.push({
+          index: i,
+          type: 'playground' as any,
+          audioUrl: publicUrl,
+          durationEstimate,
+          sizeKB: Math.round(audioBuffer.byteLength / 1024),
+        });
+
+        console.log(`[v8-generate] ✅ Playground ${i}: ${(audioBuffer.byteLength / 1024).toFixed(1)}KB`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[v8-generate] ❌ Playground ${i} failed:`, msg);
+        errors.push({ index: i, type: 'playground', error: msg });
       }
     }
 

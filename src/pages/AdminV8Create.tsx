@@ -4,14 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check, AlertTriangle, Loader2, Play, Pause, Upload, Save, Zap } from "lucide-react";
 import { motion } from "framer-motion";
-import { V8LessonData, V8Section, V8InlineQuiz } from "@/types/v8Lesson";
+import { V8LessonData, V8Section, V8InlineQuiz, V8InlinePlayground } from "@/types/v8Lesson";
 import { Json } from "@/integrations/supabase/types";
 import { V7PipelineMonitor, PipelineStep, PipelineLog } from "@/components/admin/V7PipelineMonitor";
 
 // ─── Types ───
 interface AudioResult {
   index: number;
-  type: "section" | "quiz" | "quiz-reinforcement";
+  type: "section" | "quiz" | "quiz-reinforcement" | "playground";
   audioUrl: string;
   durationEstimate: number;
   sizeKB: number;
@@ -32,6 +32,7 @@ interface ValidationResult {
   valid: boolean;
   sectionCount: number;
   quizCount: number;
+  playgroundCount: number;
   exerciseCount: number;
   warnings: string[];
   errors: string[];
@@ -42,6 +43,7 @@ function validateV8Json(raw: unknown): ValidationResult {
     valid: true,
     sectionCount: 0,
     quizCount: 0,
+    playgroundCount: 0,
     exerciseCount: 0,
     warnings: [],
     errors: [],
@@ -78,6 +80,8 @@ function validateV8Json(raw: unknown): ValidationResult {
     });
   }
 
+  const sectionsLength = Array.isArray(data.sections) ? data.sections.length : 0;
+
   // Inline quizzes
   if (Array.isArray(data.inlineQuizzes)) {
     result.quizCount = data.inlineQuizzes.length;
@@ -88,8 +92,39 @@ function validateV8Json(raw: unknown): ValidationResult {
       }
       const correct = q.options?.filter((o) => o.isCorrect);
       if (!correct?.length) result.errors.push(`Quiz ${i}: nenhuma opção correta`);
-      if (q.afterSectionIndex >= (data.sections as V8Section[]).length) {
-        result.warnings.push(`Quiz ${i}: afterSectionIndex (${q.afterSectionIndex}) >= total de sections`);
+      if (q.afterSectionIndex < 0 || q.afterSectionIndex >= sectionsLength) {
+        result.errors.push(`Quiz ${i}: afterSectionIndex (${q.afterSectionIndex}) fora do range [0, ${sectionsLength - 1}]`);
+      }
+    });
+  }
+
+  // Inline playgrounds
+  if (Array.isArray(data.inlinePlaygrounds)) {
+    result.playgroundCount = (data.inlinePlaygrounds as V8InlinePlayground[]).length;
+    (data.inlinePlaygrounds as V8InlinePlayground[]).forEach((pg, i) => {
+      if (!pg.title) result.errors.push(`Playground ${i}: falta title`);
+      if (!pg.instruction || pg.instruction.length < 40) {
+        result.errors.push(`Playground ${i}: instruction deve ter >= 40 caracteres`);
+      }
+      if (!pg.amateurPrompt) result.errors.push(`Playground ${i}: falta amateurPrompt`);
+      if (!pg.professionalPrompt) result.errors.push(`Playground ${i}: falta professionalPrompt`);
+      if (pg.amateurPrompt === pg.professionalPrompt) {
+        result.errors.push(`Playground ${i}: amateurPrompt e professionalPrompt são iguais`);
+      }
+      if (pg.amateurPrompt?.length > 2000) result.warnings.push(`Playground ${i}: amateurPrompt muito longo (>2000 chars)`);
+      if (pg.professionalPrompt?.length > 2000) result.warnings.push(`Playground ${i}: professionalPrompt muito longo (>2000 chars)`);
+      if (!pg.successMessage) result.errors.push(`Playground ${i}: falta successMessage`);
+      if (!pg.tryAgainMessage) result.errors.push(`Playground ${i}: falta tryAgainMessage`);
+      if (pg.afterSectionIndex < 0 || pg.afterSectionIndex >= sectionsLength) {
+        result.errors.push(`Playground ${i}: afterSectionIndex (${pg.afterSectionIndex}) fora do range [0, ${sectionsLength - 1}]`);
+      }
+      if (pg.userChallenge) {
+        if (pg.userChallenge.hints?.length > 3) {
+          result.errors.push(`Playground ${i}: máximo 3 hints`);
+        }
+        if (!pg.userChallenge.evaluationCriteria?.length) {
+          result.warnings.push(`Playground ${i}: challenge sem evaluationCriteria`);
+        }
       }
     });
   }
@@ -117,6 +152,7 @@ const DEFAULT_JSON: V8LessonData = {
     },
   ],
   inlineQuizzes: [],
+  inlinePlaygrounds: [],
   exercises: [],
 };
 
@@ -179,12 +215,12 @@ export default function AdminV8Create() {
       if (result.valid) {
         setLessonTitle(parsed.title || lessonTitle);
         setStep("validate");
-        toast({ title: "✅ JSON válido", description: `${result.sectionCount} seções, ${result.quizCount} quizzes, ${result.exerciseCount} exercícios` });
+        toast({ title: "✅ JSON válido", description: `${result.sectionCount} seções, ${result.quizCount} quizzes, ${result.playgroundCount} playgrounds, ${result.exerciseCount} exercícios` });
       } else {
         toast({ title: "❌ Erros encontrados", description: result.errors.join("; "), variant: "destructive" });
       }
     } catch (e) {
-      setValidation({ valid: false, sectionCount: 0, quizCount: 0, exerciseCount: 0, warnings: [], errors: ["JSON parse error: " + (e as Error).message] });
+      setValidation({ valid: false, sectionCount: 0, quizCount: 0, playgroundCount: 0, exerciseCount: 0, warnings: [], errors: ["JSON parse error: " + (e as Error).message] });
       toast({ title: "❌ JSON inválido", description: (e as Error).message, variant: "destructive" });
     }
   }, [jsonText, lessonTitle, toast]);
@@ -247,6 +283,7 @@ export default function AdminV8Create() {
             lessonId,
             sections: parsed.sections,
             quizzes: parsed.inlineQuizzes,
+            playgrounds: parsed.inlinePlaygrounds || [],
           }),
         }
       );
@@ -284,6 +321,8 @@ export default function AdminV8Create() {
           updatedData.inlineQuizzes[r.index].audioUrl = r.audioUrl;
         } else if (r.type === "quiz-reinforcement" && updatedData.inlineQuizzes[r.index]) {
           updatedData.inlineQuizzes[r.index].reinforcementAudioUrl = r.audioUrl;
+        } else if (r.type === "playground" && updatedData.inlinePlaygrounds?.[r.index]) {
+          updatedData.inlinePlaygrounds[r.index].audioUrl = r.audioUrl;
         }
       }
       setJsonText(JSON.stringify(updatedData, null, 2));
@@ -477,7 +516,7 @@ export default function AdminV8Create() {
                 {validation.valid ? "✅ Válido" : "❌ Inválido"}
               </span>
               <span className="text-xs text-slate-500">
-                {validation.sectionCount} seções · {validation.quizCount} quizzes · {validation.exerciseCount} exercícios
+                {validation.sectionCount} seções · {validation.quizCount} quizzes · {validation.playgroundCount} playgrounds · {validation.exerciseCount} exercícios
               </span>
             </div>
             {validation.errors.length > 0 && (

@@ -37,6 +37,55 @@ export interface V8InlineQuiz {
 }
 
 /**
+ * V8InlinePlayground — Playground inserido ENTRE seções
+ * Trigger: aparece após sections[afterSectionIndex] via timeline
+ * Ordenação: playground ANTES de quiz quando mesmo afterSectionIndex
+ */
+export interface V8InlinePlayground {
+  id: string;                    // ex: 'playground-01'
+  afterSectionIndex: number;     // 0-based, validado: 0 <= x < sections.length
+
+  // UI (exibido na tela)
+  title: string;                 // "Teste na Prática"
+  subtitle?: string;
+  instruction: string;           // Texto curto de UI (>= 40 chars)
+
+  // Narração (separada da UI para áudio de qualidade)
+  narration?: string;            // Texto narrado com tags de emoção
+  audioUrl?: string;             // Áudio gerado a partir de narration
+
+  // Prompts comparativos
+  amateurPrompt: string;         // != professionalPrompt (validado)
+  professionalPrompt: string;
+  amateurResult?: string;        // Se preenchido: usa direto (híbrido)
+  professionalResult?: string;   // Se vazio: chama IA na hora
+
+  // Desafio do usuário
+  userChallenge?: {
+    instruction: string;
+    challengePrompt: string;
+    hints: string[];             // max 3 (validado)
+    evaluationCriteria: string[];// ex: "tem objetivo claro", "pede formato"
+    scoring?: {
+      maxScore: number;
+      rubric: Array<{ criterion: string; points: number }>;
+    };
+    maxAttempts?: number;        // default 3
+  };
+
+  // Feedback explícito
+  successMessage: string;        // Ação, não motivação vazia
+  tryAgainMessage: string;
+  hintOnFail?: string[];
+
+  // Fallback offline
+  offlineFallback?: {
+    message: string;
+    exampleAnswer: string;
+  };
+}
+
+/**
  * V8LessonData — Armazenado em lessons.content (JSONB)
  * Discriminado por contentVersion: 'v8'
  */
@@ -46,6 +95,7 @@ export interface V8LessonData {
   description?: string;
   sections: V8Section[];         // Seções de conteúdo
   inlineQuizzes: V8InlineQuiz[]; // Quizzes mid-lesson
+  inlinePlaygrounds?: V8InlinePlayground[]; // Playgrounds mid-lesson
   exercises: ExerciseConfig[];   // Exercícios finais (reutiliza tipo existente)
 }
 
