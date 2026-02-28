@@ -1,67 +1,65 @@
 
-
-# Fix: Parser Ignoring Opening Content (# Title + Intro Paragraph)
+# Update Image Generation Prompts for Coursiv-Style Transparent PNGs
 
 ## Problem
 
-The raw content has this structure:
-
-```
-# O Cérebro do ChatGPT: Como o GPT "pensa"...
-
-Você já pediu algo ao ChatGPT e recebeu uma resposta genérica...
-
-## Seção 1 — Abertura: o que você vai destravar hoje
-...
-```
-
-The parser (`v8ContentParser.ts`) extracts the `#` line as `title` and the paragraph below it as `description` (line 30-40). But `description` is **never rendered** in the player — it's stored in the JSON but completely ignored by `V8LessonPlayer.tsx`.
-
-The `parseSections()` function (line 113-146) only matches `## ` headings, so the intro paragraph between `#` and first `##` is **silently discarded** from the sections array.
-
-## Solution
-
-Convert the intro paragraph into the first section automatically. When the parser detects content between `#` (title) and the first `##` (first section), it creates a "Section 0" (Abertura) that includes that intro text.
+The current prompts in `v8-generate-section-image` generate generic "professional educational illustrations" with opaque backgrounds, which look out of place on the light-mode Coursiv layout.
 
 ## Changes
 
-### File: `src/lib/v8ContentParser.ts`
+### File: `supabase/functions/v8-generate-section-image/index.ts`
 
-**In `parseFullContent()` (after line 43, before building V8Sections):**
+**Change 1 -- `buildAutoPrompt` function (lines 10-18)**
 
-After parsing sections and extracting `description`, check if `description` has meaningful content (more than 20 chars after trimming). If so, prepend a synthetic section to the `parsedSections` array:
+Replace the current generic prompt with a Coursiv-compatible prompt that requests:
+- Flat/3D illustration style
+- Transparent PNG background (no background, isolated object)
+- Clean, minimal, icon-like aesthetic
+- No text rendered in the image
 
+New prompt template:
 ```typescript
-// If there's intro content between # and first ##, create a "Section 0"
-if (description && description.trim().length > 20) {
-  const introSection: ParsedSection = {
-    title: "Abertura",
-    content: description,
-    position: 0, // Before all ## sections
-  };
-  parsedSections.unshift(introSection);
+function buildAutoPrompt(content: string): string {
+  const cleaned = content
+    .replace(/^#{1,3}\s+.*$/gm, "")
+    .replace(/[*_`~\[\]()>]/g, "")
+    .replace(/\n+/g, " ")
+    .trim();
+  const words = cleaned.split(/\s+/).slice(0, 150).join(" ");
+  return `Create a single isolated 3D illustration object representing this educational concept: ${words}.
+
+Style requirements:
+- Modern flat 3D render, clean and minimal
+- Single object or small composition, centered
+- TRANSPARENT BACKGROUND (no background at all, PNG transparency)
+- Soft gradients, smooth surfaces, rounded edges
+- Vibrant but not neon colors (indigo, violet, sky blue, warm tones)
+- No text, no labels, no UI elements in the image
+- Think Apple/Notion style icons: polished, friendly, professional
+- Subtle shadow underneath the object for depth`;
 }
 ```
 
-This ensures:
-- The intro paragraph becomes `section-01` (Abertura) in the final JSON
-- All `afterSectionIndex` values for quizzes/playgrounds shift correctly because `findAfterSectionIndex` uses position-based logic (position 0 is before all `##` positions)
-- The `description` field remains populated for metadata purposes
-- Existing content without intro paragraphs is unaffected (the condition checks length > 20)
+**Change 2 -- Custom prompt template (line 57)**
 
-### Systemic Effects
+Update the custom mode prompt to also request transparent background:
+```typescript
+prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-| Effect | Impact | Risk |
-|--------|--------|------|
-| Section indices shift by +1 | All quiz/playground `afterSectionIndex` values auto-adjust because they use position-based calculation, not array index | LOW |
-| Audio generation gets extra section | The intro section will be included in TTS generation, producing an additional audio file | LOW |
-| Existing lessons already saved | No impact — only affects NEW content parsing | NONE |
-| Short descriptions (< 20 chars) | Ignored, won't create spurious sections | NONE |
-| Title displayed in section | Will show "Abertura" — clean and short per the title cleanup regex already in V8ContentSection | LOW |
+Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PNG transparency), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons.`;
+```
 
 ### No other files need changes
 
-- `V8ContentSection.tsx` already has the `cleanSectionTitle` regex that strips "Secao X ---" prefixes
-- `V8LessonPlayer.tsx` renders all sections from the array — no filter exists
-- `v8-generate/index.ts` processes all sections in the array — no skip logic
+- `V8SectionSetup.tsx` -- no changes needed, it just passes content/prompt to the edge function
+- `V8ContentSection.tsx` -- already uses `object-contain` for floating image style (from previous plan)
+- The edge function already uploads as `image/png` with upsert
 
+### Systemic Effects
+
+| Effect | Risk |
+|--------|------|
+| All NEW generated images will have transparent backgrounds | LOW -- this is the desired outcome |
+| Existing images remain unchanged (already uploaded to storage) | NONE |
+| Gemini may not always produce perfect transparency | LOW -- the prompt strongly requests it, but AI image gen isn't deterministic |
+| Image preview in V8SectionSetup uses `object-cover` with bg-slate-100 | LOW -- transparent PNGs will show the slate-100 background in preview, which is fine |
