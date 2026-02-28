@@ -45,7 +45,6 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
           const y1 = 20 + i * ROW_HEIGHT + 34;
           const x2 = 200 + getXOffset(i + 1) * 70;
           const y2 = 20 + (i + 1) * ROW_HEIGHT;
-          const cpy = y1 + (y2 - y1) * 0.5;
 
           const isCompleted = lessons[i].status === "completed";
           const nextStatus = lessons[i + 1].status;
@@ -56,28 +55,55 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
             ((currentStatus === "completed" && nextStatus !== "completed") ||
               currentStatus === "available" ||
               currentStatus === "in_progress");
-          const pathD = `M ${x1} ${y1} C ${x1} ${cpy}, ${x2} ${cpy}, ${x2} ${y2}`;
+
+          // Generate dots along a quadratic bezier path
+          const dotCount = 6;
+          const dots: { x: number; y: number }[] = [];
+          for (let d = 1; d <= dotCount; d++) {
+            const t = d / (dotCount + 1);
+            const cx = (x1 + x2) / 2;
+            const cy = y1 + (y2 - y1) * 0.5;
+            const px = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2;
+            const py = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2;
+            dots.push({ x: px, y: py });
+          }
+
+          const dotColor = isCompleted
+            ? "hsl(258, 70%, 58%)"
+            : nextAvailable
+              ? "hsl(258, 45%, 68%)"
+              : "hsl(220, 10%, 82%)";
+          const dotR = isCompleted ? 3 : nextAvailable ? 2.5 : 2;
 
           return (
-            <motion.path
-              key={`line-${i}`}
-              d={pathD}
-              fill="none"
-              stroke={isCompleted ? "hsl(258, 70%, 58%)" : nextAvailable ? "hsl(258, 45%, 68%)" : "hsl(220, 10%, 82%)"}
-              strokeWidth={isCompleted ? 3.5 : nextAvailable ? 2.5 : 2}
-              strokeLinecap="round"
-              strokeDasharray={isActiveSegment ? "5 7" : "none"}
-              opacity={!isCompleted && !nextAvailable ? 0.65 : 1}
-              initial={{ pathLength: 0 }}
-              animate={{
-                pathLength: 1,
-                ...(isActiveSegment ? { strokeDashoffset: [0, -56] } : {})
-              }}
-              transition={isActiveSegment
-                ? { pathLength: { duration: 0.65, delay: i * 0.06 }, strokeDashoffset: { duration: 0.75, repeat: Infinity, ease: "linear" } }
-                : { duration: 0.65, delay: i * 0.06 }
-              }
-            />
+            <g key={`dots-${i}`}>
+              {dots.map((dot, di) => (
+                <motion.circle
+                  key={di}
+                  cx={dot.x}
+                  cy={dot.y}
+                  r={dotR}
+                  fill={dotColor}
+                  initial={{ scale: 0 }}
+                  animate={{
+                    scale: 1,
+                    opacity: !isCompleted && !nextAvailable ? 0.4 : 0.8,
+                    ...(isActiveSegment ? {
+                      r: [dotR, dotR * 1.6, dotR],
+                      opacity: [0.5, 1, 0.5],
+                    } : {})
+                  }}
+                  transition={isActiveSegment
+                    ? {
+                        scale: { duration: 0.3, delay: i * 0.06 + di * 0.05 },
+                        r: { duration: 1.2, repeat: Infinity, delay: di * 0.15, ease: "easeInOut" },
+                        opacity: { duration: 1.2, repeat: Infinity, delay: di * 0.15, ease: "easeInOut" },
+                      }
+                    : { duration: 0.4, delay: i * 0.06 + di * 0.05 }
+                  }
+                />
+              ))}
+            </g>
           );
         })}
       </svg>
