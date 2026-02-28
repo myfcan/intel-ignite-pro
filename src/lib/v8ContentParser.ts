@@ -42,6 +42,16 @@ export function parseFullContent(rawText: string): V8LessonData {
   // 3. Parse sections
   const parsedSections = parseSections(rawText);
 
+  // 3.1 If there's intro content between # and first ##, create a "Section 0"
+  if (description && description.trim().length > 20) {
+    const introSection: ParsedSection = {
+      title: "Abertura",
+      content: description,
+      position: 0,
+    };
+    parsedSections.unshift(introSection);
+  }
+
   // 4. Parse playgrounds (existing)
   const parsedPlaygrounds = parsePlaygroundBlocks(rawText);
 
