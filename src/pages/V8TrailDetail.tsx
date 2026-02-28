@@ -189,13 +189,16 @@ export default function V8TrailDetail() {
           >
             <div className={`rounded-2xl overflow-hidden ${
               allCompleted
-                ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-xl ring-2 ring-amber-300/70"
-                : "bg-white shadow-lg ring-2 ring-amber-200/40"
+                ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-xl"
+                : "bg-white shadow-lg"
             }`}
               style={{
+                border: allCompleted
+                  ? '2.5px solid hsl(43, 80%, 55%)'
+                  : '2.5px solid hsl(43, 65%, 72%)',
                 boxShadow: allCompleted
-                  ? '0 8px 32px rgba(217, 168, 42, 0.25), inset 0 1px 0 rgba(255,255,255,0.6)'
-                  : '0 4px 20px rgba(217, 168, 42, 0.1), inset 0 1px 0 rgba(255,255,255,0.6)'
+                  ? '0 8px 32px rgba(217, 168, 42, 0.30), 0 0 0 4px rgba(217, 168, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)'
+                  : '0 4px 24px rgba(217, 168, 42, 0.15), 0 0 0 4px rgba(217, 168, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.6)'
               }}
             >
               {/* Certificate Header Band */}
