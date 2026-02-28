@@ -1,32 +1,211 @@
-import { V8InlinePlayground } from "@/types/v8Lesson";
+import { V8InlinePlayground, V8InlineQuiz, V8Section, V8LessonData } from "@/types/v8Lesson";
 
-/**
- * Parse [PLAYGROUND] blocks from raw content text.
- *
- * Format:
- * [PLAYGROUND]
- * title: Teste na Prática
- * instruction: Compare os dois prompts...
- * narration: [excited] Agora você vai sentir...
- * amateurPrompt: me fala sobre marketing
- * professionalPrompt: Crie 3 estratégias...
- * successMessage: Boa! Você desbloqueou...
- * tryAgainMessage: Quase lá...
- * hints:
- * - Diga o objetivo
- * - Dê contexto
- * - Peça formato
- */
+// ─── Types ───
 
 interface ParsedPlayground {
   playground: Omit<V8InlinePlayground, "id" | "afterSectionIndex">;
-  /** Position in the raw text (char index) for ordering */
   position: number;
 }
 
+interface ParsedSection {
+  title: string;
+  content: string;
+  position: number;
+}
+
+interface ParsedQuiz {
+  quiz: Omit<V8InlineQuiz, "id" | "afterSectionIndex">;
+  position: number;
+}
+
+// ═══════════════════════════════════════════════
+// parseFullContent — Master function
+// ═══════════════════════════════════════════════
+
+export function parseFullContent(rawText: string): V8LessonData {
+  // 1. Extract title from first # line
+  const titleMatch = rawText.match(/^#\s+(.+)$/m);
+  const title = titleMatch ? titleMatch[1].trim() : "Aula sem título";
+
+  // 2. Extract description (text between # and first ##)
+  let description = "";
+  if (titleMatch) {
+    const afterTitle = rawText.slice(titleMatch.index! + titleMatch[0].length);
+    const firstSectionIdx = afterTitle.search(/^##\s/m);
+    const firstBlockIdx = afterTitle.search(/^\[(?:PLAYGROUND|QUIZ)\]/m);
+    let endIdx = afterTitle.length;
+    if (firstSectionIdx !== -1) endIdx = Math.min(endIdx, firstSectionIdx);
+    if (firstBlockIdx !== -1) endIdx = Math.min(endIdx, firstBlockIdx);
+    description = afterTitle.slice(0, endIdx).trim();
+  }
+
+  // 3. Parse sections
+  const parsedSections = parseSections(rawText);
+
+  // 4. Parse playgrounds (existing)
+  const parsedPlaygrounds = parsePlaygroundBlocks(rawText);
+
+  // 5. Parse quizzes
+  const parsedQuizzes = parseQuizBlocks(rawText);
+
+  // 6. Build section positions for afterSectionIndex calculation
+  const sectionPositions = parsedSections.map(s => s.position);
+
+  // Helper: find afterSectionIndex for a given position
+  const findAfterSectionIndex = (pos: number): number => {
+    let idx = 0;
+    for (let i = sectionPositions.length - 1; i >= 0; i--) {
+      if (sectionPositions[i] < pos) {
+        idx = i;
+        break;
+      }
+    }
+    return idx;
+  };
+
+  // 7. Build V8Sections
+  const sections: V8Section[] = parsedSections.map((s, i) => ({
+    id: `section-${String(i + 1).padStart(2, "0")}`,
+    title: s.title,
+    content: s.content,
+    audioUrl: "",
+  }));
+
+  // 8. Build V8InlinePlaygrounds
+  const inlinePlaygrounds: V8InlinePlayground[] = parsedPlaygrounds.map((pg, i) => ({
+    ...pg.playground,
+    id: `playground-${String(i + 1).padStart(2, "0")}`,
+    afterSectionIndex: findAfterSectionIndex(pg.position),
+  }));
+
+  // 9. Build V8InlineQuizzes
+  const inlineQuizzes: V8InlineQuiz[] = parsedQuizzes.map((q, i) => ({
+    ...q.quiz,
+    id: `quiz-${String(i + 1).padStart(2, "0")}`,
+    afterSectionIndex: findAfterSectionIndex(q.position),
+  }));
+
+  return {
+    contentVersion: "v8",
+    title,
+    description: description || undefined,
+    sections,
+    inlineQuizzes,
+    inlinePlaygrounds: inlinePlaygrounds.length > 0 ? inlinePlaygrounds : [],
+    exercises: [],
+  };
+}
+
+// ═══════════════════════════════════════════════
+// parseSections — Extract ## headings
+// ═══════════════════════════════════════════════
+
+export function parseSections(rawText: string): ParsedSection[] {
+  const results: ParsedSection[] = [];
+  const sectionRegex = /^##\s+(.+)$/gm;
+
+  const matches: Array<{ title: string; index: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = sectionRegex.exec(rawText)) !== null) {
+    matches.push({ title: m[1].trim(), index: m.index });
+  }
+
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].index + rawText.slice(matches[i].index).indexOf("\n") + 1;
+    const end = i + 1 < matches.length ? matches[i + 1].index : rawText.length;
+
+    // Get raw content between this ## and next ## (or end)
+    let content = rawText.slice(start, end);
+
+    // Remove any [PLAYGROUND] or [QUIZ] blocks from section content
+    content = content
+      .replace(/\[PLAYGROUND\]\s*\n[\s\S]*?(?=\n##\s|\n\[(?:PLAYGROUND|QUIZ)\]|\s*$)/gi, "")
+      .replace(/\[QUIZ\]\s*\n[\s\S]*?(?=\n##\s|\n\[(?:PLAYGROUND|QUIZ)\]|\s*$)/gi, "")
+      .trim();
+
+    if (content || matches[i].title) {
+      results.push({
+        title: matches[i].title,
+        content,
+        position: matches[i].index,
+      });
+    }
+  }
+
+  return results;
+}
+
+// ═══════════════════════════════════════════════
+// parseQuizBlocks — Extract [QUIZ] blocks
+// ═══════════════════════════════════════════════
+
+export function parseQuizBlocks(rawText: string): ParsedQuiz[] {
+  const results: ParsedQuiz[] = [];
+  const blockRegex = /\[QUIZ\]\s*\n([\s\S]*?)(?=\n\[(?:PLAYGROUND|QUIZ|SECTION)\]|\n##\s|\n---|\s*$)/gi;
+
+  let match: RegExpExecArray | null;
+  while ((match = blockRegex.exec(rawText)) !== null) {
+    const blockContent = match[1];
+    const position = match.index;
+
+    const fields = parseFields(blockContent);
+    const options = parseQuizOptions(blockContent);
+
+    const quiz: Omit<V8InlineQuiz, "id" | "afterSectionIndex"> = {
+      question: fields.question || "",
+      options,
+      explanation: fields.explanation || "",
+      reinforcement: fields.reinforcement,
+    };
+
+    results.push({ quiz, position });
+  }
+
+  return results;
+}
+
+function parseQuizOptions(block: string): V8InlineQuiz["options"] {
+  const options: V8InlineQuiz["options"] = [];
+  const lines = block.split("\n");
+  let inOptions = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Detect start of options block
+    if (trimmed.toLowerCase().startsWith("options:")) {
+      inOptions = true;
+      continue;
+    }
+
+    if (inOptions) {
+      // Match "- [x] text" or "- [ ] text"
+      const optMatch = trimmed.match(/^-\s*\[(x|\s)\]\s*(.+)$/i);
+      if (optMatch) {
+        options.push({
+          id: `opt-${String(options.length + 1).padStart(2, "0")}`,
+          text: optMatch[2].trim(),
+          isCorrect: optMatch[1].toLowerCase() === "x",
+        });
+      } else if (trimmed === "") {
+        continue; // skip blank lines inside options
+      } else if (trimmed.includes(":") && !trimmed.startsWith("-")) {
+        // Hit next field
+        inOptions = false;
+      }
+    }
+  }
+
+  return options;
+}
+
+// ═══════════════════════════════════════════════
+// parsePlaygroundBlocks — Extract [PLAYGROUND] blocks (existing, enhanced)
+// ═══════════════════════════════════════════════
+
 export function parsePlaygroundBlocks(rawText: string): ParsedPlayground[] {
   const results: ParsedPlayground[] = [];
-  const blockRegex = /\[PLAYGROUND\]\s*\n([\s\S]*?)(?=\n\[(?:PLAYGROUND|SECTION|QUIZ)\]|\n---|\s*$)/gi;
+  const blockRegex = /\[PLAYGROUND\]\s*\n([\s\S]*?)(?=\n\[(?:PLAYGROUND|QUIZ|SECTION)\]|\n##\s|\n---|\s*$)/gi;
 
   let match: RegExpExecArray | null;
   while ((match = blockRegex.exec(rawText)) !== null) {
@@ -103,7 +282,6 @@ export function assignPlaygroundIndices(
   sectionPositions: number[],
 ): V8InlinePlayground[] {
   return playgrounds.map((pg, idx) => {
-    // Find last section before this playground
     let afterIndex = 0;
     for (let i = sectionPositions.length - 1; i >= 0; i--) {
       if (sectionPositions[i] < pg.position) {
@@ -125,21 +303,18 @@ export function assignPlaygroundIndices(
 function parseFields(block: string): Record<string, string> {
   const fields: Record<string, string> = {};
   const lines = block.split("\n");
-  // Fields that are parsed as lists — skip them as key:value
-  const listFields = new Set(["hints", "evaluationcriteria"]);
+  const listFields = new Set(["hints", "evaluationcriteria", "options"]);
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.startsWith("- ")) continue; // list item, not a field
+    if (trimmed.startsWith("- ")) continue;
 
     const colonIdx = trimmed.indexOf(":");
     if (colonIdx === -1) continue;
 
     const key = trimmed.slice(0, colonIdx).trim();
-    // Use everything AFTER the first colon as value (preserves colons in value)
     const value = trimmed.slice(colonIdx + 1).trim();
 
-    // Skip list headers (e.g. "hints:", "evaluationCriteria:")
     if (!value && listFields.has(key.toLowerCase())) continue;
 
     if (key && value) {
@@ -159,10 +334,8 @@ function parseListField(block: string, fieldName: string): string[] {
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.toLowerCase() === `${fieldName.toLowerCase()}:` || trimmed.toLowerCase().startsWith(`${fieldName.toLowerCase()}:`)) {
-      // Check if there's inline content after the colon
       const afterColon = trimmed.slice(trimmed.indexOf(":") + 1).trim();
       if (afterColon) {
-        // Single-line CSV: "evaluationCriteria: a, b, c"
         items.push(...afterColon.split(",").map(s => s.trim()).filter(Boolean));
         continue;
       }
@@ -171,16 +344,13 @@ function parseListField(block: string, fieldName: string): string[] {
     }
     if (inList) {
       if (trimmed === "") {
-        // Skip blank lines inside list (don't break out)
         continue;
       }
       if (trimmed.startsWith("- ")) {
         items.push(trimmed.slice(2).trim());
       } else if (trimmed.includes(":") && !trimmed.startsWith("-")) {
-        // Hit next field — stop list
         inList = false;
       } else if (trimmed.length > 0) {
-        // Plain text line without "- " prefix — accept it as list item
         items.push(trimmed);
       }
     }
