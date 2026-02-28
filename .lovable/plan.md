@@ -1,41 +1,68 @@
 
-Objetivo do ajuste aprovado: aumentar em 25% o certificado mobile (inclusive o “com cadeado/loader”) sem quebrar o layout premium.
 
-1) Diagnóstico do problema atual
-- Hoje o bloco esquerdo do card mobile está em `width: 156`, mas o documento interno (`CertificateDocument` em modo `compact`) usa tamanhos fixos (selo, tipografia, espaçamentos), então ele não cresce proporcionalmente.
-- Resultado: mesmo com área maior, o certificado ainda parece pequeno/amador porque o conteúdo útil continua “mini”.
+# Setup Wizard de Seções — Configuração Visual Pós-Parse
 
-2) Ajuste principal (25% real no certificado mobile)
-- Arquivo: `src/components/lessons/v8/V8CertificateCard.tsx`.
-- Implementar escala explícita para o modo compacto:
-  - Criar fator `compactScale = 1.25`.
-  - Aplicar esse fator nos principais tokens do `CertificateDocument` quando `compact=true`:
-    - selo e ícone do selo,
-    - tamanhos de fonte (título/subtítulo/textos internos),
-    - paddings/margens/chamfer do documento,
-    - espessura de linhas/divisor no compacto.
-- Isso garante que o próprio documento fique 25% maior visualmente (não só o container).
+## Contexto
 
-3) Ajuste do container mobile para acompanhar o crescimento
-- No card mobile:
-  - `width` da coluna esquerda: `156 -> 195` (+25%).
-  - `maxHeight` do card: `210 -> ~262` (ou 260/264 arredondado, mantendo proporção de +25%).
-- Ajustar padding da coluna esquerda para manter moldura premium sem “apertar” o documento.
+Hoje o fluxo no Admin V8 é: colar conteúdo bruto -> converter para JSON -> editar JSON manualmente -> validar -> gerar áudio -> salvar.
 
-4) Compatibilidade em telas menores (evitar quebra em 320px)
-- Em vez de valor rígido puro, usar limite responsivo para não esmagar o texto do lado direito:
-  - Exemplo de abordagem: `width: min(195px, 58vw)` para a coluna do mini-certificado.
-- Mantém o aumento forte em mobile comum (375/390), sem quebrar em devices muito estreitos.
+O problema: nao existe momento visual para configurar **o que cada secao terá** (imagem, quiz, playground). O usuario precisa saber a sintaxe do parser ou editar JSON cru.
 
-5) O que não será alterado
-- Desktop do certificado permanece igual.
-- Fluxo do modal, progresso e estados (locked/in_progress/completed) continuam os mesmos.
-- Sem mudanças de backend.
+## Solucao
 
-6) Validação após implementação
-- Verificar em mobile (390x844, 375x812, 320x568):
-  - mini-certificado claramente maior (~25%),
-  - estado bloqueado com cadeado ainda legível e premium,
-  - sem corte/clipping no card,
-  - primeira aula continua visível logo abaixo (ou com impacto mínimo aceitável).
-- Verificar que no desktop não houve regressão visual.
+Adicionar um passo intermediário **"Setup"** entre a conversão do conteúdo bruto e a validação do JSON. Esse passo mostra cada seção detectada como um card visual onde o usuário configura o que ela terá.
+
+## Fluxo Novo (5 passos)
+
+```text
+Conteúdo Bruto -> [Converter] -> SETUP (novo) -> Validar JSON -> Gerar Áudio -> Salvar
+```
+
+## O que o Setup mostra
+
+Para cada seção detectada, um card com:
+
+1. **Titulo da seção** (readonly, vem do parse)
+2. **Preview do conteúdo** (primeiras 2-3 linhas, truncado)
+3. **Toggles/checkboxes de elementos**:
+   - Imagem (toggle + campo URL quando ativo)
+   - Quiz após esta seção (toggle — se já existe quiz no parse, vem ativo)
+   - Playground após esta seção (toggle — se já existe, vem ativo)
+4. **Indicadores visuais**: badges coloridos mostrando o que está ativo (ex: "Imagem", "Quiz", "Playground")
+
+## Comportamento
+
+- Ao ativar "Imagem" em uma seção: abre campo de URL. O valor é injetado no `imageUrl` da seção no JSON.
+- Ao ativar "Quiz": se já existe quiz com `afterSectionIndex` correspondente, mostra resumo. Se nao existe, mostra aviso "Adicione o bloco [QUIZ] no conteúdo bruto para esta seção".
+- Ao ativar "Playground": mesma lógica do quiz.
+- Botao "Aplicar Setup" atualiza o JSON e avança para a tela de validação.
+
+## Arquivos
+
+| Arquivo | Acao |
+|---------|------|
+| `src/components/admin/V8SectionSetup.tsx` | **Criar** — Componente do wizard de setup por seção |
+| `src/pages/AdminV8Create.tsx` | **Editar** — Adicionar step "setup" entre convert e validate, renderizar o novo componente |
+
+## Detalhes Tecnicos
+
+### V8SectionSetup.tsx
+
+- Props: `sections: V8Section[]`, `quizzes: V8InlineQuiz[]`, `playgrounds: V8InlinePlayground[]`, `onApply: (updatedSections, updatedQuizzes, updatedPlaygrounds) => void`
+- Estado local: array de configs por secao `{ hasImage: boolean, imageUrl: string, hasQuiz: boolean, hasPlayground: boolean }`
+- Inicializa a partir dos dados parseados (se secao já tem imageUrl, toggle vem ativo)
+- `onApply` injeta os imageUrls nas secoes e retorna os dados atualizados
+
+### AdminV8Create.tsx
+
+- Novo step type: `"setup"` adicionado ao union `Step`
+- Após `handleConvertContent`, em vez de ir direto para JSON, vai para step `"setup"`
+- Renderiza `V8SectionSetup` quando `step === "setup"`
+- Callback do setup atualiza o `jsonText` e avança para validação
+
+### Escopo limitado (V1 do wizard)
+
+- Imagens: configurável via URL manual (futuro: upload direto)
+- Quizzes e Playgrounds: apenas indicação visual de presença (edição completa continua no JSON ou conteúdo bruto)
+- Nao gera quizzes/playgrounds automaticamente nesta versão — apenas mostra o que já existe e permite adicionar imageUrl
+
