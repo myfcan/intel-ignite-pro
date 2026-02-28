@@ -187,21 +187,18 @@ export default function V8TrailDetail() {
             transition={{ duration: 0.5 }}
             className="lg:w-[300px] flex-shrink-0 lg:sticky lg:top-[72px] lg:self-start"
           >
-            <div className={`rounded-2xl overflow-hidden ${
-              allCompleted
-                ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-xl"
-                : "bg-white shadow-lg"
-            }`}
+            <div
+              className="rounded-2xl overflow-hidden"
               style={{
                 border: allCompleted
-                  ? '2.5px solid hsl(43, 80%, 55%)'
-                  : '2.5px solid hsl(43, 65%, 72%)',
+                  ? '3px solid hsl(43, 78%, 52%)'
+                  : '2px solid hsl(43, 50%, 78%)',
                 boxShadow: allCompleted
-                  ? '0 8px 32px rgba(217, 168, 42, 0.30), 0 0 0 4px rgba(217, 168, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)'
-                  : '0 4px 24px rgba(217, 168, 42, 0.15), 0 0 0 4px rgba(217, 168, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.6)'
+                  ? '0 12px 40px rgba(180, 130, 20, 0.35), 0 0 0 6px rgba(217, 168, 42, 0.10), inset 0 2px 0 rgba(255,255,255,0.7)'
+                  : '0 6px 28px rgba(180, 130, 20, 0.12), 0 0 0 4px rgba(217, 168, 42, 0.06)',
               }}
             >
-              {/* Certificate Header Band */}
+              {/* Header Band */}
               <div className={`px-4 py-3 ${
                 allCompleted
                   ? "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500"
@@ -221,72 +218,134 @@ export default function V8TrailDetail() {
                 </div>
               </div>
 
-              {/* Certificate Body */}
-              <div className="p-5">
-                {/* Document Mockup */}
-                <div className={`rounded-xl p-4 border-2 ${
-                  allCompleted 
-                    ? "border-amber-200 bg-gradient-to-b from-white to-amber-50/30" 
-                    : "border-gray-200/80 bg-gradient-to-b from-white to-gray-50/50"
-                }`}>
-                  {/* Seal / Badge */}
-                  <div className="flex justify-center mb-3">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center relative ${
-                      allCompleted 
-                        ? "bg-gradient-to-br from-amber-300 to-yellow-500 shadow-lg shadow-amber-200/50" 
-                        : "bg-gradient-to-br from-gray-100 to-gray-200"
-                    }`}>
-                      {allCompleted ? (
-                        <Trophy className="w-7 h-7 text-amber-900" />
-                      ) : (
-                        <Lock className="w-6 h-6 text-gray-400" />
-                      )}
-                      {/* Decorative ring */}
+              {/* Certificate Body — parchment feel */}
+              <div
+                className="relative p-5"
+                style={{
+                  background: allCompleted
+                    ? 'linear-gradient(170deg, #FFFDF5 0%, #FFF8E1 30%, #FFF3CD 100%)'
+                    : 'linear-gradient(170deg, #FEFEFE 0%, #FAFAFA 50%, #F5F5F5 100%)',
+                }}
+              >
+                {/* Subtle texture overlay */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                }} />
+
+                {/* Ornamental corner accents */}
+                <div className="absolute top-3 left-3 w-6 h-6 pointer-events-none" style={{
+                  borderTop: `2px solid ${allCompleted ? 'hsl(43, 70%, 60%)' : 'hsl(0, 0%, 82%)'}`,
+                  borderLeft: `2px solid ${allCompleted ? 'hsl(43, 70%, 60%)' : 'hsl(0, 0%, 82%)'}`,
+                  borderTopLeftRadius: '4px',
+                }} />
+                <div className="absolute top-3 right-3 w-6 h-6 pointer-events-none" style={{
+                  borderTop: `2px solid ${allCompleted ? 'hsl(43, 70%, 60%)' : 'hsl(0, 0%, 82%)'}`,
+                  borderRight: `2px solid ${allCompleted ? 'hsl(43, 70%, 60%)' : 'hsl(0, 0%, 82%)'}`,
+                  borderTopRightRadius: '4px',
+                }} />
+                <div className="absolute bottom-3 left-3 w-6 h-6 pointer-events-none" style={{
+                  borderBottom: `2px solid ${allCompleted ? 'hsl(43, 70%, 60%)' : 'hsl(0, 0%, 82%)'}`,
+                  borderLeft: `2px solid ${allCompleted ? 'hsl(43, 70%, 60%)' : 'hsl(0, 0%, 82%)'}`,
+                  borderBottomLeftRadius: '4px',
+                }} />
+                <div className="absolute bottom-3 right-3 w-6 h-6 pointer-events-none" style={{
+                  borderBottom: `2px solid ${allCompleted ? 'hsl(43, 70%, 60%)' : 'hsl(0, 0%, 82%)'}`,
+                  borderRight: `2px solid ${allCompleted ? 'hsl(43, 70%, 60%)' : 'hsl(0, 0%, 82%)'}`,
+                  borderBottomRightRadius: '4px',
+                }} />
+
+                {/* Inner ornamental border */}
+                <div
+                  className="relative rounded-lg px-5 py-6"
+                  style={{
+                    border: allCompleted
+                      ? '1.5px solid hsl(43, 60%, 75%)'
+                      : '1px solid hsl(0, 0%, 88%)',
+                  }}
+                >
+                  {/* Gold seal / lock badge */}
+                  <div className="flex justify-center mb-4">
+                    <div className="relative">
+                      {/* Outer ring glow */}
                       {allCompleted && (
                         <motion.div
-                          className="absolute inset-[-3px] rounded-full border-2 border-amber-300/60"
+                          className="absolute inset-[-6px] rounded-full"
+                          style={{
+                            border: '1.5px solid hsl(43, 65%, 65%)',
+                            background: 'radial-gradient(circle, rgba(255,215,0,0.08) 0%, transparent 70%)',
+                          }}
                           animate={{ rotate: 360 }}
-                          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
                         />
                       )}
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                        allCompleted
+                          ? "shadow-lg"
+                          : ""
+                      }`}
+                        style={{
+                          background: allCompleted
+                            ? 'linear-gradient(145deg, hsl(43, 85%, 62%) 0%, hsl(38, 90%, 50%) 50%, hsl(33, 85%, 45%) 100%)'
+                            : 'linear-gradient(145deg, hsl(0, 0%, 93%) 0%, hsl(0, 0%, 85%) 100%)',
+                          boxShadow: allCompleted
+                            ? 'inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.1), 0 4px 12px rgba(180, 130, 20, 0.3)'
+                            : 'inset 0 1px 2px rgba(255,255,255,0.5), inset 0 -1px 2px rgba(0,0,0,0.05)',
+                        }}
+                      >
+                        {allCompleted ? (
+                          <Trophy className="w-7 h-7 text-amber-100 drop-shadow-sm" />
+                        ) : (
+                          <Lock className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Certificate Title */}
-                  <p className={`text-center text-[11px] font-bold uppercase tracking-[0.12em] mb-1 ${
-                    allCompleted ? "text-amber-700" : "text-gray-500"
-                  }`}>
+                  {/* Title */}
+                  <p className={`text-center font-bold uppercase tracking-[0.14em] mb-0.5 ${
+                    allCompleted
+                      ? "text-amber-800 text-[12px]"
+                      : "text-gray-500 text-[11px]"
+                  }`}
+                    style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+                  >
                     Certificado de Conclusão
                   </p>
 
-                  {/* Decorative divider */}
-                  <div className="flex items-center gap-2 my-2.5">
-                    <div className={`flex-1 h-px ${allCompleted ? "bg-amber-200" : "bg-gray-200"}`} />
-                    <Star className={`w-3 h-3 ${allCompleted ? "text-amber-400" : "text-gray-300"}`} />
-                    <div className={`flex-1 h-px ${allCompleted ? "bg-amber-200" : "bg-gray-200"}`} />
+                  {/* Ornamental divider */}
+                  <div className="flex items-center gap-2 my-3 px-2">
+                    <div className={`flex-1 h-px ${allCompleted ? "bg-gradient-to-r from-transparent via-amber-300 to-transparent" : "bg-gradient-to-r from-transparent via-gray-300 to-transparent"}`} />
+                    <Star className={`w-3.5 h-3.5 ${allCompleted ? "text-amber-400 fill-amber-400" : "text-gray-300"}`} />
+                    <div className={`flex-1 h-px ${allCompleted ? "bg-gradient-to-r from-transparent via-amber-300 to-transparent" : "bg-gradient-to-r from-transparent via-gray-300 to-transparent"}`} />
                   </div>
 
-                  {/* Simulated text lines */}
-                  <div className="space-y-1.5 px-2">
-                    <div className={`h-1.5 rounded-full mx-auto w-[85%] ${allCompleted ? "bg-amber-200/80" : "bg-gray-200/80"}`} />
-                    <div className={`h-1.5 rounded-full mx-auto w-[65%] ${allCompleted ? "bg-amber-100/80" : "bg-gray-150/80"}`} style={{ backgroundColor: allCompleted ? undefined : 'hsl(220, 14%, 92%)' }} />
-                    <div className={`h-1.5 rounded-full mx-auto w-[75%] ${allCompleted ? "bg-amber-100/60" : "bg-gray-150/60"}`} style={{ backgroundColor: allCompleted ? undefined : 'hsl(220, 14%, 94%)' }} />
+                  {/* Simulated text — thicker, more "real" */}
+                  <div className="space-y-2 px-3 mb-3">
+                    <div className={`h-2 rounded-full mx-auto w-[90%] ${allCompleted ? "bg-amber-200/70" : "bg-gray-200/70"}`} />
+                    <div className={`h-2 rounded-full mx-auto w-[100%] ${allCompleted ? "bg-amber-300/50" : "bg-gray-200/50"}`} />
+                    <div className={`h-1.5 rounded-full mx-auto w-[70%] ${allCompleted ? "bg-amber-200/40" : "bg-gray-100/80"}`} />
                   </div>
 
-                  {/* Signature area */}
-                  <div className="mt-4 pt-3 border-t border-dashed border-gray-200/60">
-                    <div className={`h-1 rounded-full mx-auto w-[40%] ${allCompleted ? "bg-amber-300/50" : "bg-gray-200/50"}`} />
-                    <p className={`text-center text-[9px] mt-1 ${allCompleted ? "text-amber-500/70" : "text-gray-300"}`}>
+                  {/* Signature / Institution */}
+                  <div className="mt-5 pt-3" style={{
+                    borderTop: `1px dashed ${allCompleted ? 'hsl(43, 50%, 75%)' : 'hsl(0, 0%, 85%)'}`,
+                  }}>
+                    <div className={`h-1 rounded-full mx-auto w-[35%] mb-1.5 ${allCompleted ? "bg-amber-300/60" : "bg-gray-200/60"}`} />
+                    <p className={`text-center text-[10px] font-medium tracking-wide ${
+                      allCompleted ? "text-amber-600/80" : "text-gray-300"
+                    }`}
+                      style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+                    >
                       AIliv Academy
                     </p>
                   </div>
                 </div>
 
-                {/* Progress Section */}
-                <div className="mt-4">
-                  <p className={`text-xs mb-2 ${allCompleted ? "text-amber-600 font-semibold" : "text-gray-400"}`}>
+                {/* Progress below the document */}
+                <div className="mt-5">
+                  <p className={`text-xs mb-2 ${allCompleted ? "text-amber-700 font-semibold" : "text-gray-400"}`}>
                     {allCompleted
-                      ? "Parabéns! Trilha concluída."
+                      ? "🏆 Parabéns! Trilha concluída."
                       : `${totalLessons - completedCount} aula${totalLessons - completedCount !== 1 ? 's' : ''} restante${totalLessons - completedCount !== 1 ? 's' : ''}`
                     }
                   </p>
