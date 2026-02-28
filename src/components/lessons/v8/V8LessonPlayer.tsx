@@ -65,7 +65,7 @@ export const V8LessonPlayer = ({
   }, [onComplete, state.scores]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-white text-slate-900">
       {/* Header — hidden during mode select */}
       {state.phase !== "mode-select" && (
         <V8Header
@@ -144,7 +144,7 @@ export const V8LessonPlayer = ({
             {/* Fallback completion if no render prop */}
             {state.phase === "completion" && !renderCompletion && (
               <div key="completion-fallback" className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <h2 className="text-2xl font-bold text-white">Aula Concluída!</h2>
+                <h2 className="text-2xl font-bold text-slate-900">Aula Concluída!</h2>
                 <button
                   onClick={handleFinalContinue}
                   className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold"

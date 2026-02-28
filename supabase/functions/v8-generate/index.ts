@@ -12,8 +12,6 @@ const MODEL_ID = 'eleven_v3';
 const VOICE_SETTINGS = {
   stability: 0.5,
   similarity_boost: 0.75,
-  style: 0.3,
-  use_speaker_boost: true,
 };
 
 interface V8Section {
@@ -280,7 +278,6 @@ async function generateTTS(
   const body: Record<string, unknown> = {
     text,
     model_id: MODEL_ID,
-    output_format: 'mp3_44100_128',
     voice_settings: VOICE_SETTINGS,
   };
 
@@ -288,7 +285,7 @@ async function generateTTS(
   // Removed to avoid 400 errors
 
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
     {
       method: 'POST',
       headers: {
@@ -346,6 +343,7 @@ function stripMarkdownForTTS(markdown: string): string {
     .replace(/^\s*>\s+/gm, '')           // blockquotes
     .replace(/---+/g, '')                // hr
     .replace(/\n{3,}/g, '\n\n')          // excessive newlines
+    .replace(/\[(confiante|calmo|enfático|pausa curta|animado|sério|empolgado|excited|pause|whispers|curious|warm)\]/gi, '') // emotion tags
     .trim();
 }
 

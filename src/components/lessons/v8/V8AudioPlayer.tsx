@@ -144,13 +144,13 @@ export const V8AudioPlayer = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 space-y-3"
+      className="w-full rounded-2xl border border-slate-200 bg-slate-50 backdrop-blur-xl p-4 space-y-3"
     >
       <audio ref={audioRef} src={audioUrl} preload="auto" />
 
       {/* Progress bar */}
       <div
-        className="relative h-1.5 rounded-full bg-white/10 cursor-pointer group"
+        className="relative h-1.5 rounded-full bg-slate-200 cursor-pointer group"
         onClick={handleSeekBar}
       >
         <motion.div
@@ -160,7 +160,7 @@ export const V8AudioPlayer = ({
           transition={{ type: "tween", duration: 0.1 }}
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-indigo-500 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
           style={{ left: `calc(${progress}% - 6px)` }}
         />
       </div>
@@ -168,7 +168,7 @@ export const V8AudioPlayer = ({
       {/* Controls */}
       <div className="flex items-center justify-between">
         {/* Time */}
-        <span className="text-[11px] font-mono text-slate-400 w-20 tabular-nums">
+        <span className="text-[11px] font-mono text-slate-500 w-20 tabular-nums">
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
 
@@ -176,7 +176,7 @@ export const V8AudioPlayer = ({
         <div className="flex items-center gap-3">
           <button
             onClick={() => seek(-10)}
-            className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             aria-label="Retroceder 10s"
           >
             <RotateCcw className="w-4 h-4" />
@@ -214,7 +214,7 @@ export const V8AudioPlayer = ({
 
           <button
             onClick={() => seek(10)}
-            className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             aria-label="Avançar 10s"
           >
             <RotateCw className="w-4 h-4" />
@@ -224,7 +224,7 @@ export const V8AudioPlayer = ({
         {/* Speed */}
         <button
           onClick={cycleSpeed}
-          className="text-[11px] font-semibold font-mono text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition-colors w-20 text-right"
+          className="text-[11px] font-semibold font-mono text-slate-500 hover:text-slate-900 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors w-20 text-right"
         >
           {speed}x
         </button>
@@ -242,7 +242,7 @@ export const V8AudioPlayer = ({
             {Array.from({ length: 5 }).map((_, i) => (
               <motion.div
                 key={i}
-                className="w-0.5 rounded-full bg-indigo-400/60"
+                className="w-0.5 rounded-full bg-indigo-500/60"
                 animate={{ height: [8, 16, 8] }}
                 transition={{
                   duration: 0.8,
