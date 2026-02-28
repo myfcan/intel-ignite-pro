@@ -13,8 +13,18 @@ function buildAutoPrompt(content: string): string {
     .replace(/[*_`~\[\]()>]/g, "")
     .replace(/\n+/g, " ")
     .trim();
-  const words = cleaned.split(/\s+/).slice(0, 200).join(" ");
-  return `Professional educational illustration about: ${words}.\nStyle: modern, clean, cinematic lighting, no text in image, 16:9 landscape, editorial quality, vibrant colors.`;
+  const words = cleaned.split(/\s+/).slice(0, 150).join(" ");
+  return `Create a single isolated 3D illustration object representing this educational concept: ${words}.
+
+Style requirements:
+- Modern flat 3D render, clean and minimal
+- Single object or small composition, centered
+- TRANSPARENT BACKGROUND (no background at all, PNG transparency)
+- Soft gradients, smooth surfaces, rounded edges
+- Vibrant but not neon colors (indigo, violet, sky blue, warm tones)
+- No text, no labels, no UI elements in the image
+- Think Apple/Notion style icons: polished, friendly, professional
+- Subtle shadow underneath the object for depth`;
 }
 
 serve(async (req) => {
@@ -54,7 +64,9 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      prompt = `Professional educational illustration: ${customPrompt}.\nStyle: modern, clean, cinematic lighting, high quality, 16:9 landscape, editorial quality.`;
+      prompt = `Create a 3D illustration based on this description: ${customPrompt}.
+
+Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PNG transparency), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
