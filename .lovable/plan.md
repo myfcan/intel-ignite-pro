@@ -1,93 +1,47 @@
 
 
-# Redesign Completo do Certificado — Design Premium Real
+# Redesign das Conexoes da Skill Tree — De Pontos Fracos para Linhas Premium
 
-## Problemas Diagnosticados
+## Problema
 
-O card atual parece um wireframe/placeholder por causa de:
-- Cantos L-shapes artificiais que nao existem em certificados reais
-- Selo circular generico sem peso visual
-- Texto "CERTIFICADO DE CONCLUSAO" minusculo (7px no compact) sem presenca
-- Linhas retangulares simulando texto parecem mockup de Figma, nao documento
-- Fundo flat sem profundidade real
-- **Mini-preview mobile com apenas 90px de largura — muito pequeno, parece thumbnail amador**
+As conexoes entre os nos da skill tree sao apenas 6 pontos minusculos (raio 2-3px) ao longo de um bezier. Na tela real, parecem quase invisiveis e amadoras — nao comunicam progressao nem conexao visual entre as aulas.
 
----
+## Solucao
 
-## Nova Direcao de Design
+Substituir os pontos por **linhas curvas SVG reais** (paths) com estilo premium:
 
-### Mobile: Mini-preview maior e com presenca real
+### Conexao visual
 
-O mini-preview do certificado no mobile sera significativamente ampliado:
+- **Linha principal**: Path SVG curvo (quadratic bezier) com `stroke-width: 3px` para segmentos completos, `2.5px` para ativos, `2px` para locked
+- **Stroke dasharray** para locked: `8 6` (tracejado elegante, nao pontilhado)
+- **Cores**:
+  - Completado: `hsl(258, 70%, 58%)` — violeta solido, opacity 0.9
+  - Ativo (proximo desbloqueado): `hsl(258, 50%, 70%)` — violeta medio, com animacao de dash
+  - Locked: `hsl(220, 10%, 82%)` — cinza claro, opacity 0.5, tracejado
 
-- **Largura do preview: 130px** (antes 90px) — ganho de 44% de area visual
-- **Padding interno do preview: 12px** (antes 10px)
-- **Selo compact: 36px** (antes 28px) — mais presenca
-- **Titulo compact: 9px** (antes 7px) — legivel de verdade
-- **"AIliv Academy" compact: 7.5px** (antes 6px)
-- **Icones compact: 16px** (antes 12-13px)
-- **Altura maxima do card: 180px** (antes 170px) — ligeiro aumento para acomodar preview maior
-- **Borda do preview**: sombra inset sutil + borda dourada/cinza fina para dar "moldura" ao documento
-- Incluir divisor estrela e mini-linhas de texto mesmo no compact (versao reduzida) para parecer documento completo em miniatura
+### Animacao no segmento ativo
 
-```text
-+----------------------------------------------------------+
-|  ┌────────────────┐                                      |
-|  │                │                                      |
-|  │   [Selo 36px]  │  [Medal] CERTIFICADO                 |
-|  │                │                                      |
-|  │  CERTIFICADO   │  Complete as aulas para liberar      |
-|  │  DE CONCLUSAO  │                                      |
-|  │   ── ◆ ──     │  ████████████░░░░░░░  0/2            |
-|  │  ──────────   │                                      |
-|  │  AIliv Academy │                                      |
-|  │                │                                      |
-|  └────────────────┘                                      |
-+----------------------------------------------------------+
-```
+- `stroke-dashoffset` animado (efeito de "fluxo" ao longo da linha) para o segmento entre a aula atual e a proxima
+- Duracao: 2s, loop infinito, ease linear
+- Sem pulsacao de escala (evitar layout shift)
 
-### Desktop: Documento com texto real, sem placeholders
+### Pontos decorativos (opcional, sutis)
 
-Substituir as linhas retangulares por texto real formatado:
+- Manter 3 pontos (nao 6) apenas nos segmentos completados como "checkpoints"
+- Raio: 3.5px com borda de 1px branca para destacar
+- Remover pontos dos segmentos locked
 
-- **Remover**: L-shapes nos cantos, linhas retangulares cinza
-- **Adicionar**: texto real com `trailTitle`, "Concedido a", linha de assinatura
-- **Selo**: 52px com borda dupla (outline + border)
-- **Tipografia**: "CERTIFICADO" 14px tracking 0.2em, "DE CONCLUSAO" 12px tracking 0.15em
-- **Fundo**: gradiente radial `radial-gradient(ellipse at 30% 20%, #FFFEF8, #FBF9F4)`
-- **Divisor**: linha fina com losango central em CSS puro
-
-### Estados
-
-| Estado | Selo | Borda doc | Opacidade |
-|--------|------|-----------|-----------|
-| Bloqueado | Lock cinza 20px, selo opacity 0.6 | cinza `hsl(0,0%,88%)` | 0.6 + overlay Lock central |
-| Em progresso | Award violeta | violeta sutil | 0.85 |
-| Completo | Trophy dourado com glow ring | dourada `hsl(43,55%,65%)` | 1.0, sombra dourada |
-
-### Barra de progresso
-- Cores violeta (consistente com app)
-- Altura: 2px desktop, 1.5px mobile
-- Track: `bg-violet-100`
-
----
-
-## Arquivos Modificados
+## Arquivo Modificado
 
 | Arquivo | Acao |
 |---------|------|
-| `src/components/lessons/v8/V8CertificateCard.tsx` | **Reescrever** — novo design completo com preview mobile maior |
-
-Nenhuma mudanca em V8TrailDetail.tsx (props e importacao ja estao corretos).
-
----
+| `src/components/lessons/v8/V8SkillTree.tsx` | **Editar** — substituir logica de dots por paths SVG curvos |
 
 ## Detalhes Tecnicos
 
-- Manter mesma interface de props (zero breaking changes)
-- Usar `trailTitle` para texto real no documento desktop
-- Compact mode renderiza documento completo em miniatura (com divisor, linhas, assinatura) em vez de versao cortada
-- Sem dependencias novas
-- Manter modal mobile com mesmo fluxo
-- Remover toda logica de L-shapes e noise SVG
-
+- Usar `<motion.path>` do framer-motion para animar `strokeDashoffset`
+- Path: `M x1,y1 Q cx,cy x2,y2` (quadratic bezier, mesmo calculo atual)
+- `stroke-linecap: round` para acabamento suave
+- `fill: none` — apenas stroke
+- Manter mesma logica de `getXOffset` e `ROW_HEIGHT`
+- Zero mudancas no V8SkillNode ou V8TrailDetail
