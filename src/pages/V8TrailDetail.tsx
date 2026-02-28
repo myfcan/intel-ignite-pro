@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Clock, Loader2, Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, Trophy, Lock, Award, type LucideIcon } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, Loader2, Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, Trophy, Lock, Award, Star, Sparkles, type LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { V8SkillTree } from "@/components/lessons/v8/V8SkillTree";
 import { Progress } from "@/components/ui/progress";
@@ -131,18 +131,27 @@ export default function V8TrailDetail() {
 
   const TrailIcon = TRAIL_ICONS[trail.icon || ''] || GraduationCap;
 
+  const lessonItems = (lessons ?? []).map((lesson, index) => ({
+    id: lesson.id,
+    title: lesson.title,
+    description: lesson.description ?? undefined,
+    estimatedTime: lesson.estimated_time ?? undefined,
+    imageUrl: (lesson as any).image_url ?? undefined,
+    status: getLessonStatus(index, lesson.id),
+  }));
+
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
       {/* ── Compact App Header ── */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-2xl mx-auto flex items-center justify-between px-4 h-14">
+        <div className="max-w-3xl mx-auto flex items-center justify-between px-4 h-14">
           <button
             onClick={() => navigate("/dashboard")}
             className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <h1 className="text-base font-bold text-gray-900 truncate max-w-[200px]">
+          <h1 className="text-base font-bold text-gray-900 truncate max-w-[240px]">
             {trail.title}
           </h1>
           <div className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-bold">
@@ -151,9 +160,9 @@ export default function V8TrailDetail() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-8">
+      <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
         {/* ── Unit Card ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
               <TrailIcon className="w-5 h-5 text-white" />
@@ -169,72 +178,135 @@ export default function V8TrailDetail() {
           </div>
         </div>
 
-        {/* ── Certificate Mockup Card ── */}
-        <div className={`rounded-2xl p-5 mb-6 ${
-          allCompleted 
-            ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-lg"
-            : "bg-white shadow-sm"
-        }`}>
-          {/* Certificate document mockup */}
-          <div className={`rounded-xl p-4 mb-4 border-2 border-dashed ${
-            allCompleted ? "border-amber-300 bg-white/70" : "border-gray-200 bg-gray-50/50"
-          }`}>
-            <div className="flex flex-col items-center text-center py-2">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-                allCompleted ? "bg-amber-100" : "bg-gray-100"
+        {/* ── Premium Layout: Certificate Left + Skill Tree Right ── */}
+        <div className="flex flex-col lg:flex-row gap-5">
+          {/* ── Premium Certificate Card (Left) ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="lg:w-[260px] flex-shrink-0 lg:sticky lg:top-[72px] lg:self-start"
+          >
+            <div className={`rounded-2xl overflow-hidden ${
+              allCompleted
+                ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-xl ring-1 ring-amber-200/50"
+                : "bg-white shadow-md ring-1 ring-gray-100"
+            }`}>
+              {/* Certificate Header Band */}
+              <div className={`px-4 py-3 ${
+                allCompleted
+                  ? "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500"
+                  : "bg-gradient-to-r from-violet-500 via-indigo-500 to-violet-600"
               }`}>
-                {allCompleted ? (
-                  <Trophy className="w-6 h-6 text-amber-500" />
-                ) : (
-                  <Award className="w-6 h-6 text-gray-400" />
-                )}
+                <div className="flex items-center gap-2">
+                  {allCompleted ? (
+                    <Sparkles className="w-4 h-4 text-amber-900" />
+                  ) : (
+                    <Award className="w-4 h-4 text-white/90" />
+                  )}
+                  <span className={`text-xs font-bold uppercase tracking-wider ${
+                    allCompleted ? "text-amber-900" : "text-white/90"
+                  }`}>
+                    Certificado
+                  </span>
+                </div>
               </div>
-              <p className={`text-sm font-bold mb-1 ${allCompleted ? "text-amber-800" : "text-gray-600"}`}>
-                {allCompleted ? "🎉 Certificado Disponível!" : "Obtenha seu certificado"}
-              </p>
-              {/* Decorative lines simulating certificate text */}
-              <div className="w-full space-y-1.5 mt-2 px-4">
-                <div className={`h-1.5 rounded-full mx-auto ${allCompleted ? "bg-amber-200 w-3/4" : "bg-gray-200 w-3/4"}`} />
-                <div className={`h-1.5 rounded-full mx-auto ${allCompleted ? "bg-amber-100 w-1/2" : "bg-gray-150 w-1/2"}`} style={{ backgroundColor: allCompleted ? undefined : 'hsl(220, 14%, 92%)' }} />
-                <div className={`h-1.5 rounded-full mx-auto ${allCompleted ? "bg-amber-100 w-2/3" : "bg-gray-150 w-2/3"}`} style={{ backgroundColor: allCompleted ? undefined : 'hsl(220, 14%, 94%)' }} />
+
+              {/* Certificate Body */}
+              <div className="p-5">
+                {/* Document Mockup */}
+                <div className={`rounded-xl p-4 border-2 ${
+                  allCompleted 
+                    ? "border-amber-200 bg-gradient-to-b from-white to-amber-50/30" 
+                    : "border-gray-200/80 bg-gradient-to-b from-white to-gray-50/50"
+                }`}>
+                  {/* Seal / Badge */}
+                  <div className="flex justify-center mb-3">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center relative ${
+                      allCompleted 
+                        ? "bg-gradient-to-br from-amber-300 to-yellow-500 shadow-lg shadow-amber-200/50" 
+                        : "bg-gradient-to-br from-gray-100 to-gray-200"
+                    }`}>
+                      {allCompleted ? (
+                        <Trophy className="w-7 h-7 text-amber-900" />
+                      ) : (
+                        <Lock className="w-6 h-6 text-gray-400" />
+                      )}
+                      {/* Decorative ring */}
+                      {allCompleted && (
+                        <motion.div
+                          className="absolute inset-[-3px] rounded-full border-2 border-amber-300/60"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Certificate Title */}
+                  <p className={`text-center text-[11px] font-bold uppercase tracking-[0.12em] mb-1 ${
+                    allCompleted ? "text-amber-700" : "text-gray-500"
+                  }`}>
+                    Certificado de Conclusão
+                  </p>
+
+                  {/* Decorative divider */}
+                  <div className="flex items-center gap-2 my-2.5">
+                    <div className={`flex-1 h-px ${allCompleted ? "bg-amber-200" : "bg-gray-200"}`} />
+                    <Star className={`w-3 h-3 ${allCompleted ? "text-amber-400" : "text-gray-300"}`} />
+                    <div className={`flex-1 h-px ${allCompleted ? "bg-amber-200" : "bg-gray-200"}`} />
+                  </div>
+
+                  {/* Simulated text lines */}
+                  <div className="space-y-1.5 px-2">
+                    <div className={`h-1.5 rounded-full mx-auto w-[85%] ${allCompleted ? "bg-amber-200/80" : "bg-gray-200/80"}`} />
+                    <div className={`h-1.5 rounded-full mx-auto w-[65%] ${allCompleted ? "bg-amber-100/80" : "bg-gray-150/80"}`} style={{ backgroundColor: allCompleted ? undefined : 'hsl(220, 14%, 92%)' }} />
+                    <div className={`h-1.5 rounded-full mx-auto w-[75%] ${allCompleted ? "bg-amber-100/60" : "bg-gray-150/60"}`} style={{ backgroundColor: allCompleted ? undefined : 'hsl(220, 14%, 94%)' }} />
+                  </div>
+
+                  {/* Signature area */}
+                  <div className="mt-4 pt-3 border-t border-dashed border-gray-200/60">
+                    <div className={`h-1 rounded-full mx-auto w-[40%] ${allCompleted ? "bg-amber-300/50" : "bg-gray-200/50"}`} />
+                    <p className={`text-center text-[9px] mt-1 ${allCompleted ? "text-amber-500/70" : "text-gray-300"}`}>
+                      AIliv Academy
+                    </p>
+                  </div>
+                </div>
+
+                {/* Progress Section */}
+                <div className="mt-4">
+                  <p className={`text-xs mb-2 ${allCompleted ? "text-amber-600 font-semibold" : "text-gray-400"}`}>
+                    {allCompleted
+                      ? "Parabéns! Trilha concluída."
+                      : `${totalLessons - completedCount} aula${totalLessons - completedCount !== 1 ? 's' : ''} restante${totalLessons - completedCount !== 1 ? 's' : ''}`
+                    }
+                  </p>
+                  <div className="flex items-center gap-2.5">
+                    <Progress value={overallProgress} className="flex-1 h-2" />
+                    <span className={`text-xs font-bold ${allCompleted ? "text-amber-700" : "text-gray-500"}`}>
+                      {completedCount}/{totalLessons}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Progress footer */}
-          <p className={`text-xs mb-2 ${allCompleted ? "text-amber-600 font-semibold" : "text-gray-400"}`}>
-            {allCompleted 
-              ? "Parabéns! Todas as aulas concluídas." 
-              : `Complete ${totalLessons - completedCount} aula${totalLessons - completedCount !== 1 ? 's' : ''} restante${totalLessons - completedCount !== 1 ? 's' : ''}`
-            }
-          </p>
-          <div className="flex items-center gap-3">
-            <Progress value={overallProgress} className="flex-1 h-2" />
-            <span className={`text-xs font-bold ${allCompleted ? "text-amber-700" : "text-gray-500"}`}>
-              {completedCount}/{totalLessons}
-            </span>
+          </motion.div>
+
+          {/* ── Skill Tree (Right) ── */}
+          <div className="flex-1 min-w-0">
+            {totalLessons > 0 ? (
+              <V8SkillTree
+                lessons={lessonItems}
+                onLessonClick={(id) => navigate(`/v8/${id}`)}
+                allCompleted={allCompleted}
+              />
+            ) : (
+              <div className="text-center py-12 text-gray-500 text-sm">
+                Nenhuma aula disponível nesta trilha ainda.
+              </div>
+            )}
           </div>
         </div>
-
-        {/* ── Skill Tree ── */}
-        {totalLessons > 0 ? (
-          <V8SkillTree
-            lessons={(lessons ?? []).map((lesson, index) => ({
-              id: lesson.id,
-              title: lesson.title,
-              description: lesson.description ?? undefined,
-              estimatedTime: lesson.estimated_time ?? undefined,
-              imageUrl: (lesson as any).image_url ?? undefined,
-              status: getLessonStatus(index, lesson.id),
-            }))}
-            onLessonClick={(id) => navigate(`/v8/${id}`)}
-            allCompleted={allCompleted}
-          />
-        ) : (
-          <div className="text-center py-12 text-gray-500 text-sm">
-            Nenhuma aula disponível nesta trilha ainda.
-          </div>
-        )}
       </div>
     </div>
   );
