@@ -36,6 +36,15 @@ export function parsePlaygroundBlocks(rawText: string): ParsedPlayground[] {
     const fields = parseFields(blockContent);
 
     const hints = parseListField(blockContent, "hints");
+    const evaluationCriteria = parseListField(blockContent, "evaluationCriteria");
+
+    // Fallback: if evaluationCriteria was written as CSV on one line
+    if (evaluationCriteria.length === 0) {
+      const criteriaRaw = fields.evaluationcriteria || fields.evaluationCriteria || "";
+      if (criteriaRaw) {
+        evaluationCriteria.push(...criteriaRaw.split(",").map((c: string) => c.trim()).filter(Boolean));
+      }
+    }
 
     const playground: Omit<V8InlinePlayground, "id" | "afterSectionIndex"> = {
       title: fields.title || "Playground",
@@ -50,20 +59,29 @@ export function parsePlaygroundBlocks(rawText: string): ParsedPlayground[] {
       subtitle: fields.subtitle,
     };
 
+    // offlineFallback
+    const fallbackMessage = fields.offlinefallbackmessage || fields.offlineFallbackMessage;
+    const fallbackExample = fields.offlinefallbackexampleanswer || fields.offlineFallbackExampleAnswer;
+    if (fallbackMessage || fallbackExample) {
+      playground.offlineFallback = {
+        message: fallbackMessage || "Continue a aula normalmente.",
+        exampleAnswer: fallbackExample || "",
+      };
+    }
+
     // Parse user challenge if present
     const challengeInstruction = fields.userchallengeinstruction || fields.userChallengeInstruction;
     const challengePrompt = fields.userchallengeprompt || fields.userChallengePrompt;
     if (challengeInstruction || challengePrompt) {
-      const criteriaRaw = fields.evaluationcriteria || fields.evaluationCriteria || "";
-      const criteria = criteriaRaw
-        ? criteriaRaw.split(",").map((c: string) => c.trim()).filter(Boolean)
-        : [];
+      const maxAttemptsRaw = fields.maxattempts || fields.maxAttempts;
+      const maxAttempts = maxAttemptsRaw ? parseInt(maxAttemptsRaw, 10) : undefined;
 
       playground.userChallenge = {
         instruction: challengeInstruction || "Agora é sua vez!",
         challengePrompt: challengePrompt || "",
         hints,
-        evaluationCriteria: criteria,
+        evaluationCriteria,
+        ...(maxAttempts && !isNaN(maxAttempts) ? { maxAttempts } : {}),
       };
     }
 
@@ -107,20 +125,25 @@ export function assignPlaygroundIndices(
 function parseFields(block: string): Record<string, string> {
   const fields: Record<string, string> = {};
   const lines = block.split("\n");
+  // Fields that are parsed as lists — skip them as key:value
+  const listFields = new Set(["hints", "evaluationcriteria"]);
 
   for (const line of lines) {
-    const colonIdx = line.indexOf(":");
+    const trimmed = line.trim();
+    if (trimmed.startsWith("- ")) continue; // list item, not a field
+
+    const colonIdx = trimmed.indexOf(":");
     if (colonIdx === -1) continue;
 
-    const key = line.slice(0, colonIdx).trim();
-    const value = line.slice(colonIdx + 1).trim();
+    const key = trimmed.slice(0, colonIdx).trim();
+    // Use everything AFTER the first colon as value (preserves colons in value)
+    const value = trimmed.slice(colonIdx + 1).trim();
 
-    // Skip list headers (e.g. "hints:")
-    if (!value && key.toLowerCase() === "hints") continue;
+    // Skip list headers (e.g. "hints:", "evaluationCriteria:")
+    if (!value && listFields.has(key.toLowerCase())) continue;
 
     if (key && value) {
       fields[key.toLowerCase()] = value;
-      // Also store original case
       fields[key] = value;
     }
   }
@@ -135,18 +158,33 @@ function parseListField(block: string, fieldName: string): string[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.toLowerCase().startsWith(`${fieldName}:`)) {
+    if (trimmed.toLowerCase() === `${fieldName.toLowerCase()}:` || trimmed.toLowerCase().startsWith(`${fieldName.toLowerCase()}:`)) {
+      // Check if there's inline content after the colon
+      const afterColon = trimmed.slice(trimmed.indexOf(":") + 1).trim();
+      if (afterColon) {
+        // Single-line CSV: "evaluationCriteria: a, b, c"
+        items.push(...afterColon.split(",").map(s => s.trim()).filter(Boolean));
+        continue;
+      }
       inList = true;
       continue;
     }
     if (inList) {
+      if (trimmed === "") {
+        // Skip blank lines inside list (don't break out)
+        continue;
+      }
       if (trimmed.startsWith("- ")) {
         items.push(trimmed.slice(2).trim());
-      } else if (trimmed === "" || (!trimmed.startsWith("-") && trimmed.includes(":"))) {
+      } else if (trimmed.includes(":") && !trimmed.startsWith("-")) {
+        // Hit next field — stop list
         inList = false;
+      } else if (trimmed.length > 0) {
+        // Plain text line without "- " prefix — accept it as list item
+        items.push(trimmed);
       }
     }
   }
 
-  return items.slice(0, 3); // max 3 hints
+  return items;
 }
