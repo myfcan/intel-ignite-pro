@@ -19,13 +19,13 @@ function buildAutoPrompt(content: string): string {
 Style requirements:
 - Modern flat 3D render, clean and minimal
 - Single object or small composition, centered
-- TRUE TRANSPARENT BACKGROUND with real alpha channel (PNG)
-- ABSOLUTELY NO checkerboard, transparency grid, tiled pattern, studio backdrop, or colored panel
-- Soft gradients, smooth surfaces, rounded edges
+- CLEAN SOLID WHITE BACKGROUND (#FFFFFF), no patterns, no gradients, no grid
+- Soft gradients on the object, smooth surfaces, rounded edges
 - Vibrant but not neon colors (indigo, violet, sky blue, warm tones)
 - No text, no labels, no UI elements in the image
 - Think Apple/Notion style icons: polished, friendly, professional
-- Subtle shadow underneath the object for depth`;
+- Subtle soft shadow underneath the object for depth
+- The object should be large and fill most of the frame`;
 }
 
 serve(async (req) => {
@@ -67,7 +67,7 @@ serve(async (req) => {
       }
       prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single isolated object, TRUE TRANSPARENT BACKGROUND with alpha channel (PNG), ABSOLUTELY NO checkerboard/grid pattern, soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons.`;
+Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF) with no patterns or grid, soft gradients on object, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill most of the frame.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
@@ -112,54 +112,11 @@ Style: modern flat 3D render, single isolated object, TRUE TRANSPARENT BACKGROUN
     }
 
     const aiData = await aiResponse.json();
-    const initialBase64Url = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const finalBase64Url = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-    if (!initialBase64Url) {
+    if (!finalBase64Url) {
       console.error("[v8-generate-section-image] No image in AI response:", JSON.stringify(aiData).slice(0, 500));
       throw new Error("No image returned from AI gateway");
-    }
-
-    // Second pass: remove fake transparency grids/checkerboard if model produced one
-    let finalBase64Url = initialBase64Url;
-    try {
-      const cleanupResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash-image",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "Remove any checkerboard/grid/fake transparency background from this image and return only the object with REAL transparent alpha background (PNG). Keep the object style and colors.",
-                },
-                {
-                  type: "image_url",
-                  image_url: { url: initialBase64Url },
-                },
-              ],
-            },
-          ],
-          modalities: ["image", "text"],
-        }),
-      });
-
-      if (cleanupResponse.ok) {
-        const cleanupData = await cleanupResponse.json();
-        const cleanedBase64Url = cleanupData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        if (cleanedBase64Url) {
-          finalBase64Url = cleanedBase64Url;
-        }
-      } else {
-        console.warn(`[v8-generate-section-image] Cleanup pass skipped: ${cleanupResponse.status}`);
-      }
-    } catch (cleanupError) {
-      console.warn("[v8-generate-section-image] Cleanup pass failed, using first pass image:", cleanupError);
     }
 
     // Extract base64 data and convert to bytes
