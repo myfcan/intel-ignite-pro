@@ -1,71 +1,43 @@
 
+# Correcoes Estruturais do Player V8 — Execucao Imediata
 
-# Plano: Player V8 — Modelo de Tela Unica (Uma Secao por Vez)
+## 3 mudancas cirurgicas, sem reestruturacao
 
-## Problema Real no Codigo Atual
+### Mudanca 1: Quiz para de auto-avancar no modo ouvir
+**Arquivo**: `src/components/lessons/v8/V8QuizInline.tsx`
 
-O player renderiza TODOS os itens desbloqueados simultaneamente em scroll vertical (linha 152 de `V8LessonPlayer.tsx`):
-```tsx
-{timeline.map((item, idx) => {
-  if (idx > unlockedIndex) return null;
-  // renders ALL unlocked items stacked
-```
+- **Linha 68**: Remover `onEnded={onContinue}` do audio da pergunta do quiz
+  - De: `<V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay onEnded={onContinue} />`
+  - Para: `<V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay />`
+- **Linha 212**: Remover `onEnded={onContinue}` do audio de reforco
+  - De: `<V8AudioPlayer ... onEnded={onContinue} />`
+  - Para: `<V8AudioPlayer ... />`
 
-Isso causa:
-- Modo "Ouvir": audio termina mas usuario continua vendo a mesma tela (secao 0) porque a proxima secao aparece ABAIXO, fora da viewport
-- Modo "Ler": botao "Continuar" esta inline mas adiciona conteudo abaixo em vez de trocar a tela
-- Botao fixo no rodape cobre a imagem
+Resultado: o audio do quiz toca, mas o quiz ESPERA a interacao do usuario antes de avancar.
 
-## Solucao: Modelo de Tela Unica
+### Mudanca 2: Modo leitura nao avanca ao terminar audio
+**Arquivo**: `src/components/lessons/v8/V8LessonPlayer.tsx`
 
-Trocar de scroll vertical para **uma secao por vez** (card/slide). Apenas o item atual do timeline e renderizado. Avanco troca o conteudo inteiro da tela.
+- **Linha 118**: Condicionar `onAudioEnded` ao modo
+  - De: `onAudioEnded={advance}`
+  - Para: `onAudioEnded={state.mode === "listen" ? advance : undefined}`
 
-## Mudancas por Arquivo
+Resultado: no modo "ler", o audio pode tocar livremente mas nunca avanca a tela sozinho. Apenas o botao "Continuar" avanca.
 
-### 1. `src/hooks/useV8Player.ts`
-- Substituir `unlockedIndex` por logica de `currentIndex` que avanca para o proximo item do timeline
-- `advanceAudio()` (listen mode): incrementa `currentIndex` para proximo item, causando transicao de tela
-- Nova funcao `advanceManual()` (read mode): mesmo efeito, acionada pelo botao "Continuar"
-- Quando `currentIndex >= timeline.length`: transita para fase "exercises" ou "completion"
+### Mudanca 3: Layout adaptativo para imagens verticais
+**Arquivo**: `src/components/lessons/v8/V8ContentSection.tsx`
 
-### 2. `src/components/lessons/v8/V8LessonPlayer.tsx`
-- Renderizar APENAS `timeline[state.currentIndex]` (um item por vez), com `AnimatePresence` para transicao suave
-- Remover o `timeline.map(...)` que renderiza todos
-- Remover scroll vertical e `IntersectionObserver` (nao ha scroll entre secoes)
-- Botao "Continuar" (modo read): posicionado ABAIXO do conteudo, inline (nao fixo), nao cobre imagem
-- Modo listen: sem botao visivel — transicao automatica via `onEnded`
-- Botao final fixo removido — a transicao para exercises/completion e automatica quando `currentIndex` ultrapassa o timeline
+- Adicionar `useState` para detectar orientacao da imagem
+- No `<img>`, adicionar `onLoad` que verifica `naturalWidth / naturalHeight`
+- Se ratio < 0.85 (retrato): aplicar `max-w-[55%] max-h-[340px] rounded-xl`
+- Se paisagem/quadrada: manter `max-w-[85%] max-h-[280px]` atual
 
-### 3. `src/components/lessons/v8/V8ContentSection.tsx`
-- Sem mudanca funcional. Ja recebe `isActiveAudio` e `onAudioEnded` corretamente
-- Layout ja adequado (titulo, imagem 85%/280px, texto, audio player)
+Resultado: imagens verticais (como "previsao de palavras") aparecem com tamanho proporcional e elegante, sem ficar comprimidas no centro.
 
-## Fluxo do Usuario (Novo)
+## Arquivos modificados (3 total)
 
-```text
-Modo "Ouvir":
-  [Tela: Secao 0] audio toca automaticamente
-  -> audio termina (onEnded) -> [Tela: Secao 1] audio toca
-  -> ... -> [Tela: Quiz] -> responde -> avanca
-  -> timeline acabou -> fase exercises/completion
-
-Modo "Ler":
-  [Tela: Secao 0] usuario le conteudo
-  -> clica "Continuar" -> [Tela: Secao 1]
-  -> ... -> [Tela: Quiz] -> responde -> avanca
-  -> timeline acabou -> fase exercises/completion
-```
-
-## Estilo do Botao "Continuar"
-- Posicao: inline no fim do conteudo da secao (nao fixo, nao cobre imagem)
-- Visual: mesmo estilo atual (indigo-600, rounded-xl, sombra)
-- Aparece SOMENTE em modo "read"
-- Em modo "listen", a transicao e 100% automatica
-
-## Criterios de Aceite
-- Apenas UMA secao visivel por vez na tela
-- Modo ouvir: secoes avancam automaticamente ao terminar audio
-- Modo ler: botao "Continuar" troca a secao (nao adiciona abaixo)
-- Botao nunca cobre a imagem
-- Quizzes e playgrounds tambem aparecem como tela unica
-- Transicao suave (fade/slide) entre secoes
+| Arquivo | Linhas | Tipo |
+|---------|--------|------|
+| `V8QuizInline.tsx` | 68, 212 | Remover props |
+| `V8LessonPlayer.tsx` | 118 | Condicional |
+| `V8ContentSection.tsx` | 1, 22-54 | Estado + layout |
