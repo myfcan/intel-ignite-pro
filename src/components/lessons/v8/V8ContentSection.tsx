@@ -43,7 +43,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut", delay: sectionIndex * 0.05 }}
-        className="flex flex-col pb-10 border-b border-slate-100 last:border-b-0"
+        className="flex flex-col"
       >
         {/* Section title */}
         <h2 className="text-xl font-bold leading-snug text-slate-900">

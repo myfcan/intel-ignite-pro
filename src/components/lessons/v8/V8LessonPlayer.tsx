@@ -124,7 +124,7 @@ export const V8LessonPlayer = ({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                         onClick={advance}
-                        className="flex items-center justify-center gap-2 w-full mt-6 py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
+                        className="flex items-center justify-center gap-2 w-full mt-3 py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
                       >
                         Continuar
                         <ArrowRight className="w-4 h-4" />
