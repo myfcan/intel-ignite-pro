@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { V8Section } from "@/types/v8Lesson";
@@ -24,6 +24,17 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
   ({ section, mode, onAudioEnded, sectionIndex, isActiveAudio = false }, ref) => {
     const cleanTitle = cleanSectionTitle(section.title);
     const sanitizedContent = stripEmotionTags(section.content);
+    const [isPortrait, setIsPortrait] = useState(false);
+
+    const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.currentTarget;
+      const ratio = img.naturalWidth / img.naturalHeight;
+      setIsPortrait(ratio < 0.85);
+    };
+
+    const imageClasses = isPortrait
+      ? "max-w-[55%] max-h-[340px] h-auto object-contain mx-auto rounded-xl"
+      : "max-w-[85%] max-h-[280px] h-auto object-contain mx-auto";
 
     return (
       <motion.div
@@ -46,8 +57,9 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
               <img
                 src={section.imageUrl}
                 alt={cleanTitle}
-                className="max-w-[85%] max-h-[280px] h-auto object-contain mx-auto"
+                className={imageClasses}
                 loading="lazy"
+                onLoad={handleImageLoad}
               />
             </div>
           </div>

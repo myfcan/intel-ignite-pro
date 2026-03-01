@@ -115,7 +115,7 @@ export const V8LessonPlayer = ({
                       mode={state.mode}
                       sectionIndex={state.currentIndex}
                       isActiveAudio={state.mode === "listen"}
-                      onAudioEnded={advance}
+                      onAudioEnded={state.mode === "listen" ? advance : undefined}
                     />
                     {/* Read mode: show inline "Continuar" button */}
                     {state.mode === "read" && (

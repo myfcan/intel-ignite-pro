@@ -65,7 +65,7 @@ export const V8QuizInline = ({
 
       {/* Question audio */}
       {quiz.audioUrl && state === "answering" && isActiveAudio && (
-        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay onEnded={onContinue} />
+        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay />
       )}
 
       {/* Options */}
@@ -209,7 +209,7 @@ export const V8QuizInline = ({
               {quiz.reinforcement}
             </p>
             {quiz.reinforcementAudioUrl && (
-              <V8AudioPlayer audioUrl={quiz.reinforcementAudioUrl} autoPlay={isActiveAudio} onEnded={onContinue} />
+              <V8AudioPlayer audioUrl={quiz.reinforcementAudioUrl} autoPlay={isActiveAudio} />
             )}
             <button
               onClick={onContinue}
