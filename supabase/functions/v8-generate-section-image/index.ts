@@ -213,7 +213,7 @@ async function buildEditFormData(geminiBase64Url: string): Promise<FormData> {
   form.append("model", "gpt-image-1");
   form.append("image", imageFile);
   form.append("prompt", "Remove the background from this image completely. Keep only the main object/illustration with a fully transparent background. Preserve all colors, details and style of the object exactly as they are. Output as PNG with real alpha transparency channel.");
-  form.append("size", "1024x1024");
+  form.append("size", "512x512");
   form.append("background", "transparent");
   form.append("response_format", "b64_json");
 
