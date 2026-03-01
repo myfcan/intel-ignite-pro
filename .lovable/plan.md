@@ -1,129 +1,216 @@
 
+# Plano Refinado: 3 Correcoes no V8 Player
 
-# Correcao Definitiva: Trim Hibrido (Alpha + Cor de Fundo)
+## Evidencias Reais do Codigo Atual
 
-## Problema Real (Forense)
-
-O algoritmo atual em `V8TrimmedImage` (linha 76 de `V8ContentSection.tsx`):
-
+### Evidencia 1 — Ordem atual (Titulo -> Markdown -> Imagem -> Audio)
+Arquivo: `src/components/lessons/v8/V8ContentSection.tsx`, linhas 170-257:
 ```tsx
-const alpha = data[(y * width + x) * 4 + 3];
-if (alpha > 10) { // <-- ESTE E O BUG
+{/* Section title */}
+<h2 className="text-xl font-bold leading-snug text-slate-900">
+  {cleanTitle}
+</h2>
+
+{/* Markdown body */}
+<div className="v8-markdown text-[17px] leading-[1.75] text-slate-700 mt-[7px] ...">
+  <ReactMarkdown ...>{sanitizedContent}</ReactMarkdown>
+</div>
+
+{/* Image — AFTER markdown content */}
+{section.imageUrl && (
+  <div className="flex justify-center mt-[7px]">
+    <V8TrimmedImage src={section.imageUrl} alt={cleanTitle}
+      className="w-full max-w-md rounded-2xl object-contain" />
+  </div>
+)}
+
+{/* Audio player — inline */}
+{section.audioUrl && (
+  <div className="mt-[7px]">
+    <V8AudioPlayer ... />
+  </div>
+)}
 ```
 
-As imagens geradas pelo pipeline tem fundo branco opaco (`#FFFFFF`, alpha=255). Todos os pixels passam no teste `alpha > 10`, portanto o crop retorna a imagem inteira sem nenhum recorte. O `mt-[7px]` esta correto no CSS, mas o "espaco" visivel vem do fundo branco dentro do bitmap.
+**Problema**: O usuario quer imagem ANTES do markdown (Titulo -> Imagem -> Conteudo). E a imagem usa `max-w-md` (448px), grande demais.
 
-## Correcao
+### Evidencia 2 — Imagem usa `max-w-md` (448px)
+Linha 243: `className="w-full max-w-md rounded-2xl object-contain"`
 
-### Arquivo unico: `src/components/lessons/v8/V8ContentSection.tsx`
+### Evidencia 3 — Audio player esta DENTRO de cada V8ContentSection
+Linhas 248-256: cada secao renderiza seu proprio `V8AudioPlayer` inline no rolo.
 
-Substituir o algoritmo de deteccao de bounding box (linhas 68-84) por um algoritmo hibrido:
+### Evidencia 4 — Botao "Continuar" esta DENTRO do rolo scrollavel
+`V8LessonPlayer.tsx`, linhas 152-165:
+```tsx
+{state.mode === "read" && currentItem?.type === "section" && (
+  <motion.button ... onClick={advance}
+    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-indigo-600 ...">
+    Continuar <ArrowRight className="w-4 h-4" />
+  </motion.button>
+)}
+```
 
-1. **Amostrar cor de fundo**: Ler os 4 cantos da imagem e calcular a cor media (R, G, B).
-2. **Teste hibrido por pixel**: Um pixel e "conteudo" se:
-   - `alpha < 10` (transparente) -> NAO e conteudo
-   - Distancia de cor ao fundo `< 30` -> NAO e conteudo (e fundo)
-   - Caso contrario -> E conteudo (entra no bbox)
-3. **Manter padding de seguranca** (4px em vez de 2px para evitar corte agressivo)
-4. **Adicionar `block` na tag img** para eliminar gap de baseline
+### Evidencia 5 — Pipeline gera imagem 1024x1024
+`supabase/functions/v8-generate-section-image/index.ts`, linha 216:
+```tsx
+form.append("size", "1024x1024");
+```
+
+### Evidencia 6 — Quiz e Playground tem seus proprios botoes "Continuar" internos
+`V8QuizInline.tsx` linhas 150-153 e `V8PlaygroundInline.tsx` linhas 324-328 renderizam botoes `onContinue` dentro do proprio componente. Esses NAO devem ser movidos para a barra fixa — ficam no rolo.
+
+---
+
+## Correcao 1: Reduzir imagem em ~28%
+
+### Frontend — `V8ContentSection.tsx`
+Linha 243: trocar `max-w-md` por `max-w-xs` (320px, reducao de 28.6%).
+
+```tsx
+// ANTES:
+className="w-full max-w-md rounded-2xl object-contain"
+
+// DEPOIS:
+className="w-full max-w-xs rounded-2xl object-contain"
+```
+
+### Pipeline — `supabase/functions/v8-generate-section-image/index.ts`
+Linha 216: trocar `1024x1024` por `512x512` para aulas futuras.
+
+```tsx
+// ANTES:
+form.append("size", "1024x1024");
+
+// DEPOIS:
+form.append("size", "512x512");
+```
+
+**Nota**: Aulas ja geradas com 1024x1024 serao reduzidas pelo `max-w-xs` no CSS. Aulas futuras ja nascerao menores no pipeline.
+
+---
+
+## Correcao 2: Inverter ordem para Titulo -> Imagem -> Markdown
+
+### `V8ContentSection.tsx`
+Mover o bloco da imagem (linhas 237-246) para ANTES do bloco de markdown (linha 175).
+
+Nova ordem no JSX:
+```text
+1. <h2> titulo </h2>
+2. {section.imageUrl && <V8TrimmedImage ... />}     ← MOVIDO PARA CIMA
+3. <div className="v8-markdown"> ... </div>
+4. (audio player removido daqui — vai para barra fixa)
+```
+
+---
+
+## Correcao 3: Player de audio + botao "Continuar" fixos no fundo
+
+### Arquitetura da barra fixa
 
 ```text
-Antes (alpha-only):
-+----------------------------------+
-|  branco  branco  branco  branco  |  <- alpha=255, passa no teste
-|  branco  [ILUSTRACAO]   branco   |  <- alpha=255, passa no teste  
-|  branco  branco  branco  branco  |  <- alpha=255, passa no teste
-+----------------------------------+
-Resultado: bbox = imagem inteira, sem crop
-
-Depois (hibrido):
-+----------------------------------+
-|  fundo   fundo   fundo   fundo   |  <- cor ~= fundo, IGNORADO
-|  fundo   [ILUSTRACAO]   fundo    |  <- cor != fundo, CONTEUDO
-|  fundo   fundo   fundo   fundo   |  <- cor ~= fundo, IGNORADO
-+----------------------------------+
-Resultado: bbox = so a ilustracao, crop real
++------------------------------------------+
+|  [rolo scrollavel com pb-32]             |
+|    Titulo                                |
+|    Imagem (max-w-xs)                     |
+|    Markdown                              |
+|    --- hr ---                            |
+|    Quiz (com seu proprio botao)          |
+|    Playground (com seu proprio botao)    |
++==========================================+
+|  BARRA FIXA (fixed bottom-0 z-50)       |
+|  bg-white border-t shadow               |
+|  +--------------------------------------+
+|  | [AudioPlayer]       [Continuar ->]   |
+|  +--------------------------------------+
++==========================================+
 ```
 
-### Codigo exato da correcao
+### Regras de visibilidade da barra fixa
 
-Substituir linhas 68-101 por:
+A barra fixa so aparece quando `state.phase === "content"` E o item atual e do tipo `"section"`. Quando o item ativo e quiz ou playground, esses componentes usam seus proprios botoes internos, e a barra fixa fica oculta.
+
+### Mudancas em `V8ContentSection.tsx`
+
+1. Remover o bloco de audio player (linhas 248-256) — o audio sera gerenciado pelo player.
+2. A prop `onAudioEnded` e `isActiveAudio` permanecem na interface mas nao serao mais usadas dentro do componente (podem ser removidas da interface tambem para limpeza).
+3. Remover import de `V8AudioPlayer` deste arquivo.
+
+### Mudancas em `V8LessonPlayer.tsx`
+
+1. Importar `V8AudioPlayer` diretamente.
+2. Adicionar `pb-32` ao container scrollavel para compensar a barra fixa.
+3. Remover o `<motion.button>` "Continuar" de dentro do rolo (linhas 152-165).
+4. Criar barra fixa no fundo:
 
 ```tsx
-// Amostrar cor de fundo dos 4 cantos
-const sampleBg = (px: number, py: number) => {
-  const i = (py * width + px) * 4;
-  return [data[i], data[i + 1], data[i + 2]];
-};
-const corners = [
-  sampleBg(0, 0),
-  sampleBg(width - 1, 0),
-  sampleBg(0, height - 1),
-  sampleBg(width - 1, height - 1),
-];
-const bgR = Math.round(corners.reduce((s, c) => s + c[0], 0) / 4);
-const bgG = Math.round(corners.reduce((s, c) => s + c[1], 0) / 4);
-const bgB = Math.round(corners.reduce((s, c) => s + c[2], 0) / 4);
-
-let minX = width, minY = height, maxX = -1, maxY = -1;
-
-for (let y = 0; y < height; y++) {
-  for (let x = 0; x < width; x++) {
-    const i = (y * width + x) * 4;
-    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-    if (a < 10) continue; // transparente
-    const dist = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
-    if (dist < 30) continue; // cor igual ao fundo
-    if (x < minX) minX = x;
-    if (y < minY) minY = y;
-    if (x > maxX) maxX = x;
-    if (y > maxY) maxY = y;
-  }
-}
-
-if (maxX < 0 || maxY < 0) {
-  if (!cancelled) setResolvedSrc(src);
-  return;
-}
-
-const padding = 4;
-const cropX = Math.max(0, minX - padding);
-const cropY = Math.max(0, minY - padding);
-const cropWidth = Math.min(width - cropX, maxX - minX + 1 + padding * 2);
-const cropHeight = Math.min(height - cropY, maxY - minY + 1 + padding * 2);
+{state.phase === "content" && currentItem?.type === "section" && (
+  <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-slate-100 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+    <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+      {/* Audio player da secao ativa */}
+      {currentSectionAudioUrl && (
+        <div className="flex-1">
+          <V8AudioPlayer
+            audioUrl={currentSectionAudioUrl}
+            autoPlay={state.mode === "listen"}
+            onEnded={advance}
+          />
+        </div>
+      )}
+      {/* Botao Continuar — modo read */}
+      {state.mode === "read" && (
+        <button onClick={advance}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm ...">
+          Continuar <ArrowRight className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  </div>
+)}
 ```
 
-E na linha 142, adicionar `block`:
+5. Para obter o `currentSectionAudioUrl`, derivar do timeline + lessonData:
 
 ```tsx
-return <img src={resolvedSrc} alt={alt} className={`block ${className ?? ''}`} loading="lazy" />;
+const currentSectionAudioUrl = useMemo(() => {
+  if (state.phase !== "content" || !currentItem || currentItem.type !== "section") return null;
+  return lessonData.sections[currentItem.index]?.audioUrl ?? null;
+}, [state.phase, currentItem, lessonData.sections]);
 ```
 
-### Invalidar cache existente
+### Modo "listen" — auto-advance
 
-Limpar o cache ao mudar o algoritmo (adicionar na linha 29):
+No modo `listen`, o audio da secao ativa toca automaticamente (`autoPlay={state.mode === "listen"}`). Quando termina, `onEnded={advance}` avanca para o proximo item. Se o proximo item for quiz ou playground, a barra fixa desaparece e esses componentes assumem o controle com seus proprios botoes.
 
-```tsx
-const trimmedImageCache = new Map<string, string>();
-// Cache version — increment to invalidate when algorithm changes
-const TRIM_VERSION = 2;
-```
+---
 
-E no `useEffect`, usar chave versionada:
+## Gap Analysis — Problemas Identificados e Resolvidos
 
-```tsx
-const cacheKey = `${TRIM_VERSION}:${src}`;
-```
+| Gap | Descricao | Resolucao |
+|-----|-----------|-----------|
+| G1 | Quiz/Playground tem botoes proprios — conflito com barra fixa? | Barra fixa so aparece quando `currentItem.type === "section"`. Quiz/Playground continuam com botoes internos. |
+| G2 | `scrollIntoView` pode rolar item atras da barra fixa | `pb-32` no container scrollavel garante espaco. Tambem usar `block: "center"` no scrollIntoView para melhor posicionamento. |
+| G3 | Modo listen: quem dispara `onAudioEnded` agora? | O `V8AudioPlayer` na barra fixa recebe `onEnded={advance}` diretamente. |
+| G4 | Audio de quiz tem player proprio? | Sim — `V8QuizInline` ja renderiza seu proprio `V8AudioPlayer` internamente (linhas ~210-216). Nao e afetado. |
+| G5 | Prop `onAudioEnded` em V8ContentSection fica orfao? | Remover as props `onAudioEnded` e `isActiveAudio` da interface e do JSX de V8ContentSection. Limpar a interface. |
+| G6 | Cache de imagem trimada ja esta com TRIM_VERSION=2? | Sim — ja foi aplicado no commit anterior. Nenhuma acao necessaria. |
+
+---
+
+## Arquivos Alterados (Resumo)
+
+| Arquivo | Tipo de Mudanca |
+|---------|----------------|
+| `src/components/lessons/v8/V8ContentSection.tsx` | Inverter imagem/markdown, reduzir max-w, remover audio player inline, limpar props |
+| `src/components/lessons/v8/V8LessonPlayer.tsx` | Barra fixa com audio + continuar, pb-32, remover botao do rolo |
+| `supabase/functions/v8-generate-section-image/index.ts` | size: 1024x1024 -> 512x512 |
 
 ## O que NAO muda
 
-- Estrutura do rolo (scroll continuo) intacta
-- Ordem: Titulo -> Markdown -> Imagem -> Audio
-- Espacamento CSS: todos os `mt-[7px]` e `gap-[7px]` permanecem
-- Logica de timeline, quiz, playground, auto-scroll
-- Nenhum outro arquivo e alterado
-
-## Resultado esperado
-
-O trim ira recortar o fundo branco opaco, e o `mt-[7px]` finalmente produzira 7px visuais reais entre o ultimo paragrafo do markdown e o topo visual da ilustracao.
-
+- Estrutura do rolo (scroll continuo, `timeline.slice(0, currentIndex+1)`)
+- Logica de timeline no `useV8Player.ts`
+- `V8QuizInline.tsx` e `V8PlaygroundInline.tsx` (botoes internos intactos)
+- `V8Header.tsx`, `V8ModeSelector.tsx`
+- Nenhuma tabela ou migracao de banco
+- Nenhuma alteracao em `src/integrations/supabase/client.ts`
