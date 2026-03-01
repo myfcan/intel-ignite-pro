@@ -9,6 +9,7 @@ interface V8ContentSectionProps {
   mode: "read" | "listen";
   onAudioEnded?: () => void;
   sectionIndex: number;
+  isActiveAudio?: boolean;
 }
 
 /** Strip "Seção X — " prefix from section titles */
@@ -20,7 +21,7 @@ const stripEmotionTags = (text: string) =>
   text.replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, "");
 
 export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps>(
-  ({ section, mode, onAudioEnded, sectionIndex }, ref) => {
+  ({ section, mode, onAudioEnded, sectionIndex, isActiveAudio = false }, ref) => {
     const cleanTitle = cleanSectionTitle(section.title);
     const sanitizedContent = stripEmotionTags(section.content);
 
@@ -45,7 +46,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
               <img
                 src={section.imageUrl}
                 alt={cleanTitle}
-                className="max-w-[85%] h-auto object-contain mx-auto"
+                className="max-w-[70%] max-h-[180px] h-auto object-contain mx-auto"
                 loading="lazy"
               />
             </div>
@@ -119,7 +120,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
           <div className="mt-2">
             <V8AudioPlayer
               audioUrl={section.audioUrl}
-              autoPlay={mode === "listen"}
+              autoPlay={mode === "listen" && isActiveAudio}
               onEnded={onAudioEnded}
             />
           </div>

@@ -26,6 +26,13 @@ export const useV8Player = (lessonData: V8LessonData) => {
     scores: [],
   });
 
+  // Which timeline item is allowed to autoplay audio (listen mode)
+  const [activeAudioIndex, setActiveAudioIndex] = useState(0);
+
+  const advanceAudio = useCallback(() => {
+    setActiveAudioIndex((prev) => prev + 1);
+  }, []);
+
   // Build flat timeline: sections interleaved with playgrounds + quizzes
   const timeline = useMemo<TimelineItem[]>(() => {
     const items: TimelineItem[] = [];
@@ -114,6 +121,8 @@ export const useV8Player = (lessonData: V8LessonData) => {
     timeline,
     currentItem,
     totalContentSteps,
+    activeAudioIndex,
+    advanceAudio,
     selectMode,
     next,
     goToIndex,
