@@ -46,7 +46,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
               <img
                 src={section.imageUrl}
                 alt={cleanTitle}
-                className="max-w-[70%] max-h-[180px] h-auto object-contain mx-auto"
+                className="max-w-[85%] max-h-[280px] h-auto object-contain mx-auto"
                 loading="lazy"
               />
             </div>
