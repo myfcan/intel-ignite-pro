@@ -324,16 +324,18 @@ export default function AdminV8Create() {
       updateStep('update-content', 'running');
       addLog('info', 'Atualizando JSON com URLs de áudio...');
       const updatedData = { ...parsed };
+      const cacheBuster = `?t=${Date.now()}`;
       for (const r of result.results) {
+        const urlWithCacheBuster = r.audioUrl + cacheBuster;
         if (r.type === "section" && updatedData.sections[r.index]) {
-          updatedData.sections[r.index].audioUrl = r.audioUrl;
+          updatedData.sections[r.index].audioUrl = urlWithCacheBuster;
           updatedData.sections[r.index].audioDurationSeconds = r.durationEstimate;
         } else if (r.type === "quiz" && updatedData.inlineQuizzes[r.index]) {
-          updatedData.inlineQuizzes[r.index].audioUrl = r.audioUrl;
+          updatedData.inlineQuizzes[r.index].audioUrl = urlWithCacheBuster;
         } else if (r.type === "quiz-reinforcement" && updatedData.inlineQuizzes[r.index]) {
-          updatedData.inlineQuizzes[r.index].reinforcementAudioUrl = r.audioUrl;
+          updatedData.inlineQuizzes[r.index].reinforcementAudioUrl = urlWithCacheBuster;
         } else if (r.type === "playground" && updatedData.inlinePlaygrounds?.[r.index]) {
-          updatedData.inlinePlaygrounds[r.index].audioUrl = r.audioUrl;
+          updatedData.inlinePlaygrounds[r.index].audioUrl = urlWithCacheBuster;
         }
       }
       setJsonText(JSON.stringify(updatedData, null, 2));
