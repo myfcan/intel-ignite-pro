@@ -19,7 +19,7 @@ function buildAutoPrompt(content: string): string {
 Style requirements:
 - Modern flat 3D render, clean and minimal
 - Single object or small composition, centered
-- TRANSPARENT BACKGROUND (PNG with alpha channel)
+- CLEAN SOLID WHITE BACKGROUND (#FFFFFF)
 - Soft gradients, smooth surfaces, rounded edges
 - Vibrant but not neon colors (indigo, violet, sky blue, warm tones)
 - No text, no labels, no UI elements in the image
@@ -43,10 +43,11 @@ serve(async (req) => {
       });
     }
 
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not configured");
-    }
+    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured");
 
     // Build prompt
     let prompt: string;
@@ -67,7 +68,7 @@ serve(async (req) => {
       }
       prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PNG alpha), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill most of the frame.`;
+Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill most of the frame.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
@@ -75,55 +76,84 @@ Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PN
       });
     }
 
-    console.log(`[v8-generate-section-image] mode=${mode}, lessonId=${lessonId}, section=${sectionIndex}, provider=openai/gpt-image-1`);
+    console.log(`[v8-generate-section-image] STEP 1: Gemini generation | mode=${mode}, section=${sectionIndex}`);
 
-    // Generate image via OpenAI gpt-image-1 (supports real transparent PNG)
-    const aiResponse = await fetch("https://api.openai.com/v1/images/generations", {
+    // ── STEP 1: Generate with Gemini (best style for Coursiv) ──
+    const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-image-1",
-        prompt,
-        n: 1,
-        size: "1024x1024",
-        background: "transparent",
-        output_format: "png",
+        model: "google/gemini-2.5-flash-image",
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["image", "text"],
       }),
     });
 
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      console.error(`[v8-generate-section-image] OpenAI error: ${aiResponse.status}`, errText);
+    if (!geminiResponse.ok) {
+      const errText = await geminiResponse.text();
+      console.error(`[v8-generate-section-image] Gemini error: ${geminiResponse.status}`, errText);
 
-      if (aiResponse.status === 429) {
+      if (geminiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again in a few seconds." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
-      throw new Error(`OpenAI returned ${aiResponse.status}: ${errText.slice(0, 200)}`);
+      if (geminiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: "Credits exhausted. Add funds in Settings → Workspace → Usage." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw new Error(`Gemini returned ${geminiResponse.status}`);
     }
 
-    const aiData = await aiResponse.json();
-    const base64Data = aiData.data?.[0]?.b64_json;
+    const geminiData = await geminiResponse.json();
+    const geminiBase64Url = geminiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-    if (!base64Data) {
-      console.error("[v8-generate-section-image] No image in OpenAI response:", JSON.stringify(aiData).slice(0, 500));
-      throw new Error("No image returned from OpenAI");
+    if (!geminiBase64Url) {
+      console.error("[v8-generate-section-image] No image from Gemini:", JSON.stringify(geminiData).slice(0, 500));
+      throw new Error("No image returned from Gemini");
     }
 
-    // Convert base64 to bytes
-    const binaryString = atob(base64Data);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    console.log(`[v8-generate-section-image] STEP 2: GPT background removal | section=${sectionIndex}`);
+
+    // ── STEP 2: Remove background with GPT gpt-image-1 (real alpha transparency) ──
+    const gptResponse = await fetch("https://api.openai.com/v1/images/edits", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: await buildEditFormData(geminiBase64Url),
+    });
+
+    let finalPngBytes: Uint8Array;
+
+    if (gptResponse.ok) {
+      const gptData = await gptResponse.json();
+      const gptBase64 = gptData.data?.[0]?.b64_json;
+
+      if (gptBase64) {
+        console.log("[v8-generate-section-image] GPT cleanup succeeded — real transparent PNG");
+        const binaryString = atob(gptBase64);
+        finalPngBytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          finalPngBytes[i] = binaryString.charCodeAt(i);
+        }
+      } else {
+        console.warn("[v8-generate-section-image] GPT returned no image, falling back to Gemini original");
+        finalPngBytes = base64UrlToBytes(geminiBase64Url);
+      }
+    } else {
+      const errText = await gptResponse.text();
+      console.warn(`[v8-generate-section-image] GPT cleanup failed (${gptResponse.status}), using Gemini fallback:`, errText);
+      finalPngBytes = base64UrlToBytes(geminiBase64Url);
     }
 
-    // Upload to storage
+    // ── STEP 3: Upload to storage ──
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -132,7 +162,7 @@ Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PN
 
     const { error: uploadError } = await supabase.storage
       .from("lesson-audios")
-      .upload(storagePath, bytes.buffer as ArrayBuffer, {
+      .upload(storagePath, finalPngBytes.buffer as ArrayBuffer, {
         contentType: "image/png",
         upsert: true,
       });
@@ -142,7 +172,6 @@ Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PN
       throw new Error(`Storage upload failed: ${uploadError.message}`);
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from("lesson-audios")
       .getPublicUrl(storagePath);
@@ -160,3 +189,32 @@ Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PN
     );
   }
 });
+
+// ── Helpers ──
+
+function base64UrlToBytes(dataUrl: string): Uint8Array {
+  const base64Data = dataUrl.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "");
+  const binaryString = atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function buildEditFormData(geminiBase64Url: string): Promise<FormData> {
+  // Convert Gemini base64 data URL to a File for the multipart form
+  const imageBytes = base64UrlToBytes(geminiBase64Url);
+  const imageBlob = new Blob([imageBytes], { type: "image/png" });
+  const imageFile = new File([imageBlob], "input.png", { type: "image/png" });
+
+  const form = new FormData();
+  form.append("model", "gpt-image-1");
+  form.append("image", imageFile);
+  form.append("prompt", "Remove the background from this image completely. Keep only the main object/illustration with a fully transparent background. Preserve all colors, details and style of the object exactly as they are. Output as PNG with real alpha transparency channel.");
+  form.append("size", "1024x1024");
+  form.append("background", "transparent");
+  form.append("response_format", "b64_json");
+
+  return form;
+}
