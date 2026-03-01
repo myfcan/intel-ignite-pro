@@ -1,105 +1,120 @@
 
-Objetivo desta auditoria: validar com evidência real por que o problema persiste (layout e áudio) no V8 da aula `92da570a-32c0-4df0-ac24-be6de43e3e0f`, sem suposições.
+Objetivo: eliminar de forma sistêmica o problema de “dashboard antigo no preview”, com rastreabilidade visual e técnica para provar em runtime qual build/layout está ativo.
 
-1) Provas reais coletadas (código + execução)
-- Código do player (arquivo real `src/components/lessons/v8/V8ContentSection.tsx`):
+Contexto forense (dados reais já coletados)
+1) Não existe “segunda versão” de dashboard no código atual
+- Busca em `src/pages`:
+  - somente `src/pages/Dashboard.tsx` exporta `Dashboard`.
+- Trecho real (`src/pages/Dashboard.tsx`):
 ```tsx
-<div className="flex justify-center mt-[7px] mb-[7px]">
-  <div className="bg-white rounded-2xl">
-    <img
-      src={section.imageUrl}
-      alt={cleanTitle}
-      className="max-w-[85%] h-auto object-contain mx-auto"
-      loading="lazy"
-    />
-  </div>
-</div>
+<div className="min-h-screen relative" data-layout-id={DASHBOARD_LAYOUT_ID} ...>
 ```
-- Ou seja: o ajuste de `7px` foi aplicado no código (fato).
+- `DASHBOARD_LAYOUT_ID` real (`src/lib/runtimeSignature.ts`):
+```ts
+export const DASHBOARD_LAYOUT_ID = 'dashboard_v2026_02_25';
+```
 
-- Dados reais carregados no preview (network real do usuário, `2026-03-01T12:43:02Z`):
-  - `section-0.imageUrl = .../v8-images/draft-1772368558827/section-0.png`
-  - `section-0.audioUrl = .../section-0.mp3?t=1772368619856` (cache-buster presente)
-- Isso confirma que a aula usa URLs novas com `?t=` no áudio.
-
-- Metadados reais no storage (query real):
-  - `v8-images/draft-1772368558827/section-0.png` size `678535`
-  - `...section-1.png` size `708913`
-  - `...section-2.png` size `799067`
-  - `...section-3.png` size `728895`
-- E o PNG carregado mostra header binário com `IHDR` e dimensão 1024x1024 (canvas grande).
-
-2) Diagnóstico do problema 1 (layout)
-Constatação técnica:
-- O `gap` externo entre título-imagem-texto foi corrigido para 7px no componente.
-- Porém o `<img>` ainda renderiza com `max-w-[85%] h-auto`, sem limite de altura e sem corte de bordas transparentes do PNG.
-- Resultado prático: mesmo com `7px` corretos entre elementos, a área visual da arte fica “longe” do texto quando o PNG vem com muito espaço interno (transparente/canvas grande).
-
-Prova visual:
-- Screenshot real da execução em `/v8/...` após selecionar “Ouvir” mostra o objeto central distante do texto, apesar do margin externo já aplicado.
-
-3) Diagnóstico do problema 2 (áudio duplicado)
-Causa encontrada com prova real: autoplay concorrente de múltiplos blocos.
-
-- Código real `src/components/lessons/v8/V8LessonPlayer.tsx`:
+2) O dashboard atual no código não bate com o screenshot que você enviou
+- Trechos reais do dashboard atual:
 ```tsx
-{state.phase === "content" && (
-  <div className="flex flex-col gap-10 pb-32">
-    {timeline.map((item, idx) => { ...render ALL items... })}
+<h2 ...>Pronto para aprender?</h2>
+...
+<div className="hidden sm:grid sm:grid-cols-4 ...">  // 4 stat cards
 ```
-- Todos os itens do timeline são montados ao mesmo tempo.
+- No screenshot enviado aparecem textos e composição de uma versão anterior (hero com “Bem-vindo de volta / Olá...” + 3 cards), o que indica problema de entrega/cache de assets no cliente, não ausência de alteração no repositório.
 
-- Código real `src/components/lessons/v8/V8ContentSection.tsx`:
-```tsx
-<V8AudioPlayer
-  audioUrl={section.audioUrl}
-  autoPlay={mode === "listen"}
-/>
+3) Evidência de sessão real no preview
+- Network real do iframe do usuário:
+  - Origin: `https://5d6a7bc3-91d4-4047-a4f4-c9b771bd43ee.lovableproject.com`
+  - Usuário autenticado carregando aula V8 (`/v8/92da...`) no timestamp `2026-03-01T13:10:17Z`.
+- Isso confirma que o usuário estava no preview logado, mas não prova que o dashboard aberto naquele momento era o bundle mais novo.
+
+4) Fragilidade real de invalidação de cache no boot
+- Trecho real (`src/main.tsx`):
+```ts
+const APP_VERSION = '2026-02-27-v5';
 ```
-- Em modo “listen”, todas as seções recebem `autoPlay=true`.
+- Esse valor é manual/fixo. Se não for incrementado sempre, existe risco de não forçar “hard refresh” quando deveria.
 
-- Código real `src/components/lessons/v8/V8QuizInline.tsx`:
-```tsx
-{quiz.audioUrl && state === "answering" && (
-  <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay />
-)}
-```
-- Quizzes também auto-iniciam áudio ao montar.
+Diagnóstico técnico
+- Causa principal provável: entrega de bundle antigo por cache no cliente/worker antigo + invalidação incompleta (chave fixa de versão).
+- Causa secundária: falta de “prova visível obrigatória” de build/layout no topo do dashboard para validação imediata.
+- NÃO LOCALIZADO NO CÓDIGO:
+  - qualquer feature flag ativa de “dashboard antigo vs novo”;
+  - qualquer rota alternativa de dashboard sendo usada no App Router.
 
-- Log real de rede (browser, timestamp único `2026-03-01T19:34:49Z`):
-  - `section-0.mp3` (ID 591.202)
-  - `quiz-0.mp3` (ID 591.203)
-  - `section-1.mp3` (ID 591.204)
-  - `section-2.mp3` (ID 591.205)
-  - `quiz-1.mp3` (ID 591.206)
-  - `section-3.mp3` (ID 591.207)
-- Seis requests de mídia simultâneos no mesmo segundo = reprodução concorrente (origem da percepção de áudio duplicado/sobreposto).
-
-4) Itens solicitados que NÃO consegui localizar
-- Logs históricos da função backend `v8-generate` para esse `lesson_id` no coletor de logs: retorno vazio no momento da consulta.
-- Registro determinístico de “dimensão útil do objeto sem transparência” (bounding box alpha) no pipeline atual: NÃO LOCALIZADO NO CÓDIGO.
-
-5) Plano de correção (execução após sua aprovação)
-A. Correção sistêmica do áudio (prioridade máxima)
-- Introduzir controle de “activeTimelineIndex” no player.
-- Só permitir `autoPlay` para o item ativo.
-- Seções/quizzes/playgrounds fora do item ativo ficam com autoplay desativado.
-- Avanço do índice por `onEnded` (modo listen), mantendo comportamento determinístico.
+Plano de correção (implementação)
+Fase 1 — Invalidação determinística de versão (prioridade máxima)
 Arquivos:
-- `src/components/lessons/v8/V8LessonPlayer.tsx`
-- `src/components/lessons/v8/V8ContentSection.tsx`
-- `src/components/lessons/v8/V8QuizInline.tsx`
-- `src/components/lessons/v8/V8PlaygroundInline.tsx` (se houver áudio narrado automático)
+- `src/main.tsx`
+- `src/lib/runtimeSignature.ts`
 
-B. Correção sistêmica do layout de imagem
-- Frontend: limitar altura visual do bloco de imagem (para impedir “coluna gigante”).
-- Pipeline de imagem: adicionar etapa de trim/crop por alpha (remoção de bordas transparentes) antes do upload.
+Ações:
+1. Substituir a dependência em `APP_VERSION` fixo por `BUILD_FINGERPRINT` (dinâmico por build).
+2. Persistir fingerprint anterior em `localStorage`.
+3. Se fingerprint mudar:
+   - limpar Service Workers;
+   - limpar Cache API;
+   - fazer reload único controlado (anti-loop).
+4. Manter logs de assinatura no boot com timestamp.
+
+Resultado esperado:
+- Qualquer build novo invalida cliente antigo automaticamente, sem depender de atualizar string manual.
+
+Fase 2 — Prova visual obrigatória no dashboard
 Arquivos:
-- `src/components/lessons/v8/V8ContentSection.tsx`
-- `supabase/functions/v8-generate-section-image/index.ts`
+- `src/components/BuildBadge.tsx`
+- `src/pages/Dashboard.tsx` (injeção/posição)
 
-C. Critérios de aceite com prova real
-- Ao entrar em “Ouvir”, rede deve mostrar 1 request de mídia inicial (não 6 simultâneos).
-- Ao terminar áudio da seção ativa, próximo item inicia; sem sobreposição.
-- Distância visual título→imagem e imagem→texto deve ficar compacta mesmo com PNG 1024.
-- Evidência entregue: trechos de código final + logs de rede com timestamps + JSON final da aula com URLs atualizadas.
+Ações:
+1. Tornar assinatura de runtime sempre visível no dashboard para admin (e opcional em `?debug=true` para qualquer usuário).
+2. Exibir explicitamente:
+   - build fingerprint
+   - `DASHBOARD_LAYOUT_ID`
+   - ambiente (preview/published/local)
+3. Posicionar indicador em área sempre visível (não apenas rodapé).
+
+Resultado esperado:
+- Em 2 segundos dá para comprovar em tela se está no layout/build correto.
+
+Fase 3 — Guarda anti-stale no carregamento do dashboard
+Arquivo:
+- `src/pages/Dashboard.tsx`
+
+Ações:
+1. No mount do dashboard, validar assinatura esperada.
+2. Se assinatura ausente/inconsistente, disparar rotina controlada de “cache purge + reload único” e logar motivo.
+
+Resultado esperado:
+- Mesmo em cenários de cache agressivo, o dashboard converge para a versão atual.
+
+Fase 4 — Protocolo de validação com evidência (entrega forense)
+Validação após implementação:
+1. Abrir `/dashboard?debug=true` no preview.
+2. Capturar screenshot com assinatura visível (build + layout).
+3. Coletar logs:
+   - `[AIliv:RuntimeSignature]` no boot
+   - `[AIliv:RuntimeSignature]` no dashboard com `layoutId: dashboard_v2026_02_25`
+   - timestamps reais.
+4. Conferir visual:
+   - ausência do hero antigo (“Bem-vindo de volta / Olá...”)
+   - presença do layout atual (`Pronto para aprender?` + estrutura nova).
+5. Recarregar hard 2x para confirmar persistência da versão correta.
+
+Critérios de aceite
+- Não aparecer novamente dashboard antigo no preview após refresh/login.
+- Assinatura de runtime visível e consistente com o código atual.
+- Logs com timestamp comprovando build/layout em execução.
+- Evidência entregue com screenshot + logs brutos.
+
+Riscos e mitigação
+- Risco: loop de reload em clientes com cache corrompido.
+  - Mitigação: chave de reload único por fingerprint em `sessionStorage`.
+- Risco: indicador visual incomodar usuários finais.
+  - Mitigação: manter visível apenas para admin e modo debug.
+
+Sequenciamento recomendado
+1) Fase 1 (invalidação)  
+2) Fase 2 (prova visual)  
+3) Fase 3 (guarda anti-stale)  
+4) Fase 4 (validação forense com timestamps reais)
