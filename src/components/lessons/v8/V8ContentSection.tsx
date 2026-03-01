@@ -40,7 +40,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
         </h2>
 
         {/* Markdown body */}
-        <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700 mt-[7px]">
+        <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700 mt-[7px] [&>*:last-child]:mb-0">
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
@@ -58,7 +58,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
                   {children}
                 </h3>
               ),
-              p: ({ children }) => <p className="mb-4">{children}</p>,
+              p: ({ children }) => <p className="mb-[7px]">{children}</p>,
               ul: ({ children }) => (
                 <ul className="list-disc list-inside mb-4 space-y-1.5 ml-1">
                   {children}
@@ -103,7 +103,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
 
         {/* Image — AFTER markdown content */}
         {section.imageUrl && (
-          <div className="flex justify-center mt-[7px] mb-[7px]">
+          <div className="flex justify-center mt-[7px]">
             <img
               src={section.imageUrl}
               alt={cleanTitle}
