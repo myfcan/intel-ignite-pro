@@ -32,20 +32,25 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
       setImageRatio(ratio);
     };
 
-    const isPortrait = imageRatio !== null && imageRatio < 0.85;
     const isNarrowPortrait = imageRatio !== null && imageRatio < 0.55;
+    const isPortrait = imageRatio !== null && imageRatio >= 0.55 && imageRatio < 0.85;
+    const isSquareOrCompact = imageRatio !== null && imageRatio >= 0.85 && imageRatio <= 1.35;
 
     const imageWrapperClasses = isNarrowPortrait
-      ? "bg-white rounded-2xl p-2 w-full max-w-[280px] h-[360px] overflow-hidden"
+      ? "bg-white rounded-2xl p-2 w-full max-w-[300px] h-[380px] overflow-hidden"
       : isPortrait
-        ? "bg-white rounded-2xl p-2 w-full max-w-[300px] h-[380px] overflow-hidden"
-        : "bg-white rounded-2xl p-2";
+        ? "bg-white rounded-2xl p-2 w-full max-w-[320px] h-[380px] overflow-hidden"
+        : isSquareOrCompact
+          ? "bg-white rounded-2xl p-2 w-full max-w-[320px] h-[320px] overflow-hidden"
+          : "bg-white rounded-2xl p-2";
 
     const imageClasses = isNarrowPortrait
-      ? "w-full h-full object-contain mx-auto scale-[1.75] origin-center"
+      ? "w-full h-full object-contain mx-auto scale-[2.2] origin-center"
       : isPortrait
-        ? "w-full h-full object-contain mx-auto scale-[1.25] origin-center"
-        : "max-w-[85%] max-h-[280px] h-auto object-contain mx-auto";
+        ? "w-full h-full object-contain mx-auto scale-[1.8] origin-center"
+        : isSquareOrCompact
+          ? "w-full h-full object-contain mx-auto scale-[1.65] origin-center"
+          : "max-w-[85%] max-h-[280px] h-auto object-contain mx-auto";
 
     return (
       <motion.div
