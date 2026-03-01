@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { V8Section } from "@/types/v8Lesson";
@@ -24,33 +24,6 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
   ({ section, mode, onAudioEnded, sectionIndex, isActiveAudio = false }, ref) => {
     const cleanTitle = cleanSectionTitle(section.title);
     const sanitizedContent = stripEmotionTags(section.content);
-    const [imageRatio, setImageRatio] = useState<number | null>(null);
-
-    const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-      const img = e.currentTarget;
-      const ratio = img.naturalWidth / img.naturalHeight;
-      setImageRatio(ratio);
-    };
-
-    const isNarrowPortrait = imageRatio !== null && imageRatio < 0.55;
-    const isPortrait = imageRatio !== null && imageRatio >= 0.55 && imageRatio < 0.85;
-    const isSquareOrCompact = imageRatio !== null && imageRatio >= 0.85 && imageRatio <= 1.35;
-
-    const imageWrapperClasses = isNarrowPortrait
-      ? "bg-white rounded-2xl p-2 w-full max-w-[300px] h-[380px] overflow-hidden"
-      : isPortrait
-        ? "bg-white rounded-2xl p-2 w-full max-w-[320px] h-[380px] overflow-hidden"
-        : isSquareOrCompact
-          ? "bg-white rounded-2xl p-2 w-full max-w-[320px] h-[320px] overflow-hidden"
-          : "bg-white rounded-2xl p-2";
-
-    const imageClasses = isNarrowPortrait
-      ? "w-full h-full object-contain mx-auto scale-[2.2] origin-center"
-      : isPortrait
-        ? "w-full h-full object-contain mx-auto scale-[1.8] origin-center"
-        : isSquareOrCompact
-          ? "w-full h-full object-contain mx-auto scale-[1.65] origin-center"
-          : "max-w-[85%] max-h-[280px] h-auto object-contain mx-auto";
 
     return (
       <motion.div
@@ -66,23 +39,8 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
           {cleanTitle}
         </h2>
 
-        {/* Image — 7px from title, 7px before content */}
-        {section.imageUrl && (
-          <div className="flex justify-center mt-[7px] mb-[7px]">
-            <div className={imageWrapperClasses}>
-              <img
-                src={section.imageUrl}
-                alt={cleanTitle}
-                className={imageClasses}
-                loading="lazy"
-                onLoad={handleImageLoad}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Markdown body */}
-        <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700">
+        <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700 mt-3">
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
@@ -143,7 +101,19 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
           </ReactMarkdown>
         </div>
 
-        {/* Audio player — inline (not fixed) */}
+        {/* Image — AFTER markdown content */}
+        {section.imageUrl && (
+          <div className="flex justify-center mt-4 mb-2">
+            <img
+              src={section.imageUrl}
+              alt={cleanTitle}
+              className="w-full max-w-md rounded-2xl object-contain"
+              loading="lazy"
+            />
+          </div>
+        )}
+
+        {/* Audio player — inline */}
         {section.audioUrl && (
           <div className="mt-2">
             <V8AudioPlayer
