@@ -1,59 +1,71 @@
 
-# Plano: Player V8 com Revelacao Progressiva e Scroll Controlado
 
-## Problema Atual (Codigo Real)
+# Plano: Player V8 — Modelo de Tela Unica (Uma Secao por Vez)
 
-O player V8 renderiza TODOS os itens do timeline simultaneamente (`timeline.map(...)` na linha 148 de `V8LessonPlayer.tsx`), permitindo scroll livre para qualquer secao futura. Alem disso, a imagem esta limitada a `max-h-[180px]` (linha 49 de `V8ContentSection.tsx`), tornando-a muito pequena. O botao diz "Finalizar conteudo" (linha 197).
+## Problema Real no Codigo Atual
 
-## Mudancas Necessarias
+O player renderiza TODOS os itens desbloqueados simultaneamente em scroll vertical (linha 152 de `V8LessonPlayer.tsx`):
+```tsx
+{timeline.map((item, idx) => {
+  if (idx > unlockedIndex) return null;
+  // renders ALL unlocked items stacked
+```
 
-### 1. Imagem maior (V8ContentSection.tsx)
-- **Atual**: `max-w-[70%] max-h-[180px]`
-- **Novo**: `max-w-[85%] max-h-[280px]` -- imagem maior empurra conteudo para baixo, preenchendo melhor a tela
+Isso causa:
+- Modo "Ouvir": audio termina mas usuario continua vendo a mesma tela (secao 0) porque a proxima secao aparece ABAIXO, fora da viewport
+- Modo "Ler": botao "Continuar" esta inline mas adiciona conteudo abaixo em vez de trocar a tela
+- Botao fixo no rodape cobre a imagem
 
-### 2. Revelacao progressiva de secoes (V8LessonPlayer.tsx)
-- **Atual**: `timeline.map(...)` renderiza tudo de uma vez
-- **Novo**: Renderizar apenas secoes ate `activeAudioIndex` (modo listen) ou ate `unlockedIndex` (modo read)
-- Logica:
-  - Modo "Ouvir": secao aparece quando `activeAudioIndex >= idx`
-  - Modo "Ler": secao aparece quando usuario clica "Continuar" no botao de cada secao
-- Secoes futuras ficam ocultas (nao renderizadas), impedindo scroll para frente
+## Solucao: Modelo de Tela Unica
 
-### 3. Scroll controlado para secoes passadas
-- Secoes ja reveladas podem ser scrolladas livremente
-- Secoes futuras simplesmente nao existem no DOM ate serem desbloqueadas
-- Isso elimina o problema de "ver conteudo futuro" naturalmente
+Trocar de scroll vertical para **uma secao por vez** (card/slide). Apenas o item atual do timeline e renderizado. Avanco troca o conteudo inteiro da tela.
 
-### 4. Botao por secao + botao final
-- Cada secao (modo "Ler") tera um botao "Continuar" inline que desbloqueia a proxima
-- O botao fixo no rodape so aparece quando TODAS as secoes foram desbloqueadas
-- Texto do botao final: "Continuar" (nao "Finalizar conteudo")
+## Mudancas por Arquivo
 
-### 5. Hook useV8Player -- novo estado `unlockedIndex`
-- Adicionar `unlockedIndex` ao estado para rastrear ate qual secao do timeline o usuario desbloqueou
-- `advanceAudio` ja incrementa `activeAudioIndex` (modo listen) -- agora tambem incrementa `unlockedIndex`
-- Nova funcao `unlockNext()` para modo "Ler" (botao manual)
+### 1. `src/hooks/useV8Player.ts`
+- Substituir `unlockedIndex` por logica de `currentIndex` que avanca para o proximo item do timeline
+- `advanceAudio()` (listen mode): incrementa `currentIndex` para proximo item, causando transicao de tela
+- Nova funcao `advanceManual()` (read mode): mesmo efeito, acionada pelo botao "Continuar"
+- Quando `currentIndex >= timeline.length`: transita para fase "exercises" ou "completion"
 
-## Arquivos Modificados
+### 2. `src/components/lessons/v8/V8LessonPlayer.tsx`
+- Renderizar APENAS `timeline[state.currentIndex]` (um item por vez), com `AnimatePresence` para transicao suave
+- Remover o `timeline.map(...)` que renderiza todos
+- Remover scroll vertical e `IntersectionObserver` (nao ha scroll entre secoes)
+- Botao "Continuar" (modo read): posicionado ABAIXO do conteudo, inline (nao fixo), nao cobre imagem
+- Modo listen: sem botao visivel — transicao automatica via `onEnded`
+- Botao final fixo removido — a transicao para exercises/completion e automatica quando `currentIndex` ultrapassa o timeline
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/hooks/useV8Player.ts` | Adicionar `unlockedIndex` + `unlockNext()` |
-| `src/components/lessons/v8/V8LessonPlayer.tsx` | Filtrar timeline por `unlockedIndex`, botao "Continuar" por secao, botao final renomeado |
-| `src/components/lessons/v8/V8ContentSection.tsx` | Aumentar tamanho da imagem para `max-w-[85%] max-h-[280px]` |
+### 3. `src/components/lessons/v8/V8ContentSection.tsx`
+- Sem mudanca funcional. Ja recebe `isActiveAudio` e `onAudioEnded` corretamente
+- Layout ja adequado (titulo, imagem 85%/280px, texto, audio player)
 
-## Fluxo do Usuario
+## Fluxo do Usuario (Novo)
 
 ```text
-Modo "Ler":
-  Secao 0 visivel -> usuario le -> clica "Continuar" -> Secao 1 aparece -> ...
-  Todas desbloqueadas -> botao final "Continuar" aparece
-
 Modo "Ouvir":
-  Secao 0 visivel + autoplay -> audio termina -> Secao 1 aparece + autoplay -> ...
-  Todas desbloqueadas -> botao final "Continuar" aparece
+  [Tela: Secao 0] audio toca automaticamente
+  -> audio termina (onEnded) -> [Tela: Secao 1] audio toca
+  -> ... -> [Tela: Quiz] -> responde -> avanca
+  -> timeline acabou -> fase exercises/completion
 
-Em ambos os modos:
-  Scroll livre apenas para secoes ja reveladas
-  Secoes futuras NAO existem no DOM
+Modo "Ler":
+  [Tela: Secao 0] usuario le conteudo
+  -> clica "Continuar" -> [Tela: Secao 1]
+  -> ... -> [Tela: Quiz] -> responde -> avanca
+  -> timeline acabou -> fase exercises/completion
 ```
+
+## Estilo do Botao "Continuar"
+- Posicao: inline no fim do conteudo da secao (nao fixo, nao cobre imagem)
+- Visual: mesmo estilo atual (indigo-600, rounded-xl, sombra)
+- Aparece SOMENTE em modo "read"
+- Em modo "listen", a transicao e 100% automatica
+
+## Criterios de Aceite
+- Apenas UMA secao visivel por vez na tela
+- Modo ouvir: secoes avancam automaticamente ao terminar audio
+- Modo ler: botao "Continuar" troca a secao (nao adiciona abaixo)
+- Botao nunca cobre a imagem
+- Quizzes e playgrounds tambem aparecem como tela unica
+- Transicao suave (fade/slide) entre secoes
