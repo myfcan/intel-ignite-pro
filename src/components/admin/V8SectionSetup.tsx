@@ -306,11 +306,11 @@ function ImageGenerationBlock({
             <div className="mt-2 space-y-2">
               {/* Preview */}
               {hasPreview && (
-                <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-white p-2">
                   <img
                     src={cfg.generatedPreview}
                     alt={`Seção ${index + 1}`}
-                    className="w-full h-32 object-cover"
+                    className="w-full h-32 object-contain"
                   />
                   <button
                     onClick={() => onUpdateConfig(index, { generatedPreview: "", imageUrl: "" })}
