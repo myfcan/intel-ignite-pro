@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { V8Section } from "@/types/v8Lesson";
@@ -19,6 +19,128 @@ const cleanSectionTitle = (title: string) =>
 /** Strip emotion/direction tags like [confiante], [pause], etc. */
 const stripEmotionTags = (text: string) =>
   text.replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, "");
+
+interface V8TrimmedImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+}
+
+const trimmedImageCache = new Map<string, string>();
+
+const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
+  const [resolvedSrc, setResolvedSrc] = useState(() =>
+    trimmedImageCache.get(src) ?? src
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const cached = trimmedImageCache.get(src);
+    if (cached) {
+      setResolvedSrc(cached);
+      return;
+    }
+
+    setResolvedSrc(src);
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.decoding = "async";
+
+    img.onload = () => {
+      try {
+        const sourceCanvas = document.createElement("canvas");
+        sourceCanvas.width = img.naturalWidth;
+        sourceCanvas.height = img.naturalHeight;
+
+        const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+        if (!sourceCtx) throw new Error("NO_CANVAS_CONTEXT");
+
+        sourceCtx.drawImage(img, 0, 0);
+
+        const { data, width, height } = sourceCtx.getImageData(
+          0,
+          0,
+          sourceCanvas.width,
+          sourceCanvas.height
+        );
+
+        let minX = width;
+        let minY = height;
+        let maxX = -1;
+        let maxY = -1;
+
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const alpha = data[(y * width + x) * 4 + 3];
+            if (alpha > 10) {
+              if (x < minX) minX = x;
+              if (y < minY) minY = y;
+              if (x > maxX) maxX = x;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+
+        if (maxX < 0 || maxY < 0) {
+          if (!cancelled) setResolvedSrc(src);
+          return;
+        }
+
+        const padding = 2;
+        const cropX = Math.max(0, minX - padding);
+        const cropY = Math.max(0, minY - padding);
+        const cropWidth = Math.min(
+          width - cropX,
+          maxX - minX + 1 + padding * 2
+        );
+        const cropHeight = Math.min(
+          height - cropY,
+          maxY - minY + 1 + padding * 2
+        );
+
+        const croppedCanvas = document.createElement("canvas");
+        croppedCanvas.width = cropWidth;
+        croppedCanvas.height = cropHeight;
+
+        const croppedCtx = croppedCanvas.getContext("2d");
+        if (!croppedCtx) throw new Error("NO_CROPPED_CONTEXT");
+
+        croppedCtx.drawImage(
+          sourceCanvas,
+          cropX,
+          cropY,
+          cropWidth,
+          cropHeight,
+          0,
+          0,
+          cropWidth,
+          cropHeight
+        );
+
+        const croppedSrc = croppedCanvas.toDataURL("image/png");
+        trimmedImageCache.set(src, croppedSrc);
+
+        if (!cancelled) setResolvedSrc(croppedSrc);
+      } catch {
+        if (!cancelled) setResolvedSrc(src);
+      }
+    };
+
+    img.onerror = () => {
+      if (!cancelled) setResolvedSrc(src);
+    };
+
+    img.src = src;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  return <img src={resolvedSrc} alt={alt} className={className} loading="lazy" />;
+};
 
 export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps>(
   ({ section, mode, onAudioEnded, sectionIndex, isActiveAudio = false }, ref) => {
@@ -104,11 +226,10 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
         {/* Image — AFTER markdown content */}
         {section.imageUrl && (
           <div className="flex justify-center mt-[7px]">
-            <img
+            <V8TrimmedImage
               src={section.imageUrl}
               alt={cleanTitle}
               className="w-full max-w-md rounded-2xl object-contain"
-              loading="lazy"
             />
           </div>
         )}
