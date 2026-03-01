@@ -35,10 +35,16 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
     const isPortrait = imageRatio !== null && imageRatio < 0.85;
     const isNarrowPortrait = imageRatio !== null && imageRatio < 0.55;
 
-    const imageClasses = isNarrowPortrait
-      ? "w-[82%] max-w-[320px] h-[360px] object-cover mx-auto rounded-xl"
+    const imageWrapperClasses = isNarrowPortrait
+      ? "bg-white rounded-2xl p-2 w-full max-w-[280px] h-[360px] overflow-hidden"
       : isPortrait
-        ? "max-w-[72%] max-h-[420px] h-auto object-contain mx-auto rounded-xl"
+        ? "bg-white rounded-2xl p-2 w-full max-w-[300px] h-[380px] overflow-hidden"
+        : "bg-white rounded-2xl p-2";
+
+    const imageClasses = isNarrowPortrait
+      ? "w-full h-full object-contain mx-auto scale-[1.75] origin-center"
+      : isPortrait
+        ? "w-full h-full object-contain mx-auto scale-[1.25] origin-center"
         : "max-w-[85%] max-h-[280px] h-auto object-contain mx-auto";
 
     return (
@@ -58,7 +64,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
         {/* Image — 7px from title, 7px before content */}
         {section.imageUrl && (
           <div className="flex justify-center mt-[7px] mb-[7px]">
-            <div className="bg-white rounded-2xl p-2">
+            <div className={imageWrapperClasses}>
               <img
                 src={section.imageUrl}
                 alt={cleanTitle}
