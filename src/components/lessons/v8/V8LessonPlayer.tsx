@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { V8LessonData } from "@/types/v8Lesson";
 import { useV8Player } from "@/hooks/useV8Player";
@@ -35,46 +35,12 @@ export const V8LessonPlayer = ({
     state,
     timeline,
     totalContentSteps,
-    activeAudioIndex,
-    unlockedIndex,
-    advanceAudio,
-    unlockNext,
+    currentItem,
     selectMode,
-    next,
+    advance,
     goToCompletion,
     addScore,
-    goToIndex,
   } = useV8Player(lessonData);
-
-  const allUnlocked = unlockedIndex >= timeline.length - 1;
-
-  const sectionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const observerRef = useRef<IntersectionObserver | null>(null);
-
-  // Track which sections are visible for progress
-  useEffect(() => {
-    if (state.phase !== "content") return;
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const idx = Number(entry.target.getAttribute("data-timeline-index"));
-            if (!isNaN(idx)) {
-              goToIndex(idx);
-            }
-          }
-        }
-      },
-      { threshold: 0.3 }
-    );
-
-    sectionRefs.current.forEach((el) => {
-      observerRef.current?.observe(el);
-    });
-
-    return () => observerRef.current?.disconnect();
-  }, [state.phase, goToIndex, timeline.length]);
 
   const handleQuizAnswer = useCallback(
     (correct: boolean) => {
@@ -98,21 +64,14 @@ export const V8LessonPlayer = ({
     onComplete(state.scores);
   }, [onComplete, state.scores]);
 
-  const scrollToSection = useCallback((timelineIdx: number) => {
-    const el = sectionRefs.current.get(timelineIdx);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, []);
-
-  const setRef = useCallback((idx: number, el: HTMLDivElement | null) => {
-    if (el) {
-      el.setAttribute("data-timeline-index", String(idx));
-      sectionRefs.current.set(idx, el);
-    } else {
-      sectionRefs.current.delete(idx);
-    }
-  }, []);
+  // Get label for current timeline item (for header)
+  const currentLabel = currentItem
+    ? currentItem.type === "section"
+      ? lessonData.sections[currentItem.index]?.title || `Seção ${state.currentIndex + 1}`
+      : currentItem.type === "quiz"
+        ? "Quiz"
+        : "Playground"
+    : "";
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -123,12 +82,6 @@ export const V8LessonPlayer = ({
           currentIndex={state.phase === "content" ? state.currentIndex : totalContentSteps - 1}
           totalSteps={totalContentSteps}
           onBack={onBack}
-          sectionTitles={state.phase === "content" ? timeline.map((item, i) => {
-            if (item.type === "section") return lessonData.sections[item.index]?.title || `Seção ${i + 1}`;
-            if (item.type === "quiz") return "Quiz";
-            return "Playground";
-          }) : undefined}
-          onNavigateToSection={scrollToSection}
         />
       )}
 
@@ -144,115 +97,61 @@ export const V8LessonPlayer = ({
                 onSelectMode={selectMode}
               />
             )}
-          </AnimatePresence>
 
-          {/* Phase: Content — ALL items rendered vertically */}
-          {state.phase === "content" && (
-            <div className="flex flex-col gap-10 pb-32">
-              {timeline.map((item, idx) => {
-                // Progressive reveal: only render unlocked items
-                if (idx > unlockedIndex) return null;
+            {/* Phase: Content — ONE item at a time */}
+            {state.phase === "content" && currentItem && (
+              <motion.div
+                key={`timeline-${state.currentIndex}`}
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex flex-col"
+              >
+                {currentItem.type === "section" && (
+                  <>
+                    <V8ContentSection
+                      section={lessonData.sections[currentItem.index]}
+                      mode={state.mode}
+                      sectionIndex={state.currentIndex}
+                      isActiveAudio={state.mode === "listen"}
+                      onAudioEnded={advance}
+                    />
+                    {/* Read mode: show inline "Continuar" button */}
+                    {state.mode === "read" && (
+                      <motion.button
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        onClick={advance}
+                        className="flex items-center justify-center gap-2 w-full mt-6 py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
+                      >
+                        Continuar
+                        <ArrowRight className="w-4 h-4" />
+                      </motion.button>
+                    )}
+                  </>
+                )}
 
-                const isLastUnlocked = idx === unlockedIndex;
-                const showContinueButton = state.mode === "read" && isLastUnlocked && !allUnlocked;
+                {currentItem.type === "quiz" && (
+                  <V8QuizInline
+                    quiz={currentItem.quiz}
+                    onAnswer={handleQuizAnswer}
+                    onContinue={advance}
+                    isActiveAudio={state.mode === "listen"}
+                  />
+                )}
 
-                if (item.type === "section") {
-                  return (
-                    <div key={`section-${item.index}`}>
-                      <V8ContentSection
-                        ref={(el) => setRef(idx, el)}
-                        section={lessonData.sections[item.index]}
-                        mode={state.mode}
-                        sectionIndex={idx}
-                        isActiveAudio={idx === activeAudioIndex}
-                        onAudioEnded={advanceAudio}
-                      />
-                      {showContinueButton && (
-                        <motion.button
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          onClick={unlockNext}
-                          className="flex items-center justify-center gap-2 w-full mt-4 py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
-                        >
-                          Continuar
-                          <ArrowRight className="w-4 h-4" />
-                        </motion.button>
-                      )}
-                    </div>
-                  );
-                }
-                if (item.type === "quiz") {
-                  return (
-                    <div key={`quiz-${item.quiz.id}`}>
-                      <div ref={(el) => setRef(idx, el)} data-timeline-index={idx}>
-                        <V8QuizInline
-                          quiz={item.quiz}
-                          onAnswer={handleQuizAnswer}
-                          onContinue={advanceAudio}
-                          isActiveAudio={idx === activeAudioIndex && state.mode === "listen"}
-                        />
-                      </div>
-                      {showContinueButton && (
-                        <motion.button
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          onClick={unlockNext}
-                          className="flex items-center justify-center gap-2 w-full mt-4 py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
-                        >
-                          Continuar
-                          <ArrowRight className="w-4 h-4" />
-                        </motion.button>
-                      )}
-                    </div>
-                  );
-                }
-                if (item.type === "playground") {
-                  return (
-                    <div key={`pg-${item.playground.id}`}>
-                      <div ref={(el) => setRef(idx, el)} data-timeline-index={idx}>
-                        <V8PlaygroundInline
-                          playground={item.playground}
-                          onContinue={advanceAudio}
-                          onScore={(s) => addScore(s)}
-                        />
-                      </div>
-                      {showContinueButton && (
-                        <motion.button
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          onClick={unlockNext}
-                          className="flex items-center justify-center gap-2 w-full mt-4 py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
-                        >
-                          Continuar
-                          <ArrowRight className="w-4 h-4" />
-                        </motion.button>
-                      )}
-                    </div>
-                  );
-                }
-                return null;
-              })}
+                {currentItem.type === "playground" && (
+                  <V8PlaygroundInline
+                    playground={currentItem.playground}
+                    onContinue={advance}
+                    onScore={(s) => addScore(s)}
+                  />
+                )}
+              </motion.div>
+            )}
 
-              {/* Final button — only when all sections unlocked */}
-              {allUnlocked && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-6 pt-3 bg-gradient-to-t from-white via-white/95 to-transparent">
-                  <div className="max-w-2xl mx-auto">
-                    <motion.button
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      onClick={next}
-                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
-                    >
-                      Continuar
-                      <ArrowRight className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <AnimatePresence mode="wait">
             {/* Phase: Exercises */}
             {state.phase === "exercises" && renderExercises && (
               <div key="exercises">
