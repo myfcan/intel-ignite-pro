@@ -6,7 +6,7 @@ import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle } from 
 
 interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
-  onContinue: () => void;
+  onContinue?: () => void;
   onScore?: (score: number) => void;
 }
 
@@ -321,13 +321,15 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
             <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-amber-600"}`}>
               {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : (attempts > 0 ? playground.tryAgainMessage : playground.successMessage)}
             </p>
-            <button
-              onClick={onContinue}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity"
-            >
-              Continuar Aula
-              <ArrowRight className="w-4 h-4 inline ml-2" />
-            </button>
+            {onContinue && (
+              <button
+                onClick={onContinue}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity"
+              >
+                Continuar Aula
+                <ArrowRight className="w-4 h-4 inline ml-2" />
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -7,7 +7,7 @@ import { V8AudioPlayer } from "./V8AudioPlayer";
 interface V8QuizInlineProps {
   quiz: V8InlineQuiz;
   onAnswer: (correct: boolean) => void;
-  onContinue: () => void;
+  onContinue?: () => void;
   isActiveAudio?: boolean;
 }
 
@@ -147,12 +147,14 @@ export const V8QuizInline = ({
             <p className="text-sm text-slate-700 leading-relaxed">
               {quiz.explanation}
             </p>
-            <button
-              onClick={onContinue}
-              className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
-            >
-              Continuar <ArrowRight className="w-4 h-4" />
-            </button>
+            {onContinue && (
+              <button
+                onClick={onContinue}
+                className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+              >
+                Continuar <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -183,12 +185,14 @@ export const V8QuizInline = ({
                   Aprender mais
                 </button>
               )}
-              <button
-                onClick={onContinue}
-                className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
-              >
-                Continuar <ArrowRight className="w-4 h-4" />
-              </button>
+              {onContinue && (
+                <button
+                  onClick={onContinue}
+                  className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+                >
+                  Continuar <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </motion.div>
         )}
@@ -211,12 +215,14 @@ export const V8QuizInline = ({
             {quiz.reinforcementAudioUrl && (
               <V8AudioPlayer audioUrl={quiz.reinforcementAudioUrl} autoPlay={isActiveAudio} />
             )}
-            <button
-              onClick={onContinue}
-              className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
-            >
-              Continuar <ArrowRight className="w-4 h-4" />
-            </button>
+            {onContinue && (
+              <button
+                onClick={onContinue}
+                className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+              >
+                Continuar <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { V8LessonData } from "@/types/v8Lesson";
 import { useV8Player } from "@/hooks/useV8Player";
 import { V8Header } from "./V8Header";
@@ -42,6 +42,8 @@ export const V8LessonPlayer = ({
     addScore,
   } = useV8Player(lessonData);
 
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
   const handleQuizAnswer = useCallback(
     (correct: boolean) => {
       addScore(correct ? 100 : 0);
@@ -64,14 +66,18 @@ export const V8LessonPlayer = ({
     onComplete(state.scores);
   }, [onComplete, state.scores]);
 
-  // Get label for current timeline item (for header)
-  const currentLabel = currentItem
-    ? currentItem.type === "section"
-      ? lessonData.sections[currentItem.index]?.title || `Seção ${state.currentIndex + 1}`
-      : currentItem.type === "quiz"
-        ? "Quiz"
-        : "Playground"
-    : "";
+  // Auto-scroll to new section
+  useEffect(() => {
+    if (state.phase === "content" && state.currentIndex > 0) {
+      const timer = setTimeout(() => {
+        itemRefs.current[state.currentIndex]?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [state.currentIndex, state.phase]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -88,104 +94,111 @@ export const V8LessonPlayer = ({
       {/* Content area */}
       <div className={state.phase !== "mode-select" ? "pt-16" : ""}>
         <div className="max-w-2xl mx-auto px-4 py-6">
-          <AnimatePresence mode="wait">
-            {/* Phase: Mode Select */}
-            {state.phase === "mode-select" && (
-              <V8ModeSelector
-                key="mode-select"
-                title={lessonData.title}
-                onSelectMode={selectMode}
-              />
-            )}
+          {/* Phase: Mode Select */}
+          {state.phase === "mode-select" && (
+            <V8ModeSelector
+              key="mode-select"
+              title={lessonData.title}
+              onSelectMode={selectMode}
+            />
+          )}
 
-            {/* Phase: Content — ONE item at a time */}
-            {state.phase === "content" && currentItem && (
-              <motion.div
-                key={`timeline-${state.currentIndex}`}
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -40 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex flex-col"
-              >
-                {currentItem.type === "section" && (
-                  <>
-                    <V8ContentSection
-                      section={lessonData.sections[currentItem.index]}
-                      mode={state.mode}
-                      sectionIndex={state.currentIndex}
-                      isActiveAudio={state.mode === "listen"}
-                      onAudioEnded={state.mode === "listen" ? advance : undefined}
-                    />
-                    {/* Read mode: show inline "Continuar" button */}
-                    {state.mode === "read" && (
-                      <motion.button
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        onClick={advance}
-                        className="flex items-center justify-center gap-2 w-full mt-3 py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
-                      >
-                        Continuar
-                        <ArrowRight className="w-4 h-4" />
-                      </motion.button>
-                    )}
-                  </>
-                )}
+          {/* Phase: Content — continuous scroll (rolo) */}
+          {state.phase === "content" && (
+            <div className="flex flex-col gap-8">
+              {timeline.slice(0, state.currentIndex + 1).map((item, idx) => {
+                const isLast = idx === state.currentIndex;
+                return (
+                  <div key={`timeline-${idx}`}>
+                    {idx > 0 && <hr className="border-slate-100 mb-8" />}
+                    <motion.div
+                      ref={(el) => { itemRefs.current[idx] = el; }}
+                      initial={idx === state.currentIndex ? { opacity: 0, y: 30 } : false}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="flex flex-col"
+                    >
+                      {item.type === "section" && (
+                        <V8ContentSection
+                          section={lessonData.sections[item.index]}
+                          mode={state.mode}
+                          sectionIndex={idx}
+                          isActiveAudio={state.mode === "listen" && isLast}
+                          onAudioEnded={state.mode === "listen" && isLast ? advance : undefined}
+                        />
+                      )}
 
-                {currentItem.type === "quiz" && (
-                  <V8QuizInline
-                    quiz={currentItem.quiz}
-                    onAnswer={handleQuizAnswer}
-                    onContinue={advance}
-                    isActiveAudio={state.mode === "listen"}
-                  />
-                )}
+                      {item.type === "quiz" && (
+                        <V8QuizInline
+                          quiz={item.quiz}
+                          onAnswer={handleQuizAnswer}
+                          onContinue={isLast ? advance : undefined}
+                          isActiveAudio={state.mode === "listen" && isLast}
+                        />
+                      )}
 
-                {currentItem.type === "playground" && (
-                  <V8PlaygroundInline
-                    playground={currentItem.playground}
-                    onContinue={advance}
-                    onScore={(s) => addScore(s)}
-                  />
-                )}
-              </motion.div>
-            )}
+                      {item.type === "playground" && (
+                        <V8PlaygroundInline
+                          playground={item.playground}
+                          onContinue={isLast ? advance : undefined}
+                          onScore={(s) => addScore(s)}
+                        />
+                      )}
+                    </motion.div>
+                  </div>
+                );
+              })}
 
-            {/* Phase: Exercises */}
-            {state.phase === "exercises" && renderExercises && (
-              <div key="exercises">
-                {renderExercises({
-                  exercises: lessonData.exercises,
-                  onComplete: handleExercisesComplete,
-                  onScoreUpdate: handleExerciseScores,
-                })}
-              </div>
-            )}
-
-            {/* Phase: Completion */}
-            {state.phase === "completion" && renderCompletion && (
-              <div key="completion">
-                {renderCompletion({
-                  scores: state.scores,
-                  onContinue: handleFinalContinue,
-                })}
-              </div>
-            )}
-
-            {/* Fallback completion */}
-            {state.phase === "completion" && !renderCompletion && (
-              <div key="completion-fallback" className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <h2 className="text-2xl font-bold text-slate-900">Aula Concluída!</h2>
-                <button
-                  onClick={handleFinalContinue}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold"
+              {/* "Continuar" button — read mode + current is section */}
+              {state.mode === "read" && currentItem?.type === "section" && (
+                <motion.button
+                  key={`continue-${state.currentIndex}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  onClick={advance}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
                 >
                   Continuar
-                </button>
-              </div>
-            )}
-          </AnimatePresence>
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
+              )}
+            </div>
+          )}
+
+          {/* Phase: Exercises */}
+          {state.phase === "exercises" && renderExercises && (
+            <div key="exercises">
+              {renderExercises({
+                exercises: lessonData.exercises,
+                onComplete: handleExercisesComplete,
+                onScoreUpdate: handleExerciseScores,
+              })}
+            </div>
+          )}
+
+          {/* Phase: Completion */}
+          {state.phase === "completion" && renderCompletion && (
+            <div key="completion">
+              {renderCompletion({
+                scores: state.scores,
+                onContinue: handleFinalContinue,
+              })}
+            </div>
+          )}
+
+          {/* Fallback completion */}
+          {state.phase === "completion" && !renderCompletion && (
+            <div key="completion-fallback" className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+              <h2 className="text-2xl font-bold text-slate-900">Aula Concluída!</h2>
+              <button
+                onClick={handleFinalContinue}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold"
+              >
+                Continuar
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
