@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, RotateCcw, RotateCw } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 
 interface V8AudioPlayerProps {
   audioUrl: string;
@@ -111,12 +111,6 @@ export const V8AudioPlayer = ({
     }
   }, [isPlaying, onPlay, onPause]);
 
-  const seek = useCallback((delta: number) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + delta));
-  }, []);
-
   const cycleSpeed = useCallback(() => {
     setSpeed((prev) => {
       const idx = PLAYBACK_RATES.indexOf(prev);
@@ -141,16 +135,43 @@ export const V8AudioPlayer = ({
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full rounded-2xl border border-slate-200 bg-slate-50 backdrop-blur-xl p-4 space-y-3"
-    >
+    <div className="w-full flex items-center gap-2.5 h-11 px-3 rounded-xl border border-slate-200 bg-slate-50">
       <audio ref={audioRef} src={audioUrl} preload="auto" />
+
+      {/* Play / Pause */}
+      <button
+        onClick={togglePlay}
+        className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0 shadow-sm"
+        aria-label={isPlaying ? "Pausar" : "Reproduzir"}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {isPlaying ? (
+            <motion.div
+              key="pause"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ duration: 0.12 }}
+            >
+              <Pause className="w-3 h-3" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="play"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ duration: 0.12 }}
+            >
+              <Play className="w-3 h-3 ml-0.5" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </button>
 
       {/* Progress bar */}
       <div
-        className="relative h-1.5 rounded-full bg-slate-200 cursor-pointer group"
+        className="relative flex-1 h-1 rounded-full bg-slate-200 cursor-pointer group"
         onClick={handleSeekBar}
       >
         <motion.div
@@ -159,102 +180,20 @@ export const V8AudioPlayer = ({
           layout
           transition={{ type: "tween", duration: 0.1 }}
         />
-        <div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-indigo-500 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ left: `calc(${progress}% - 6px)` }}
-        />
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-between">
-        {/* Time */}
-        <span className="text-[11px] font-mono text-slate-500 w-20 tabular-nums">
-          {formatTime(currentTime)} / {formatTime(duration)}
-        </span>
+      {/* Time */}
+      <span className="text-[10px] font-mono text-slate-400 tabular-nums flex-shrink-0 min-w-[52px] text-center">
+        {formatTime(currentTime)}/{formatTime(duration)}
+      </span>
 
-        {/* Center controls */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => seek(-10)}
-            className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-            aria-label="Retroceder 10s"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={togglePlay}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow"
-            aria-label={isPlaying ? "Pausar" : "Reproduzir"}
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              {isPlaying ? (
-                <motion.div
-                  key="pause"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <Pause className="w-4 h-4" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="play"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <Play className="w-4 h-4 ml-0.5" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </button>
-
-          <button
-            onClick={() => seek(10)}
-            className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-            aria-label="Avançar 10s"
-          >
-            <RotateCw className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Speed */}
-        <button
-          onClick={cycleSpeed}
-          className="text-[11px] font-semibold font-mono text-slate-500 hover:text-slate-900 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors w-20 text-right"
-        >
-          {speed}x
-        </button>
-      </div>
-
-      {/* Audio bars indicator */}
-      <AnimatePresence>
-        {isPlaying && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex justify-center gap-[3px]"
-          >
-            {Array.from({ length: 5 }).map((_, i) => (
-              <motion.div
-                key={i}
-                className="w-0.5 rounded-full bg-indigo-500/60"
-                animate={{ height: [8, 16, 8] }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.1,
-                }}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {/* Speed */}
+      <button
+        onClick={cycleSpeed}
+        className="text-[10px] font-semibold font-mono text-slate-400 hover:text-slate-700 transition-colors flex-shrink-0"
+      >
+        {speed}x
+      </button>
+    </div>
   );
 };
