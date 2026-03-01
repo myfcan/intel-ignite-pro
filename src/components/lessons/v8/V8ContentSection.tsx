@@ -27,16 +27,19 @@ interface V8TrimmedImageProps {
 }
 
 const trimmedImageCache = new Map<string, string>();
+// Cache version — increment to invalidate when algorithm changes
+const TRIM_VERSION = 2;
 
 const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
   const [resolvedSrc, setResolvedSrc] = useState(() =>
-    trimmedImageCache.get(src) ?? src
+    trimmedImageCache.get(`${TRIM_VERSION}:${src}`) ?? src
   );
 
   useEffect(() => {
     let cancelled = false;
 
-    const cached = trimmedImageCache.get(src);
+    const cacheKey = `${TRIM_VERSION}:${src}`;
+    const cached = trimmedImageCache.get(cacheKey);
     if (cached) {
       setResolvedSrc(cached);
       return;
@@ -66,20 +69,34 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
           sourceCanvas.height
         );
 
-        let minX = width;
-        let minY = height;
-        let maxX = -1;
-        let maxY = -1;
+        // Amostrar cor de fundo dos 4 cantos
+        const sampleBg = (px: number, py: number) => {
+          const i = (py * width + px) * 4;
+          return [data[i], data[i + 1], data[i + 2]];
+        };
+        const corners = [
+          sampleBg(0, 0),
+          sampleBg(width - 1, 0),
+          sampleBg(0, height - 1),
+          sampleBg(width - 1, height - 1),
+        ];
+        const bgR = Math.round(corners.reduce((s, c) => s + c[0], 0) / 4);
+        const bgG = Math.round(corners.reduce((s, c) => s + c[1], 0) / 4);
+        const bgB = Math.round(corners.reduce((s, c) => s + c[2], 0) / 4);
+
+        let minX = width, minY = height, maxX = -1, maxY = -1;
 
         for (let y = 0; y < height; y++) {
           for (let x = 0; x < width; x++) {
-            const alpha = data[(y * width + x) * 4 + 3];
-            if (alpha > 10) {
-              if (x < minX) minX = x;
-              if (y < minY) minY = y;
-              if (x > maxX) maxX = x;
-              if (y > maxY) maxY = y;
-            }
+            const i = (y * width + x) * 4;
+            const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+            if (a < 10) continue;
+            const dist = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
+            if (dist < 30) continue;
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
           }
         }
 
@@ -88,17 +105,11 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
           return;
         }
 
-        const padding = 2;
+        const padding = 4;
         const cropX = Math.max(0, minX - padding);
         const cropY = Math.max(0, minY - padding);
-        const cropWidth = Math.min(
-          width - cropX,
-          maxX - minX + 1 + padding * 2
-        );
-        const cropHeight = Math.min(
-          height - cropY,
-          maxY - minY + 1 + padding * 2
-        );
+        const cropWidth = Math.min(width - cropX, maxX - minX + 1 + padding * 2);
+        const cropHeight = Math.min(height - cropY, maxY - minY + 1 + padding * 2);
 
         const croppedCanvas = document.createElement("canvas");
         croppedCanvas.width = cropWidth;
@@ -120,7 +131,7 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
         );
 
         const croppedSrc = croppedCanvas.toDataURL("image/png");
-        trimmedImageCache.set(src, croppedSrc);
+        trimmedImageCache.set(cacheKey, croppedSrc);
 
         if (!cancelled) setResolvedSrc(croppedSrc);
       } catch {
@@ -139,7 +150,7 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
     };
   }, [src]);
 
-  return <img src={resolvedSrc} alt={alt} className={className} loading="lazy" />;
+  return <img src={resolvedSrc} alt={alt} className={`block ${className ?? ''}`} loading="lazy" />;
 };
 
 export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps>(
