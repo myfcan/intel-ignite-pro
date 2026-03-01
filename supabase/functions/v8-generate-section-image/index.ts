@@ -25,7 +25,8 @@ Style requirements:
 - No text, no labels, no UI elements in the image
 - Think Apple/Notion style icons: polished, friendly, professional
 - Subtle shadow underneath the object for depth
-- The object should be large and fill most of the frame`;
+- The object should be large and fill at least 80% of the frame with MINIMAL padding around it
+- NO excessive whitespace or empty margins around the object`;
 }
 
 serve(async (req) => {
@@ -68,7 +69,7 @@ serve(async (req) => {
       }
       prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill most of the frame.`;
+Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill at least 80% of the frame with MINIMAL padding.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,

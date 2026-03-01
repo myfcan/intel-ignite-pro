@@ -8,6 +8,7 @@ interface V8QuizInlineProps {
   quiz: V8InlineQuiz;
   onAnswer: (correct: boolean) => void;
   onContinue: () => void;
+  isActiveAudio?: boolean;
 }
 
 type QuizState = "answering" | "correct" | "wrong" | "reinforcement";
@@ -16,6 +17,7 @@ export const V8QuizInline = ({
   quiz,
   onAnswer,
   onContinue,
+  isActiveAudio = false,
 }: V8QuizInlineProps) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [state, setState] = useState<QuizState>("answering");
@@ -62,8 +64,8 @@ export const V8QuizInline = ({
       </h3>
 
       {/* Question audio */}
-      {quiz.audioUrl && state === "answering" && (
-        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay />
+      {quiz.audioUrl && state === "answering" && isActiveAudio && (
+        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay onEnded={onContinue} />
       )}
 
       {/* Options */}
@@ -207,7 +209,7 @@ export const V8QuizInline = ({
               {quiz.reinforcement}
             </p>
             {quiz.reinforcementAudioUrl && (
-              <V8AudioPlayer audioUrl={quiz.reinforcementAudioUrl} autoPlay />
+              <V8AudioPlayer audioUrl={quiz.reinforcementAudioUrl} autoPlay={isActiveAudio} onEnded={onContinue} />
             )}
             <button
               onClick={onContinue}

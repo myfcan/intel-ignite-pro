@@ -35,6 +35,8 @@ export const V8LessonPlayer = ({
     state,
     timeline,
     totalContentSteps,
+    activeAudioIndex,
+    advanceAudio,
     selectMode,
     next,
     goToCompletion,
@@ -152,6 +154,8 @@ export const V8LessonPlayer = ({
                       section={lessonData.sections[item.index]}
                       mode={state.mode}
                       sectionIndex={idx}
+                      isActiveAudio={idx === activeAudioIndex}
+                      onAudioEnded={advanceAudio}
                     />
                   );
                 }
@@ -161,7 +165,8 @@ export const V8LessonPlayer = ({
                       <V8QuizInline
                         quiz={item.quiz}
                         onAnswer={handleQuizAnswer}
-                        onContinue={() => {}}
+                        onContinue={advanceAudio}
+                        isActiveAudio={idx === activeAudioIndex && state.mode === "listen"}
                       />
                     </div>
                   );
@@ -171,7 +176,7 @@ export const V8LessonPlayer = ({
                     <div key={`pg-${item.playground.id}`} ref={(el) => setRef(idx, el)} data-timeline-index={idx}>
                       <V8PlaygroundInline
                         playground={item.playground}
-                        onContinue={() => {}}
+                        onContinue={advanceAudio}
                         onScore={(s) => addScore(s)}
                       />
                     </div>
