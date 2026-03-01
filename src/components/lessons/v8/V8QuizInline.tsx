@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, ArrowRight, HelpCircle } from "lucide-react";
 import { V8InlineQuiz } from "@/types/v8Lesson";
@@ -21,6 +21,19 @@ export const V8QuizInline = ({
 }: V8QuizInlineProps) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [state, setState] = useState<QuizState>("answering");
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selected || state !== "answering") {
+      const timer = setTimeout(() => {
+        bottomRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [selected, state]);
 
   const handleConfirm = useCallback(() => {
     if (!selected) return;
@@ -226,6 +239,9 @@ export const V8QuizInline = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Scroll anchor */}
+      <div ref={bottomRef} />
     </motion.div>
   );
 };
