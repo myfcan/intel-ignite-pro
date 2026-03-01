@@ -189,8 +189,27 @@ const Dashboard = () => {
     el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
 
+  // Fase 3: Guarda anti-stale — valida fingerprint no mount do dashboard
   useEffect(() => {
     logRuntimeSignature({ route: '/dashboard', layoutId: DASHBOARD_LAYOUT_ID });
+    
+    // Anti-stale guard: verifica se o layout tag no DOM bate com o esperado
+    const guardKey = `ailiv_dashboard_guard_${DASHBOARD_LAYOUT_ID}`;
+    const el = document.querySelector(`[data-layout-id]`);
+    if (el) {
+      const actual = el.getAttribute('data-layout-id');
+      if (actual && actual !== DASHBOARD_LAYOUT_ID) {
+        console.error(`[AIliv:AntiStale] Layout mismatch: DOM=${actual} vs expected=${DASHBOARD_LAYOUT_ID}`);
+        if (!sessionStorage.getItem(guardKey)) {
+          sessionStorage.setItem(guardKey, '1');
+          // Purge e reload
+          if ('caches' in window) caches.keys().then(n => n.forEach(k => caches.delete(k)));
+          window.location.reload();
+          return;
+        }
+      }
+    }
+    
     checkAuth();
   }, []);
 
@@ -464,6 +483,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen relative" data-layout-id={DASHBOARD_LAYOUT_ID} style={{ background: 'linear-gradient(180deg, #F0F1F5 0%, #E8E9EF 50%, #F0F1F5 100%)' }}>
       <DashboardHeader user={user!} />
+      <BuildBadge isAdmin={isAdmin} />
       
       {/* Gamification Header */}
       {!gamificationLoading && gamificationStats && (
