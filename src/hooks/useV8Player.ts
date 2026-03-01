@@ -7,8 +7,8 @@ import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground } from "@
  * Builds a flat timeline of items (sections + inline quizzes + playgrounds sorted by position)
  * and manages phase transitions: mode-select → content → exercises → completion.
  *
- * V8 uses vertical scroll — currentIndex tracks the most-advanced section seen (for progress),
- * not which section is rendered (all are rendered).
+ * V8 uses a single-section model — only one item is visible at a time.
+ * `currentIndex` tracks which timeline item is currently displayed.
  */
 
 export type TimelineItem =
@@ -25,22 +25,6 @@ export const useV8Player = (lessonData: V8LessonData) => {
     phase: "mode-select",
     scores: [],
   });
-
-  // Which timeline item is allowed to autoplay audio (listen mode)
-  const [activeAudioIndex, setActiveAudioIndex] = useState(0);
-
-  // How far the user has unlocked (progressive reveal)
-  const [unlockedIndex, setUnlockedIndex] = useState(0);
-
-  const advanceAudio = useCallback(() => {
-    setActiveAudioIndex((prev) => prev + 1);
-    setUnlockedIndex((prev) => prev + 1);
-  }, []);
-
-  // Manual unlock for "read" mode
-  const unlockNext = useCallback(() => {
-    setUnlockedIndex((prev) => prev + 1);
-  }, []);
 
   // Build flat timeline: sections interleaved with playgrounds + quizzes
   const timeline = useMemo<TimelineItem[]>(() => {
@@ -84,26 +68,26 @@ export const useV8Player = (lessonData: V8LessonData) => {
   const totalContentSteps = timeline.length;
   const currentItem = timeline[state.currentIndex] ?? null;
   const hasExercises = lessonData.exercises.length > 0;
+  const isLastItem = state.currentIndex >= timeline.length - 1;
 
   const selectMode = useCallback((mode: "read" | "listen") => {
-    setState((prev) => ({ ...prev, mode, phase: "content" }));
+    setState((prev) => ({ ...prev, mode, phase: "content", currentIndex: 0 }));
   }, []);
 
-  // In vertical scroll mode, "next" moves to exercises/completion
-  const next = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      phase: hasExercises ? "exercises" : "completion",
-    }));
-  }, [hasExercises]);
-
-  // Update progress based on scroll position (highest index seen)
-  const goToIndex = useCallback((index: number) => {
-    setState((prev) => ({
-      ...prev,
-      currentIndex: Math.max(prev.currentIndex, index),
-    }));
-  }, []);
+  // Advance to next timeline item (used by both modes)
+  const advance = useCallback(() => {
+    setState((prev) => {
+      const nextIndex = prev.currentIndex + 1;
+      if (nextIndex >= timeline.length) {
+        // Timeline finished → go to exercises or completion
+        return {
+          ...prev,
+          phase: hasExercises ? "exercises" : "completion",
+        };
+      }
+      return { ...prev, currentIndex: nextIndex };
+    });
+  }, [timeline.length, hasExercises]);
 
   const goToExercises = useCallback(() => {
     setState((prev) => ({ ...prev, phase: "exercises" }));
@@ -130,13 +114,9 @@ export const useV8Player = (lessonData: V8LessonData) => {
     timeline,
     currentItem,
     totalContentSteps,
-    activeAudioIndex,
-    unlockedIndex,
-    advanceAudio,
-    unlockNext,
+    isLastItem,
     selectMode,
-    next,
-    goToIndex,
+    advance,
     goToExercises,
     goToCompletion,
     addScore,
