@@ -10,7 +10,7 @@ export const BUILD_FINGERPRINT = typeof __BUILD_FINGERPRINT__ !== 'undefined'
   ? __BUILD_FINGERPRINT__ 
   : 'dev-local';
 
-export const DASHBOARD_LAYOUT_ID = 'dashboard_v2026_02_25';
+export const DASHBOARD_LAYOUT_ID = 'dashboard_v2026_03_01';
 
 /**
  * Imprime a assinatura completa do runtime no console.
