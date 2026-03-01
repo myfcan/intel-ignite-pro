@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { V8LessonData } from "@/types/v8Lesson";
 import { useV8Player } from "@/hooks/useV8Player";
@@ -7,6 +7,7 @@ import { V8ModeSelector } from "./V8ModeSelector";
 import { V8ContentSection } from "./V8ContentSection";
 import { V8QuizInline } from "./V8QuizInline";
 import { V8PlaygroundInline } from "./V8PlaygroundInline";
+import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
 
 interface V8LessonPlayerProps {
@@ -66,18 +67,27 @@ export const V8LessonPlayer = ({
     onComplete(state.scores);
   }, [onComplete, state.scores]);
 
+  // Derive audio URL for the current section (used by fixed bottom bar)
+  const currentSectionAudioUrl = useMemo(() => {
+    if (state.phase !== "content" || !currentItem || currentItem.type !== "section") return null;
+    return lessonData.sections[currentItem.index]?.audioUrl ?? null;
+  }, [state.phase, currentItem, lessonData.sections]);
+
   // Auto-scroll to new section
   useEffect(() => {
     if (state.phase === "content" && state.currentIndex > 0) {
       const timer = setTimeout(() => {
         itemRefs.current[state.currentIndex]?.scrollIntoView({
           behavior: "smooth",
-          block: "start",
+          block: "center",
         });
       }, 100);
       return () => clearTimeout(timer);
     }
   }, [state.currentIndex, state.phase]);
+
+  // Whether the fixed bottom bar should be visible
+  const showFixedBar = state.phase === "content" && currentItem?.type === "section";
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -93,7 +103,7 @@ export const V8LessonPlayer = ({
 
       {/* Content area */}
       <div className={state.phase !== "mode-select" ? "pt-16" : ""}>
-        <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className={`max-w-2xl mx-auto px-4 py-6 ${showFixedBar ? "pb-32" : ""}`}>
           {/* Phase: Mode Select */}
           {state.phase === "mode-select" && (
             <V8ModeSelector
@@ -123,8 +133,6 @@ export const V8LessonPlayer = ({
                           section={lessonData.sections[item.index]}
                           mode={state.mode}
                           sectionIndex={idx}
-                          isActiveAudio={state.mode === "listen" && isLast}
-                          onAudioEnded={state.mode === "listen" && isLast ? advance : undefined}
                         />
                       )}
 
@@ -148,21 +156,6 @@ export const V8LessonPlayer = ({
                   </div>
                 );
               })}
-
-              {/* "Continuar" button — read mode + current is section */}
-              {state.mode === "read" && currentItem?.type === "section" && (
-                <motion.button
-                  key={`continue-${state.currentIndex}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  onClick={advance}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
-                >
-                  Continuar
-                  <ArrowRight className="w-4 h-4" />
-                </motion.button>
-              )}
             </div>
           )}
 
@@ -201,6 +194,40 @@ export const V8LessonPlayer = ({
           )}
         </div>
       </div>
+
+      {/* Fixed bottom bar — audio player + Continuar button */}
+      {showFixedBar && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-slate-100 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+            {/* Audio player for active section */}
+            {currentSectionAudioUrl && (
+              <div className="flex-1 min-w-0">
+                <V8AudioPlayer
+                  key={`audio-${state.currentIndex}`}
+                  audioUrl={currentSectionAudioUrl}
+                  autoPlay={state.mode === "listen"}
+                  onEnded={advance}
+                />
+              </div>
+            )}
+
+            {/* Continuar button — read mode only */}
+            {state.mode === "read" && (
+              <motion.button
+                key={`continue-${state.currentIndex}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                onClick={advance}
+                className="flex items-center justify-center gap-2 flex-shrink-0 px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
+              >
+                Continuar
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

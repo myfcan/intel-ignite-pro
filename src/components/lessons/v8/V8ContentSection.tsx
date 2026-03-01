@@ -2,14 +2,11 @@ import { forwardRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { V8Section } from "@/types/v8Lesson";
-import { V8AudioPlayer } from "./V8AudioPlayer";
 
 interface V8ContentSectionProps {
   section: V8Section;
   mode: "read" | "listen";
-  onAudioEnded?: () => void;
   sectionIndex: number;
-  isActiveAudio?: boolean;
 }
 
 /** Strip "Seção X — " prefix from section titles */
@@ -154,7 +151,7 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
 };
 
 export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps>(
-  ({ section, mode, onAudioEnded, sectionIndex, isActiveAudio = false }, ref) => {
+  ({ section, mode, sectionIndex }, ref) => {
     const cleanTitle = cleanSectionTitle(section.title);
     const sanitizedContent = stripEmotionTags(section.content);
 
@@ -167,12 +164,23 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
         transition={{ duration: 0.4, ease: "easeOut", delay: sectionIndex * 0.05 }}
         className="flex flex-col"
       >
-        {/* Section title */}
+        {/* 1. Section title */}
         <h2 className="text-xl font-bold leading-snug text-slate-900">
           {cleanTitle}
         </h2>
 
-        {/* Markdown body */}
+        {/* 2. Image — BEFORE markdown */}
+        {section.imageUrl && (
+          <div className="flex justify-center mt-[7px]">
+            <V8TrimmedImage
+              src={section.imageUrl}
+              alt={cleanTitle}
+              className="w-full max-w-xs rounded-2xl object-contain"
+            />
+          </div>
+        )}
+
+        {/* 3. Markdown body */}
         <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700 mt-[7px] [&>*:last-child]:mb-0">
           <ReactMarkdown
             components={{
@@ -233,28 +241,6 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
             {sanitizedContent}
           </ReactMarkdown>
         </div>
-
-        {/* Image — AFTER markdown content */}
-        {section.imageUrl && (
-          <div className="flex justify-center mt-[7px]">
-            <V8TrimmedImage
-              src={section.imageUrl}
-              alt={cleanTitle}
-              className="w-full max-w-md rounded-2xl object-contain"
-            />
-          </div>
-        )}
-
-        {/* Audio player — inline */}
-        {section.audioUrl && (
-          <div className="mt-[7px]">
-            <V8AudioPlayer
-              audioUrl={section.audioUrl}
-              autoPlay={mode === "listen" && isActiveAudio}
-              onEnded={onAudioEnded}
-            />
-          </div>
-        )}
       </motion.div>
     );
   }
