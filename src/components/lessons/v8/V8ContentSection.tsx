@@ -24,17 +24,22 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
   ({ section, mode, onAudioEnded, sectionIndex, isActiveAudio = false }, ref) => {
     const cleanTitle = cleanSectionTitle(section.title);
     const sanitizedContent = stripEmotionTags(section.content);
-    const [isPortrait, setIsPortrait] = useState(false);
+    const [imageRatio, setImageRatio] = useState<number | null>(null);
 
     const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
       const img = e.currentTarget;
       const ratio = img.naturalWidth / img.naturalHeight;
-      setIsPortrait(ratio < 0.85);
+      setImageRatio(ratio);
     };
 
-    const imageClasses = isPortrait
-      ? "max-w-[55%] max-h-[340px] h-auto object-contain mx-auto rounded-xl"
-      : "max-w-[85%] max-h-[280px] h-auto object-contain mx-auto";
+    const isPortrait = imageRatio !== null && imageRatio < 0.85;
+    const isNarrowPortrait = imageRatio !== null && imageRatio < 0.55;
+
+    const imageClasses = isNarrowPortrait
+      ? "w-[82%] max-w-[320px] h-[360px] object-cover mx-auto rounded-xl"
+      : isPortrait
+        ? "max-w-[72%] max-h-[420px] h-auto object-contain mx-auto rounded-xl"
+        : "max-w-[85%] max-h-[280px] h-auto object-contain mx-auto";
 
     return (
       <motion.div
@@ -53,7 +58,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
         {/* Image — 7px from title, 7px before content */}
         {section.imageUrl && (
           <div className="flex justify-center mt-[7px] mb-[7px]">
-            <div className="bg-white rounded-2xl">
+            <div className="bg-white rounded-2xl p-2">
               <img
                 src={section.imageUrl}
                 alt={cleanTitle}
