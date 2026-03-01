@@ -105,12 +105,12 @@ export const V8LessonPlayer = ({
 
           {/* Phase: Content — continuous scroll (rolo) */}
           {state.phase === "content" && (
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-[7px]">
               {timeline.slice(0, state.currentIndex + 1).map((item, idx) => {
                 const isLast = idx === state.currentIndex;
                 return (
                   <div key={`timeline-${idx}`}>
-                    {idx > 0 && <hr className="border-slate-100 mb-8" />}
+                    {idx > 0 && <hr className="border-slate-100 mb-[7px]" />}
                     <motion.div
                       ref={(el) => { itemRefs.current[idx] = el; }}
                       initial={idx === state.currentIndex ? { opacity: 0, y: 30 } : false}
