@@ -19,7 +19,8 @@ function buildAutoPrompt(content: string): string {
 Style requirements:
 - Modern flat 3D render, clean and minimal
 - Single object or small composition, centered
-- TRANSPARENT BACKGROUND (no background at all, PNG transparency)
+- TRUE TRANSPARENT BACKGROUND with real alpha channel (PNG)
+- ABSOLUTELY NO checkerboard, transparency grid, tiled pattern, studio backdrop, or colored panel
 - Soft gradients, smooth surfaces, rounded edges
 - Vibrant but not neon colors (indigo, violet, sky blue, warm tones)
 - No text, no labels, no UI elements in the image
@@ -66,7 +67,7 @@ serve(async (req) => {
       }
       prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PNG transparency), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons.`;
+Style: modern flat 3D render, single isolated object, TRUE TRANSPARENT BACKGROUND with alpha channel (PNG), ABSOLUTELY NO checkerboard/grid pattern, soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
@@ -111,15 +112,65 @@ Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PN
     }
 
     const aiData = await aiResponse.json();
-    const base64Url = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const initialBase64Url = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-    if (!base64Url) {
+    if (!initialBase64Url) {
       console.error("[v8-generate-section-image] No image in AI response:", JSON.stringify(aiData).slice(0, 500));
       throw new Error("No image returned from AI gateway");
     }
 
+    // Second pass: remove fake transparency grids/checkerboard if model produced one
+    let finalBase64Url = initialBase64Url;
+    try {
+      const cleanupResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-image",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "Remove any checkerboard/grid/fake transparency background from this image and return only the object with REAL transparent alpha background (PNG). Keep the object style and colors.",
+                },
+                {
+                  type: "image_url",
+                  image_url: { url: initialBase64Url },
+                },
+              ],
+            },
+          ],
+          modalities: ["image", "text"],
+        }),
+      });
+
+      if (cleanupResponse.ok) {
+        const cleanupData = await cleanupResponse.json();
+        const cleanedBase64Url = cleanupData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        if (cleanedBase64Url) {
+          finalBase64Url = cleanedBase64Url;
+        }
+      } else {
+        console.warn(`[v8-generate-section-image] Cleanup pass skipped: ${cleanupResponse.status}`);
+      }
+    } catch (cleanupError) {
+      console.warn("[v8-generate-section-image] Cleanup pass failed, using first pass image:", cleanupError);
+    }
+
     // Extract base64 data and convert to bytes
-    const base64Data = base64Url.replace(/^data:image\/\w+;base64,/, "");
+    const mimeMatch = finalBase64Url.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+    if (!mimeMatch) {
+      throw new Error("Invalid image format returned from AI gateway");
+    }
+
+    const mimeType = mimeMatch[1];
+    const fileExtension = mimeType.includes("png") ? "png" : mimeType.includes("webp") ? "webp" : "jpg";
+    const base64Data = finalBase64Url.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "");
     const binaryString = atob(base64Data);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
@@ -131,12 +182,12 @@ Style: modern flat 3D render, single isolated object, TRANSPARENT BACKGROUND (PN
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const storagePath = `v8-images/${lessonId}/section-${sectionIndex}.png`;
+    const storagePath = `v8-images/${lessonId}/section-${sectionIndex}.${fileExtension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("lesson-audios")
       .upload(storagePath, bytes.buffer as ArrayBuffer, {
-        contentType: "image/png",
+        contentType: mimeType,
         upsert: true,
       });
 
