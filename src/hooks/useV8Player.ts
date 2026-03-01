@@ -29,8 +29,17 @@ export const useV8Player = (lessonData: V8LessonData) => {
   // Which timeline item is allowed to autoplay audio (listen mode)
   const [activeAudioIndex, setActiveAudioIndex] = useState(0);
 
+  // How far the user has unlocked (progressive reveal)
+  const [unlockedIndex, setUnlockedIndex] = useState(0);
+
   const advanceAudio = useCallback(() => {
     setActiveAudioIndex((prev) => prev + 1);
+    setUnlockedIndex((prev) => prev + 1);
+  }, []);
+
+  // Manual unlock for "read" mode
+  const unlockNext = useCallback(() => {
+    setUnlockedIndex((prev) => prev + 1);
   }, []);
 
   // Build flat timeline: sections interleaved with playgrounds + quizzes
@@ -122,7 +131,9 @@ export const useV8Player = (lessonData: V8LessonData) => {
     currentItem,
     totalContentSteps,
     activeAudioIndex,
+    unlockedIndex,
     advanceAudio,
+    unlockNext,
     selectMode,
     next,
     goToIndex,
