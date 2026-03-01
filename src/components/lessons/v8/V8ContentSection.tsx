@@ -40,7 +40,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
         </h2>
 
         {/* Markdown body */}
-        <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700 mt-3">
+        <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700 mt-[7px]">
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
@@ -103,7 +103,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
 
         {/* Image — AFTER markdown content */}
         {section.imageUrl && (
-          <div className="flex justify-center mt-4 mb-2">
+          <div className="flex justify-center mt-[7px] mb-[7px]">
             <img
               src={section.imageUrl}
               alt={cleanTitle}
@@ -115,7 +115,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
 
         {/* Audio player — inline */}
         {section.audioUrl && (
-          <div className="mt-2">
+          <div className="mt-[7px]">
             <V8AudioPlayer
               audioUrl={section.audioUrl}
               autoPlay={mode === "listen" && isActiveAudio}
