@@ -1,39 +1,48 @@
 
+# Correção: Imagem com texto errado ("exaztmente") na Seção 3
 
-# Fix: Botão "Continuar Aula" não aparece na fase Done
+## Diagnóstico
 
-## Causa raiz
+A imagem da Seção 3 ("A regra prática: 3 peças que mudam tudo") contém texto gerado pela IA com erro de ortografia: **"exaztmente"** em vez de **"exatamente"**.
 
-Na correção anterior do scroll, foi adicionada a condição `phase === "done"` para pular o auto-scroll interno:
+A edge function `v8-generate-section-image` foi chamada com `allowText: false` (padrão), o que instrui o Gemini a "NEVER include text, labels, banners, arrows, or UI elements inside the image". Porém, o modelo Gemini **ignorou essa instrução** e gerou texto mesmo assim.
 
-```typescript
-// V8PlaygroundInline.tsx, linha 133 (atual)
-if (phase === "intro" || phase === "done") return;
-```
+O contrato visual V8 v3.0 já define a regra de ortografia, mas ela só se aplica quando `allowText: true`. Quando `allowText: false`, o prompt simplesmente proíbe texto — mas o modelo não obedeceu.
 
-O problema: a transição para "done" é **interna** ao Playground (`setPhase("done")`). O rolo externo (`V8LessonPlayer`) NÃO dispara scroll nesse momento porque `state.currentIndex` não muda. Resultado: **nenhum mecanismo** faz scroll até o card "done", e o botão "Continuar Aula" fica abaixo da dobra, invisível.
+## Plano de Correção (2 passos)
 
-## Correção
+### Passo 1 — Reforçar a proibição de texto no prompt (edge function)
 
-### Arquivo: `src/components/lessons/v8/V8PlaygroundInline.tsx`
+**Arquivo:** `supabase/functions/v8-generate-section-image/index.ts`
 
-Remover `phase === "done"` da condição de skip no useEffect de auto-scroll (linha 133):
+Atualizar a regra de `allowText: false` (linha 23) para ser mais enfática e incluir uma instrução de fallback caso o modelo insista em gerar texto:
 
 **De:**
-```typescript
-if (phase === "intro" || phase === "done") return;
+```
+- NEVER include text, labels, banners, arrows, or UI elements inside the image
 ```
 
 **Para:**
-```typescript
-if (phase === "intro") return;
+```
+- ABSOLUTELY NO TEXT of any kind inside the image. No words, no letters, no labels, no numbers, no banners, no captions, no typography. The image must be 100% visual/iconic with ZERO text or written characters. If you feel the urge to add text, replace it with an iconic symbol instead.
 ```
 
-A guarda `if (!isActive) return;` (linha 132) já é suficiente para evitar que itens inativos sequestrem o scroll. Não há necessidade de bloquear o scroll na fase "done" — é justamente nela que o botão "Continuar Aula" precisa ficar visível.
+### Passo 2 — Regenerar apenas a Seção 3 (índice 2)
 
-## Escopo
+**Arquivo:** `src/components/admin/V8SectionSetup.tsx`
 
-- 1 linha alterada em 1 arquivo
-- 0 mudanças de banco
-- 0 risco para o scroll do rolo externo (a guarda `isActive` permanece)
+Adicionar uma opção de regeneração individual por seção (botão pequeno ao lado de cada imagem). Isso permitirá reprocessar apenas a `section-2` sem refazer todas as outras.
 
+Alternativamente, se você preferir uma solução imediata, posso criar um trigger rápido que chama a edge function `v8-reprocess-lesson-images` com `sectionsToReprocess: [2]` diretamente.
+
+---
+
+### Resumo técnico
+
+| Item | Detalhe |
+|------|---------|
+| Causa | Gemini ignorou "NEVER include text" e gerou texto com typo |
+| Arquivo backend | `supabase/functions/v8-generate-section-image/index.ts` (1 linha) |
+| Arquivo frontend | `src/components/admin/V8SectionSetup.tsx` (botão regenerar individual) |
+| Banco de dados | 0 mudanças |
+| Risco | Baixo — apenas reforço de prompt e regeneração de 1 imagem |
