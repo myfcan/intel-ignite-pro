@@ -1,103 +1,77 @@
 
 
-# Modal de Boas-vindas da Liv + Review de Persuasao por Licao
+# Refinamento Visual do Certificado V8
 
-## Resumo
+## Problema
 
-Dois modais distintos, cada um com gatilho e publico diferente:
+Comparando com a referencia do Cursiv, nosso certificado esta:
+- **Bordas muito finas e apagadas** — quase invisiveis
+- **Textos com opacidade baixa** — "Concedido a", "AIliv Academy" parecem fantasmas
+- **Card pequeno demais no desktop** — 280px e pouco impactante
+- **Selo (emblem) discreto** — nao chama atencao
+- **Progress bar fina demais** — quase imperceptivel
+- **Falta motivacao textual** — o Cursiv tem "Voce esta no caminho certo!" + "Continue e desbloqueie seu certificado personalizado"
 
-1. **Liv Welcome (entrada na arvore)** — Para TODOS os usuarios, apenas no primeiro acesso a cada trilha
-2. **Review de Licao (clique na licao)** — Apenas para usuarios `basico` (free/paywall), aparece TODA vez que clicam em uma licao, ate virarem assinantes (`ultra` ou `pro`)
+## Referencia Cursiv (o que funciona)
 
----
+O design do Cursiv mostra:
+1. Card com borda visivel (1.5-2px solida, nao rgba quase transparente)
+2. Selo grande e centralizado com contorno forte
+3. Texto motivacional abaixo do certificado ("Voce esta no caminho certo!")
+4. Sub-texto explicativo ("Continue e desbloqueie seu certificado personalizado de conclusao")
+5. Progress bar com porcentagem visivel (0%)
+6. Layout do info panel a direita do mini-cert (mobile) com hierarquia clara
 
-## Regras de exibicao
+## Alteracoes no `V8CertificateCard.tsx`
 
-| Gatilho | Quem ve | Frequencia | Como sai |
-|---|---|---|---|
-| Entrar na arvore (V8TrailDetail) | Todos (basico, ultra, pro, admin) | 1x por trilha (localStorage `liv-trail-welcome-{trailId}`) | Clica "Continuar" |
-| Clicar em uma licao na arvore | Apenas `basico` | TODA vez que clicar | Clica "Continuar" (nao navega para a licao) |
+### Desktop (card vertical sticky)
 
-Quando o usuario vira assinante (`ultra` ou `pro`), o review para de aparecer automaticamente (checagem do `users.plan` no banco).
+| Propriedade | Atual | Novo |
+|---|---|---|
+| Largura | 280px | 320px |
+| Borda card | 1px rgba(0,0,0,0.06) | 1.5px solid hsl(250,15%,88%) |
+| Shadow | 0 2px 12px rgba(0,0,0,0.06) | 0 4px 20px rgba(0,0,0,0.08) |
+| Borda dupla interna cert | 1px, opacity 0.5 | 1.5px, opacity 0.7 |
+| Selo tamanho | 52px | 60px |
+| Selo outline | 2.5px | 3px |
+| Texto "Certificado" | 14px | 16px |
+| Texto "de Conclusao" | 12px | 13px |
+| Texto "Concedido a" | opacity 0.6 | opacity 0.8 |
+| "AIliv Academy" | opacity 0.7, 10px | opacity 1, 12px |
+| Progress bar | height 2px | height 4px |
+| Texto motivacional | apenas "X aulas restantes" | **"Voce esta no caminho certo!"** + subtexto |
 
----
+### Mobile (card horizontal)
 
-## Componentes
+| Propriedade | Atual | Novo |
+|---|---|---|
+| Borda card | 1px rgba(0,0,0,0.06) | 1.5px solid hsl(250,15%,88%) |
+| Mini-cert width | min(195px, 58vw) | min(180px, 50vw) |
+| Texto info | "Complete as aulas para liberar" | **"Obtenha seu certificado"** + subtexto motivacional |
+| Progress bar | height 1.5px | height 3px |
 
-### 1. `V8LivTrailWelcome.tsx` (NOVO)
+### CertificateDocument (interno)
 
-Modal da Liv que aparece ao entrar na arvore. Reutiliza o visual do `LivWelcomeModal` existente (avatar, glow, particulas) mas com texto contextual sobre a trilha:
+- Bordas duplas: de 1px para **1.5px** com opacidade de 0.5 para **0.7**
+- Linhas divisoras (signature, concedido a): de 1px para **1.5px**, cores mais fortes
+- Diamond divider: de 8px para **10px** no desktop
+- Padding interno: de 20px para **24px**
 
-- Avatar da Liv com glow
-- Texto: "Oi! Que bom te ver aqui na trilha **{trailTitle}**! Preparei tudo com carinho pra voce aprender no seu ritmo."
-- Botao "Vamos la!" (delay de 2s para forcar leitura)
-- Controle: `localStorage` com chave `liv-trail-welcome-{trailId}` — aparece 1x por trilha
-
-### 2. `V8LessonReviewGate.tsx` (NOVO)
-
-Modal de prova social focado na licao clicada. Aparece como barreira para usuarios `basico`:
-
-- Header: "O que dizem sobre esta aula"
-- Nome da licao em destaque
-- 3-4 depoimentos hardcoded focados no tema da licao (texto generico mas que funciona para qualquer aula: "Essa aula mudou minha visao", "Conteudo direto ao ponto", etc.)
-- Rating visual (estrelas)
-- Botao "Continuar" (fecha o modal, NAO navega para a licao — funciona como barreira de persuasao)
-- Opcional: botao "Quero desbloquear tudo" que leva para a pagina de pricing
-
-### 3. Alteracoes em `V8TrailDetail.tsx`
-
-- Buscar `users.plan` do usuario logado (query ja disponivel ou nova query simples)
-- Estado `showLivWelcome` — controlado por localStorage per-trail
-- Estado `showReviewGate` + `selectedLessonForReview` — ativado no clique da licao
-- Interceptar `onLessonClick`:
-  - Se `plan === 'basico'` e nao admin: abre `V8LessonReviewGate` ao inves de navegar
-  - Se `plan === 'ultra'` ou `plan === 'pro'` ou admin: navega normalmente
-
----
-
-## Fluxo do usuario
+### Texto motivacional novo (estado locked/in_progress)
 
 ```text
-Usuario entra na arvore (V8TrailDetail)
-  |
-  +-- Primeiro acesso nessa trilha?
-  |     Sim -> Modal Liv Welcome -> "Continuar" -> fecha
-  |     Nao -> nada
-  |
-  +-- Clica em uma licao
-        |
-        +-- plan = 'ultra' ou 'pro' ou admin?
-        |     Sim -> navega para /v8/{lessonId}
-        |
-        +-- plan = 'basico'?
-              Sim -> Modal Review Gate (com nome da licao)
-                     -> "Continuar" (fecha modal, nao navega)
-                     -> "Desbloquear tudo" (vai para pricing)
+Titulo: "Obtenha seu certificado" (ou "Voce esta no caminho certo!" se in_progress)
+Sub: "Continue e desbloqueie seu certificado personalizado de conclusao"
 ```
 
----
+### Resumo dos arquivos
 
-## Detalhes tecnicos
+**Arquivo modificado:** `src/components/lessons/v8/V8CertificateCard.tsx`
+- Aumentar bordas, sombras, tamanhos de fonte e opacidades
+- Adicionar texto motivacional contextual por estado
+- Aumentar largura do card desktop de 280 para 320px
+- Engrossar progress bar
+- Aumentar selo e seus contornos
 
-**Buscar plano do usuario** — Nova query em `V8TrailDetail`:
-```text
-SELECT plan FROM users WHERE id = auth.uid()
-```
+Nenhum arquivo novo. Nenhuma mudanca de banco de dados.
 
-**Depoimentos hardcoded** — Array de 5 reviews genericos que servem para qualquer licao:
-- "Essa aula foi um divisor de aguas pra mim"
-- "Conteudo claro e direto, sem enrolacao"
-- "Apliquei no mesmo dia e ja vi resultado"
-- "Melhor investimento de tempo que fiz"
-- "Nao sabia que IA podia ser tao simples"
-
-Cada review mostra 3-4 desses com rotacao pseudo-aleatoria baseada no ID da licao.
-
-**Arquivos criados:**
-- `src/components/lessons/v8/V8LivTrailWelcome.tsx`
-- `src/components/lessons/v8/V8LessonReviewGate.tsx`
-
-**Arquivos modificados:**
-- `src/pages/V8TrailDetail.tsx` (adicionar queries, estados, interceptar clique)
-
-**Nenhuma mudanca no banco de dados** — tudo frontend, usando dados ja existentes (`users.plan`).
