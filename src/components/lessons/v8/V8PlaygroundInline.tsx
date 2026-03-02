@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { V8InlinePlayground } from "@/types/v8Lesson";
 import { supabase } from "@/integrations/supabase/client";
 import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle } from "lucide-react";
-
+import { scheduleCTAScroll } from "./v8ScrollUtils";
 interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
   onContinue?: () => void;
@@ -112,44 +112,10 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
     if (phase === "intro") return;
     if (isLoadingResult || isEvaluating) return;
 
-    const SAFE_BOTTOM = 120;
-
-    const scrollToCTA = () => {
-      const cta = ctaRef.current;
-      if (cta) {
-        const ctaRect = cta.getBoundingClientRect();
-        const maxVisible = window.innerHeight - SAFE_BOTTOM;
-        if (ctaRect.bottom > maxVisible) {
-          window.scrollBy({
-            top: ctaRect.bottom - maxVisible + 16,
-            behavior: "smooth",
-          });
-          return true;
-        }
-        return true; // CTA is already visible
-      }
-      return false;
-    };
-
-    // Primary attempt: 300ms after phase change (AnimatePresence exit+enter)
-    const timer1 = setTimeout(() => {
-      if (!scrollToCTA()) {
-        bottomRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-        });
-      }
-    }, 300);
-
-    // Safety net: re-check at 600ms in case layout shifted
-    const timer2 = setTimeout(() => {
-      scrollToCTA();
-    }, 600);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
+    return scheduleCTAScroll(
+      () => ctaRef.current,
+      () => bottomRef.current
+    );
   }, [phase, isLoadingResult, isEvaluating, feedback, challengeScore]);
 
   const cardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm p-5";
@@ -330,6 +296,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
               <div className="mt-3 flex gap-2">
                 {canRetry && (
                   <button
+                    ref={ctaRef}
                     onClick={handleEvaluate}
                     disabled={isEvaluating || !userPrompt.trim()}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -351,6 +318,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 )}
                 {(!canRetry || (challengeScore !== null && challengeScore >= 70)) && (
                   <button
+                    ref={ctaRef}
                     onClick={() => setPhase("done")}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
                   >
@@ -374,6 +342,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
             </p>
             {onContinue && (
               <button
+                ref={ctaRef}
                 onClick={onContinue}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
               >
