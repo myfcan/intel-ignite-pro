@@ -109,32 +109,47 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
 
   // Auto-scroll: ensure CTA button is visible after phase transitions
   useEffect(() => {
-    if (phase !== "intro" && !isLoadingResult && !isEvaluating) {
-      const SAFE_BOTTOM = 120; // account for fixed bottom bar
+    if (phase === "intro") return;
+    if (isLoadingResult || isEvaluating) return;
 
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          // First, try to ensure the CTA button is visible
-          const cta = ctaRef.current;
-          if (cta) {
-            const ctaRect = cta.getBoundingClientRect();
-            const maxVisible = window.innerHeight - SAFE_BOTTOM;
-            if (ctaRect.bottom > maxVisible) {
-              window.scrollBy({
-                top: ctaRect.bottom - maxVisible + 16,
-                behavior: "smooth",
-              });
-              return;
-            }
-          }
-          // Fallback: scroll bottom anchor into view
-          bottomRef.current?.scrollIntoView({
+    const SAFE_BOTTOM = 120;
+
+    const scrollToCTA = () => {
+      const cta = ctaRef.current;
+      if (cta) {
+        const ctaRect = cta.getBoundingClientRect();
+        const maxVisible = window.innerHeight - SAFE_BOTTOM;
+        if (ctaRect.bottom > maxVisible) {
+          window.scrollBy({
+            top: ctaRect.bottom - maxVisible + 16,
             behavior: "smooth",
-            block: "nearest",
           });
+          return true;
+        }
+        return true; // CTA is already visible
+      }
+      return false;
+    };
+
+    // Primary attempt: 300ms after phase change (AnimatePresence exit+enter)
+    const timer1 = setTimeout(() => {
+      if (!scrollToCTA()) {
+        bottomRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
         });
-      });
-    }
+      }
+    }, 300);
+
+    // Safety net: re-check at 600ms in case layout shifted
+    const timer2 = setTimeout(() => {
+      scrollToCTA();
+    }, 600);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [phase, isLoadingResult, isEvaluating, feedback, challengeScore]);
 
   const cardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm p-5";
