@@ -1,48 +1,45 @@
+# Adicionar Loading Spinner nos Botões do Playground
 
-# Correção: Imagem com texto errado ("exaztmente") na Seção 3
+## Problema
 
-## Diagnóstico
+Quando o usuário clica nos botões de ação do Playground (transição de fase ou avaliação), não há indicador visual claro de que algo está sendo processado. Os botões ficam desabilitados mas sem spinner, o que gera incerteza.
 
-A imagem da Seção 3 ("A regra prática: 3 peças que mudam tudo") contém texto gerado pela IA com erro de ortografia: **"exaztmente"** em vez de **"exatamente"**.
+## Correção >> Não mude mais nada além disso, ,tudo está indo bem.
 
-A edge function `v8-generate-section-image` foi chamada com `allowText: false` (padrão), o que instrui o Gemini a "NEVER include text, labels, banners, arrows, or UI elements inside the image". Porém, o modelo Gemini **ignorou essa instrução** e gerou texto mesmo assim.
+### Arquivo: `src/components/lessons/v8/V8PlaygroundInline.tsx`
 
-O contrato visual V8 v3.0 já define a regra de ortografia, mas ela só se aplica quando `allowText: true`. Quando `allowText: false`, o prompt simplesmente proíbe texto — mas o modelo não obedeceu.
+**Adicionar import do Loader2:**
 
-## Plano de Correção (2 passos)
+- Adicionar `Loader2` ao import de `lucide-react` (ícone de spinner padrão do projeto).
 
-### Passo 1 — Reforçar a proibição de texto no prompt (edge function)
+**Botões de transição de fase (linhas 178-184, 213-222, 249-258, 281-289):**
 
-**Arquivo:** `supabase/functions/v8-generate-section-image/index.ts`
+- Nos botões que chamam `handleNextPhase`, quando `isLoadingResult` estiver true, substituir o conteúdo por um spinner (`Loader2` com `animate-spin`) + texto "Carregando...".
 
-Atualizar a regra de `allowText: false` (linha 23) para ser mais enfática e incluir uma instrução de fallback caso o modelo insista em gerar texto:
+**Botão "Avaliar Meu Prompt" (linhas 431-445, 450-464):**
 
-**De:**
+- Substituir o `animate-pulse` do texto "Avaliando..." por um `Loader2 animate-spin` + texto, para feedback visual mais claro e consistente.
+
+## Exemplo visual do padrão
+
 ```
-- NEVER include text, labels, banners, arrows, or UI elements inside the image
+// De:
+<span className="animate-pulse">Avaliando...</span>
+
+// Para:
+<><Loader2 className="w-4 h-4 animate-spin" /> Avaliando...</>
 ```
 
-**Para:**
 ```
-- ABSOLUTELY NO TEXT of any kind inside the image. No words, no letters, no labels, no numbers, no banners, no captions, no typography. The image must be 100% visual/iconic with ZERO text or written characters. If you feel the urge to add text, replace it with an iconic symbol instead.
+// Botão de transição, de:
+Ver Prompt Amador <ArrowRight />
+
+// Para (quando isLoadingResult):
+<Loader2 className="w-4 h-4 animate-spin" /> Gerando...
 ```
 
-### Passo 2 — Regenerar apenas a Seção 3 (índice 2)
+## Escopo
 
-**Arquivo:** `src/components/admin/V8SectionSetup.tsx`
-
-Adicionar uma opção de regeneração individual por seção (botão pequeno ao lado de cada imagem). Isso permitirá reprocessar apenas a `section-2` sem refazer todas as outras.
-
-Alternativamente, se você preferir uma solução imediata, posso criar um trigger rápido que chama a edge function `v8-reprocess-lesson-images` com `sectionsToReprocess: [2]` diretamente.
-
----
-
-### Resumo técnico
-
-| Item | Detalhe |
-|------|---------|
-| Causa | Gemini ignorou "NEVER include text" e gerou texto com typo |
-| Arquivo backend | `supabase/functions/v8-generate-section-image/index.ts` (1 linha) |
-| Arquivo frontend | `src/components/admin/V8SectionSetup.tsx` (botão regenerar individual) |
-| Banco de dados | 0 mudanças |
-| Risco | Baixo — apenas reforço de prompt e regeneração de 1 imagem |
+- 1 arquivo alterado
+- 0 mudancas de banco
+- Risco: nenhum (apenas visual)
