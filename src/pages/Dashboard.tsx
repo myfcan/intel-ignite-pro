@@ -122,6 +122,11 @@ const Dashboard = () => {
   const snapItemRefsV8 = useRef<(HTMLDivElement | null)[]>([]);
   const [snapActiveIndexV8, setSnapActiveIndexV8] = useState(0);
 
+  // Snap carousel Pro: refs e estado do card ativo
+  const snapScrollerRefPro = useRef<HTMLDivElement | null>(null);
+  const snapItemRefsPro = useRef<(HTMLDivElement | null)[]>([]);
+  const [snapActiveIndexPro, setSnapActiveIndexPro] = useState(0);
+
   // IntersectionObserver para detectar card ativo (>=60% visível)
   useEffect(() => {
     const root = snapScrollerRef.current;
@@ -185,6 +190,38 @@ const Dashboard = () => {
 
   const scrollToSnapIndexV8 = (idx: number) => {
     const el = snapItemRefsV8.current[idx];
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
+
+  // IntersectionObserver Pro
+  useEffect(() => {
+    const root = snapScrollerRefPro.current;
+    if (!root || PROFESSIONAL_CHALLENGES.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let best: { idx: number; ratio: number } | null = null;
+        for (const entry of entries) {
+          const idx = Number((entry.target as HTMLElement).dataset.snapIndex);
+          if (Number.isNaN(idx)) continue;
+          if (!best || entry.intersectionRatio > best.ratio) {
+            best = { idx, ratio: entry.intersectionRatio };
+          }
+        }
+        if (best && best.ratio >= 0.6) {
+          setSnapActiveIndexPro(best.idx);
+        }
+      },
+      { root, threshold: [0.35, 0.45, 0.55, 0.6, 0.7, 0.85] }
+    );
+
+    snapItemRefsPro.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToSnapIndexPro = (idx: number) => {
+    const el = snapItemRefsPro.current[idx];
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
@@ -933,6 +970,7 @@ const Dashboard = () => {
               {/* Mobile carousel */}
               <div className="sm:hidden">
                 <div
+                  ref={snapScrollerRefPro}
                   className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden"
                   style={{
                     scrollSnapType: 'x mandatory',
@@ -943,23 +981,57 @@ const Dashboard = () => {
                     overscrollBehaviorX: 'contain',
                     touchAction: 'pan-x',
                   }}
+                  aria-label="Carrossel de desafios profissionais"
                 >
-                  {PROFESSIONAL_CHALLENGES.map((challenge) => (
-                    <div
-                      key={challenge.id}
-                      className="snap-item flex-shrink-0"
-                      style={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 82%', maxWidth: 360 }}
-                    >
-                      <TrailCard
-                        trail={challenge}
-                        Icon={PRO_ICONS[challenge.id] || Briefcase}
-                        progress={0}
-                        completedLessons={0}
-                        totalLessons={0}
-                        status={isAdmin ? "active" : "locked"}
-                        gradient=""
-                      />
-                    </div>
+                  {PROFESSIONAL_CHALLENGES.map((challenge, idx) => {
+                    const isActive = idx === snapActiveIndexPro;
+                    return (
+                      <div
+                        key={challenge.id}
+                        ref={(el) => { snapItemRefsPro.current[idx] = el; }}
+                        data-snap-index={idx}
+                        className="snap-item relative flex-shrink-0"
+                        style={{
+                          scrollSnapAlign: 'center',
+                          scrollSnapStop: 'always',
+                          flex: '0 0 82%',
+                          maxWidth: 360,
+                          transform: isActive ? 'scale(1)' : 'scale(0.94)',
+                          filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
+                          opacity: isActive ? 1 : 0.96,
+                          transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
+                        }}
+                      >
+                        <TrailCard
+                          trail={challenge}
+                          Icon={PRO_ICONS[challenge.id] || Briefcase}
+                          progress={0}
+                          completedLessons={0}
+                          totalLessons={0}
+                          status={isAdmin ? "active" : "locked"}
+                          gradient=""
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-center gap-2 mt-0">
+                  {PROFESSIONAL_CHALLENGES.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => scrollToSnapIndexPro(idx)}
+                      className="rounded-full transition-all duration-200"
+                      style={{
+                        width: idx === snapActiveIndexPro ? 10 : 7,
+                        height: idx === snapActiveIndexPro ? 10 : 7,
+                        background: idx === snapActiveIndexPro
+                          ? 'rgba(139,92,246,1)'
+                          : 'rgba(148,163,184,0.45)',
+                        transform: idx === snapActiveIndexPro ? 'scale(1.15)' : 'scale(1)',
+                      }}
+                      aria-label={`Ir para desafio ${idx + 1}`}
+                    />
                   ))}
                 </div>
               </div>
