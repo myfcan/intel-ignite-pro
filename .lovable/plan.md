@@ -1,45 +1,59 @@
-# Adicionar Loading Spinner nos Botões do Playground
 
-## Problema
+# Narração de Momentos Interativos via Pipeline
 
-Quando o usuário clica nos botões de ação do Playground (transição de fase ou avaliação), não há indicador visual claro de que algo está sendo processado. Os botões ficam desabilitados mas sem spinner, o que gera incerteza.
+## Diagnóstico
 
-## Correção >> Não mude mais nada além disso, ,tudo está indo bem.
+O pipeline `v8-generate` já gera áudio para:
+- Seções (conteúdo markdown)
+- Quiz (pergunta + reforço ao errar)
+- Playground (instrução/narração)
 
-### Arquivo: `src/components/lessons/v8/V8PlaygroundInline.tsx`
+Mas **não gera** áudio para os momentos de resultado/feedback:
+- `successMessage` do Playground (ex: "Você completou o desafio...")
+- `explanation` do Quiz (feedback após resposta)
+- `tryAgainMessage` do Playground
 
-**Adicionar import do Loader2:**
+Esses textos aparecem apenas como texto na tela, sem narração — quebrando a humanização.
 
-- Adicionar `Loader2` ao import de `lucide-react` (ícone de spinner padrão do projeto).
+## Solução: Estender o Pipeline
 
-**Botões de transição de fase (linhas 178-184, 213-222, 249-258, 281-289):**
+### Passo 1 — Adicionar campos de áudio nos tipos
 
-- Nos botões que chamam `handleNextPhase`, quando `isLoadingResult` estiver true, substituir o conteúdo por um spinner (`Loader2` com `animate-spin`) + texto "Carregando...".
+**Arquivo:** `src/types/v8Lesson.ts`
 
-**Botão "Avaliar Meu Prompt" (linhas 431-445, 450-464):**
+Adicionar campos opcionais ao tipo existente:
 
-- Substituir o `animate-pulse` do texto "Avaliando..." por um `Loader2 animate-spin` + texto, para feedback visual mais claro e consistente.
+- `V8InlineQuiz`: adicionar `explanationAudioUrl?: string` (áudio do feedback)
+- `V8InlinePlayground`: adicionar `successAudioUrl?: string` e `tryAgainAudioUrl?: string`
 
-## Exemplo visual do padrão
+### Passo 2 — Gerar os áudios no pipeline
 
-```
-// De:
-<span className="animate-pulse">Avaliando...</span>
+**Arquivo:** `supabase/functions/v8-generate/index.ts`
 
-// Para:
-<><Loader2 className="w-4 h-4 animate-spin" /> Avaliando...</>
-```
+Estender a interface `GenerateRequest` para receber os textos extras dos quizzes e playgrounds. Adicionar 3 novos blocos de geração TTS:
 
-```
-// Botão de transição, de:
-Ver Prompt Amador <ArrowRight />
+1. **Quiz explanation**: Para cada quiz, gerar áudio de `explanation` e salvar como `quiz-{i}-explanation.mp3`
+2. **Playground successMessage**: Gerar áudio de `successMessage` e salvar como `playground-{i}-success.mp3`
+3. **Playground tryAgainMessage**: Gerar áudio de `tryAgainMessage` e salvar como `playground-{i}-tryagain.mp3`
 
-// Para (quando isLoadingResult):
-<Loader2 className="w-4 h-4 animate-spin" /> Gerando...
-```
+Retornar os novos tipos: `quiz-explanation`, `playground-success`, `playground-tryagain` no array de results.
 
-## Escopo
+### Passo 3 — Tocar os áudios no player
 
-- 1 arquivo alterado
-- 0 mudancas de banco
-- Risco: nenhum (apenas visual)
+**Arquivo:** `src/components/lessons/v8/V8QuizInline.tsx`
+
+- Quando o usuário responde, tocar `explanationAudioUrl` (se disponível) junto com a exibição do feedback visual.
+
+**Arquivo:** `src/components/lessons/v8/V8PlaygroundInline.tsx`
+
+- Na fase "done", tocar `successAudioUrl` ou `tryAgainAudioUrl` conforme o score (>= 70 ou não).
+
+## Resumo Tecnico
+
+| Item | Detalhe |
+|------|---------|
+| Tipos | `v8Lesson.ts` - 3 novos campos opcionais |
+| Pipeline | `v8-generate/index.ts` - 3 novos blocos TTS |
+| Players | `V8QuizInline.tsx` + `V8PlaygroundInline.tsx` - tocar áudios de feedback |
+| Banco de dados | 0 mudancas (campos ficam no JSONB existente) |
+| Risco | Baixo - campos opcionais, backward compatible |
