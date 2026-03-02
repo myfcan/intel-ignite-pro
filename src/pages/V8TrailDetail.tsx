@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -5,6 +6,8 @@ import { ArrowLeft, BookOpen, Loader2, Brain, Zap, Rocket, Target, TrendingUp, G
 import { supabase } from "@/integrations/supabase/client";
 import { V8SkillTree } from "@/components/lessons/v8/V8SkillTree";
 import { V8CertificateCard } from "@/components/lessons/v8/V8CertificateCard";
+import { V8LivTrailWelcome } from "@/components/lessons/v8/V8LivTrailWelcome";
+import { V8LessonReviewGate } from "@/components/lessons/v8/V8LessonReviewGate";
 
 const TRAIL_ICONS: Record<string, LucideIcon> = {
   Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, BookOpen,
@@ -77,6 +80,23 @@ export default function V8TrailDetail() {
     },
   });
 
+  const { data: userPlan } = useQuery({
+    queryKey: ["v8-user-plan"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return "basico" as const;
+      const { data } = await supabase
+        .from("users")
+        .select("plan")
+        .eq("id", user.id)
+        .single();
+      return data?.plan ?? "basico";
+    },
+  });
+
+  const [showLivWelcome, setShowLivWelcome] = useState(true);
+  const [reviewGateLesson, setReviewGateLesson] = useState<{ id: string; title: string } | null>(null);
+
   const isLoading = trailLoading || lessonsLoading;
 
   const progressMap = new Map(
@@ -130,6 +150,17 @@ export default function V8TrailDetail() {
   }
 
   const TrailIcon = TRAIL_ICONS[trail.icon || ''] || GraduationCap;
+
+  const isBasicUser = userPlan === 'basico' && !isAdmin;
+
+  const handleLessonClick = (lessonId: string) => {
+    if (isBasicUser) {
+      const lesson = lessons?.find(l => l.id === lessonId);
+      setReviewGateLesson({ id: lessonId, title: lesson?.title ?? 'Aula' });
+    } else {
+      navigate(`/v8/${lessonId}`);
+    }
+  };
 
   const lessonItems = (lessons ?? []).map((lesson, index) => ({
     id: lesson.id,
@@ -193,7 +224,7 @@ export default function V8TrailDetail() {
             {totalLessons > 0 ? (
               <V8SkillTree
                 lessons={lessonItems}
-                onLessonClick={(id) => navigate(`/v8/${id}`)}
+                onLessonClick={handleLessonClick}
                 allCompleted={allCompleted}
               />
             ) : (
@@ -204,6 +235,23 @@ export default function V8TrailDetail() {
           </div>
         </div>
       </div>
+
+      {/* Modais */}
+      {showLivWelcome && trailId && trail && (
+        <V8LivTrailWelcome
+          trailId={trailId}
+          trailTitle={trail.title}
+          onContinue={() => setShowLivWelcome(false)}
+        />
+      )}
+
+      {reviewGateLesson && (
+        <V8LessonReviewGate
+          lessonId={reviewGateLesson.id}
+          lessonTitle={reviewGateLesson.title}
+          onClose={() => setReviewGateLesson(null)}
+        />
+      )}
     </div>
   );
 }
