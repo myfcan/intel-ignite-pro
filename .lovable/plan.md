@@ -1,17 +1,17 @@
 
 
-# Ajuste: Espaçamento de 10px entre título e imagem
+# Ajuste: Aumentar espaçamento titulo-imagem para 20px
 
-## Mudança
+## Mudanca
 
-Arquivo `src/components/lessons/v8/V8ContentSection.tsx`, linha 173:
+Arquivo `src/components/lessons/v8/V8ContentSection.tsx`, linha 174:
 
 ```tsx
 // ANTES:
-<div className="flex justify-center mt-[7px]">
+<div className="flex justify-center mt-[10px]">
 
 // DEPOIS:
-<div className="flex justify-center mt-[10px]">
+<div className="flex justify-center mt-[20px]">
 ```
 
 Apenas essa linha muda. Nada mais.
