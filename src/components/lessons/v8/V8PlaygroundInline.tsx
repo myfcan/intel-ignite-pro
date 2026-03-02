@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { V8InlinePlayground } from "@/types/v8Lesson";
 import { supabase } from "@/integrations/supabase/client";
-import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle } from "lucide-react";
+import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle, CheckCircle2, XCircle, Copy } from "lucide-react";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
@@ -22,6 +22,13 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
   const [userPrompt, setUserPrompt] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [structuredFeedback, setStructuredFeedback] = useState<{
+    verdict?: string;
+    feedback?: string;
+    criteriaBreakdown?: Array<{ criterion: string; met: boolean; detail: string }>;
+    suggestions?: string[];
+    improvedExample?: string;
+  } | null>(null);
   const [challengeScore, setChallengeScore] = useState<number | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [showHints, setShowHints] = useState(false);
@@ -89,6 +96,13 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
       const score = data?.score ?? 0;
       setChallengeScore(score);
       setFeedback(data?.feedback || (score >= 70 ? playground.successMessage : playground.tryAgainMessage));
+      setStructuredFeedback({
+        verdict: data?.verdict || "",
+        feedback: data?.feedback || "",
+        criteriaBreakdown: data?.criteriaBreakdown || [],
+        suggestions: data?.suggestions || [],
+        improvedExample: data?.improvedExample || "",
+      });
 
       if (score >= 70) {
         onScore?.(score);
@@ -96,6 +110,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
     } catch {
       // Offline fallback
       setFeedback(playground.offlineFallback?.message || "Avaliação indisponível no momento. Continue a aula.");
+      setStructuredFeedback(null);
       setChallengeScore(null);
     } finally {
       setIsEvaluating(false);
@@ -275,12 +290,84 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 </div>
               )}
 
-              {/* Feedback */}
+              {/* Structured Feedback */}
               {feedback && (
-                <div className={`mt-3 p-3 rounded-xl text-sm ${challengeScore !== null && challengeScore >= 70 ? "bg-emerald-50 border border-emerald-200 text-emerald-700" : "bg-amber-50 border border-amber-200 text-amber-700"}`}>
-                  {feedback}
-                  {challengeScore !== null && (
-                    <p className="text-xs mt-1 opacity-70">Score: {challengeScore}/100</p>
+                <div className="mt-3 space-y-3">
+                  {/* Header: verdict + score */}
+                  <div className={`p-4 rounded-xl border ${challengeScore !== null && challengeScore >= 70 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-sm font-bold ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-700" : "text-amber-700"}`}>
+                        {structuredFeedback?.verdict || (challengeScore !== null && challengeScore >= 70 ? "Excelente!" : "Quase lá!")}
+                      </span>
+                      {challengeScore !== null && (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${challengeScore >= 70 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                          {challengeScore}/100
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm leading-relaxed ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {structuredFeedback?.feedback || feedback}
+                    </p>
+                  </div>
+
+                  {/* Criteria breakdown */}
+                  {structuredFeedback?.criteriaBreakdown && structuredFeedback.criteriaBreakdown.length > 0 && (
+                    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase px-4 pt-3 pb-1">Análise por Critério</p>
+                      <div className="divide-y divide-slate-100">
+                        {structuredFeedback.criteriaBreakdown.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2.5 px-4 py-2.5">
+                            {item.met ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                            )}
+                            <div className="min-w-0">
+                              <p className={`text-xs font-semibold ${item.met ? "text-emerald-700" : "text-red-600"}`}>
+                                {item.criterion}
+                              </p>
+                              <p className="text-xs text-slate-500 leading-relaxed mt-0.5">
+                                {item.detail}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suggestions */}
+                  {structuredFeedback?.suggestions && structuredFeedback.suggestions.length > 0 && (
+                    <div className="rounded-xl border border-violet-200 bg-violet-50 p-4">
+                      <p className="text-[10px] font-bold text-violet-500 uppercase mb-2">💡 Sugestões para melhorar</p>
+                      <ul className="space-y-2">
+                        {structuredFeedback.suggestions.map((suggestion, i) => (
+                          <li key={i} className="text-xs text-violet-700 leading-relaxed flex items-start gap-2">
+                            <span className="text-violet-400 mt-0.5 flex-shrink-0">→</span>
+                            <span>{suggestion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Improved example */}
+                  {structuredFeedback?.improvedExample && (
+                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] font-bold text-indigo-500 uppercase">✨ Versão Melhorada do Seu Prompt</p>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(structuredFeedback.improvedExample || "")}
+                          className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-600 transition-colors"
+                        >
+                          <Copy className="w-3 h-3" />
+                          Copiar
+                        </button>
+                      </div>
+                      <p className="text-xs text-indigo-700 font-mono leading-relaxed bg-white/60 rounded-lg p-3 border border-indigo-100">
+                        {structuredFeedback.improvedExample}
+                      </p>
+                    </div>
                   )}
                 </div>
               )}

@@ -68,7 +68,7 @@ serve(async (req) => {
       messages = [
         {
           role: "system",
-          content: `Você é um avaliador de prompts de IA. Avalie o prompt do usuário usando os critérios abaixo.
+          content: `Você é um professor de prompts de IA — didático, encorajador e exigente. Avalie o prompt do usuário usando os critérios abaixo.
 
 Critérios de avaliação:
 ${criteriaText}
@@ -77,10 +77,29 @@ ${rubricText ? `Rubrica:\n${rubricText}` : ""}
 
 Pontuação máxima: ${maxScore || 100}
 
-Responda EXATAMENTE neste formato JSON (sem markdown):
-{"score": <número>, "feedback": "<feedback em 1-2 frases, ação concreta, em português>"}
+Responda EXATAMENTE neste formato JSON (sem markdown, sem backticks):
+{
+  "score": <número de 0 a ${maxScore || 100}>,
+  "verdict": "<frase curta motivacional, ex: 'Você está quase lá!' ou 'Excelente trabalho!'>",
+  "feedback": "<resumo de 1-2 frases: o que funcionou e o que faltou>",
+  "criteriaBreakdown": [
+    {"criterion": "<nome do critério>", "met": <true|false>, "detail": "<explicação clara do que o usuário fez certo OU o que faltou, com exemplo concreto>"}
+  ],
+  "suggestions": [
+    "<ação concreta com texto exato que o usuário pode copiar e adicionar ao prompt>"
+  ],
+  "improvedExample": "<versão melhorada do prompt DO USUÁRIO (não genérico), aplicando todas as correções>"
+}
 
-Seja justo mas exigente. Feedback deve ser acionável, nunca genérico.`,
+REGRAS OBRIGATÓRIAS:
+1. criteriaBreakdown DEVE ter um item para CADA critério listado acima
+2. Para critérios NÃO atendidos: explique O QUE faltou, POR QUE é importante, e dê EXEMPLO do que adicionar
+3. Para critérios atendidos: elogie especificamente O QUE o usuário fez bem
+4. suggestions deve conter frases EXATAS que o usuário pode copiar e colar no prompt dele
+5. improvedExample deve ser o prompt DO USUÁRIO reescrito com as melhorias aplicadas (não invente um prompt diferente)
+6. verdict deve ser encorajador — nunca seco ou genérico
+7. Responda em português brasileiro
+8. O JSON deve ser válido, sem trailing commas`,
         },
         { role: "user", content: `Prompt para avaliar: "${userPrompt}"` },
       ];
@@ -135,18 +154,25 @@ Seja justo mas exigente. Feedback deve ser acionável, nunca genérico.`,
       return jsonResp({ result: content });
     }
 
-    // Parse evaluation response
+    // Parse structured evaluation response
     try {
-      const jsonMatch = content.match(/\{[\s\S]*?"score"[\s\S]*?"feedback"[\s\S]*?\}/);
+      const jsonMatch = content.match(/\{[\s\S]*?"score"[\s\S]*?\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        return jsonResp({ score: parsed.score, feedback: parsed.feedback });
+        return jsonResp({
+          score: parsed.score ?? 50,
+          verdict: parsed.verdict || "",
+          feedback: parsed.feedback || "",
+          criteriaBreakdown: parsed.criteriaBreakdown || [],
+          suggestions: parsed.suggestions || [],
+          improvedExample: parsed.improvedExample || "",
+        });
       }
     } catch {
       // Fallback below
     }
 
-    return jsonResp({ score: 50, feedback: content.slice(0, 300) });
+    return jsonResp({ score: 50, feedback: content.slice(0, 300), verdict: "", criteriaBreakdown: [], suggestions: [], improvedExample: "" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[v8-evaluate-prompt] Error:", msg);
