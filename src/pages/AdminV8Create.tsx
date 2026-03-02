@@ -2,12 +2,12 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, AlertTriangle, Loader2, Play, Pause, Upload, Save, Zap, FileText, Code } from "lucide-react";
+import { ArrowLeft, Check, AlertTriangle, Loader2, Play, Pause, Upload, Save, Zap, FileText, Code, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { V8LessonData, V8Section, V8InlineQuiz, V8InlinePlayground } from "@/types/v8Lesson";
 import { Json } from "@/integrations/supabase/types";
 import { V7PipelineMonitor, PipelineStep, PipelineLog } from "@/components/admin/V7PipelineMonitor";
-import { parseFullContent } from "@/lib/v8ContentParser";
+import { parseFullContent, ParseResult } from "@/lib/v8ContentParser";
 import { V8SectionSetup } from "@/components/admin/V8SectionSetup";
 
 // ─── Types ───
@@ -450,6 +450,133 @@ export default function AdminV8Create() {
     }
   }, [contentText, toast]);
 
+  // ─── Convert & Generate All (new automated flow) ───
+  const handleConvertAndGenerate = useCallback(async () => {
+    if (!contentText.trim()) {
+      toast({ title: "❌ Conteúdo vazio", description: "Cole o conteúdo bruto no editor.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      // Step 1: Parse content
+      const parsed = parseFullContent(contentText);
+      setParsedSections(parsed.sections);
+      setParsedQuizzes(parsed.inlineQuizzes);
+      setParsedPlaygrounds(parsed.inlinePlaygrounds || []);
+      setLessonTitle(parsed.title);
+
+      setIsGenerating(true);
+      setStep("generate");
+      resetPipeline();
+
+      // Custom pipeline steps for automated generation
+      const autoSteps: PipelineStep[] = [
+        { id: 'parse', name: 'Parsing conteúdo bruto', status: 'completed', message: `${parsed.sections.length} seções` },
+        { id: 'ai-generate', name: 'IA gerando quizzes, playgrounds e exercícios', status: 'running' },
+        { id: 'images', name: 'Gerando imagens por seção', status: 'pending' },
+        { id: 'finalize', name: 'Montando JSON final', status: 'pending' },
+      ];
+      setPipelineSteps(autoSteps);
+      addLog('success', `Parse: ${parsed.sections.length} seções, ${parsed.inlineQuizzes.length} quizzes manuais, ${(parsed.inlinePlaygrounds || []).length} playgrounds manuais`);
+      if (parsed.hasManualExercises) {
+        addLog('info', `Exercícios manuais detectados: ${parsed.manualExerciseTypes.join(', ')}`);
+      }
+      setPipelineProgress(15);
+
+      // Step 2: Call edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      addLog('info', 'Chamando IA para gerar conteúdo complementar...');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-lesson-content`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            sections: parsed.sections.map(s => ({ title: s.title, content: s.content })),
+            manualQuizzes: parsed.inlineQuizzes,
+            manualPlaygrounds: parsed.inlinePlaygrounds || [],
+            manualExercises: parsed.hasManualExercises ? [] : [], // Future: pass parsed exercise data
+            generateImages: true,
+            lessonTitle: parsed.title,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`v8-generate-lesson-content failed: ${response.status} - ${errBody}`);
+      }
+
+      const result = await response.json();
+
+      // Update pipeline steps
+      setPipelineSteps(prev => prev.map(s => 
+        s.id === 'ai-generate' ? { ...s, status: 'completed' as const, message: `${result.inlineQuizzes?.length || 0} quizzes, ${result.exercises?.length || 0} exercícios` } :
+        s.id === 'images' ? { ...s, status: 'completed' as const, message: `${result.sections?.filter((s: any) => s.imageUrl).length || 0} imagens` } :
+        s
+      ));
+      setPipelineProgress(80);
+
+      // Log progress messages from edge function
+      (result.progress || []).forEach((msg: string) => addLog('info', msg));
+      (result.errors || []).forEach((msg: string) => addLog('warning', msg));
+
+      // Step 3: Build final JSON
+      setPipelineSteps(prev => prev.map(s => s.id === 'finalize' ? { ...s, status: 'running' as const } : s));
+      addLog('info', 'Montando JSON final...');
+
+      const finalData: V8LessonData = {
+        contentVersion: "v8",
+        title: parsed.title,
+        description: parsed.description,
+        sections: (result.sections || parsed.sections).map((s: any, i: number) => ({
+          id: `section-${String(i + 1).padStart(2, "0")}`,
+          title: s.title,
+          content: s.content,
+          audioUrl: "",
+          ...(s.imageUrl ? { imageUrl: s.imageUrl } : {}),
+        })),
+        inlineQuizzes: result.inlineQuizzes || parsed.inlineQuizzes,
+        inlinePlaygrounds: result.inlinePlaygrounds || parsed.inlinePlaygrounds || [],
+        exercises: result.exercises || [],
+      };
+
+      setJsonText(JSON.stringify(finalData, null, 2));
+      setEditorMode("json");
+      
+      // Auto-validate
+      const validationResult = validateV8Json(finalData);
+      setValidation(validationResult);
+
+      setPipelineSteps(prev => prev.map(s => s.id === 'finalize' ? { ...s, status: 'completed' as const } : s));
+      setPipelineProgress(100);
+      addLog('success', `JSON final: ${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${(finalData.inlinePlaygrounds || []).length} playgrounds, ${finalData.exercises.length} exercícios`);
+
+      setStep(validationResult.valid ? "validate" : "edit");
+
+      toast({
+        title: "✅ Conteúdo gerado!",
+        description: `${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${finalData.exercises.length} exercícios`,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setPipelineSteps(prev => prev.map(s => s.status === 'running' ? { ...s, status: 'error' as const } : s));
+      setPipelineError(msg);
+      addLog('error', msg);
+      toast({ title: "❌ Erro na geração automática", description: msg, variant: "destructive" });
+      setStep("edit");
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [contentText, toast, resetPipeline, addLog]);
+
   const handleSetupApply = useCallback((
     updatedSections: V8Section[],
     updatedQuizzes: V8InlineQuiz[],
@@ -564,14 +691,24 @@ export default function AdminV8Create() {
             </div>
 
             {editorMode === "content" ? (
-              <button
-                onClick={handleConvertContent}
-                disabled={!contentText.trim()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 text-xs font-semibold hover:bg-emerald-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Zap className="w-3.5 h-3.5" />
-                Converter para JSON
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleConvertContent}
+                  disabled={!contentText.trim() || isGenerating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 text-xs font-semibold hover:bg-emerald-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  Converter (manual)
+                </button>
+                <button
+                  onClick={handleConvertAndGenerate}
+                  disabled={!contentText.trim() || isGenerating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  Converter e Gerar Tudo
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleValidate}
@@ -593,7 +730,7 @@ export default function AdminV8Create() {
                 spellCheck={false}
               />
               <p className="text-[10px] text-slate-500 mt-2">
-                💡 Use <code className="text-slate-600">## Título</code> para seções, <code className="text-slate-600">[PLAYGROUND]</code> e <code className="text-slate-600">[QUIZ]</code> para interações inline. Clique "Converter" para gerar o JSON automaticamente.
+                💡 Use <code className="text-slate-600">## Título</code> para seções, <code className="text-slate-600">[PLAYGROUND]</code>, <code className="text-slate-600">[QUIZ]</code> e <code className="text-slate-600">[EXERCISE:tipo]</code> para interações. "Converter e Gerar Tudo" cria automaticamente quizzes, playgrounds, exercícios e imagens via IA.
               </p>
             </>
           ) : (
