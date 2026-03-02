@@ -1789,19 +1789,34 @@ export type Database = {
       c05_compute_content_hash: { Args: { p_run_id: string }; Returns: string }
       canonical_jsonb_string: { Args: { input_jsonb: Json }; Returns: string }
       cleanup_stale_image_attempts: { Args: never; Returns: number }
-      create_lesson_draft: {
-        Args: {
-          p_audio_url?: string
-          p_content: Json
-          p_estimated_time: number
-          p_exercises?: Json
-          p_order_index: number
-          p_title: string
-          p_trail_id: string
-          p_word_timestamps?: Json
-        }
-        Returns: string
-      }
+      create_lesson_draft:
+        | {
+            Args: {
+              p_audio_url?: string
+              p_content: Json
+              p_estimated_time: number
+              p_exercises?: Json
+              p_order_index: number
+              p_title: string
+              p_trail_id: string
+              p_word_timestamps?: Json
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_audio_url?: string
+              p_content: Json
+              p_estimated_time: number
+              p_exercises?: Json
+              p_model?: string
+              p_order_index: number
+              p_title: string
+              p_trail_id: string
+              p_word_timestamps?: Json
+            }
+            Returns: string
+          }
       debug_auth_context: {
         Args: never
         Returns: {
