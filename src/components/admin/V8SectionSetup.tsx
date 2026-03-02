@@ -378,12 +378,22 @@ function ImageGenerationBlock({
                     alt={`Seção ${index + 1}`}
                     className="w-full h-32 object-contain"
                   />
-                  <button
-                    onClick={() => onUpdateConfig(index, { generatedPreview: "", imageUrl: "" })}
-                    className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
+                  <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+                    <button
+                      onClick={() => onGenerate(index, "auto")}
+                      disabled={cfg.isGenerating}
+                      title="Regenerar esta imagem"
+                      className="w-5 h-5 rounded-full bg-indigo-500/80 flex items-center justify-center hover:bg-indigo-600 transition-colors disabled:opacity-40"
+                    >
+                      <RefreshCw className={`w-3 h-3 text-white ${cfg.isGenerating ? "animate-spin" : ""}`} />
+                    </button>
+                    <button
+                      onClick={() => onUpdateConfig(index, { generatedPreview: "", imageUrl: "" })}
+                      className="w-5 h-5 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
                 </div>
               )}
 
