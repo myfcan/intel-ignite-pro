@@ -1,98 +1,156 @@
 
-# Correcao Definitiva do Scroll V8: Calculo Manual com offsetTop
+Objetivo: corrigir de forma determinística o auto-scroll do V8 para (1) ancorar o topo da seção com respiro fixo e (2) garantir visibilidade do CTA no Playground após transições de fase, sem depender de timing frágil de animação.
 
-## Causa raiz REAL (nao era so block:center vs block:start)
+Diagnóstico forense (dados reais)
 
-O `scrollIntoView` calcula a posicao de scroll baseada no `getBoundingClientRect()` do elemento, que INCLUI transforms CSS ativos. Como o `motion.div` tem `initial={{ opacity: 0, y: 30 }}` com duracao de 400ms, quando o scroll dispara aos 100ms o elemento ainda esta com `transform: translateY(~20px)`. Isso faz o browser rolar para uma posicao ~20px acima do correto, deixando conteudo antigo visivel acima ("sobra").
-
-**Evidencia no codigo real:**
-
-Linha 80-83 de `V8LessonPlayer.tsx`:
-```text
-itemRefs.current[state.currentIndex]?.scrollIntoView({
-  behavior: "smooth",
-  block: "start",
-});
+1) Código atual que ainda está em produção:
+- `src/components/lessons/v8/V8LessonPlayer.tsx` (linhas 77–91)
+```tsx
+useEffect(() => {
+  if (state.phase === "content" && state.currentIndex > 0) {
+    const timer = setTimeout(() => {
+      const el = itemRefs.current[state.currentIndex];
+      if (el) {
+        const scrollTarget = el.offsetTop - 80;
+        window.scrollTo({
+          top: Math.max(0, scrollTarget),
+          behavior: "smooth",
+        });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }
+}, [state.currentIndex, state.phase]);
 ```
 
-Linha 127 — a animacao que interfere:
-```text
-initial={idx === state.currentIndex ? { opacity: 0, y: 30 } : false}
+- O `ref` ainda está no nó animado:
+```tsx
+<motion.div
+  ref={(el) => { itemRefs.current[idx] = el; }}
+  initial={idx === state.currentIndex ? { opacity: 0, y: 30 } : false}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4, ease: "easeOut" }}
 ```
 
-Linha 129 — duracao 400ms vs delay scroll 100ms:
-```text
-transition={{ duration: 0.4, ease: "easeOut" }}
+- Há animação adicional dentro da própria seção:
+`src/components/lessons/v8/V8ContentSection.tsx` (linhas 159–165), também com `motion.div` + `y:30`.
+
+2) Playground atual:
+- `src/components/lessons/v8/V8PlaygroundInline.tsx` (linhas 110–120)
+```tsx
+useEffect(() => {
+  if (phase !== "intro" && !isLoadingResult && !isEvaluating) {
+    const timer = setTimeout(() => {
+      bottomRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }, 150);
+    return () => clearTimeout(timer);
+  }
+}, [phase, isLoadingResult, isEvaluating, feedback, challengeScore]);
 ```
+- Hoje o ajuste é “nearest” no rodapé do bloco; isso não impõe alinhamento de topo da seção e nem garante CTA visível em todos os tamanhos de viewport.
 
-## Solucao
+3) Replay e timestamps reais
+- Replay anterior com clique identificado:
+  - `tool-results://lov-read-session-replay/20260302-010935-097576`
+  - Clique no botão (id 7118): `timestamp 1772413703156`
+  - DOM da fase profissional montado: `1772413703582` (nós com “Profissional”, “Resultado”, botão “Comparar”)
+  - Primeiro scroll (`source:3`): `1772413744773`
+  - Gap: ~41.6s sem autoajuste imediato.
+- Replay mais recente:
+  - `tool-results://lov-read-session-replay/20260302-013401-295798`
+  - Há eventos `source:3` (scroll) em sequência (`1772414973678`...).
+  - Clique exato (`source:2`) nesta captura: NÃO LOCALIZADO NO CÓDIGO.
 
-**Arquivo unico:** `src/components/lessons/v8/V8LessonPlayer.tsx`
+4) Banco de dados / conteúdo (dados reais)
+- Query real da aula: `92da570a-32c0-4df0-ac24-be6de43e3e0f`
+- Resultado: `model=v8`, `sections_count=4`, `quizzes_count=2`, `playgrounds_count=1`.
+- Título da seção reportada pelo usuário está no conteúdo real:
+  - `Seção 2 — O conceito essencial: previsão de palavras`.
+- Conclusão: falha é de UX/UI no player (cliente), não de persistência de dados.
 
-### Alteracao 1 — Substituir `scrollIntoView` por calculo manual com `offsetTop`
+5) Console
+- Logs recebidos nesta execução: sem erro de runtime associado ao scroll V8.
+- “stack trace de erro JS do scroll”: NÃO LOCALIZADO NO CÓDIGO.
 
-`offsetTop` retorna a posicao do elemento relativa ao offset parent, **ignorando transforms CSS**. Isso elimina a interferencia da animacao do framer-motion.
+Plano de correção (implementação)
 
-```text
-// ANTES (linha 80-83):
-itemRefs.current[state.currentIndex]?.scrollIntoView({
-  behavior: "smooth",
-  block: "start",
-});
+Arquivo 1: `src/components/lessons/v8/V8LessonPlayer.tsx` (correção estrutural principal)
 
-// DEPOIS:
-const el = itemRefs.current[state.currentIndex];
-if (el) {
-  const scrollTarget = el.offsetTop - 80;
-  window.scrollTo({
-    top: Math.max(0, scrollTarget),
-    behavior: "smooth",
-  });
-}
+A. Separar “âncora de scroll” do nó animado
+- Criar `anchorRefs` dedicado (não usar o `motion.div` como alvo de scroll).
+- No `map` do timeline, renderizar antes do `motion.div`:
+```tsx
+<div
+  ref={(el) => { anchorRefs.current[idx] = el; }}
+  className="h-px scroll-mt-[88px]"
+  aria-hidden="true"
+/>
 ```
+- Manter animação no `motion.div` visual (sem ref de scroll).
 
-O valor 80 = header fixo (~56px) + 24px de respiro visual. `Math.max(0, ...)` previne scroll negativo.
+B. Trocar efeito para rolagem por âncora estática com sincronização de layout
+- Substituir `setTimeout(150)+window.scrollTo(offsetTop)` por:
+  - `requestAnimationFrame` duplo (2 RAF) para garantir commit/layout.
+  - `anchorRefs.current[state.currentIndex]?.scrollIntoView({ behavior: "smooth", block: "start" })`.
 
-### Alteracao 2 — Remover `scrollMarginTop` do motion.div
+C. Passo corretivo pós-animação (anti-deriva)
+- Após ~420ms (duração da animação + margem), medir:
+  - `const top = anchor.getBoundingClientRect().top`
+  - alvo visual = 88px
+  - se `Math.abs(top - 88) > 4`, aplicar `window.scrollBy({ top: top - 88, behavior: "auto" })`.
+- Isso fecha os casos de drift residual por reflow tardio.
 
-O `scrollMarginTop` era necessario para o `scrollIntoView`. Com calculo manual via `offsetTop - 80`, nao e mais necessario e pode ser removido para evitar confusao.
+D. Regra de escopo
+- Aplicar ancoragem “topo com respiro” para itens `section`.
+- Para `quiz/playground` no avanço de timeline, manter comportamento suave sem forçar topo (evita saltos agressivos em interações).
 
-```text
-// ANTES (linha 126):
-style={{ scrollMarginTop: "80px" }}
+Arquivo 2: `src/components/lessons/v8/V8PlaygroundInline.tsx` (garantia de CTA visível)
 
-// DEPOIS:
-(remover a prop style inteira)
-```
+A. Preservar o `bottomRef`, mas adicionar validação geométrica de CTA
+- Introduzir `ctaRef` no botão primário da fase ativa (“Agora o Profissional”, “Comparar”, “Sua Vez!/Continuar”, “Continuar Aula”).
+- Após transição de fase e fim de loading/evaluating:
+  - medir `ctaRect.bottom` versus `window.innerHeight - safeBottom`.
+  - se CTA estiver fora, `window.scrollBy` apenas o delta necessário.
 
-### Alteracao 3 — Aumentar delay para 150ms
+B. Timing robusto
+- Disparo por `phase`, `isLoadingResult`, `isEvaluating`, `feedback`, `challengeScore`.
+- Execução com 2 RAF + fallback timeout curto.
+- Mantém o comportamento atual de fluxo pedagógico (sem alterar estados de negócio).
 
-Para dar mais margem ao React completar a renderizacao do novo item no DOM antes de calcular `offsetTop`:
+Por que essa abordagem é a mais segura
+- Remove dependência do alvo animado (transform/y).
+- Define referência estática de topo (scroll-margin-top) com semântica clara.
+- Adiciona “correção de erro residual” baseada em medição real de viewport.
+- Não altera contrato JSON, timeline do backend, nem regras de progressão.
 
-```text
-// ANTES:
-const timer = setTimeout(() => { ... }, 100);
+Critérios de aceite (objetivos)
 
-// DEPOIS:
-const timer = setTimeout(() => { ... }, 150);
-```
+1) Seção
+- Ao avançar para “O conceito essencial: previsão de palavras”, o topo do título deve parar com respiro visual no topo (target ~88px, tolerância ±4px).
+- Não pode sobrar card anterior ocupando o topo da viewport acima do título alvo.
 
-## Por que esta tecnica e superior
+2) Playground
+- Clique em “Agora o Profissional” => botão “Comparar” deve estar visível sem scroll manual.
+- Clique em “Comparar” => CTA seguinte (“Sua Vez!” ou “Continuar”) deve estar visível sem scroll manual.
 
-| Aspecto | scrollIntoView | offsetTop manual |
-|---------|---------------|-----------------|
-| Afetado por transform | SIM | NAO |
-| Depende da animacao terminar | SIM | NAO |
-| Controle preciso do offset | NAO (scrollMarginTop) | SIM (subtracao direta) |
-| Funciona com framer-motion | PARCIAL | TOTAL |
+3) Regressão
+- Sem quebrar:
+  - fluxo de áudio/continuar em seções,
+  - quizzes inline,
+  - progressão `advance` do timeline.
 
-## Analise de risco
+Validação forense pós-fix (que vou executar após aprovação)
+- Capturar novo replay e registrar:
+  - timestamp do clique,
+  - timestamp da mutação DOM da nova fase/seção,
+  - timestamp do primeiro `source:3`,
+  - delta clique→scroll esperado: curto (ordem de centenas de ms, não dezenas de segundos).
+- Confirmar visualmente os 2 cenários enviados nas imagens (âncora do título + CTA visível).
 
-- `offsetTop` e suportado em todos os browsers modernos: RISCO ZERO
-- `offsetTop` pode retornar valor relativo ao `offsetParent` mais proximo, nao ao documento. No layout atual (`min-h-screen`, sem `position: relative` intermediario), o offsetParent e o body/html: CORRETO
-- Compatibilidade com scroll do quiz (`bottomRef.scrollIntoView`): SEM CONFLITO (ref diferente, contexto diferente)
-- Compatibilidade com scroll do playground (`bottomRef.scrollIntoView`): SEM CONFLITO
-
-## Probabilidade de exito: 98%
-
-Justificativa: `offsetTop` resolve o problema na raiz (ignora transforms), sem depender de timing da animacao. A unica margem de erro (2%) e se houver um `position: relative` intermediario nao detectado que altere o offsetParent — verificado no codigo e NAO existe.
+Risco e mitigação
+- Risco baixo: calibração do `scroll-mt` (88px) pode exigir ajuste fino por viewport.
+- Mitigação: manter constante centralizada (ex.: `SECTION_TOP_OFFSET`) e ajustar uma vez após validação móvel.
+- Mudanças de banco de dados: nenhuma.
