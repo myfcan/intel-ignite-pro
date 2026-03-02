@@ -20,7 +20,7 @@ export default function V8Lesson() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lessons")
-        .select("id, title, trail_id, content, exercises, estimated_time")
+        .select("id, title, trail_id, course_id, content, exercises, estimated_time")
         .eq("id", lessonId!)
         .single();
       if (error) throw error;
@@ -104,7 +104,9 @@ export default function V8Lesson() {
   };
 
   const handleBack = () => {
-    if (lesson?.trail_id) {
+    if (lesson?.course_id) {
+      navigate(`/course/${lesson.course_id}`);
+    } else if (lesson?.trail_id) {
       navigate(`/v8-trail/${lesson.trail_id}`);
     } else {
       navigate("/dashboard");

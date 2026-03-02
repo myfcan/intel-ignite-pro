@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { BookOpen, Headphones } from "lucide-react";
+import { BookOpen, Headphones, ArrowLeft } from "lucide-react";
 
 interface V8ModeSelectorProps {
   onSelectMode: (mode: "read" | "listen") => void;
+  onBack?: () => void;
   title?: string;
 }
 
@@ -21,14 +22,28 @@ const modes = [
   },
 ];
 
-export const V8ModeSelector = ({ onSelectMode, title }: V8ModeSelectorProps) => {
+export const V8ModeSelector = ({ onSelectMode, onBack, title }: V8ModeSelectorProps) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center min-h-[70vh] px-6 gap-10"
+      className="relative flex flex-col items-center justify-center min-h-[70vh] px-6 gap-10"
     >
+      {/* Back button */}
+      {onBack && (
+        <motion.button
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          onClick={onBack}
+          className="absolute top-6 left-6 flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar
+        </motion.button>
+      )}
+
       {/* Title */}
       <div className="text-center space-y-2">
         {title && (

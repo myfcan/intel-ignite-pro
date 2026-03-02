@@ -134,6 +134,7 @@ export const V8LessonPlayer = ({
               key="mode-select"
               title={lessonData.title}
               onSelectMode={selectMode}
+              onBack={onBack}
             />
           )}
 
