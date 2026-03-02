@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.v8-generate-section-image]
 verify_jwt = false
+
+[functions.v8-generate-lesson-content]
+verify_jwt = false

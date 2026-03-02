@@ -22,7 +22,14 @@ interface ParsedQuiz {
 // parseFullContent — Master function
 // ═══════════════════════════════════════════════
 
-export function parseFullContent(rawText: string): V8LessonData {
+export interface ParseResult extends V8LessonData {
+  hasManualExercises: boolean;
+  hasManualQuizzes: boolean;
+  hasManualPlaygrounds: boolean;
+  manualExerciseTypes: string[];
+}
+
+export function parseFullContent(rawText: string): ParseResult {
   // 1. Extract title from first # line
   const titleMatch = rawText.match(/^#\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1].trim() : "Aula sem título";
@@ -107,6 +114,9 @@ export function parseFullContent(rawText: string): V8LessonData {
     afterSectionIndex: findAfterSectionIndex(q.position),
   }));
 
+  // 10. Parse exercise markers [EXERCISE:tipo]
+  const exerciseMarkers = parseExerciseMarkers(rawText);
+
   return {
     contentVersion: "v8",
     title,
@@ -115,6 +125,10 @@ export function parseFullContent(rawText: string): V8LessonData {
     inlineQuizzes,
     inlinePlaygrounds: inlinePlaygrounds.length > 0 ? inlinePlaygrounds : [],
     exercises: [],
+    hasManualExercises: exerciseMarkers.length > 0,
+    hasManualQuizzes: parsedQuizzes.length > 0,
+    hasManualPlaygrounds: parsedPlaygrounds.length > 0,
+    manualExerciseTypes: exerciseMarkers,
   };
 }
 
@@ -379,4 +393,27 @@ function parseListField(block: string, fieldName: string): string[] {
   }
 
   return items;
+}
+
+// ═══════════════════════════════════════════════
+// parseExerciseMarkers — Extract [EXERCISE:tipo] markers
+// ═══════════════════════════════════════════════
+
+const VALID_EXERCISE_TYPES = [
+  "drag-drop", "fill-in-blanks", "scenario-selection", "true-false",
+  "platform-match", "data-collection", "complete-sentence",
+  "multiple-choice", "flipcard-quiz", "timed-quiz",
+];
+
+export function parseExerciseMarkers(rawText: string): string[] {
+  const markers: string[] = [];
+  const regex = /\[EXERCISE:([a-z-]+)\]/gi;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(rawText)) !== null) {
+    const type = match[1].toLowerCase();
+    if (VALID_EXERCISE_TYPES.includes(type)) {
+      markers.push(type);
+    }
+  }
+  return markers;
 }
