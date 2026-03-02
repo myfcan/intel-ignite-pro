@@ -175,7 +175,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
             <V8TrimmedImage
               src={section.imageUrl}
               alt={cleanTitle}
-              className="w-full max-w-[256px] rounded-2xl object-contain"
+              className="w-full max-w-md rounded-2xl object-contain"
             />
           </div>
         )}

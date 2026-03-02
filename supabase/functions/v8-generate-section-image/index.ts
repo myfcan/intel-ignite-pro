@@ -26,7 +26,9 @@ Style requirements:
 - Think Apple/Notion style icons: polished, friendly, professional
 - Subtle shadow underneath the object for depth
 - The object should be large and fill at least 80% of the frame with MINIMAL padding around it
-- NO excessive whitespace or empty margins around the object`;
+- NO excessive whitespace or empty margins around the object
+- HORIZONTAL landscape composition (wider than tall)
+- Aspect ratio: 3:2 landscape`;
 }
 
 serve(async (req) => {
@@ -69,7 +71,7 @@ serve(async (req) => {
       }
       prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill at least 80% of the frame with MINIMAL padding.`;
+Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill at least 80% of the frame with MINIMAL padding. HORIZONTAL landscape composition (wider than tall), aspect ratio 3:2 landscape.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
@@ -204,7 +206,6 @@ function base64UrlToBytes(dataUrl: string): Uint8Array {
 }
 
 async function buildEditFormData(geminiBase64Url: string): Promise<FormData> {
-  // Convert Gemini base64 data URL to a File for the multipart form
   const imageBytes = base64UrlToBytes(geminiBase64Url);
   const imageBlob = new Blob([imageBytes], { type: "image/png" });
   const imageFile = new File([imageBlob], "input.png", { type: "image/png" });
@@ -213,7 +214,7 @@ async function buildEditFormData(geminiBase64Url: string): Promise<FormData> {
   form.append("model", "gpt-image-1");
   form.append("image", imageFile);
   form.append("prompt", "Remove the background from this image completely. Keep only the main object/illustration with a fully transparent background. Preserve all colors, details and style of the object exactly as they are. Output as PNG with real alpha transparency channel.");
-  form.append("size", "512x512");
+  form.append("size", "1536x1024");
   form.append("background", "transparent");
   form.append("response_format", "b64_json");
 
