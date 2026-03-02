@@ -450,8 +450,8 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
         {/* Phase: Done */}
         {phase === "done" && (
           <motion.div key="done" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className={`${cardClass} text-center`}>
-            <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-amber-600"}`}>
-              {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : (attempts > 0 ? playground.tryAgainMessage : playground.successMessage)}
+            <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-slate-600"}`}>
+              {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : "Você completou o desafio. Continue a aula para aprender mais!"}
             </p>
             {onContinue && (
               <button

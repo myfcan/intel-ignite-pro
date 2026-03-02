@@ -18,7 +18,8 @@ function buildAutoPrompt(content: string, allowText = false): string {
   const textRule = allowText
     ? `- Text in the image is ALLOWED but MUST be written in Brazilian Portuguese (pt-BR). Never use English.
 - Use clean, legible sans-serif typography integrated into the 3D style
-- Examples: "Inteligência Artificial" (not "Artificial Intelligence"), "Como funciona" (not "How it works")`
+- Examples: "Inteligência Artificial" (not "Artificial Intelligence"), "Como funciona" (not "How it works")
+- SPELLING RULE: Double-check ALL Portuguese words for correct spelling before rendering. Common mistakes to AVOID: "exaztmente" (correct: "exatamente"), "voce" (correct: "você"), "nao" (correct: "não"), "informaçao" (correct: "informação"), "inteligencia" (correct: "inteligência"). Every single word MUST be spelled correctly in standard Brazilian Portuguese with proper accents (á, é, í, ó, ú, ã, õ, ç, ê, â).`
     : `- NEVER include text, labels, banners, arrows, or UI elements inside the image`;
 
   return `Create a single isolated 3D illustration object representing this educational concept: ${words}.
