@@ -34,6 +34,7 @@ export interface V8InlineQuiz {
   reinforcement?: string;        // Texto extra ao errar
   audioUrl?: string;             // Áudio da pergunta (narrado)
   reinforcementAudioUrl?: string; // Áudio do reforço ao errar
+  explanationAudioUrl?: string;  // Áudio do feedback (explanation)
 }
 
 /**
@@ -76,6 +77,8 @@ export interface V8InlinePlayground {
   // Feedback explícito
   successMessage: string;        // Ação, não motivação vazia
   tryAgainMessage: string;
+  successAudioUrl?: string;      // Áudio narrado do successMessage
+  tryAgainAudioUrl?: string;     // Áudio narrado do tryAgainMessage
   hintOnFail?: string[];
 
   // Fallback offline
