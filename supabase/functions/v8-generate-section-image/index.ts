@@ -26,7 +26,11 @@ Style requirements:
 - Think Apple/Notion style icons: polished, friendly, professional
 - Subtle shadow underneath the object for depth
 - The object should be large and fill at least 80% of the frame with MINIMAL padding around it
-- NO excessive whitespace or empty margins around the object`;
+- NO excessive whitespace or empty margins around the object
+- IMPORTANT: Compose the image in a SQUARE (1:1) or HORIZONTAL (landscape) orientation
+- NEVER create tall/vertical/portrait compositions
+- If the concept involves multiple elements, arrange them SIDE BY SIDE horizontally, not stacked vertically
+- The composition width must be EQUAL TO or GREATER than its height`;
 }
 
 serve(async (req) => {
@@ -69,7 +73,7 @@ serve(async (req) => {
       }
       prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill at least 80% of the frame with MINIMAL padding.`;
+Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill at least 80% of the frame with MINIMAL padding. IMPORTANT: Compose in SQUARE (1:1) or HORIZONTAL (landscape) orientation. NEVER create tall/vertical/portrait compositions. Width must be EQUAL TO or GREATER than height.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
