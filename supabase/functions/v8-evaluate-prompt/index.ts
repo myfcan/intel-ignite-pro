@@ -154,25 +154,36 @@ REGRAS OBRIGATÓRIAS:
       return jsonResp({ result: content });
     }
 
-    // Parse structured evaluation response
+    // Parse structured evaluation response — balanced brace parser
     try {
-      const jsonMatch = content.match(/\{[\s\S]*?"score"[\s\S]*?\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return jsonResp({
-          score: parsed.score ?? 50,
-          verdict: parsed.verdict || "",
-          feedback: parsed.feedback || "",
-          criteriaBreakdown: parsed.criteriaBreakdown || [],
-          suggestions: parsed.suggestions || [],
-          improvedExample: parsed.improvedExample || "",
-        });
+      const startIdx = content.indexOf('{');
+      if (startIdx !== -1) {
+        let depth = 0;
+        let endIdx = -1;
+        for (let i = startIdx; i < content.length; i++) {
+          if (content[i] === '{') depth++;
+          else if (content[i] === '}') {
+            depth--;
+            if (depth === 0) { endIdx = i; break; }
+          }
+        }
+        if (endIdx !== -1) {
+          const parsed = JSON.parse(content.substring(startIdx, endIdx + 1));
+          return jsonResp({
+            score: parsed.score ?? 50,
+            verdict: parsed.verdict || "",
+            feedback: parsed.feedback || "",
+            criteriaBreakdown: parsed.criteriaBreakdown || [],
+            suggestions: parsed.suggestions || [],
+            improvedExample: parsed.improvedExample || "",
+          });
+        }
       }
     } catch {
       // Fallback below
     }
 
-    return jsonResp({ score: 50, feedback: content.slice(0, 300), verdict: "", criteriaBreakdown: [], suggestions: [], improvedExample: "" });
+    return jsonResp({ score: 50, feedback: "Avaliação indisponível. Tente novamente.", verdict: "Tente novamente", criteriaBreakdown: [], suggestions: [], improvedExample: "" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[v8-evaluate-prompt] Error:", msg);
