@@ -18,18 +18,19 @@ function buildAutoPrompt(content: string): string {
 
 Style requirements:
 - Modern flat 3D render, clean and minimal
-- Single object or small composition, centered
+- Single iconic 3D object only — NO diagrams, flowcharts, arrows, or multi-step sequences
+- Maximum 1 to 3 visual elements total, tightly composed as ONE unit
+- The main object must fill 85-95% of the frame — almost NO padding around it
 - CLEAN SOLID WHITE BACKGROUND (#FFFFFF)
 - Soft gradients, smooth surfaces, rounded edges
 - Vibrant but not neon colors (indigo, violet, sky blue, warm tones)
-- No text, no labels, no UI elements in the image
 - Think Apple/Notion style icons: polished, friendly, professional
 - Subtle shadow underneath the object for depth
-- The object should be large and fill at least 80% of the frame with MINIMAL padding around it
-- NO excessive whitespace or empty margins around the object
+- NEVER include text, labels, banners, arrows, or UI elements inside the image
+- NEVER create infographic-style, diagram-style, or flowchart-style compositions
+- NEVER scatter many small objects — always ONE cohesive central object
 - IMPORTANT: Compose the image in a SQUARE (1:1) or HORIZONTAL (landscape) orientation
 - NEVER create tall/vertical/portrait compositions
-- If the concept involves multiple elements, arrange them SIDE BY SIDE horizontally, not stacked vertically
 - The composition width must be EQUAL TO or GREATER than its height`;
 }
 
@@ -73,7 +74,7 @@ serve(async (req) => {
       }
       prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single isolated object, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors, no text in image, polished and professional like Apple/Notion icons. Object should be large and fill at least 80% of the frame with MINIMAL padding. IMPORTANT: Compose in SQUARE (1:1) or HORIZONTAL (landscape) orientation. NEVER create tall/vertical/portrait compositions. Width must be EQUAL TO or GREATER than height.`;
+Style: modern flat 3D render, single iconic object only, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors (indigo, violet, sky blue). Maximum 1-3 visual elements composed as ONE cohesive unit. The main object must fill 85-95% of the frame with almost NO padding. NO text, labels, banners, arrows, diagrams, flowcharts, or infographic-style compositions. NO scattered small objects. Polished and professional like Apple/Notion icons. IMPORTANT: Compose in SQUARE (1:1) or HORIZONTAL (landscape) orientation. NEVER create tall/vertical/portrait compositions. Width must be EQUAL TO or GREATER than height.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
