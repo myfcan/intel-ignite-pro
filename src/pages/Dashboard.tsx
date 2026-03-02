@@ -781,7 +781,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Crown className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  <h2 className="text-lg sm:text-xl font-bold text-indigo-800 tracking-tight whitespace-nowrap truncate">Seu Caminho de Maestria</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-indigo-800 tracking-tight whitespace-nowrap truncate">Seu Caminho de Maestria</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
@@ -870,7 +870,7 @@ const Dashboard = () => {
                     );
                   })}
                 </div>
-                <div className="flex items-center justify-center gap-2 mt-0">
+                <div className="flex items-center justify-center gap-2 mt-2">
                   {v8Courses.map((_, idx) => (
                     <button
                       key={idx}
@@ -934,7 +934,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Briefcase className="w-5 h-5 text-violet-500 flex-shrink-0" />
-                  <h2 className="text-lg sm:text-xl font-bold text-violet-800 tracking-tight whitespace-nowrap truncate">IA para Profissionais</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-violet-800 tracking-tight whitespace-nowrap truncate">IA para Profissionais</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -1081,7 +1081,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Rocket className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                  <h2 className="text-lg sm:text-xl font-bold text-blue-800 tracking-tight whitespace-nowrap truncate">Renda Extra PRO</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-blue-800 tracking-tight whitespace-nowrap truncate">Renda Extra PRO</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
