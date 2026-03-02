@@ -20,7 +20,7 @@ function buildAutoPrompt(content: string, allowText = false): string {
 - Use clean, legible sans-serif typography integrated into the 3D style
 - Examples: "Inteligência Artificial" (not "Artificial Intelligence"), "Como funciona" (not "How it works")
 - SPELLING RULE: Double-check ALL Portuguese words for correct spelling before rendering. Common mistakes to AVOID: "exaztmente" (correct: "exatamente"), "voce" (correct: "você"), "nao" (correct: "não"), "informaçao" (correct: "informação"), "inteligencia" (correct: "inteligência"). Every single word MUST be spelled correctly in standard Brazilian Portuguese with proper accents (á, é, í, ó, ú, ã, õ, ç, ê, â).`
-    : `- NEVER include text, labels, banners, arrows, or UI elements inside the image`;
+    : `- ABSOLUTELY NO TEXT of any kind inside the image. No words, no letters, no labels, no numbers, no banners, no captions, no typography, no characters, no symbols with letters. The image must be 100% visual/iconic with ZERO text or written characters anywhere. If you feel the urge to add text, replace it with a pure iconic symbol instead.`;
 
   return `Create a single isolated 3D illustration object representing this educational concept: ${words}.
 
