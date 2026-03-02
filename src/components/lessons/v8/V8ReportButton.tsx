@@ -34,13 +34,13 @@ export const V8ReportButton = ({ lessonId, pageContext }: V8ReportButtonProps) =
         toast({ title: "Erro", description: "Você precisa estar logado para reportar.", variant: "destructive" });
         return;
       }
-      const { error } = await supabase.from("lesson_reports" as any).insert({
+      const { error } = await supabase.from("lesson_reports").insert([{
         user_id: user.id,
         lesson_id: lessonId,
         category,
         details: details.trim() || null,
-        page_context: pageContext || {},
-      } as any);
+        page_context: (pageContext || {}) as unknown as import("@/integrations/supabase/types").Json,
+      }]);
       if (error) throw error;
       toast({ title: "Obrigado!", description: "Seu report foi enviado com sucesso." });
       setOpen(false);

@@ -123,21 +123,21 @@ export default function V8Lesson() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
       </div>
     );
   }
 
   if (error || !playerData) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 text-white">
-        <p className="text-slate-400">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4 text-slate-900">
+        <p className="text-slate-500">
           {error ? "Erro ao carregar aula" : "Conteúdo V8 não encontrado"}
         </p>
         <button
           onClick={() => navigate("/dashboard")}
-          className="text-sm text-indigo-400 hover:text-white transition-colors"
+          className="text-sm text-indigo-500 hover:text-indigo-700 transition-colors"
         >
           Voltar ao Dashboard
         </button>
