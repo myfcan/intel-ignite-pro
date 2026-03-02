@@ -13,7 +13,7 @@ import { V8SectionSetup } from "@/components/admin/V8SectionSetup";
 // ─── Types ───
 interface AudioResult {
   index: number;
-  type: "section" | "quiz" | "quiz-reinforcement" | "playground";
+  type: "section" | "quiz" | "quiz-reinforcement" | "quiz-explanation" | "playground" | "playground-success" | "playground-tryagain";
   audioUrl: string;
   durationEstimate: number;
   sizeKB: number;
@@ -269,6 +269,7 @@ export default function AdminV8Create() {
           p_exercises: [] as unknown as Json,
           p_audio_url: null as unknown as string,
           p_word_timestamps: null as unknown as Json,
+          p_model: "v8",
         });
         if (draftError) throw draftError;
         lessonId = draftId;
@@ -334,8 +335,14 @@ export default function AdminV8Create() {
           updatedData.inlineQuizzes[r.index].audioUrl = urlWithCacheBuster;
         } else if (r.type === "quiz-reinforcement" && updatedData.inlineQuizzes[r.index]) {
           updatedData.inlineQuizzes[r.index].reinforcementAudioUrl = urlWithCacheBuster;
+        } else if (r.type === "quiz-explanation" && updatedData.inlineQuizzes[r.index]) {
+          updatedData.inlineQuizzes[r.index].explanationAudioUrl = urlWithCacheBuster;
         } else if (r.type === "playground" && updatedData.inlinePlaygrounds?.[r.index]) {
           updatedData.inlinePlaygrounds[r.index].audioUrl = urlWithCacheBuster;
+        } else if (r.type === "playground-success" && updatedData.inlinePlaygrounds?.[r.index]) {
+          updatedData.inlinePlaygrounds[r.index].successAudioUrl = urlWithCacheBuster;
+        } else if (r.type === "playground-tryagain" && updatedData.inlinePlaygrounds?.[r.index]) {
+          updatedData.inlinePlaygrounds[r.index].tryAgainAudioUrl = urlWithCacheBuster;
         }
       }
       setJsonText(JSON.stringify(updatedData, null, 2));
@@ -403,6 +410,7 @@ export default function AdminV8Create() {
           p_exercises: (parsed.exercises || []) as unknown as Json,
           p_audio_url: null as unknown as string,
           p_word_timestamps: null as unknown as Json,
+          p_model: "v8",
         });
         if (draftError) throw draftError;
         setSavedLessonId(draftId);
@@ -410,7 +418,7 @@ export default function AdminV8Create() {
         if (activate) {
           await supabase
             .from("lessons")
-            .update({ is_active: true, status: "publicado", model: "v8" })
+            .update({ is_active: true, status: "publicado" })
             .eq("id", draftId);
         }
       }
@@ -474,7 +482,11 @@ export default function AdminV8Create() {
         { id: 'parse', name: 'Parsing conteúdo bruto', status: 'completed', message: `${parsed.sections.length} seções` },
         { id: 'ai-generate', name: 'IA gerando quizzes, playgrounds e exercícios', status: 'running' },
         { id: 'images', name: 'Gerando imagens por seção', status: 'pending' },
-        { id: 'finalize', name: 'Montando JSON final', status: 'pending' },
+        { id: 'build-json', name: 'Montando JSON final', status: 'pending' },
+        { id: 'create-draft', name: 'Salvando rascunho no banco', status: 'pending' },
+        { id: 'generate-audio', name: 'Gerando áudios via ElevenLabs', status: 'pending' },
+        { id: 'map-audio', name: 'Mapeando URLs de áudio', status: 'pending' },
+        { id: 'finalize', name: 'Salvando JSON final com áudios', status: 'pending' },
       ];
       setPipelineSteps(autoSteps);
       addLog('success', `Parse: ${parsed.sections.length} seções, ${parsed.inlineQuizzes.length} quizzes manuais, ${(parsed.inlinePlaygrounds || []).length} playgrounds manuais`);
@@ -483,9 +495,9 @@ export default function AdminV8Create() {
       }
       setPipelineProgress(15);
 
-      // Step 2: Call edge function
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      // Step 2: Call edge function (get session early for both AI + audio steps)
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) throw new Error("Not authenticated");
 
       addLog('info', 'Chamando IA para gerar conteúdo complementar...');
 
@@ -495,7 +507,7 @@ export default function AdminV8Create() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${authSession.access_token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
@@ -529,7 +541,7 @@ export default function AdminV8Create() {
       (result.errors || []).forEach((msg: string) => addLog('warning', msg));
 
       // Step 3: Build final JSON
-      setPipelineSteps(prev => prev.map(s => s.id === 'finalize' ? { ...s, status: 'running' as const } : s));
+      setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'running' as const } : s));
       addLog('info', 'Montando JSON final...');
 
       const finalData: V8LessonData = {
@@ -548,22 +560,142 @@ export default function AdminV8Create() {
         exercises: result.exercises || [],
       };
 
+      setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'completed' as const, message: `${finalData.sections.length} seções` } : s));
+      setPipelineProgress(45);
+      addLog('success', `JSON montado: ${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${finalData.exercises.length} exercícios`);
+
+      // Step 4: Create draft in database
+      setPipelineSteps(prev => prev.map(s => s.id === 'create-draft' ? { ...s, status: 'running' as const } : s));
+      addLog('info', 'Salvando rascunho no banco de dados...');
+
+      // Re-use authSession from step 2
+
+      let lessonId = savedLessonId;
+      if (!lessonId) {
+        const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
+          p_title: finalData.title,
+          p_trail_id: null as unknown as string,
+          p_order_index: 0,
+          p_estimated_time: estimatedTime,
+          p_content: finalData as unknown as Json,
+          p_exercises: (finalData.exercises || []) as unknown as Json,
+          p_audio_url: null as unknown as string,
+          p_word_timestamps: null as unknown as Json,
+          p_model: "v8",
+        });
+        if (draftError) throw draftError;
+        lessonId = draftId;
+        setSavedLessonId(lessonId);
+      } else {
+        // Update existing draft
+        await supabase.from("lessons").update({
+          title: finalData.title,
+          content: finalData as unknown as Json,
+          exercises: (finalData.exercises || []) as unknown as Json,
+          model: "v8",
+        }).eq("id", lessonId);
+      }
+
+      setPipelineSteps(prev => prev.map(s => s.id === 'create-draft' ? { ...s, status: 'completed' as const, message: `ID: ${lessonId?.slice(0, 8)}...` } : s));
+      setPipelineProgress(55);
+      addLog('success', `Rascunho salvo: ${lessonId}`);
+
+      // Step 5: Generate audio via ElevenLabs
+      setPipelineSteps(prev => prev.map(s => s.id === 'generate-audio' ? { ...s, status: 'running' as const } : s));
+      addLog('info', 'Gerando áudios via ElevenLabs...');
+
+      const audioResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authSession.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            lessonId,
+            sections: finalData.sections,
+            quizzes: finalData.inlineQuizzes,
+            playgrounds: finalData.inlinePlaygrounds || [],
+          }),
+        }
+      );
+
+      if (!audioResponse.ok) {
+        const errBody = await audioResponse.text();
+        throw new Error(`v8-generate failed: ${audioResponse.status} - ${errBody}`);
+      }
+
+      const audioResult: GenerateResponse = await audioResponse.json();
+      setGenerateResult(audioResult);
+
+      setPipelineSteps(prev => prev.map(s => s.id === 'generate-audio' ? { ...s, status: 'completed' as const, message: `${audioResult.stats.totalAudios} áudios` } : s));
+      setPipelineProgress(80);
+      addLog('success', `${audioResult.stats.totalAudios} áudios gerados (${audioResult.stats.totalSizeKB}KB) em ${(audioResult.stats.elapsedMs / 1000).toFixed(1)}s`);
+      if (audioResult.errors && audioResult.errors.length > 0) {
+        audioResult.errors.forEach(e => addLog('warning', `Erro em ${e.type} ${e.index}: ${e.error}`));
+      }
+
+      // Step 6: Map audio URLs back to JSON
+      setPipelineSteps(prev => prev.map(s => s.id === 'map-audio' ? { ...s, status: 'running' as const } : s));
+      addLog('info', 'Mapeando URLs de áudio no JSON...');
+
+      const cacheBuster = `?t=${Date.now()}`;
+      for (const r of audioResult.results) {
+        const urlWithCacheBuster = r.audioUrl + cacheBuster;
+        if (r.type === "section" && finalData.sections[r.index]) {
+          finalData.sections[r.index].audioUrl = urlWithCacheBuster;
+          finalData.sections[r.index].audioDurationSeconds = r.durationEstimate;
+        } else if (r.type === "quiz" && finalData.inlineQuizzes[r.index]) {
+          finalData.inlineQuizzes[r.index].audioUrl = urlWithCacheBuster;
+        } else if (r.type === "quiz-reinforcement" && finalData.inlineQuizzes[r.index]) {
+          finalData.inlineQuizzes[r.index].reinforcementAudioUrl = urlWithCacheBuster;
+        } else if (r.type === "quiz-explanation" && finalData.inlineQuizzes[r.index]) {
+          finalData.inlineQuizzes[r.index].explanationAudioUrl = urlWithCacheBuster;
+        } else if (r.type === "playground" && finalData.inlinePlaygrounds?.[r.index]) {
+          finalData.inlinePlaygrounds[r.index].audioUrl = urlWithCacheBuster;
+        } else if (r.type === "playground-success" && finalData.inlinePlaygrounds?.[r.index]) {
+          finalData.inlinePlaygrounds[r.index].successAudioUrl = urlWithCacheBuster;
+        } else if (r.type === "playground-tryagain" && finalData.inlinePlaygrounds?.[r.index]) {
+          finalData.inlinePlaygrounds[r.index].tryAgainAudioUrl = urlWithCacheBuster;
+        }
+      }
+
+      setPipelineSteps(prev => prev.map(s => s.id === 'map-audio' ? { ...s, status: 'completed' as const } : s));
+      setPipelineProgress(90);
+
+      // Step 7: Save final JSON with audio URLs to database
+      setPipelineSteps(prev => prev.map(s => s.id === 'finalize' ? { ...s, status: 'running' as const } : s));
+      addLog('info', 'Salvando JSON final com áudios no banco...');
+
+      const { error: finalSaveError } = await supabase
+        .from("lessons")
+        .update({
+          content: finalData as unknown as Json,
+          exercises: (finalData.exercises || []) as unknown as Json,
+          model: "v8",
+          status: "rascunho",
+        })
+        .eq("id", lessonId);
+
+      if (finalSaveError) throw finalSaveError;
+
       setJsonText(JSON.stringify(finalData, null, 2));
       setEditorMode("json");
       
-      // Auto-validate
       const validationResult = validateV8Json(finalData);
       setValidation(validationResult);
 
       setPipelineSteps(prev => prev.map(s => s.id === 'finalize' ? { ...s, status: 'completed' as const } : s));
       setPipelineProgress(100);
-      addLog('success', `JSON final: ${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${(finalData.inlinePlaygrounds || []).length} playgrounds, ${finalData.exercises.length} exercícios`);
+      addLog('success', `Pipeline completo! Aula salva com ${audioResult.stats.totalAudios} áudios.`);
 
-      setStep(validationResult.valid ? "validate" : "edit");
+      setStep(validationResult.valid ? "preview" : "edit");
 
       toast({
-        title: "✅ Conteúdo gerado!",
-        description: `${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${finalData.exercises.length} exercícios`,
+        title: "✅ Pipeline completo!",
+        description: `${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${audioResult.stats.totalAudios} áudios gerados e salvos.`,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -575,7 +707,7 @@ export default function AdminV8Create() {
     } finally {
       setIsGenerating(false);
     }
-  }, [contentText, toast, resetPipeline, addLog]);
+  }, [contentText, savedLessonId, estimatedTime, toast, resetPipeline, addLog]);
 
   const handleSetupApply = useCallback((
     updatedSections: V8Section[],
