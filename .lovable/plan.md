@@ -1,151 +1,196 @@
+# Correcao Sistemica do Pipeline V8 — Todos os Gaps Reais  
+  
+Atue como um engenheiro sênior responsável pelo runtime de todo o sistema e banco de dados, atue com obrigação de precisão técnica absoluta.
 
+&nbsp;
 
-# Harmonizacao Proporcional do Dashboard — Design System com Grid de 8pt
+REGRA DESTE PROMPT:
 
-## Diagnostico Real do Problema
+&nbsp;
 
-O problema NAO e apenas "tamanho" — e a **ausencia de um sistema de espacamento consistente**. Hoje cada bloco usa valores arbitrarios:
+Você NÃO pode mentir.
 
-- Hero: `p-10`, `minHeight: 180px`, `rounded-3xl`
-- Trail containers: `p-8`, `rounded-3xl`, `boxShadow: 16px 48px`
-- Cards internos: header `h-[148px]`, body `py-5 px-5`
-- Gaps entre secoes: `mb-6` (24px) — mesmo valor para tudo
+Você NÃO pode supor.
 
-Isso cria a sensacao de "blocos soltos de tamanhos diferentes jogados na tela". Nao existe ritmo vertical.
+Você NÃO pode responder com explicações genéricas.
 
-## Solucao Profissional: 8pt Grid System + Hierarquia Visual
+Você NÃO pode omitir dados.
 
-A industria (Google Material, Apple HIG, Linear, Stripe) usa o **8pt grid system**: todos os espacamentos sao multiplos de 8 (8, 16, 24, 32, 40, 48). Isso cria ritmo visual previsivel.
+Você deve executar tudo com DADOS REAIS do código atual.
 
-Alem disso, a hierarquia precisa de **diferenciacao por papel**, nao por tamanho arbitrario:
+Você deve copiar e colar trechos REAIS do código.
 
-```text
-Nivel 1 (HERO) — CTA principal, gradiente, UNICO bloco de destaque
-Nivel 2 (SECOES) — Containers de trilha, fundo NEUTRO, titulo colorido
-Nivel 3 (CARDS) — Dentro dos containers, todos com mesma altura
-```
+Você deve usar logs reais e timestamps reais.
 
-Hoje, Hero e Containers estao no MESMO nivel visual (todos com gradiente forte + sombra pesada). Isso e o problema central.
+Se não souber algo, diga explicitamente: “NÃO LOCALIZADO NO CÓDIGO”.  
+  
+TUDO ISSO É MANDATÓRIO
 
-## Mudancas Concretas
+&nbsp;
 
-### 1. Sistema de Espacamento Unificado (8pt grid)
+## Diagnostico Forense Completo
 
-| Token | Valor | Uso |
-|---|---|---|
-| `space-sm` | 16px (gap-4) | Entre cards dentro de container |
-| `space-md` | 24px (gap-6 / p-6) | Padding interno dos containers |
-| `space-lg` | 32px (mb-8) | Entre secoes principais |
-| `radius-section` | 20px (rounded-[20px]) | Todos os containers de secao |
-| `radius-card` | 14px (rounded-[14px]) | Todos os cards internos |
+Tracei o fluxo completo de processamento de aula V8, linha a linha, e encontrei **5 gaps reais** que impedem o pipeline de funcionar de ponta a ponta.
 
-### 2. Hero Banner — Manter como Nivel 1 (unico destaque)
+---
 
-| Propriedade | Atual | Novo |
-|---|---|---|
-| minHeight | 180px | removido (natural) |
-| padding | `p-6 sm:p-8 md:p-10` | `p-6 sm:p-7 md:p-8` (48/56/64) |
-| border-radius | `rounded-2xl sm:rounded-3xl` | `rounded-[20px]` |
-| Titulo | `text-2xl sm:text-3xl md:text-4xl` | `text-2xl sm:text-2xl md:text-3xl` |
-| Icones flutuantes | 36-48px | 32-40px |
+## GAP 1 (CRITICO): `handleConvertAndGenerate` nao persiste nem gera audio
 
-Resultado: hero compacta ~25%, continua sendo o bloco de destaque.
+**Arquivo**: `src/pages/AdminV8Create.tsx`, linhas 454-578
 
-### 3. Containers de Trilha — Rebaixar para Nivel 2 (fundo neutro)
+**O que faz**: Chama `v8-generate-lesson-content` (gera quizzes, playgrounds, exercicios, imagens via IA), monta o JSON final em memoria, e PARA.
 
-TODAS as 3 secoes (V8, IA Pro, V7) passam do modelo "bloco gradiente pesado" para **card branco com titulo colorido**:
+**O que NAO faz**:
 
-| Propriedade | Atual | Novo |
-|---|---|---|
-| background | gradiente forte (roxo/azul) | `white` |
-| border | nenhum | `1px solid hsl(230, 15%, 92%)` |
-| boxShadow | `0 16px 48px -12px rgba(...)` | `0 2px 16px rgba(0,0,0,0.04)` |
-| border-radius | `rounded-3xl` | `rounded-[20px]` |
-| padding | `p-5 sm:p-7 md:p-8` | `p-5 sm:p-6` (uniforme) |
-| titulo cor | `text-white` | cor tematica (indigo/violet/blue) |
-| icone titulo | sobre gradiente | cor tematica solida |
-| botao "Ver todos" | glass branco sobre gradiente | `bg-{theme}-50 text-{theme}-600 border` |
-| setas paginacao | `text-white/30` | `text-slate-400` (desabilitado), `text-{theme}-600` (ativo) |
-| contador pagina | `text-white/60` | `text-slate-400` |
+- Nao cria registro no banco de dados
+- Nao chama `v8-generate` (geracao de audio)
+- Nao seta `model: 'v8'`
 
-Cores tematicas por secao:
-- **Seu Caminho de Maestria**: titulo `text-indigo-800`, Crown `text-amber-500`, botoes `bg-indigo-50 text-indigo-600`
-- **IA para Profissionais**: titulo `text-violet-800`, Briefcase `text-violet-500`, botoes `bg-violet-50 text-violet-600`
-- **Renda Extra PRO**: titulo `text-blue-800`, Rocket `text-blue-500`, botoes `bg-blue-50 text-blue-600`
+**Resultado**: Apos clicar "Converter e Gerar Tudo", o usuario tem JSON na tela mas NADA no banco. Se ele salva como rascunho depois, cai no GAP 2.
 
-### 4. Trail Cards — Header Compactado
+**Correcao**: Estender `handleConvertAndGenerate` para executar o pipeline completo:
 
-O header colorido dos cards (que fica DENTRO dos containers) mantem o gradiente — e aqui que a cor vive agora.
+1. Parse conteudo (ja faz)
+2. Chamar `v8-generate-lesson-content` (ja faz)
+3. **NOVO**: Criar draft no banco via `create_lesson_draft`
+4. **NOVO**: Chamar `v8-generate` para gerar todos os audios
+5. **NOVO**: Mapear audio URLs de volta no JSON
+6. **NOVO**: Salvar JSON final no banco com `model: 'v8'`
 
-| Propriedade | Atual | Novo |
-|---|---|---|
-| Header height | `h-[120px] sm:h-[148px]` | `h-[96px] sm:h-[120px]` |
-| Glass icon | `w-12 h-12 sm:w-16 sm:h-16` | `w-10 h-10 sm:w-14 sm:h-14` |
-| Icon interno | `w-6 h-6 sm:w-8 sm:h-8` | `w-5 h-5 sm:w-7 sm:h-7` |
-| Body padding | `px-3.5 py-3.5 sm:px-5 sm:py-5` | `px-3 py-3 sm:px-4 sm:py-4` |
-| Circulos decorativos | w-20 sm:w-28 | w-16 sm:w-22 |
+---
 
-### 5. Espacamento entre Secoes
+## GAP 2 (CRITICO): `handleSave(false)` para aulas NOVAS nao seta `model: 'v8'`
 
-| Entre | Atual | Novo |
-|---|---|---|
-| Hero -> Stats | mb-6 (24px) | mb-8 (32px) |
-| Stats -> Continue | mb-6 (24px) | mb-6 (24px) |
-| Continue -> Trilhas title | mb-6 (24px) | mb-8 (32px) |
-| Entre containers trilha | mb-6 (24px) | mb-6 (24px) |
+**Arquivo**: `src/pages/AdminV8Create.tsx`, linhas 374-430
 
-Isso cria agrupamento visual: blocos de mesmo tipo ficam mais juntos, blocos de tipo diferente tem mais respiro.
-
-### 6. Continue Aprendendo — Alinhar
-
-| Propriedade | Atual | Novo |
-|---|---|---|
-| minHeight | 120px | removido |
-| padding | `p-5 sm:p-7` | `p-4 sm:p-5` |
-| border-radius | rounded-2xl | `rounded-[20px]` |
-| Icone | `w-16 h-16 sm:w-20 sm:h-20` | `w-14 h-14 sm:w-16 sm:h-16` |
-
-## Resultado Visual Esperado
+**Codigo real** (linhas 396-416):
 
 ```text
-+--[HERO roxo gradiente — UNICO bloco de cor]---+
-|  Pronto para aprender? (compacto, ~160px)      |
-+-------------------------------------------------+
-        32px gap
-+--[4 stat cards brancos]---+---+---+---+
-        24px gap
-+--[Continue Aprendendo — card branco]---+
-        32px gap
-  Trilhas (titulo)
-        16px gap
-+--[CARD BRANCO, borda sutil]--------------------+
-|  Crown(indigo) Seu Caminho de Maestria(indigo) |
-|  [card com header colorido] [card] [card]       |
-+-------------------------------------------------+
-        24px gap
-+--[CARD BRANCO, borda sutil]--------------------+
-|  Briefcase(violet) IA para Profissionais       |
-|  [card com header colorido] [card] [card]       |
-+-------------------------------------------------+
-        24px gap
-+--[CARD BRANCO, borda sutil]--------------------+
-|  Rocket(blue) Renda Extra PRO                  |
-|  [card com header colorido] [card] [card]       |
-+-------------------------------------------------+
+// Para aulas NOVAS (sem savedLessonId):
+create_lesson_draft(...)  // <-- NAO tem parametro model
+setSavedLessonId(draftId);
+
+if (activate) {
+  // SO seta model: 'v8' se ativar
+  update({ is_active: true, status: "publicado", model: "v8" })
+}
+// Se activate = false -> model FICA NULL
 ```
 
-## Por que isso e profissional e nao "remendo"
+**A funcao SQL `create_lesson_draft**` (confirmado no banco): insere `title, lesson_type, trail_id, order_index, difficulty_level, estimated_time, is_active, content, exercises, exercises_version, audio_url, word_timestamps` — **NAO TEM coluna `model**`.
 
-1. **8pt grid system** — padrao da industria (Google, Apple, Linear)
-2. **Hierarquia por funcao** — hero = CTA (cor), containers = organizacao (neutro), cards = conteudo (cor no header)
-3. **Valores consistentes** — todo espacamento e multiplo de 8, todo radius e 20px ou 14px, sem valores arbitrarios
-4. **Diferenciacao semantica** — cada secao tem sua cor NO TITULO, nao no fundo inteiro
-5. **Principio de "contenção"** — a cor forte vive nos cards pequenos (onde cria impacto), nao nos containers grandes (onde cria fadiga)
+**Correcao**: Duas opcoes (ambas necessarias):
+
+1. Apos `create_lesson_draft`, fazer UPDATE imediato: `UPDATE lessons SET model = 'v8' WHERE id = draftId`
+2. Adicionar `p_model` ao `create_lesson_draft` SQL function (melhor a longo prazo)
+
+---
+
+## GAP 3 (CRITICO): 3 tipos de audio gerados mas NAO mapeados de volta
+
+**Arquivo**: `src/pages/AdminV8Create.tsx`, linhas 328-339
+
+A edge function `v8-generate` (linhas 207-305) gera audios para:
+
+- `quiz-explanation` (linha 215-228)
+- `playground-success` (linha 261-282)
+- `playground-tryagain` (linha 284-305)
+
+Mas o mapeamento no cliente (linhas 328-339) so cobre:
+
+```text
+section        -> sections[i].audioUrl           OK
+quiz           -> inlineQuizzes[i].audioUrl      OK
+quiz-reinforcement -> inlineQuizzes[i].reinforcementAudioUrl  OK
+playground     -> inlinePlaygrounds[i].audioUrl  OK
+```
+
+**FALTAM** (tipos existem em `V8InlineQuiz` e `V8InlinePlayground`):
+
+```text
+quiz-explanation     -> inlineQuizzes[i].explanationAudioUrl     PERDIDO
+playground-success   -> inlinePlaygrounds[i].successAudioUrl     PERDIDO
+playground-tryagain  -> inlinePlaygrounds[i].tryAgainAudioUrl    PERDIDO
+```
+
+**Resultado**: ElevenLabs gera o audio, paga-se pela API, o audio e uploadeado para storage, mas a URL nunca e inserida no JSON da aula. O audio existe no bucket mas o player nunca o encontra.
+
+**Correcao**: Adicionar 3 mapeamentos no loop de resultados (linhas 328-339):
+
+```text
+} else if (r.type === "quiz-explanation" && updatedData.inlineQuizzes[r.index]) {
+  updatedData.inlineQuizzes[r.index].explanationAudioUrl = urlWithCacheBuster;
+} else if (r.type === "playground-success" && updatedData.inlinePlaygrounds?.[r.index]) {
+  updatedData.inlinePlaygrounds[r.index].successAudioUrl = urlWithCacheBuster;
+} else if (r.type === "playground-tryagain" && updatedData.inlinePlaygrounds?.[r.index]) {
+  updatedData.inlinePlaygrounds[r.index].tryAgainAudioUrl = urlWithCacheBuster;
+}
+```
+
+---
+
+## GAP 4 (MODERADO): Roteamento sem fallback em AdminManageLessons
+
+**Arquivo**: `src/pages/AdminManageLessons.tsx`, linha 385
+
+```text
+lesson.model === 'v8' ? `/v8/${lesson.id}` : `/admin/v7/play/${lesson.id}`
+```
+
+Quando `model` e `null` (por causa do GAP 2), a aula abre no player V7 que nao sabe renderizar conteudo V8.
+
+**Correcao**: Adicionar fallback por `contentVersion`:
+
+```text
+(lesson.model === 'v8' || (lesson.content as any)?.contentVersion === 'v8')
+  ? `/v8/${lesson.id}`
+  : `/admin/v7/play/${lesson.id}`
+```
+
+Verificar se `content` esta disponivel na query de listagem. Se nao estiver, a correcao do GAP 2 e suficiente (model sera sempre setado).
+
+---
+
+## GAP 5 (MODERADO): Aula existente `b92124bd` precisa de correcao imediata no banco
+
+A aula ja existe com `model: null` e 0 audios. Precisa de:
+
+```sql
+UPDATE lessons SET model = 'v8' WHERE id = 'b92124bd-4243-4ee1-ad88-d2a520dd1f4b';
+```
+
+Isso permite que ela abra no player V8 correto. Os audios precisarao ser regenerados via o botao "Gerar Audios" na interface de criacao.
+
+---
+
+## Plano de Implementacao (Ordem)
+
+### Passo 1: Correcao do banco (migracao SQL)
+
+- UPDATE aula existente: `model = 'v8'`
+- Adicionar parametro `p_model` a funcao `create_lesson_draft`
+
+### Passo 2: Correcao do mapeamento de audio (`AdminV8Create.tsx`)
+
+- Adicionar 3 mapeamentos faltantes: `quiz-explanation`, `playground-success`, `playground-tryagain`
+
+### Passo 3: Correcao do `handleSave` para drafts (`AdminV8Create.tsx`)
+
+- Apos `create_lesson_draft`, fazer UPDATE imediato setando `model = 'v8'`
+
+### Passo 4: Pipeline end-to-end no `handleConvertAndGenerate` (`AdminV8Create.tsx`)
+
+- Estender para: parse -> gerar conteudo IA -> criar draft -> gerar audios -> mapear URLs -> salvar final
+- Um unico clique processa tudo
+
+### Passo 5: Fallback de roteamento (`AdminManageLessons.tsx`)
+
+- Adicionar check de `contentVersion` como fallback
 
 ## Arquivos Modificados
 
-1. **`src/pages/Dashboard.tsx`** — Hero compactado, containers de trilha com fundo branco, espacamentos 8pt grid, botoes/setas adaptados para fundo claro
-2. **`src/components/lessons/v8/V8TrailCard.tsx`** — Header height reduzido, icones compactados
-3. **`src/components/TrailCard.tsx`** — Header height reduzido, icones compactados
+1. **Migracao SQL** — UPDATE aula + ALTER FUNCTION `create_lesson_draft`
+2. `**src/pages/AdminV8Create.tsx**` — Mapeamento de audio, handleSave, handleConvertAndGenerate
+3. `**src/pages/AdminManageLessons.tsx**` — Fallback de roteamento
 
-Nenhum arquivo novo. Nenhuma mudanca no banco de dados.
+Nenhum arquivo novo. Todas as correcoes sao no codigo existente.
