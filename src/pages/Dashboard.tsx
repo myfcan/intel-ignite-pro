@@ -564,21 +564,20 @@ const Dashboard = () => {
 
             {/* ===== PURPLE HERO BANNER - Hidden on mobile ===== */}
             <div
-              className="hidden lg:block rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 mb-6 relative overflow-hidden"
+              className="hidden lg:block rounded-[20px] p-6 sm:p-7 md:p-8 mb-8 relative overflow-hidden"
               style={{
                 background: 'linear-gradient(135deg, #6C63FF 0%, #7C3AED 100%)',
                 boxShadow: '0 12px 40px -8px rgba(108, 99, 255, 0.3)',
-                minHeight: '180px',
               }}
             >
               {/* Floating Icon Badges */}
               {[
-                { Icon: Code, bg: '#F97316', right: '8%', top: '10%', size: 48, delay: 0 },
-                { Icon: Database, bg: '#0EA5E9', right: '22%', top: '5%', size: 40, delay: 0.1 },
-                { Icon: PieChart, bg: '#8B5CF6', right: '15%', top: '40%', size: 36, delay: 0.2 },
-                { Icon: Palette, bg: '#EC4899', right: '5%', top: '50%', size: 44, delay: 0.3 },
-                { Icon: Layers, bg: '#10B981', right: '25%', top: '65%', size: 40, delay: 0.15 },
-                { Icon: BarChart3, bg: '#1E40AF', right: '12%', top: '75%', size: 36, delay: 0.25 },
+                { Icon: Code, bg: '#F97316', right: '8%', top: '10%', size: 40, delay: 0 },
+                { Icon: Database, bg: '#0EA5E9', right: '22%', top: '5%', size: 36, delay: 0.1 },
+                { Icon: PieChart, bg: '#8B5CF6', right: '15%', top: '40%', size: 32, delay: 0.2 },
+                { Icon: Palette, bg: '#EC4899', right: '5%', top: '50%', size: 38, delay: 0.3 },
+                { Icon: Layers, bg: '#10B981', right: '25%', top: '65%', size: 36, delay: 0.15 },
+                { Icon: BarChart3, bg: '#1E40AF', right: '12%', top: '75%', size: 32, delay: 0.25 },
               ].map(({ Icon: FloatIcon, bg, right, top, size, delay: d }, i) => (
                 <motion.div
                   key={i}
@@ -603,7 +602,7 @@ const Dashboard = () => {
                 <motion.h2
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2"
+                  className="text-2xl sm:text-2xl md:text-3xl font-bold text-white mb-2"
                 >
                   Pronto para aprender?
                 </motion.h2>
@@ -611,7 +610,7 @@ const Dashboard = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15 }}
-                  className="text-purple-200 text-sm sm:text-base mb-5 leading-relaxed"
+                  className="text-purple-200 text-sm sm:text-base mb-4 leading-relaxed"
                 >
                   Continue sua jornada de aprendizado. Você está a um passo dos seus objetivos.
                 </motion.p>
@@ -637,7 +636,7 @@ const Dashboard = () => {
             </div>
 
             {/* ===== 4 STAT CARDS - Hidden on mobile (redundant with GamificationHeader) ===== */}
-            <div className="hidden sm:grid sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <div className="hidden sm:grid sm:grid-cols-4 gap-3 sm:gap-4 mb-6 lg:mb-6">
               <AnimatedStatCard
                 value={gamificationStats?.lessonsCompleted ?? 0}
                 label="Aulas Concluídas"
@@ -689,12 +688,12 @@ const Dashboard = () => {
                     <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
                   </div>
                   <div
-                    className="bg-white rounded-2xl p-5 sm:p-7 flex items-center gap-5 cursor-pointer hover:shadow-lg transition-shadow"
-                    style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)', minHeight: '120px' }}
+                    className="bg-white rounded-[20px] p-4 sm:p-5 flex items-center gap-5 cursor-pointer hover:shadow-lg transition-shadow"
+                    style={{ border: '1px solid hsl(230 15% 92%)', boxShadow: '0 2px 16px rgba(0,0,0,0.04)' }}
                     onClick={() => navigate(`/trail/${activeTrail.id}`)}
                   >
                     <div
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center flex-shrink-0"
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{
                         background: 'linear-gradient(135deg, #6366F1, #818CF8)',
                         boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
@@ -734,17 +733,18 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
-              className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
+              className="mb-6 rounded-[20px] p-5 sm:p-6"
               style={{
-                background: 'linear-gradient(135deg, #7C3AED 0%, #6366F1 40%, #818CF8 100%)',
-                boxShadow: '0 16px 48px -12px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+                background: 'white',
+                border: '1px solid hsl(230 15% 92%)',
+                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
               }}
             >
               {/* Section header */}
-              <div className="flex items-center justify-between mb-5 sm:mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <Crown className="w-6 h-6 text-amber-400" />
-                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Seu Caminho de Maestria</h2>
+                  <Crown className="w-5 h-5 text-amber-500" />
+                  <h2 className="text-lg sm:text-xl font-bold text-indigo-800 tracking-tight">Seu Caminho de Maestria</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
@@ -756,8 +756,8 @@ const Dashboard = () => {
                         navigate('/all-trails/v8');
                       }
                     }}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
+                    style={{ background: 'hsl(226 100% 97%)', color: 'hsl(239 84% 67%)', border: '1px solid hsl(224 76% 90%)' }}
                   >
                     Ver todos ›
                   </button>
@@ -766,20 +766,20 @@ const Dashboard = () => {
                     <button
                       onClick={() => setTrailPageV8(p => Math.max(0, p - 1))}
                       disabled={trailPageV8 === 0}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-indigo-600 hover:bg-indigo-50'}`}
+                      style={{ background: 'hsl(226 100% 97%)', border: '1px solid hsl(224 76% 90%)' }}
                     >
                       ‹
                     </button>
                     <button
                       onClick={() => setTrailPageV8(p => Math.min(totalTrailPagesV8 - 1, p + 1))}
                       disabled={trailPageV8 >= totalTrailPagesV8 - 1}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 >= totalTrailPagesV8 - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 >= totalTrailPagesV8 - 1 ? 'text-slate-300 cursor-not-allowed' : 'text-indigo-600 hover:bg-indigo-50'}`}
+                      style={{ background: 'hsl(226 100% 97%)', border: '1px solid hsl(224 76% 90%)' }}
                     >
                       ›
                     </button>
-                    <span className="text-xs text-white/60 font-medium ml-1">
+                    <span className="text-xs text-slate-400 font-medium ml-1">
                       {trailPageV8 + 1}/{totalTrailPagesV8}
                     </span>
                   </div>
@@ -886,22 +886,23 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
+              className="mb-6 rounded-[20px] p-5 sm:p-6"
               style={{
-                background: 'linear-gradient(135deg, hsl(258 90% 56%) 0%, hsl(258 80% 62%) 40%, hsl(270 76% 68%) 100%)',
-                boxShadow: '0 16px 48px -12px rgba(124, 58, 237, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+                background: 'white',
+                border: '1px solid hsl(230 15% 92%)',
+                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
               }}
             >
               {/* Section header */}
-              <div className="flex items-center justify-between mb-5 sm:mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <Briefcase className="w-6 h-6 text-violet-200" />
-                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">IA para Profissionais</h2>
+                  <Briefcase className="w-5 h-5 text-violet-500" />
+                  <h2 className="text-lg sm:text-xl font-bold text-violet-800 tracking-tight">IA para Profissionais</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
+                    style={{ background: 'hsl(270 100% 97%)', color: 'hsl(262 83% 58%)', border: '1px solid hsl(270 76% 90%)' }}
                   >
                     Ver todos ›
                   </button>
@@ -909,20 +910,20 @@ const Dashboard = () => {
                     <button
                       onClick={() => setTrailPagePro(p => Math.max(0, p - 1))}
                       disabled={trailPagePro === 0}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPagePro === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPagePro === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50'}`}
+                      style={{ background: 'hsl(270 100% 97%)', border: '1px solid hsl(270 76% 90%)' }}
                     >
                       ‹
                     </button>
                     <button
                       onClick={() => setTrailPagePro(p => Math.min(totalTrailPagesPro - 1, p + 1))}
                       disabled={trailPagePro >= totalTrailPagesPro - 1}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPagePro >= totalTrailPagesPro - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPagePro >= totalTrailPagesPro - 1 ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50'}`}
+                      style={{ background: 'hsl(270 100% 97%)', border: '1px solid hsl(270 76% 90%)' }}
                     >
                       ›
                     </button>
-                    <span className="text-xs text-white/60 font-medium ml-1">
+                    <span className="text-xs text-slate-400 font-medium ml-1">
                       {trailPagePro + 1}/{totalTrailPagesPro}
                     </span>
                   </div>
@@ -997,17 +998,18 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.25 }}
-              className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
+              className="mb-6 rounded-[20px] p-5 sm:p-6"
               style={{
-                background: 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 40%, #3B82F6 100%)',
-                boxShadow: '0 16px 48px -12px rgba(30, 58, 138, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                background: 'white',
+                border: '1px solid hsl(230 15% 92%)',
+                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
               }}
             >
               {/* Section header */}
-              <div className="flex items-center justify-between mb-5 sm:mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <Rocket className="w-6 h-6 text-sky-300" />
-                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Renda Extra PRO</h2>
+                  <Rocket className="w-5 h-5 text-blue-500" />
+                  <h2 className="text-lg sm:text-xl font-bold text-blue-800 tracking-tight">Renda Extra PRO</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
@@ -1019,8 +1021,8 @@ const Dashboard = () => {
                         navigate('/all-trails/v7');
                       }
                     }}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
+                    style={{ background: 'hsl(214 100% 97%)', color: 'hsl(217 91% 60%)', border: '1px solid hsl(214 76% 90%)' }}
                   >
                     Ver todos ›
                   </button>
@@ -1029,20 +1031,20 @@ const Dashboard = () => {
                     <button
                       onClick={() => setTrailPage(p => Math.max(0, p - 1))}
                       disabled={trailPage === 0}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage === 0 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                      style={{ background: 'hsl(214 100% 97%)', border: '1px solid hsl(214 76% 90%)' }}
                     >
                       ‹
                     </button>
                     <button
                       onClick={() => setTrailPage(p => Math.min(totalTrailPages - 1, p + 1))}
                       disabled={trailPage >= totalTrailPages - 1}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage >= totalTrailPages - 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/70 hover:text-white hover:bg-white/15'}`}
-                      style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage >= totalTrailPages - 1 ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                      style={{ background: 'hsl(214 100% 97%)', border: '1px solid hsl(214 76% 90%)' }}
                     >
                       ›
                     </button>
-                    <span className="text-xs text-white/60 font-medium ml-1">
+                    <span className="text-xs text-slate-400 font-medium ml-1">
                       {trailPage + 1}/{totalTrailPages}
                     </span>
                   </div>
