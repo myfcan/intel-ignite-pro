@@ -1,29 +1,55 @@
 
-# Fix: Adicionar botao "Continuar Aula" apos falha no Playground
+# Fix: Mensagem do Done Phase + Ortografia nas Imagens
 
-## Problema
+## Problema 1: Mensagem sem contexto no "done" do Playground
 
-No `V8PlaygroundInline.tsx`, quando o usuario falha no desafio (score < 70) mas ainda tem tentativas restantes, a unica opcao visivel e "Tentar Novamente". Nao ha como pular e continuar a aula, prendendo o usuario no playground.
+Quando o usuario clica "Continuar Aula" apos falhar, a fase "done" (linha 454) mostra o `tryAgainMessage`:
 
-## Correcao
+```
+"Quase. Coloque 3 detalhes: onde voce esta, quando voce precisa e o formato do retorno."
+```
 
-### Arquivo: `src/components/lessons/v8/V8PlaygroundInline.tsx` (linhas ~383-416)
+Isso e uma dica de retry, nao uma mensagem de encerramento. O usuario ja decidiu seguir em frente — mostrar "tente de novo" nao faz sentido.
 
-Adicionar um botao "Continuar Aula" secundario que aparece **sempre apos a primeira tentativa com falha**, independente de ter retries restantes. O botao "Tentar Novamente" continua disponivel, mas agora como opcao, nao obrigacao.
+### Correcao
 
-**Layout pos-correcao:**
-- Score >= 70: Botao "Continuar" (primario, como ja funciona)
-- Score < 70, com retries: Botao "Tentar Novamente" (primario) + Botao "Continuar Aula" (secundario/outline)
-- Score < 70, sem retries: Botao "Continuar" (primario, como ja funciona)
+No `V8PlaygroundInline.tsx` (linha 453-455), substituir a logica da mensagem na fase "done":
 
-O botao secundario tera estilo `outline` (borda slate, texto slate) para diferenciar visualmente do CTA principal, incentivando o retry sem forcar.
+- Se score >= 70: mostrar `successMessage` (como ja funciona)
+- Se score < 70 e usuario escolheu continuar: mostrar uma mensagem neutra de progresso em vez do `tryAgainMessage`
 
-### Mudanca especifica
+Mensagem neutra: **"Voce completou o desafio. Continue a aula para aprender mais!"** — ou usar um campo opcional `skipMessage` do playground, com fallback para essa mensagem padrao.
 
-Substituir o bloco de botoes (linhas 383-416) para que, apos `attempts > 0 && challengeScore < 70 && canRetry`, renderize ambos os botoes lado a lado.
+### Arquivo
+`src/components/lessons/v8/V8PlaygroundInline.tsx` — linhas 450-466
 
-## Escopo
+---
 
-- 1 arquivo: `src/components/lessons/v8/V8PlaygroundInline.tsx`
-- 0 mudancas de banco
-- 0 mudancas de edge function
+## Problema 2: Erros ortograficos nas imagens geradas
+
+A imagem mostra "exaztmente" em vez de "exatamente". O Gemini gera texto com erros de ortografia em portugues.
+
+### Correcao
+
+No `v8-generate-section-image/index.ts`, adicionar regra de ortografia ao prompt (dentro do bloco `allowText = true`):
+
+```
+- SPELLING RULE: Double-check ALL Portuguese words for correct spelling.
+  Common mistakes to AVOID: "exaztmente" (correct: "exatamente"), 
+  "voce" (correct: "voce" with accent), "nao" (correct: "nao" with til).
+  Every word must be spelled correctly in standard Brazilian Portuguese.
+```
+
+### Arquivo
+`supabase/functions/v8-generate-section-image/index.ts` — linhas 18-22 (bloco `allowText`)
+
+---
+
+## Resumo
+
+| Problema | Arquivo | Mudanca |
+|----------|---------|---------|
+| Mensagem "tryAgain" no done | `V8PlaygroundInline.tsx` | Mensagem neutra quando usuario pula |
+| Typos em pt-BR nas imagens | `v8-generate-section-image/index.ts` | Regra de ortografia no prompt |
+
+2 arquivos, 0 mudancas de banco.
