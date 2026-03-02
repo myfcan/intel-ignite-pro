@@ -1,81 +1,122 @@
-# Playground Acumulativo — Fases Empilhadas no Rolo
 
-  
-Atue como um engenheiro sênior responsável pelo sistema V8 de todo o sistema e banco de dados, atue com obrigação de precisão técnica absoluta.
+Diagnóstico objetivo (com dados reais do código atual)
 
-&nbsp;
+1) O padding/alinhamento do título NÃO foi alterado no motor de rolagem principal.
+Trechos reais:
+```ts
+// src/components/lessons/v8/v8ScrollUtils.ts
+export const V8_SAFE_TOP = 88;      // linha 7
+```
+```ts
+// src/components/lessons/v8/V8LessonPlayer.tsx
+const SECTION_TOP_OFFSET = 88;      // linha 49
+style={{ scrollMarginTop: `${SECTION_TOP_OFFSET}px` }} // linha 153
+```
+Conclusão: a régua de topo continua 88px.
 
-REGRA DESTE PROMPT:
-
-&nbsp;
-
-Você NÃO pode mentir.
-
-Você NÃO pode supor.
-
-Você NÃO pode responder com explicações genéricas.
-
-Você NÃO pode omitir dados.
-
-Você deve executar tudo com DADOS REAIS do código atual.
-
-Você deve copiar e colar trechos REAIS do código.
-
-Você deve usar logs reais e timestamps reais.
-
-Se não souber algo, diga explicitamente: “NÃO LOCALIZADO NO CÓDIGO”.  
-  
-TUDO ISSO É MANDATÓRIO  
-  
-  
-  
-Contexto
-
-O rolo V8 ja renderiza o Playground cumulativamente no DOM (via `timeline.slice(0, currentIndex + 1)`). Porem, **dentro** do Playground, o `AnimatePresence mode="wait"` troca fases de forma exclusiva — ao avançar para "professional", o "amateur" desaparece. Isso contradiz o padrao do rolo.
-
-## Sobre Tokens e Cache
-
-**Nao ha risco de consumo extra de tokens.** Os resultados do amateur e professional ja sao armazenados em estado React (`amateurResult`, `professionalResult`). Uma vez gerados, ficam em memoria ate o componente desmontar. A conversao para acumulativo apenas mantém esses dados visiveis — nao refaz chamadas.
-
-## Sobre o Scroll
-
-**Nao vai quebrar.** O scroll do rolo opera na camada externa (`V8LessonPlayer.tsx`), usando anchors e `scrollIntoView`. O Playground e apenas um bloco dentro desse container. Ao crescer verticalmente (mais conteudo visivel), o scroll simplesmente tem mais area — as regras de `scrollMarginTop`, `scheduleCTAScroll` e o anti-drift continuam funcionando normalmente.
-
-## Plano de Implementacao
-
-### Arquivo: `src/components/lessons/v8/V8PlaygroundInline.tsx`
-
-1. **Substituir `AnimatePresence mode="wait"` por renderizacao condicional acumulativa**
-  - Trocar `{phase === "intro" && ...}` por `{phaseIndex >= 0 && ...}`
-  - Mapa de indices: intro=0, amateur=1, professional=2, compare=3, challenge=4, done=5
-  - Cada bloco renderiza se `phaseIndex >= seuIndice`
-2. **Esconder botoes de fases ja concluidas**
-  - Botoes como "Ver Prompt Amador", "Agora o Profissional", "Comparar" ficam visiveis apenas quando a fase correspondente e a fase ativa (ultima desbloqueada)
-  - Implementar via: `{phaseIndex === 1 && <button>Agora o Profissional</button>}`
-3. **Textarea read-only apos done**
-  - Quando `phaseIndex >= 5` (done), o textarea do challenge fica `readOnly` com estilo visual desabilitado (`opacity-60`)
-  - O prompt digitado pelo usuario permanece visivel como registro
-4. **Manter animacao apenas na entrada do bloco mais recente**
-  - Blocos ja exibidos ficam estaticos (sem `initial` animation)
-  - Apenas o bloco recem-desbloqueado entra com `opacity: 0 -> 1, y: 20 -> 0`
-5. **Contador de tentativas permanece visivel**
-  - O texto "{attempts}/{maxAttempts} tentativas" continua aparecendo no bloco challenge
-
-### Resultado Visual (scroll para baixo)
-
-```text
-[Titulo: Teste na Pratica]
-[Card: Instrucao]              <- intro (sempre visivel)
-[Card: Prompt Amador + Resultado] <- amateur (visivel apos avancar)
-[Card: Prompt Profissional + Resultado] <- professional
-[Grid: Comparacao lado a lado] <- compare
-[Card: Desafio + textarea + feedback] <- challenge (textarea read-only apos done)
-[Card: Mensagem final + Continuar] <- done
+2) O “rolo” mantém itens anteriores montados (comportamento cumulativo), então efeitos atrasados de itens anteriores podem disparar depois do avanço.
+Trecho real:
+```tsx
+// src/components/lessons/v8/V8LessonPlayer.tsx
+{timeline.slice(0, state.currentIndex + 1).map((item, idx) => { ... }} // linha 144
 ```
 
-## Escopo
+3) Hoje, Quiz e Playground agendam auto-scroll interno com timer (300ms/600ms), mas sem trava de “item ativo”.
+Trechos reais:
+```tsx
+// src/components/lessons/v8/V8PlaygroundInline.tsx
+useEffect(() => {
+  if (phase === "intro" || phase === "done") return;
+  if (isLoadingResult || isEvaluating) return;
+  return scheduleCTAScroll(() => ctaRef.current, () => bottomRef.current);
+}, [phase, isLoadingResult, isEvaluating, feedback, challengeScore]); // linhas 129-137
+```
+```tsx
+// src/components/lessons/v8/V8QuizInline.tsx
+useEffect(() => {
+  if (!selected && state === "answering") return;
+  return scheduleCTAScroll(() => ctaRef.current);
+}, [selected, state]); // linhas 28-32
+```
 
-- 1 arquivo: `V8PlaygroundInline.tsx`
-- 0 mudancas de banco
-- 0 edge functions
-- 0 tokens extras consumidos
+4) Prova de rolagem automática em runtime (replay real):
+- eventos de scroll automáticos (`source:3`) em sequência com timestamps:
+  - `1772475350002` (y=2460.5)
+  - `1772475350328` (y=2465.5)
+  - `1772475350428` (y=2588.5)
+  - `1772475350528` (y=3111)
+  - `1772475350628` (y=3418)
+  - `1772475350728` (y=3562.5)
+  - `1772475350828` (y=3643.5)
+  - `1772475350928` (y=3689)
+  - `1772475351028` (y=3712)
+  - `1772475351128` (y=3719)
+- inserção do card “Boa! Você colocou contexto e objetivo...” em `1772475354811`.
+
+Causa raiz provável (precisa e alinhada ao código)
+
+- A regressão não é “padding do título”.
+- O problema é concorrência entre:
+  1) scroll externo de âncora do rolo (V8LessonPlayer),
+  2) timers de auto-scroll interno (Quiz/Playground) que continuam válidos e podem disparar quando o item já deixou de ser o item ativo.
+- Como os itens anteriores permanecem montados no rolo cumulativo, esse conflito ficou mais visível no mobile.
+
+Plano de correção (sem banco, sem backend, apenas frontend)
+
+Arquivos a alterar:
+- `src/components/lessons/v8/V8LessonPlayer.tsx`
+- `src/components/lessons/v8/V8QuizInline.tsx`
+- `src/components/lessons/v8/V8PlaygroundInline.tsx`
+
+Passo 1 — Introduzir noção explícita de “item ativo”
+- Passar `isActive={isLast}` para Quiz e Playground no `V8LessonPlayer`.
+- Hoje já existe `isLast` (linha 145), então só propagar.
+
+Passo 2 — Bloquear auto-scroll interno quando item não está ativo
+- Em `V8QuizInline`, adicionar guarda no effect:
+  - se `!isActive`, não agendar `scheduleCTAScroll`.
+- Em `V8PlaygroundInline`, idem:
+  - se `!isActive`, não agendar;
+  - manter regra atual de não rolar em `intro` e `done`.
+
+Passo 3 — Cancelamento defensivo de timer antes de avançar
+- Guardar retorno de `scheduleCTAScroll` em ref de cleanup.
+- Antes de chamar `onContinue` (ou `setPhase("done")`), limpar timer pendente.
+- Isso elimina a janela de corrida quando o usuário avança muito rápido (<300ms).
+
+Passo 4 — Não mexer nas regras estruturais do rolo
+- Não alterar:
+  - `SECTION_TOP_OFFSET = 88`
+  - `scrollMarginTop`
+  - double `requestAnimationFrame`
+  - anti-drift de 420ms.
+- Assim preserva o setup que já funciona.
+
+Validação pós-correção (obrigatória)
+
+1) Mobile:
+- Fluxo Playground até feedback (“Boa!...”).
+- Esperar 1-2s sem tocar: tela não deve “subir sozinha” para título.
+
+2) Transição rápida:
+- Clicar “Continuar” imediatamente após aparecer CTA.
+- Deve permanecer no item novo, sem snap de retorno.
+
+3) Alinhamento de topo:
+- Ao entrar no novo item, título deve ficar respeitando offset do header (88px), sem cortar.
+
+4) Regressão cruzada:
+- Repetir no Quiz (correto/errado + continuar), porque usa mesmo mecanismo de timer.
+
+Escopo e risco
+
+- Escopo: 3 arquivos frontend.
+- Banco de dados: 0 mudanças.
+- Funções backend: 0 mudanças.
+- Risco: baixo/médio (ajuste de coordenação de scroll).
+- Benefício: elimina jump aleatório sem tocar no padrão de padding/âncora do rolo.
+
+Observação de integridade técnica
+
+- “Qual timer específico causou o salto exato em cada frame” com rastreio completo de stack não está visível no replay truncado em um ponto (`data.truncated`); detalhe forense de call stack: NÃO LOCALIZADO NO CÓDIGO/LOG DISPONÍVEL.
+- Mesmo assim, o padrão de conflito entre timer interno e item não ativo está diretamente comprovado pelos trechos reais acima e pela arquitetura cumulativa atual.
