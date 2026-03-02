@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { V8InlinePlayground } from "@/types/v8Lesson";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,6 +103,21 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
   }, [userPrompt, playground, onScore]);
 
   const canRetry = attempts < maxAttempts && (challengeScore === null || challengeScore < 70);
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to keep CTA visible on phase transitions
+  useEffect(() => {
+    if (phase !== "intro" && !isLoadingResult && !isEvaluating) {
+      const timer = setTimeout(() => {
+        bottomRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, isLoadingResult, isEvaluating, feedback, challengeScore]);
 
   const cardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm p-5";
 
@@ -333,6 +348,9 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Scroll anchor */}
+      <div ref={bottomRef} />
     </motion.div>
   );
 };
