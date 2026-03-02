@@ -380,8 +380,9 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 </div>
               )}
 
-              <div className="mt-3 flex gap-2">
-                {canRetry && (
+              <div className="mt-3 flex flex-col gap-2">
+                {/* First attempt: Avaliar button */}
+                {attempts === 0 && canRetry && (
                   <button
                     ref={ctaRef}
                     onClick={handleEvaluate}
@@ -390,11 +391,6 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                   >
                     {isEvaluating ? (
                       <span className="animate-pulse">Avaliando...</span>
-                    ) : attempts > 0 ? (
-                      <>
-                        <RotateCcw className="w-4 h-4" />
-                        Tentar Novamente ({maxAttempts - attempts} restantes)
-                      </>
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
@@ -403,7 +399,37 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                     )}
                   </button>
                 )}
-                {(!canRetry || (challengeScore !== null && challengeScore >= 70)) && (
+
+                {/* Failed with retries left: Retry (primary) + Continue (secondary) */}
+                {attempts > 0 && canRetry && challengeScore !== null && challengeScore < 70 && (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      ref={ctaRef}
+                      onClick={handleEvaluate}
+                      disabled={isEvaluating || !userPrompt.trim()}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {isEvaluating ? (
+                        <span className="animate-pulse">Avaliando...</span>
+                      ) : (
+                        <>
+                          <RotateCcw className="w-4 h-4" />
+                          Tentar Novamente ({maxAttempts - attempts})
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setPhase("done")}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-slate-300 text-slate-500 text-sm font-medium hover:bg-slate-50 transition-colors"
+                    >
+                      Continuar Aula
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Passed OR no retries left: Continue button */}
+                {((!canRetry && attempts > 0) || (challengeScore !== null && challengeScore >= 70)) && (
                   <button
                     ref={ctaRef}
                     onClick={() => setPhase("done")}
