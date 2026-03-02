@@ -1,147 +1,133 @@
 
 
-# Auditoria Completa do Sistema V8 — Inventario e Estado Atual
+# Pipeline V8 Automatizado — Imagens + Exercicios Completos (10 tipos)
 
-## 1. Inventario Completo de Ativos V8
+## Visao Geral
 
-### Frontend — Componentes (13 arquivos)
+Automatizar o pipeline de criacao de aulas V8 em 3 frentes:
 
-| Arquivo | Funcao | Estado |
-|---------|--------|--------|
-| `V8LessonPlayer.tsx` | Orquestrador principal (rolo continuo, timeline, fases) | OK |
-| `V8ContentSection.tsx` | Renderizador de secao (titulo, imagem trimmed, markdown) | OK |
-| `V8AudioPlayer.tsx` | Player de audio por secao (play/pause, seek, speed) | OK |
-| `V8ModeSelector.tsx` | Tela de selecao Ler/Ouvir + unlockAudio | OK |
-| `V8QuizInline.tsx` | Quiz mid-lesson com SFX e feedback narrado | OK |
-| `V8PlaygroundInline.tsx` | Playground mid-lesson (6 fases, avaliacao IA, badges) | OK |
-| `V8Header.tsx` | Header fixo com progresso, report button, nav | OK |
-| `V8ReportButton.tsx` | Botao de report com Portal (escapa stacking context) | OK |
-| `V8CompletionScreen.tsx` | Tela final (gamificacao, confetti, XP/moedas/streak) | OK |
-| `V8SkillTree.tsx` | Arvore zigzag de progressao na trilha | OK |
-| `V8SkillNode.tsx` | Node individual da skill tree | OK |
-| `V8LessonCard.tsx` | Card de aula na listagem | OK |
-| `V8TrailCard.tsx` | Card de trilha V8 | OK |
-| `v8ScrollUtils.ts` | Utilitarios de scroll deterministico | OK |
-| `V8CertificateCard.tsx` | Card de certificado (pos-trilha) | OK |
+1. **Imagens**: geracao automatica por secao (sem wizard manual)
+2. **Interacoes mid-lesson**: quizzes inline e playgrounds inline gerados por IA quando ausentes
+3. **Exercicios finais**: IA escolhe entre os 10 tipos de exercicio disponveis baseado no contexto do conteudo
 
-### Frontend — Tipos e Hooks (2 arquivos)
+## Como a IA escolhe o tipo de exercicio
 
-| Arquivo | Funcao | Estado |
-|---------|--------|--------|
-| `src/types/v8Lesson.ts` | Tipos canonicos (V8Section, V8InlineQuiz, V8InlinePlayground, V8LessonData, V8PlayerState) | OK |
-| `src/hooks/useV8Player.ts` | State machine (timeline, fases, navegacao) | OK |
+A Edge Function recebe o conteudo de todas as secoes e usa um prompt estruturado que mapeia contexto para tipo:
 
-### Frontend — Paginas (3 arquivos)
+| Contexto detectado | Tipo de exercicio |
+|---|---|
+| Categorias, classificacoes | drag-drop |
+| Plataformas, ferramentas para combinar | platform-match |
+| Afirmacoes para validar | true-false |
+| Conceitos-chave para memorizar | flipcard-quiz |
+| Definicoes com lacunas | fill-in-blanks ou complete-sentence |
+| Cenarios de decisao | scenario-selection |
+| Dados para analisar | data-collection |
+| Perguntas diretas | multiple-choice |
+| Revisao rapida com pressao | timed-quiz |
 
-| Arquivo | Funcao | Estado |
-|---------|--------|--------|
-| `src/pages/V8Lesson.tsx` | Pagina de aula (fetch, progress, renderizacao) | OK |
-| `src/pages/V8TrailDetail.tsx` | Detalhe da trilha V8 | OK |
-| `src/pages/AdminV8Create.tsx` | Wizard de criacao de aula V8 (admin) | OK |
+A IA retorna JSON estruturado via tool calling (sem parsing manual), seguindo exatamente os schemas de `exerciseSchemas.ts`.
 
-### Backend — Edge Functions (4 funcoes)
+## Arquitetura
 
-| Funcao | Proposito | Estado |
-|--------|-----------|--------|
-| `v8-generate` | Gera audios (secoes, quizzes, playgrounds) via ElevenLabs | OK |
-| `v8-evaluate-prompt` | Avalia prompts do usuario via Lovable AI | OK |
-| `v8-generate-section-image` | Gera imagens por secao (contrato visual 1024x1024) | OK |
-| `v8-reprocess-lesson-images` | Reprocessamento em lote de imagens | OK |
+```text
+Conteudo Bruto
+    |
+    v
+v8ContentParser.ts  (extrair secoes, detectar [QUIZ], [PLAYGROUND])
+    |
+    v
+Edge Function: v8-generate-lesson-content  (NOVA)
+    |
+    +---> Gera imagens por secao (chama v8-generate-section-image)
+    +---> Gera quizzes inline onde faltam
+    +---> Gera playgrounds inline onde faltam  
+    +---> Gera exercicios finais (escolhe entre 10 tipos)
+    |
+    v
+JSON V8 completo pronto para validacao
+```
 
-### Backend — Admin Components (1 arquivo)
+## Alteracoes
 
-| Arquivo | Funcao | Estado |
-|---------|--------|--------|
-| `src/components/admin/V8SectionSetup.tsx` | Setup wizard de secoes (imagens, config) | OK |
+### 1. Nova Edge Function: `v8-generate-lesson-content`
 
-### Database — Tabela dedicada (1)
+Orquestra a geracao automatica de todo conteudo complementar:
 
-| Tabela | Proposito | RLS |
-|--------|-----------|-----|
-| `lesson_reports` | Reports de erro por usuarios | INSERT para auth.uid(), SELECT own, ALL admin |
+- Recebe: array de secoes (titulo + conteudo markdown)
+- Recebe: quizzes/playgrounds ja extraidos do bruto (se houver)
+- Chama Lovable AI (Gemini Flash) com tool calling para gerar:
+  - Quizzes inline para secoes sem interacao
+  - Playgrounds inline onde o conteudo pede pratica
+  - 2-4 exercicios finais escolhidos entre os 10 tipos
+- Chama `v8-generate-section-image` para cada secao (imagens)
+- Retorna JSON completo com tudo preenchido
 
-### Database — Tabelas compartilhadas
+### 2. Atualizar `AdminV8Create.tsx`
 
-| Tabela | Uso V8 |
-|--------|--------|
-| `lessons` | Armazena content JSONB (contentVersion: 'v8') |
-| `trails` | trail_type = 'v8' |
-| `user_progress` | Progresso do usuario |
-| `user_gamification_events` | Eventos de gamificacao |
-| `user_streaks` | Streak de atividade |
+- Remover etapa manual de "Setup Visual" (V8SectionSetup)
+- Fluxo simplificado: Conteudo Bruto -> Converter -> Gerar Tudo -> Validar -> Salvar
+- Botao "Converter e Gerar" faz tudo em um passo
+- Progress bar mostrando: "Gerando imagens... Gerando exercicios... Gerando quizzes..."
 
----
+### 3. Atualizar `v8ContentParser.ts`
 
-## 2. Auditoria de Qualidade — Problemas Encontrados
+- Manter extracao de marcadores manuais `[QUIZ]`, `[PLAYGROUND]`, `[EXERCISE:tipo]`
+- Novo marcador opcional: `[EXERCISE:drag-drop]`, `[EXERCISE:timed-quiz]`, etc.
+- Parser retorna flag `hasManualExercises` para a Edge Function saber se precisa gerar
 
-### CRITICO (0 problemas)
-Nenhum problema critico encontrado. O sistema esta funcional.
+### 4. Remover/simplificar `V8SectionSetup.tsx`
 
-### MEDIO (3 itens)
+- Componente deixa de ser obrigatorio no fluxo
+- Pode ser mantido como visualizador opcional (readonly) do que foi gerado
 
-**M1: V8Lesson.tsx — background dark em loading/error (inconsistencia visual)**
-As telas de loading e erro usam `bg-slate-950` (dark mode), enquanto o V8 segue o padrao Premium Light (`bg-white`). Inconsistencia visual quando o usuario entra e sai da aula.
+## Contrato da Edge Function
 
-**M2: V8Lesson.tsx — saveProgress nao trata lesson_id como UUID**
-O `user_progress.lesson_id` e do tipo UUID, mas o `lessonId` do URL params e uma string. Se alguem acessar com um ID invalido, o insert falhara silenciosamente.
+```text
+POST /v8-generate-lesson-content
 
-**M3: V8PlaygroundInline.tsx — playSound nao listado no array de deps do useCallback**
-Na linha 131, `handleEvaluate` usa `playSound` mas nao o inclui no array de dependencias do `useCallback`. Isso pode causar chamadas stale se o hook for reinstanciado.
+Request:
+{
+  sections: [{ title, content }],
+  manualQuizzes: [...],        // extraidos do bruto (pode ser vazio)
+  manualPlaygrounds: [...],    // extraidos do bruto (pode ser vazio)  
+  manualExercises: [...],      // extraidos do bruto (pode ser vazio)
+  generateImages: true,
+  lessonTitle: "..."
+}
 
-### BAIXO (4 itens)
+Response:
+{
+  sections: [{ ...section, imageUrl }],
+  inlineQuizzes: [...],
+  inlinePlaygrounds: [...],
+  exercises: [...]             // 2-4 exercicios dos 10 tipos
+}
+```
 
-**B1: V8AudioPlayer.tsx — autoPlay useEffect tem dep stale**
-`onPlay` esta no array de deps do `useEffect` de autoPlay (linha 88), o que pode causar re-triggers desnecessarios se o callback nao for memoizado pelo pai.
+## Prompt de selecao de exercicios (resumo)
 
-**B2: V8QuizInline.tsx — playSound nao no array de deps do handleConfirm**
-Mesmo problema que M3 — `playSound` esta ausente do array de dependencias.
+A IA recebe os schemas dos 10 tipos via tool calling e instrucoes como:
 
-**B3: V8ReportButton.tsx — cast `as any` no insert**
-Usa `from("lesson_reports" as any)` e `as any` no objeto de insert. Isso indica que os tipos do Supabase podem nao ter sido regenerados apos a migracao.
+- "Analise o conteudo e escolha 2-4 tipos de exercicio que melhor testam o conhecimento"
+- "Varie os tipos — nao repita o mesmo tipo"
+- "Priorize exercicios interativos (drag-drop, flipcard, platform-match) sobre texto puro"
+- "Siga EXATAMENTE o schema de cada tipo"
 
-**B4: V8CompletionScreen.tsx — saveProgress e useEffect sem lessonId no deps**
-O `register` dentro do useEffect chama `registerGamificationEvent` com `lessonId`, mas o deps array ja inclui `lessonId` — OK. Porem o `hasSavedProgress.current` nao protege contra rerenders com lessonId diferente.
+## Custo estimado por aula
 
----
+| Item | Custo |
+|---|---|
+| Imagens (14 secoes x DALL-E 3) | ~R$ 2.80 |
+| Exercicios + Quizzes (Gemini Flash) | ~R$ 0.01 |
+| Audio (ElevenLabs, sem mudanca) | custo existente |
+| **Total adicional** | **~R$ 2.81** |
 
-## 3. Plano de Correcoes
+## Fluxo do admin apos implementacao
 
-### Passo 1: Corrigir inconsistencia visual (M1)
-**Arquivo:** `src/pages/V8Lesson.tsx`
-- Trocar `bg-slate-950` por `bg-white` nas telas de loading e erro
-- Trocar `text-white` por `text-slate-900` e `text-slate-400` adequados
-
-### Passo 2: Adicionar playSound aos deps dos useCallbacks (M3, B2)
-**Arquivos:** `V8PlaygroundInline.tsx`, `V8QuizInline.tsx`
-- Adicionar `playSound` ao array de deps dos useCallbacks relevantes
-
-### Passo 3: Remover `as any` do ReportButton (B3)
-**Arquivo:** `V8ReportButton.tsx`
-- Verificar se `lesson_reports` ja esta nos tipos gerados
-- Se sim, remover os casts `as any`
-
-### Passo 4: Estabilizar autoPlay deps (B1)
-**Arquivo:** `V8AudioPlayer.tsx`
-- Remover `onPlay` do array de deps do autoPlay useEffect (ou memoizar no pai)
-
----
-
-## 4. Resumo Executivo
-
-| Categoria | Total | Critico | Medio | Baixo |
-|-----------|-------|---------|-------|-------|
-| Componentes Frontend | 15 | 0 | 1 | 2 |
-| Paginas | 3 | 0 | 1 | 0 |
-| Edge Functions | 4 | 0 | 0 | 0 |
-| Hooks/Tipos | 2 | 0 | 0 | 0 |
-| Database | 1 | 0 | 0 | 1 |
-| **Total** | **25 ativos** | **0** | **2** | **3** |
-
-**Veredicto: Sistema V8 esta operacional e estavel.** As correcoes identificadas sao de polish (consistencia visual e higiene de deps). Nenhum bug bloqueante ou risco de seguranca encontrado.
-
-### O que sera corrigido na implementacao:
-1. Background dark -> Premium Light nas telas de loading/erro
-2. Deps arrays dos useCallbacks com playSound
-3. Remocao dos `as any` no ReportButton
-4. Estabilizacao do autoPlay useEffect
+1. Admin cola conteudo bruto (pode incluir `[QUIZ]`, `[PLAYGROUND]`, `[EXERCISE:tipo]` ou nao)
+2. Clica "Converter e Gerar"
+3. Pipeline automatico: parse -> imagens -> quizzes -> playgrounds -> exercicios
+4. Admin ve JSON completo para revisar
+5. Valida e salva
 
