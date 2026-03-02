@@ -779,9 +779,9 @@ const Dashboard = () => {
             >
               {/* Section header */}
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Crown className="w-5 h-5 text-amber-500" />
-                  <h2 className="text-lg sm:text-xl font-bold text-indigo-800 tracking-tight">Seu Caminho de Maestria</h2>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Crown className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                  <h2 className="text-lg sm:text-xl font-bold text-indigo-800 tracking-tight whitespace-nowrap truncate">Seu Caminho de Maestria</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
@@ -932,9 +932,9 @@ const Dashboard = () => {
             >
               {/* Section header */}
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Briefcase className="w-5 h-5 text-violet-500" />
-                  <h2 className="text-lg sm:text-xl font-bold text-violet-800 tracking-tight">IA para Profissionais</h2>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Briefcase className="w-5 h-5 text-violet-500 flex-shrink-0" />
+                  <h2 className="text-lg sm:text-xl font-bold text-violet-800 tracking-tight whitespace-nowrap truncate">IA para Profissionais</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -1079,9 +1079,9 @@ const Dashboard = () => {
             >
               {/* Section header */}
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Rocket className="w-5 h-5 text-blue-500" />
-                  <h2 className="text-lg sm:text-xl font-bold text-blue-800 tracking-tight">Renda Extra PRO</h2>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Rocket className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <h2 className="text-lg sm:text-xl font-bold text-blue-800 tracking-tight whitespace-nowrap truncate">Renda Extra PRO</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
