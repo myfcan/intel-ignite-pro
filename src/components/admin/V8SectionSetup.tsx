@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { V8Section, V8InlineQuiz, V8InlinePlayground } from "@/types/v8Lesson";
-import { Image, Brain, Gamepad2, Check, ChevronDown, ChevronUp, Wand2, Pencil, Loader2, RefreshCw, X } from "lucide-react";
+import { Image, Brain, Gamepad2, Check, ChevronDown, ChevronUp, Wand2, Pencil, Loader2, RefreshCw, X, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -44,6 +44,8 @@ export function V8SectionSetup({ sections, quizzes, playgrounds, onApply, onBack
   );
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const [reprocessProgress, setReprocessProgress] = useState<string>("");
 
   const quizMap = useMemo(() => {
     const map = new Map<number, V8InlineQuiz>();
@@ -114,6 +116,48 @@ export function V8SectionSetup({ sections, quizzes, playgrounds, onApply, onBack
     onApply(updatedSections, quizzes, playgrounds);
   };
 
+  const handleReprocessAllImages = async () => {
+    if (!lessonId) {
+      toast.error("Salve a aula primeiro para reprocessar imagens");
+      return;
+    }
+
+    setIsReprocessing(true);
+    setReprocessProgress("Iniciando reprocessamento...");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("v8-reprocess-lesson-images", {
+        body: { lessonId, allowText: false },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const report = data.report || [];
+      const successCount = report.filter((r: any) => r.status === "ok").length;
+
+      // Update local configs with new image URLs
+      report.forEach((r: any) => {
+        if (r.status === "ok" && r.imageUrl) {
+          updateConfig(r.index, {
+            hasImage: true,
+            imageUrl: r.imageUrl,
+            generatedPreview: r.imageUrl,
+          });
+        }
+      });
+
+      setReprocessProgress("");
+      toast.success(`${successCount}/${report.length} imagens reprocessadas com o contrato 1024x1024`);
+    } catch (err: any) {
+      console.error("[V8SectionSetup] Reprocess error:", err);
+      toast.error(err?.message || "Erro ao reprocessar imagens");
+      setReprocessProgress("");
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
+
   const getContentPreview = (content: string) => {
     const lines = content.replace(/^#{1,3}\s+.*\n?/gm, "").trim().split("\n").filter(Boolean);
     return lines.slice(0, 2).join(" ").slice(0, 120) + (lines.join(" ").length > 120 ? "..." : "");
@@ -140,8 +184,30 @@ export function V8SectionSetup({ sections, quizzes, playgrounds, onApply, onBack
             Configure o que cada seção terá antes de gerar o JSON final
           </p>
         </div>
-        <span className="text-[10px] text-slate-500">{sections.length} seções</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleReprocessAllImages}
+            disabled={isReprocessing || !lessonId}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-[10px] font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {isReprocessing ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <RotateCcw className="w-3 h-3" />
+            )}
+            {isReprocessing ? "Reprocessando…" : "Reprocessar Imagens"}
+          </button>
+          <span className="text-[10px] text-slate-500">{sections.length} seções</span>
+        </div>
       </div>
+
+      {/* Reprocess progress */}
+      {isReprocessing && reprocessProgress && (
+        <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-[10px] text-amber-700 flex items-center gap-2">
+          <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" />
+          <span>{reprocessProgress}</span>
+        </div>
+      )}
 
       <div className="space-y-2">
         {sections.map((section, i) => {
