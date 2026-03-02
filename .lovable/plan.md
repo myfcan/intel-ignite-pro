@@ -1,57 +1,29 @@
 
-# Reprocessar Imagens V8 — Contrato Visual
+# Fix: Adicionar botao "Continuar Aula" apos falha no Playground
 
-## Contexto
+## Problema
 
-A aula `92da570a-32c0-4df0-ac24-be6de43e3e0f` tem 4 secoes com imagens ja geradas no formato antigo (512x512, sem regra pt-BR). A edge function `v8-generate-section-image` ja foi atualizada com o contrato 1024x1024 + pt-BR. Precisamos reprocessar as 4 imagens e atualizar o JSON da aula.
+No `V8PlaygroundInline.tsx`, quando o usuario falha no desafio (score < 70) mas ainda tem tentativas restantes, a unica opcao visivel e "Tentar Novamente". Nao ha como pular e continuar a aula, prendendo o usuario no playground.
 
-## Plano
+## Correcao
 
-### 1. Criar edge function `v8-reprocess-lesson-images`
+### Arquivo: `src/components/lessons/v8/V8PlaygroundInline.tsx` (linhas ~383-416)
 
-Nova edge function que recebe `lessonId` e:
+Adicionar um botao "Continuar Aula" secundario que aparece **sempre apos a primeira tentativa com falha**, independente de ter retries restantes. O botao "Tentar Novamente" continua disponivel, mas agora como opcao, nao obrigacao.
 
-1. Busca a aula no banco (`lessons.content`)
-2. Itera sobre cada secao (`sections[0..3]`)
-3. Para cada secao, chama internamente a mesma logica de geracao (Gemini + GPT cleanup) com o contrato atualizado
-4. Atualiza o `imageUrl` de cada secao no JSON `content`
-5. Salva o JSON atualizado no banco via `UPDATE lessons SET content = ...`
-6. Retorna relatorio com status de cada secao
+**Layout pos-correcao:**
+- Score >= 70: Botao "Continuar" (primario, como ja funciona)
+- Score < 70, com retries: Botao "Tentar Novamente" (primario) + Botao "Continuar Aula" (secundario/outline)
+- Score < 70, sem retries: Botao "Continuar" (primario, como ja funciona)
 
-Parametros do endpoint:
-```json
-{
-  "lessonId": "92da570a-...",
-  "allowText": false,
-  "sectionsToReprocess": [0, 1, 2, 3]  // opcional, default = todas
-}
-```
+O botao secundario tera estilo `outline` (borda slate, texto slate) para diferenciar visualmente do CTA principal, incentivando o retry sem forcar.
 
-Processamento sequencial (nao paralelo) para evitar rate limit do Gemini.
+### Mudanca especifica
 
-### 2. Adicionar botao "Reprocessar Imagens" no Admin
+Substituir o bloco de botoes (linhas 383-416) para que, apos `attempts > 0 && challengeScore < 70 && canRetry`, renderize ambos os botoes lado a lado.
 
-No `V8SectionSetup.tsx`, adicionar um botao no topo que dispara o reprocessamento de todas as secoes de uma vez, com progress indicator por secao.
+## Escopo
 
-Alternativa mais rapida: executar via `supabase.functions.invoke` direto do console/admin, sem UI dedicada.
-
-### 3. Execucao imediata
-
-Apos deploy da edge function, chamar via curl ou admin para reprocessar a aula de teste.
-
-## Arquivos
-
-1. **Novo**: `supabase/functions/v8-reprocess-lesson-images/index.ts` — orchestrador de reprocessamento
-2. **Editar**: `supabase/config.toml` — NAO (auto-gerenciado)
-3. **Editar**: `src/components/admin/V8SectionSetup.tsx` — botao "Reprocessar Todas"
-
-## Validacao pos-reprocessamento
-
-Apos execucao, verificar:
-- Resolucao das imagens no storage (1024x1024)
-- Ausencia de texto em ingles
-- Fundo transparente (alpha channel)
-- URLs atualizadas no JSON da aula
-
-## Sem mudancas de banco
-A tabela `lessons` ja tem a coluna `content` (JSONB) — so atualizamos o JSON.
+- 1 arquivo: `src/components/lessons/v8/V8PlaygroundInline.tsx`
+- 0 mudancas de banco
+- 0 mudancas de edge function
