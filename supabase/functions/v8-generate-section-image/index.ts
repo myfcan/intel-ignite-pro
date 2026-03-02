@@ -7,13 +7,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function buildAutoPrompt(content: string): string {
+function buildAutoPrompt(content: string, allowText = false): string {
   const cleaned = content
     .replace(/^#{1,3}\s+.*$/gm, "")
     .replace(/[*_`~\[\]()>]/g, "")
     .replace(/\n+/g, " ")
     .trim();
   const words = cleaned.split(/\s+/).slice(0, 150).join(" ");
+
+  const textRule = allowText
+    ? `- Text in the image is ALLOWED but MUST be written in Brazilian Portuguese (pt-BR). Never use English.
+- Use clean, legible sans-serif typography integrated into the 3D style
+- Examples: "Inteligência Artificial" (not "Artificial Intelligence"), "Como funciona" (not "How it works")`
+    : `- NEVER include text, labels, banners, arrows, or UI elements inside the image`;
+
   return `Create a single isolated 3D illustration object representing this educational concept: ${words}.
 
 Style requirements:
@@ -26,12 +33,13 @@ Style requirements:
 - Vibrant but not neon colors (indigo, violet, sky blue, warm tones)
 - Think Apple/Notion style icons: polished, friendly, professional
 - Subtle shadow underneath the object for depth
-- NEVER include text, labels, banners, arrows, or UI elements inside the image
+${textRule}
 - NEVER create infographic-style, diagram-style, or flowchart-style compositions
 - NEVER scatter many small objects — always ONE cohesive central object
-- IMPORTANT: Compose the image in a SQUARE (1:1) or HORIZONTAL (landscape) orientation
-- NEVER create tall/vertical/portrait compositions
-- The composition width must be EQUAL TO or GREATER than its height`;
+- IMPORTANT: Compose the image in a SQUARE (1:1) orientation
+- OUTPUT SIZE: Generate the image at exactly 1024x1024 pixels (1:1 square)
+- The composition must be centered and fill the frame
+- LANGUAGE RULE: If any text, label, word, or phrase appears in the image, it MUST be written in Brazilian Portuguese (pt-BR). Never use English or any other language.`;
 }
 
 serve(async (req) => {
@@ -40,7 +48,7 @@ serve(async (req) => {
   }
 
   try {
-    const { mode, content, customPrompt, lessonId, sectionIndex } = await req.json();
+    const { mode, content, customPrompt, lessonId, sectionIndex, allowText } = await req.json();
 
     if (!mode || !lessonId || sectionIndex === undefined) {
       return new Response(JSON.stringify({ error: "Missing required fields: mode, lessonId, sectionIndex" }), {
@@ -64,7 +72,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      prompt = buildAutoPrompt(content);
+      prompt = buildAutoPrompt(content, allowText === true);
     } else if (mode === "custom") {
       if (!customPrompt) {
         return new Response(JSON.stringify({ error: "customPrompt is required for custom mode" }), {
@@ -72,9 +80,12 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const customTextRule = allowText === true
+        ? `Text in the image is ALLOWED but MUST be in Brazilian Portuguese (pt-BR). Use clean sans-serif typography.`
+        : `NO text, labels, banners, arrows.`;
       prompt = `Create a 3D illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single iconic object only, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors (indigo, violet, sky blue). Maximum 1-3 visual elements composed as ONE cohesive unit. The main object must fill 85-95% of the frame with almost NO padding. NO text, labels, banners, arrows, diagrams, flowcharts, or infographic-style compositions. NO scattered small objects. Polished and professional like Apple/Notion icons. IMPORTANT: Compose in SQUARE (1:1) or HORIZONTAL (landscape) orientation. NEVER create tall/vertical/portrait compositions. Width must be EQUAL TO or GREATER than height.`;
+Style: modern flat 3D render, single iconic object only, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors (indigo, violet, sky blue). Maximum 1-3 visual elements composed as ONE cohesive unit. The main object must fill 85-95% of the frame with almost NO padding. ${customTextRule} NO diagrams, flowcharts, or infographic-style compositions. NO scattered small objects. Polished and professional like Apple/Notion icons. IMPORTANT: Compose in SQUARE (1:1) orientation. OUTPUT SIZE: 1024x1024 pixels (1:1 square). The composition must be centered and fill the frame. LANGUAGE RULE: If any text appears, it MUST be in Brazilian Portuguese (pt-BR). Never use English.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
@@ -218,7 +229,7 @@ async function buildEditFormData(geminiBase64Url: string): Promise<FormData> {
   form.append("model", "gpt-image-1");
   form.append("image", imageFile);
   form.append("prompt", "Remove the background from this image completely. Keep only the main object/illustration with a fully transparent background. Preserve all colors, details and style of the object exactly as they are. Output as PNG with real alpha transparency channel.");
-  form.append("size", "512x512");
+  form.append("size", "1024x1024");
   form.append("background", "transparent");
   form.append("response_format", "b64_json");
 
