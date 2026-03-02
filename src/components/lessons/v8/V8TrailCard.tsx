@@ -82,7 +82,7 @@ export const V8TrailCard = ({
       <div className="relative z-10 bg-white rounded-[14px] overflow-hidden m-[2px] flex flex-col h-[calc(100%-4px)]">
         {/* Colored header area with indigo/violet gradient */}
         <div
-          className="h-[120px] sm:h-[148px] flex items-center justify-center relative overflow-hidden"
+          className="h-[96px] sm:h-[120px] flex items-center justify-center relative overflow-hidden"
           style={{
             background: `linear-gradient(135deg, ${theme.accent}, #818CF8, #8B5CF6, ${theme.accent})`,
             backgroundSize: '300% 300%',
@@ -91,22 +91,22 @@ export const V8TrailCard = ({
         >
           {/* Decorative shapes */}
           <div
-            className="absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full"
+            className="absolute w-16 h-16 sm:w-[88px] sm:h-[88px] rounded-full"
             style={{ background: 'rgba(255,255,255,0.12)', top: '-14px', right: '-14px' }}
           />
           <div
-            className="absolute w-14 h-14 sm:w-20 sm:h-20 rounded-full"
+            className="absolute w-12 h-12 sm:w-16 sm:h-16 rounded-full"
             style={{ background: 'rgba(255,255,255,0.08)', bottom: '-10px', left: '-6px' }}
           />
           <div
-            className="absolute w-8 h-8 sm:w-12 sm:h-12 rounded-full"
+            className="absolute w-7 h-7 sm:w-10 sm:h-10 rounded-full"
             style={{ background: 'rgba(255,255,255,0.06)', top: '8px', left: '14px' }}
           />
 
           {/* Icon in glass container */}
           <div className="relative">
             <div
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-sm"
+              className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-sm"
               style={{
                 background: 'rgba(255,255,255,0.2)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.3)',
@@ -114,14 +114,14 @@ export const V8TrailCard = ({
             >
               {(() => {
                 const IconComponent = V8_ICONS[orderIndex] || BookOpen;
-                return <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-md" />;
+                return <IconComponent className="w-5 h-5 sm:w-7 sm:h-7 text-white drop-shadow-md" />;
               })()}
             </div>
           </div>
         </div>
 
         {/* Card body */}
-        <div className="px-3.5 py-3.5 sm:px-5 sm:py-5 flex-1 flex flex-col justify-between">
+        <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1 flex flex-col justify-between">
           <div>
             {/* Category badge + estimated hours */}
             <div className="flex items-center gap-2 mb-2">
