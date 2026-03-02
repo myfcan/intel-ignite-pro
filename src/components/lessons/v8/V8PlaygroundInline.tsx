@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { V8InlinePlayground } from "@/types/v8Lesson";
 import { supabase } from "@/integrations/supabase/client";
 import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle, CheckCircle2, XCircle, Copy } from "lucide-react";
@@ -11,6 +11,9 @@ interface V8PlaygroundInlineProps {
 }
 
 type Phase = "intro" | "amateur" | "professional" | "compare" | "challenge" | "done";
+
+const PHASE_ORDER: Phase[] = ["intro", "amateur", "professional", "compare", "challenge", "done"];
+const phaseToIndex = (p: Phase) => PHASE_ORDER.indexOf(p);
 
 export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8PlaygroundInlineProps) => {
   const [phase, setPhase] = useState<Phase>("intro");
@@ -135,6 +138,10 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
 
   const cardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm p-5";
 
+  const pi = phaseToIndex(phase);
+  // For challenge skip: if no userChallenge, treat challenge(4) as done(5)
+  const hasChallenge = !!playground.userChallenge;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -154,24 +161,36 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
         )}
       </div>
 
-      <AnimatePresence mode="wait">
-        {/* Phase: Intro */}
-        {phase === "intro" && (
-          <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={cardClass}>
+      <div className="flex flex-col gap-4">
+        {/* Phase: Intro (index 0) — always visible */}
+        {pi >= 0 && (
+          <motion.div
+            key="intro"
+            initial={pi === 0 ? { opacity: 0, y: 20 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            className={cardClass}
+          >
             <p className="text-sm text-slate-700 leading-relaxed">{playground.instruction}</p>
-            <button
-              onClick={handleNextPhase}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
-            >
-              Ver Prompt Amador
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {pi === 0 && (
+              <button
+                onClick={handleNextPhase}
+                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
+              >
+                Ver Prompt Amador
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </motion.div>
         )}
 
-        {/* Phase: Amateur */}
-        {phase === "amateur" && (
-          <motion.div key="amateur" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+        {/* Phase: Amateur (index 1) */}
+        {pi >= 1 && (
+          <motion.div
+            key="amateur"
+            initial={pi === 1 ? { opacity: 0, y: 20 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3"
+          >
             <div className={`${cardClass} border-red-200`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold uppercase">Amador</span>
@@ -184,24 +203,31 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 <p className="text-sm text-slate-600 leading-relaxed">{amateurResult}</p>
               </div>
             )}
-            {isLoadingResult && (
+            {isLoadingResult && pi === 1 && (
               <div className="text-center py-4 text-xs text-slate-400 animate-pulse">Gerando resultado...</div>
             )}
-            <button
-              ref={ctaRef}
-              onClick={handleNextPhase}
-              disabled={isLoadingResult}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              Agora o Profissional
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {pi === 1 && (
+              <button
+                ref={ctaRef}
+                onClick={handleNextPhase}
+                disabled={isLoadingResult}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                Agora o Profissional
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </motion.div>
         )}
 
-        {/* Phase: Professional */}
-        {phase === "professional" && (
-          <motion.div key="professional" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+        {/* Phase: Professional (index 2) */}
+        {pi >= 2 && (
+          <motion.div
+            key="professional"
+            initial={pi === 2 ? { opacity: 0, y: 20 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3"
+          >
             <div className={`${cardClass} border-emerald-200`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase">Profissional</span>
@@ -214,24 +240,31 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 <p className="text-sm text-slate-600 leading-relaxed">{professionalResult}</p>
               </div>
             )}
-            {isLoadingResult && (
+            {isLoadingResult && pi === 2 && (
               <div className="text-center py-4 text-xs text-slate-400 animate-pulse">Gerando resultado...</div>
             )}
-            <button
-              ref={ctaRef}
-              onClick={handleNextPhase}
-              disabled={isLoadingResult}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              Comparar
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {pi === 2 && (
+              <button
+                ref={ctaRef}
+                onClick={handleNextPhase}
+                disabled={isLoadingResult}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                Comparar
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </motion.div>
         )}
 
-        {/* Phase: Compare */}
-        {phase === "compare" && (
-          <motion.div key="compare" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+        {/* Phase: Compare (index 3) */}
+        {pi >= 3 && (
+          <motion.div
+            key="compare"
+            initial={pi === 3 ? { opacity: 0, y: 20 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3"
+          >
             <div className="grid grid-cols-2 gap-3">
               <div className={`${cardClass} border-red-200`}>
                 <p className="text-[10px] font-bold text-red-500 uppercase mb-2">❌ Amador</p>
@@ -242,20 +275,27 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 <p className="text-xs text-slate-600 line-clamp-4">{playground.professionalPrompt}</p>
               </div>
             </div>
-            <button
-              ref={ctaRef}
-              onClick={handleNextPhase}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
-            >
-              {playground.userChallenge ? "Sua Vez!" : "Continuar"}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {pi === 3 && (
+              <button
+                ref={ctaRef}
+                onClick={handleNextPhase}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
+              >
+                {hasChallenge ? "Sua Vez!" : "Continuar"}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </motion.div>
         )}
 
-        {/* Phase: Challenge */}
-        {phase === "challenge" && playground.userChallenge && (
-          <motion.div key="challenge" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+        {/* Phase: Challenge (index 4) */}
+        {pi >= 4 && hasChallenge && playground.userChallenge && (
+          <motion.div
+            key="challenge"
+            initial={pi === 4 ? { opacity: 0, y: 20 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3"
+          >
             <div className={cardClass}>
               <p className="text-sm text-slate-700 leading-relaxed mb-3">{playground.userChallenge.instruction}</p>
 
@@ -263,8 +303,9 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 value={userPrompt}
                 onChange={(e) => setUserPrompt(e.target.value)}
                 placeholder="Digite seu prompt aqui..."
-                className="w-full h-28 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 resize-none"
-                disabled={isEvaluating || (!canRetry && challengeScore !== null)}
+                className={`w-full h-28 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 resize-none ${pi >= 5 ? "opacity-60 cursor-not-allowed" : ""}`}
+                disabled={isEvaluating || (!canRetry && challengeScore !== null) || pi >= 5}
+                readOnly={pi >= 5}
               />
 
               {/* Hints */}
@@ -380,29 +421,10 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 </div>
               )}
 
-              <div className="mt-3 flex flex-col gap-2">
-                {/* First attempt: Avaliar button */}
-                {attempts === 0 && canRetry && (
-                  <button
-                    ref={ctaRef}
-                    onClick={handleEvaluate}
-                    disabled={isEvaluating || !userPrompt.trim()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    {isEvaluating ? (
-                      <span className="animate-pulse">Avaliando...</span>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        Avaliar Meu Prompt
-                      </>
-                    )}
-                  </button>
-                )}
-
-                {/* Failed with retries left: Retry (primary) + Continue (secondary) */}
-                {attempts > 0 && canRetry && challengeScore !== null && challengeScore < 70 && (
-                  <div className="flex flex-col sm:flex-row gap-2">
+              {/* Buttons — only when challenge is the active phase */}
+              {pi === 4 && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {attempts === 0 && canRetry && (
                     <button
                       ref={ctaRef}
                       onClick={handleEvaluate}
@@ -413,33 +435,53 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                         <span className="animate-pulse">Avaliando...</span>
                       ) : (
                         <>
-                          <RotateCcw className="w-4 h-4" />
-                          Tentar Novamente ({maxAttempts - attempts})
+                          <Send className="w-4 h-4" />
+                          Avaliar Meu Prompt
                         </>
                       )}
                     </button>
+                  )}
+
+                  {attempts > 0 && canRetry && challengeScore !== null && challengeScore < 70 && (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button
+                        ref={ctaRef}
+                        onClick={handleEvaluate}
+                        disabled={isEvaluating || !userPrompt.trim()}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                      >
+                        {isEvaluating ? (
+                          <span className="animate-pulse">Avaliando...</span>
+                        ) : (
+                          <>
+                            <RotateCcw className="w-4 h-4" />
+                            Tentar Novamente ({maxAttempts - attempts})
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setPhase("done")}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-slate-300 text-slate-500 text-sm font-medium hover:bg-slate-50 transition-colors"
+                      >
+                        Continuar Aula
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {((!canRetry && attempts > 0) || (challengeScore !== null && challengeScore >= 70)) && (
                     <button
+                      ref={ctaRef}
                       onClick={() => setPhase("done")}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-slate-300 text-slate-500 text-sm font-medium hover:bg-slate-50 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
                     >
-                      Continuar Aula
+                      Continuar
                       <ArrowRight className="w-4 h-4" />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {/* Passed OR no retries left: Continue button */}
-                {((!canRetry && attempts > 0) || (challengeScore !== null && challengeScore >= 70)) && (
-                  <button
-                    ref={ctaRef}
-                    onClick={() => setPhase("done")}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
-                  >
-                    Continuar
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
               <p className="text-[10px] text-slate-400 text-center mt-2">
                 {attempts}/{maxAttempts} tentativas
               </p>
@@ -447,9 +489,14 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
           </motion.div>
         )}
 
-        {/* Phase: Done */}
-        {phase === "done" && (
-          <motion.div key="done" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className={`${cardClass} text-center`}>
+        {/* Phase: Done (index 5) */}
+        {pi >= 5 && (
+          <motion.div
+            key="done"
+            initial={pi === 5 ? { opacity: 0, scale: 0.95 } : false}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`${cardClass} text-center`}
+          >
             <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-slate-600"}`}>
               {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : "Você completou o desafio. Continue a aula para aprender mais!"}
             </p>
@@ -465,7 +512,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
             )}
           </motion.div>
         )}
-      </AnimatePresence>
+      </div>
 
       {/* Scroll anchor */}
       <div ref={bottomRef} />
