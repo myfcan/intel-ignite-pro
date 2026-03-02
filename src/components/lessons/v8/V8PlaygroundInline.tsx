@@ -8,6 +8,7 @@ interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
   onContinue?: () => void;
   onScore?: (score: number) => void;
+  isActive?: boolean;
 }
 
 type Phase = "intro" | "amateur" | "professional" | "compare" | "challenge" | "done";
@@ -15,7 +16,7 @@ type Phase = "intro" | "amateur" | "professional" | "compare" | "challenge" | "d
 const PHASE_ORDER: Phase[] = ["intro", "amateur", "professional", "compare", "challenge", "done"];
 const phaseToIndex = (p: Phase) => PHASE_ORDER.indexOf(p);
 
-export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8PlaygroundInlineProps) => {
+export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive = true }: V8PlaygroundInlineProps) => {
   const [phase, setPhase] = useState<Phase>("intro");
   const [amateurResult, setAmateurResult] = useState(playground.amateurResult || "");
   const [professionalResult, setProfessionalResult] = useState(playground.professionalResult || "");
@@ -126,7 +127,9 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
   const ctaRef = useRef<HTMLButtonElement>(null);
 
   // Auto-scroll: ensure CTA button is visible after phase transitions
+  // Only scroll when this is the active item to prevent stale items from hijacking scroll
   useEffect(() => {
+    if (!isActive) return;
     if (phase === "intro" || phase === "done") return;
     if (isLoadingResult || isEvaluating) return;
 
@@ -134,7 +137,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
       () => ctaRef.current,
       () => bottomRef.current
     );
-  }, [phase, isLoadingResult, isEvaluating, feedback, challengeScore]);
+  }, [phase, isLoadingResult, isEvaluating, feedback, challengeScore, isActive]);
 
   const cardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm p-5";
 
