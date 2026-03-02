@@ -127,7 +127,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
 
   // Auto-scroll: ensure CTA button is visible after phase transitions
   useEffect(() => {
-    if (phase === "intro") return;
+    if (phase === "intro" || phase === "done") return;
     if (isLoadingResult || isEvaluating) return;
 
     return scheduleCTAScroll(
