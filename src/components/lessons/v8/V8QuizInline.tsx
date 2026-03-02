@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, ArrowRight, HelpCircle } from "lucide-react";
 import { V8InlineQuiz } from "@/types/v8Lesson";
 import { V8AudioPlayer } from "./V8AudioPlayer";
+import { scheduleCTAScroll } from "./v8ScrollUtils";
 
 interface V8QuizInlineProps {
   quiz: V8InlineQuiz;
@@ -21,18 +22,13 @@ export const V8QuizInline = ({
 }: V8QuizInlineProps) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [state, setState] = useState<QuizState>("answering");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLButtonElement>(null);
 
+  // Deterministic geometric scroll when state changes
   useEffect(() => {
-    if (selected || state !== "answering") {
-      const timer = setTimeout(() => {
-        bottomRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-        });
-      }, 150);
-      return () => clearTimeout(timer);
-    }
+    if (!selected && state === "answering") return;
+
+    return scheduleCTAScroll(() => ctaRef.current);
   }, [selected, state]);
 
   const handleConfirm = useCallback(() => {
@@ -132,6 +128,7 @@ export const V8QuizInline = ({
       <AnimatePresence>
         {state === "answering" && selected && (
           <motion.button
+            ref={ctaRef}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -162,6 +159,7 @@ export const V8QuizInline = ({
             </p>
             {onContinue && (
               <button
+                ref={ctaRef}
                 onClick={onContinue}
                 className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
               >
@@ -200,6 +198,7 @@ export const V8QuizInline = ({
               )}
               {onContinue && (
                 <button
+                  ref={ctaRef}
                   onClick={onContinue}
                   className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
                 >
@@ -230,6 +229,7 @@ export const V8QuizInline = ({
             )}
             {onContinue && (
               <button
+                ref={ctaRef}
                 onClick={onContinue}
                 className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
               >
@@ -239,9 +239,6 @@ export const V8QuizInline = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Scroll anchor */}
-      <div ref={bottomRef} />
     </motion.div>
   );
 };
