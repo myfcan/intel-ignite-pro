@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Flag, X, Send, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,81 +63,75 @@ export const V8ReportButton = ({ lessonId, pageContext }: V8ReportButtonProps) =
         <Flag className="w-4 h-4" />
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
-              className="fixed inset-0 z-[60] bg-black/30"
-            />
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, y: 40, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 40, scale: 0.95 }}
-              transition={{ duration: 0.25 }}
-              className="fixed inset-x-4 bottom-4 z-[61] max-w-md mx-auto rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                <span className="text-sm font-semibold text-slate-900">Reportar Problema</span>
-                <button onClick={() => setOpen(false)} className="p-1 rounded-full hover:bg-slate-100">
-                  <X className="w-4 h-4 text-slate-400" />
-                </button>
-              </div>
-
-              {/* Categories */}
-              <div className="px-4 py-3 space-y-2">
-                <p className="text-xs text-slate-500 mb-2">Selecione o tipo de problema:</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setCategory(cat)}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                        category === cat
-                          ? "bg-indigo-50 border-indigo-300 text-indigo-700"
-                          : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setOpen(false)}
+                className="fixed inset-0 z-[60] bg-black/30"
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 40, scale: 0.95 }}
+                transition={{ duration: 0.25 }}
+                className="fixed inset-x-4 bottom-4 z-[61] max-w-md mx-auto rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden"
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                  <span className="text-sm font-semibold text-slate-900">Reportar Problema</span>
+                  <button onClick={() => setOpen(false)} className="p-1 rounded-full hover:bg-slate-100">
+                    <X className="w-4 h-4 text-slate-400" />
+                  </button>
                 </div>
-              </div>
-
-              {/* Details */}
-              <div className="px-4 pb-3">
-                <textarea
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  placeholder="Detalhes adicionais (opcional)..."
-                  className="w-full h-16 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-400 resize-none"
-                />
-              </div>
-
-              {/* Submit */}
-              <div className="px-4 pb-4">
-                <button
-                  onClick={handleSubmit}
-                  disabled={!category || sending}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                >
-                  {sending ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>
-                  ) : (
-                    <><Send className="w-4 h-4" /> Enviar Report</>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                <div className="px-4 py-3 space-y-2">
+                  <p className="text-xs text-slate-500 mb-2">Selecione o tipo de problema:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {CATEGORIES.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setCategory(cat)}
+                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                          category === cat
+                            ? "bg-indigo-50 border-indigo-300 text-indigo-700"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="px-4 pb-3">
+                  <textarea
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
+                    placeholder="Detalhes adicionais (opcional)..."
+                    className="w-full h-16 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-400 resize-none"
+                  />
+                </div>
+                <div className="px-4 pb-4">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!category || sending}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    {sending ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>
+                    ) : (
+                      <><Send className="w-4 h-4" /> Enviar Report</>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };
