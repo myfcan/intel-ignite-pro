@@ -541,6 +541,36 @@ export type Database = {
           },
         ]
       }
+      lesson_reports: {
+        Row: {
+          category: string
+          created_at: string | null
+          details: string | null
+          id: string
+          lesson_id: string
+          page_context: Json | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          lesson_id: string
+          page_context?: Json | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          lesson_id?: string
+          page_context?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           audio_url: string | null

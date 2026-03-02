@@ -122,6 +122,8 @@ export const V8LessonPlayer = ({
           currentIndex={state.phase === "content" ? state.currentIndex : totalContentSteps - 1}
           totalSteps={totalContentSteps}
           onBack={onBack}
+          lessonId={lessonData.title}
+          reportContext={{ phase: state.phase, currentIndex: state.currentIndex, mode: state.mode }}
         />
       )}
 
