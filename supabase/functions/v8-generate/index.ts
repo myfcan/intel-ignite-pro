@@ -38,6 +38,8 @@ interface GenerateRequest {
     id: string;
     narration?: string;
     instruction: string;
+    successMessage?: string;
+    tryAgainMessage?: string;
   }>;
 }
 
@@ -201,6 +203,29 @@ serve(async (req) => {
           errors.push({ index: i, type: 'quiz-reinforcement', error: msg });
         }
       }
+
+      // Quiz explanation audio (feedback after answer)
+      if (quiz.explanation?.trim()) {
+        try {
+          const audioBuffer = await generateTTS(elevenLabsKey, quiz.explanation);
+          const storagePath = `v8/${lessonId}/quiz-${i}-explanation.mp3`;
+          const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
+          const durationEstimate = estimateDuration(audioBuffer.byteLength);
+
+          results.push({
+            index: i,
+            type: 'quiz-explanation',
+            audioUrl: publicUrl,
+            durationEstimate,
+            sizeKB: Math.round(audioBuffer.byteLength / 1024),
+          });
+
+          console.log(`[v8-generate] ✅ Quiz ${i} explanation: ${(audioBuffer.byteLength / 1024).toFixed(1)}KB`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          errors.push({ index: i, type: 'quiz-explanation', error: msg });
+        }
+      }
     }
 
     // ─── 5b. GENERATE AUDIO FOR PLAYGROUNDS (narration field) ───
@@ -231,6 +256,52 @@ serve(async (req) => {
         const msg = err instanceof Error ? err.message : String(err);
         console.error(`[v8-generate] ❌ Playground ${i} failed:`, msg);
         errors.push({ index: i, type: 'playground', error: msg });
+      }
+
+      // Playground successMessage audio
+      if (pg.successMessage?.trim()) {
+        try {
+          const audioBuffer = await generateTTS(elevenLabsKey, pg.successMessage);
+          const storagePath = `v8/${lessonId}/playground-${i}-success.mp3`;
+          const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
+          const durationEstimate = estimateDuration(audioBuffer.byteLength);
+
+          results.push({
+            index: i,
+            type: 'playground-success',
+            audioUrl: publicUrl,
+            durationEstimate,
+            sizeKB: Math.round(audioBuffer.byteLength / 1024),
+          });
+
+          console.log(`[v8-generate] ✅ Playground ${i} success: ${(audioBuffer.byteLength / 1024).toFixed(1)}KB`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          errors.push({ index: i, type: 'playground-success', error: msg });
+        }
+      }
+
+      // Playground tryAgainMessage audio
+      if (pg.tryAgainMessage?.trim()) {
+        try {
+          const audioBuffer = await generateTTS(elevenLabsKey, pg.tryAgainMessage);
+          const storagePath = `v8/${lessonId}/playground-${i}-tryagain.mp3`;
+          const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
+          const durationEstimate = estimateDuration(audioBuffer.byteLength);
+
+          results.push({
+            index: i,
+            type: 'playground-tryagain',
+            audioUrl: publicUrl,
+            durationEstimate,
+            sizeKB: Math.round(audioBuffer.byteLength / 1024),
+          });
+
+          console.log(`[v8-generate] ✅ Playground ${i} tryAgain: ${(audioBuffer.byteLength / 1024).toFixed(1)}KB`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          errors.push({ index: i, type: 'playground-tryagain', error: msg });
+        }
       }
     }
 

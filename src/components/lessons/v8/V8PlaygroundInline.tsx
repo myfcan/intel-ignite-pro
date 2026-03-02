@@ -4,6 +4,7 @@ import { V8InlinePlayground } from "@/types/v8Lesson";
 import { supabase } from "@/integrations/supabase/client";
 import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle, CheckCircle2, XCircle, Copy, Loader2 } from "lucide-react";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
+import { V8AudioPlayer } from "./V8AudioPlayer";
 interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
   onContinue?: () => void;
@@ -512,6 +513,13 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
             <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-slate-600"}`}>
               {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : "Você completou o desafio. Continue a aula para aprender mais!"}
             </p>
+            {/* Play success or tryAgain audio */}
+            {challengeScore !== null && challengeScore >= 70 && playground.successAudioUrl && (
+              <V8AudioPlayer audioUrl={playground.successAudioUrl} autoPlay />
+            )}
+            {(challengeScore === null || challengeScore < 70) && playground.tryAgainAudioUrl && (
+              <V8AudioPlayer audioUrl={playground.tryAgainAudioUrl} autoPlay />
+            )}
             {onContinue && (
               <button
                 ref={ctaRef}

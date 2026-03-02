@@ -161,6 +161,9 @@ export const V8QuizInline = ({
             <p className="text-sm text-slate-700 leading-relaxed">
               {quiz.explanation}
             </p>
+            {quiz.explanationAudioUrl && isActiveAudio && (
+              <V8AudioPlayer audioUrl={quiz.explanationAudioUrl} autoPlay />
+            )}
             {onContinue && (
               <button
                 ref={ctaRef}
@@ -191,6 +194,9 @@ export const V8QuizInline = ({
             <p className="text-sm text-slate-700 leading-relaxed">
               {quiz.explanation}
             </p>
+            {quiz.explanationAudioUrl && isActiveAudio && (
+              <V8AudioPlayer audioUrl={quiz.explanationAudioUrl} autoPlay />
+            )}
             <div className="flex items-center gap-4">
               {quiz.reinforcement && (
                 <button
