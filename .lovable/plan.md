@@ -1,51 +1,41 @@
 
 
-# Contrato Visual V8: Padronizacao de Imagens por Secao
+# Correcao do Scroll V8: block:start + scrollMarginTop
 
-## Problema
+## Problema diagnosticado
 
-As imagens geradas pelo pipeline V8 apresentam inconsistencia visual entre secoes:
-- Quantidade de elementos varia (uma secao tem 1 objeto, outra tem 6+ elementos pequenos)
-- Composicao interna muda drasticamente (algumas preenchem o frame, outras ficam minusculas)
-- Resultado: secoes com imagens "cheias" ao lado de secoes com imagens "vazias"
+O `scrollIntoView({ block: "center" })` centraliza o ponto medio do elemento no viewport. Para secoes altas (titulo + imagem 300px + markdown = 500-800px total), o topo fica cortado pelo header fixo de ~56px. Afeta tanto secoes quanto playgrounds.
 
-## Solucao
+## Evidencia no codigo
 
-### 1. Atualizar o prompt de geracao (Edge Function)
-
-**Arquivo:** `supabase/functions/v8-generate-section-image/index.ts`
-
-Reescrever a funcao `buildAutoPrompt` com regras mais rigorosas:
-
-- **Limite de elementos:** Maximo 1-3 objetos por imagem (nunca um diagrama com 6+ pecas)
-- **Preenchimento:** O objeto principal deve ocupar 85-95% do frame (nao 80%)
-- **Proibicao de diagramas:** Nao gerar flowcharts, setas, labels ou sequencias complexas
-- **Foco em objeto unico:** Priorizar um unico objeto 3D icônico que represente o conceito
-- **Anti-pattern explicito:** Proibir textos, setas, labels, banners dentro da imagem
-
-O prompt custom tambem recebera as mesmas restricoes.
-
-### 2. Aumentar tamanho de exibicao no player
-
-**Arquivo:** `src/components/lessons/v8/V8ContentSection.tsx`
-
-Alterar `max-w-[256px]` para `max-w-[300px]` para dar mais presenca visual as imagens, mantendo proporcionalidade com o layout mobile.
-
-### Detalhes tecnicos
-
-**Prompt AUTO revisado (trecho chave):**
-```
-- Single iconic 3D object only — NO diagrams, flowcharts, arrows, or multi-step sequences
-- Maximum 1 to 3 visual elements total, tightly composed
-- The main object must fill 85-95% of the frame
-- NEVER include text, labels, banners, arrows, or UI elements
-- NEVER create infographic-style or diagram-style compositions
+**Linha 82 de V8LessonPlayer.tsx:**
+```text
+block: "center"  ← causa raiz
 ```
 
-**Player CSS:**
-```
-className="w-full max-w-[300px] rounded-2xl object-contain"
+**Linha 124-129 — sem scrollMarginTop:**
+```text
+<motion.div ref={...} className="flex flex-col">  ← sem compensacao do header
 ```
 
-Apos o deploy, todas as novas imagens seguirao o padrao. Imagens existentes precisarao ser regeneradas individualmente.
+## Solucao (2 alteracoes no mesmo arquivo)
 
+**Arquivo:** `src/components/lessons/v8/V8LessonPlayer.tsx`
+
+### Alteracao 1 — Linha 82
+
+Trocar `block: "center"` por `block: "start"`
+
+### Alteracao 2 — Linha 124-125
+
+Adicionar `style={{ scrollMarginTop: "80px" }}` no `motion.div` que recebe o ref
+
+O valor 80px = 56px (header real) + 24px de respiro visual
+
+## Analise de risco
+
+- Conflito com scroll do V8QuizInline: NENHUM (refs diferentes, `block: "nearest"`)
+- Timing 100ms vs animacao 400ms: RISCO BAIXO (y:30 e pequeno, scrollMarginTop absorve)
+- Impacto em outros phases (exercises, completion): NENHUM (guard `state.phase === "content"`)
+
+## Probabilidade de exito: 95%
