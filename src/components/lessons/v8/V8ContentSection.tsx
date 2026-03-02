@@ -1,5 +1,4 @@
 import { forwardRef, useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { V8Section } from "@/types/v8Lesson";
 
@@ -156,12 +155,9 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
     const sanitizedContent = stripEmotionTags(section.content);
 
     return (
-      <motion.div
+      <div
         ref={ref}
         id={`v8-section-${sectionIndex}`}
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut", delay: sectionIndex * 0.05 }}
         className="flex flex-col"
       >
         {/* 1. Section title */}
@@ -241,7 +237,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
             {sanitizedContent}
           </ReactMarkdown>
         </div>
-      </motion.div>
+      </div>
     );
   }
 );
