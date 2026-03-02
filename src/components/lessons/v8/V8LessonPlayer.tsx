@@ -44,6 +44,9 @@ export const V8LessonPlayer = ({
   } = useV8Player(lessonData);
 
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const anchorRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const SECTION_TOP_OFFSET = 88; // header (56px) + visual breathing room (32px)
 
   const handleQuizAnswer = useCallback(
     (correct: boolean) => {
@@ -73,20 +76,37 @@ export const V8LessonPlayer = ({
     return lessonData.sections[currentItem.index]?.audioUrl ?? null;
   }, [state.phase, currentItem, lessonData.sections]);
 
-  // Auto-scroll to new section
+  // Auto-scroll to new section using STATIC anchor (immune to framer-motion transforms)
   useEffect(() => {
     if (state.phase === "content" && state.currentIndex > 0) {
-      const timer = setTimeout(() => {
-        const el = itemRefs.current[state.currentIndex];
-        if (el) {
-          const scrollTarget = el.offsetTop - 80;
-          window.scrollTo({
-            top: Math.max(0, scrollTarget),
-            behavior: "smooth",
-          });
-        }
-      }, 150);
-      return () => clearTimeout(timer);
+      const anchor = anchorRefs.current[state.currentIndex];
+      if (!anchor) return;
+
+      // Double RAF ensures React has committed DOM + layout is calculated
+      const rafId1 = requestAnimationFrame(() => {
+        const rafId2 = requestAnimationFrame(() => {
+          anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+
+          // Anti-drift correction after animation completes (~420ms)
+          const driftTimer = setTimeout(() => {
+            const rect = anchor.getBoundingClientRect();
+            const drift = rect.top - SECTION_TOP_OFFSET;
+            if (Math.abs(drift) > 4) {
+              window.scrollBy({ top: drift, behavior: "auto" });
+            }
+          }, 420);
+
+          // Store for cleanup
+          (anchor as any).__driftTimer = driftTimer;
+        });
+        (anchor as any).__rafId2 = rafId2;
+      });
+
+      return () => {
+        cancelAnimationFrame(rafId1);
+        cancelAnimationFrame((anchor as any).__rafId2);
+        clearTimeout((anchor as any).__driftTimer);
+      };
     }
   }, [state.currentIndex, state.phase]);
 
@@ -125,9 +145,15 @@ export const V8LessonPlayer = ({
                 return (
                   <div key={`timeline-${idx}`}>
                     {idx > 0 && <hr className="border-slate-100 mb-[7px]" />}
+                    {/* Static scroll anchor — NOT affected by framer-motion transforms */}
+                    <div
+                      ref={(el) => { anchorRefs.current[idx] = el; }}
+                      className="h-px"
+                      style={{ scrollMarginTop: `${SECTION_TOP_OFFSET}px` }}
+                      aria-hidden="true"
+                    />
                     <motion.div
                       ref={(el) => { itemRefs.current[idx] = el; }}
-                      
                       initial={idx === state.currentIndex ? { opacity: 0, y: 30 } : false}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}

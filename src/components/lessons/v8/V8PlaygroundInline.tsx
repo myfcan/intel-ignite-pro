@@ -105,17 +105,35 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
   const canRetry = attempts < maxAttempts && (challengeScore === null || challengeScore < 70);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLButtonElement>(null);
 
-  // Auto-scroll to keep CTA visible on phase transitions
+  // Auto-scroll: ensure CTA button is visible after phase transitions
   useEffect(() => {
     if (phase !== "intro" && !isLoadingResult && !isEvaluating) {
-      const timer = setTimeout(() => {
-        bottomRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
+      const SAFE_BOTTOM = 120; // account for fixed bottom bar
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // First, try to ensure the CTA button is visible
+          const cta = ctaRef.current;
+          if (cta) {
+            const ctaRect = cta.getBoundingClientRect();
+            const maxVisible = window.innerHeight - SAFE_BOTTOM;
+            if (ctaRect.bottom > maxVisible) {
+              window.scrollBy({
+                top: ctaRect.bottom - maxVisible + 16,
+                behavior: "smooth",
+              });
+              return;
+            }
+          }
+          // Fallback: scroll bottom anchor into view
+          bottomRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          });
         });
-      }, 150);
-      return () => clearTimeout(timer);
+      });
     }
   }, [phase, isLoadingResult, isEvaluating, feedback, challengeScore]);
 
@@ -174,6 +192,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
               <div className="text-center py-4 text-xs text-slate-400 animate-pulse">Gerando resultado...</div>
             )}
             <button
+              ref={ctaRef}
               onClick={handleNextPhase}
               disabled={isLoadingResult}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -203,6 +222,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
               <div className="text-center py-4 text-xs text-slate-400 animate-pulse">Gerando resultado...</div>
             )}
             <button
+              ref={ctaRef}
               onClick={handleNextPhase}
               disabled={isLoadingResult}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -227,6 +247,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
               </div>
             </div>
             <button
+              ref={ctaRef}
               onClick={handleNextPhase}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
             >
