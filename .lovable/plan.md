@@ -1,88 +1,85 @@
-Atue como um engenheiro sênior responsável pelo runtime de todo o sistema V8 e banco de dados, atue com obrigação de precisão técnica absoluta.
 
-&nbsp;
+# Contrato Visual V8: Tamanho Padrao e Idioma Obrigatorio
 
-REGRA DESTE PROMPT:
+## Problema Atual
 
-&nbsp;
+1. **Sem contrato de tamanho**: O Gemini gera imagens em tamanho arbitrario. So o GPT cleanup (step 2) forca 512x512 — mas se o GPT falhar e o fallback usar a imagem Gemini original, o tamanho e imprevisivel.
+2. **Sem exigencia de idioma**: O prompt atual diz "NEVER include text", mas na pratica algumas imagens TEM texto (como as da screenshot: "o que exatamente voce quer"). Quando texto e necessario, nao ha regra forcando portugues Brasil.
 
-Você NÃO pode mentir.
+## Solucao
 
-Você NÃO pode supor.
+### Arquivo: `supabase/functions/v8-generate-section-image/index.ts`
 
-Você NÃO pode responder com explicações genéricas.
+**1. Contrato de tamanho no prompt Gemini**
 
-Você NÃO pode omitir dados.
+Adicionar instrucao explicita de resolucao ao prompt de geracao (tanto `buildAutoPrompt` quanto modo `custom`):
 
-Você deve executar tudo com DADOS REAIS do código atual.
-
-Você deve copiar e colar trechos REAIS do código.
-
-Você deve usar logs reais e timestamps reais.
-
-Se não souber algo, diga explicitamente: “NÃO LOCALIZADO NO CÓDIGO”.  
-  
-TUDO ISSO É MANDATÓRIO  
-  
-Fix: JSON parsing quebrado no edge function
-
-## Problema
-
-A regex na linha 159 do edge function (`/\{[\s\S]*?"score"[\s\S]*?\}/`) usa quantificador non-greedy que para no primeiro `}` encontrado. Com objetos aninhados em `criteriaBreakdown`, captura JSON incompleto. O `JSON.parse` falha e o fallback retorna JSON cru como texto na tela do usuario.
-
-## Correcao
-
-### Arquivo: `supabase/functions/v8-evaluate-prompt/index.ts`
-
-**1. Substituir regex por parser de chaves balanceadas (linhas ~157-173):**
-
-```typescript
-try {
-  const startIdx = content.indexOf('{');
-  if (startIdx !== -1) {
-    let depth = 0;
-    let endIdx = -1;
-    for (let i = startIdx; i < content.length; i++) {
-      if (content[i] === '{') depth++;
-      else if (content[i] === '}') {
-        depth--;
-        if (depth === 0) { endIdx = i; break; }
-      }
-    }
-    if (endIdx !== -1) {
-      const parsed = JSON.parse(content.substring(startIdx, endIdx + 1));
-      return jsonResp({
-        score: parsed.score ?? 50,
-        verdict: parsed.verdict || "",
-        feedback: parsed.feedback || "",
-        criteriaBreakdown: parsed.criteriaBreakdown || [],
-        suggestions: parsed.suggestions || [],
-        improvedExample: parsed.improvedExample || "",
-      });
-    }
-  }
-} catch {
-  // Fallback below
-}
+```
+- OUTPUT SIZE: Generate the image at exactly 1024x1024 pixels (1:1 square)
+- The composition must be centered and fill the frame
 ```
 
-**2. Corrigir fallback para nao vazar JSON cru (linha ~175):**
+Isso garante que mesmo sem o GPT cleanup, a imagem ja nasce no tamanho correto. O GPT cleanup continua redimensionando para 512x512 na saida final.
 
-```typescript
-return jsonResp({
-  score: 50,
-  feedback: "Avaliacao indisponivel. Tente novamente.",
-  verdict: "Tente novamente",
-  criteriaBreakdown: [],
-  suggestions: [],
-  improvedExample: "",
-});
+**2. Idioma pt-BR obrigatorio para textos**
+
+Adicionar ao prompt base:
+
+```
+- LANGUAGE RULE: If any text, label, word, or phrase appears in the image, 
+  it MUST be written in Brazilian Portuguese (pt-BR). 
+  Never use English or any other language.
+  Examples: "Inteligencia Artificial" (not "Artificial Intelligence"), 
+  "Como funciona" (not "How it works")
 ```
 
-**3. Redeploy da edge function.**
+**3. Modo "com texto" explicito**
 
-## Escopo
+Adicionar um parametro opcional `allowText` ao endpoint. Quando `allowText: true`:
+- Remove a regra "NEVER include text"
+- Adiciona regra de idioma pt-BR
+- Especifica estilo tipografico (fonte limpa, legivel, integrada ao 3D)
 
-- 1 arquivo: `supabase/functions/v8-evaluate-prompt/index.ts`
-- 0 mudancas de banco
-- 0 mudancas de frontend
+Quando `allowText: false` (padrao atual), mantem a proibicao de texto.
+
+### Mudancas especificas no codigo
+
+**`buildAutoPrompt()` (linha 10-34)**:
+- Adicionar `OUTPUT SIZE: 1024x1024 pixels, square format`
+- Adicionar regra de idioma pt-BR como invariante
+
+**Modo `custom` (linha 75-77)**:
+- Mesmas regras de tamanho e idioma
+
+**Novo parametro `allowText`** no body do request:
+- Se `true`: remove "NEVER include text" e adiciona regras de tipografia pt-BR
+- Se `false` (default): mantem comportamento atual
+
+**`buildEditFormData()` (linha 211-226)**:
+- Manter `size: "1024x1024"` no GPT cleanup (upgrade de 512x512 para consistencia com o Gemini)
+
+### Frontend: `V8ContentSection.tsx`
+
+- Manter `max-w-[300px]` no render (o contrato de tamanho e do pipeline, nao do player)
+- O player ja faz downscale via CSS — nenhuma mudanca necessaria
+
+## Resumo do Contrato
+
+```text
+CONTRATO VISUAL V8 — IMAGENS DE SECAO
+========================================
+Resolucao de geracao:  1024x1024 (Gemini)
+Resolucao de entrega:  1024x1024 (pos-GPT cleanup)
+Resolucao de exibicao: max 300px (CSS no player)
+Proporcao:             1:1 (quadrada) ou landscape
+Idioma de texto:       pt-BR obrigatorio
+Texto na imagem:       Proibido por padrao, permitido via allowText=true
+Fundo:                 Branco solido (#FFF) pre-cleanup, transparente pos-cleanup
+```
+
+## Arquivos Modificados
+
+1. `supabase/functions/v8-generate-section-image/index.ts` — contrato de tamanho + idioma + allowText
+2. Redeploy da edge function
+
+## Sem mudancas de banco ou frontend
