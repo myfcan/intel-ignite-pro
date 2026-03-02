@@ -10,6 +10,7 @@ interface V8QuizInlineProps {
   onAnswer: (correct: boolean) => void;
   onContinue?: () => void;
   isActiveAudio?: boolean;
+  isActive?: boolean;
 }
 
 type QuizState = "answering" | "correct" | "wrong" | "reinforcement";
@@ -19,17 +20,20 @@ export const V8QuizInline = ({
   onAnswer,
   onContinue,
   isActiveAudio = false,
+  isActive = true,
 }: V8QuizInlineProps) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [state, setState] = useState<QuizState>("answering");
   const ctaRef = useRef<HTMLButtonElement>(null);
 
   // Deterministic geometric scroll when state changes
+  // Only scroll when this is the active item to prevent stale items from hijacking scroll
   useEffect(() => {
+    if (!isActive) return;
     if (!selected && state === "answering") return;
 
     return scheduleCTAScroll(() => ctaRef.current);
-  }, [selected, state]);
+  }, [selected, state, isActive]);
 
   const handleConfirm = useCallback(() => {
     if (!selected) return;

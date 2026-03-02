@@ -174,6 +174,7 @@ export const V8LessonPlayer = ({
                           onAnswer={handleQuizAnswer}
                           onContinue={isLast ? advance : undefined}
                           isActiveAudio={state.mode === "listen" && isLast}
+                          isActive={isLast}
                         />
                       )}
 
@@ -182,6 +183,7 @@ export const V8LessonPlayer = ({
                           playground={item.playground}
                           onContinue={isLast ? advance : undefined}
                           onScore={(s) => addScore(s)}
+                          isActive={isLast}
                         />
                       )}
                     </motion.div>
