@@ -27,21 +27,21 @@ function getState(completedCount: number, totalLessons: number, allCompleted: bo
 function DiamondDivider({ done, compact = false }: { done: boolean; compact?: boolean }) {
   const lineClass = done
     ? "bg-gradient-to-r from-transparent via-amber-300/60 to-transparent"
-    : "bg-gradient-to-r from-transparent via-gray-300/40 to-transparent";
-  const diamondColor = done ? "hsl(43, 55%, 55%)" : "hsl(0, 0%, 75%)";
+    : "bg-gradient-to-r from-transparent via-gray-300/50 to-transparent";
+  const diamondColor = done ? "hsl(43, 55%, 55%)" : "hsl(0, 0%, 72%)";
 
   return (
     <div className="flex items-center" style={{ gap: compact ? 4 : 8, margin: compact ? "4px 0" : "10px 0" }}>
-      <div className={`flex-1 ${lineClass}`} style={{ height: compact ? 0.6 : 1 }} />
+      <div className={`flex-1 ${lineClass}`} style={{ height: compact ? 0.8 : 1.5 }} />
       <div
         style={{
-          width: compact ? 5 : 8,
-          height: compact ? 5 : 8,
+          width: compact ? 6 : 10,
+          height: compact ? 6 : 10,
           backgroundColor: diamondColor,
           transform: "rotate(45deg)",
         }}
       />
-      <div className={`flex-1 ${lineClass}`} style={{ height: compact ? 0.6 : 1 }} />
+      <div className={`flex-1 ${lineClass}`} style={{ height: compact ? 0.8 : 1.5 }} />
     </div>
   );
 }
@@ -58,12 +58,12 @@ function CertificateDocument({
 }) {
   const done = state === "completed";
   const locked = state === "locked";
-  const docOpacity = done ? 1 : locked ? 0.78 : 0.92;
+  const docOpacity = done ? 1 : locked ? 0.82 : 0.94;
 
-  const borderColor = done ? "hsl(43, 55%, 65%)" : locked ? "hsl(0, 0%, 88%)" : "hsl(258, 30%, 85%)";
+  const borderColor = done ? "hsl(43, 55%, 62%)" : locked ? "hsl(0, 0%, 84%)" : "hsl(258, 30%, 82%)";
 
-  const sealSize = compact ? 45 : 52;
-  const sealIconSize = compact ? 20 : 24;
+  const sealSize = compact ? 45 : 60;
+  const sealIconSize = compact ? 20 : 26;
 
   return (
     <div
@@ -71,7 +71,7 @@ function CertificateDocument({
       style={{
         opacity: docOpacity,
         background: "radial-gradient(ellipse at 30% 20%, #FFFEF8, #FBF9F4)",
-        padding: compact ? 15 : 20,
+        padding: compact ? 15 : 24,
         borderRadius: compact ? 12 : 14,
       }}
     >
@@ -80,16 +80,16 @@ function CertificateDocument({
         className="absolute inset-0 pointer-events-none"
         style={{
           borderRadius: "inherit",
-          border: `1px solid ${borderColor}`,
+          border: `1.5px solid ${borderColor}`,
         }}
       />
       <div
         className="absolute pointer-events-none"
         style={{
           borderRadius: "inherit",
-          border: `1px solid ${borderColor}`,
-          inset: compact ? 5 : 6,
-          opacity: 0.5,
+          border: `1.5px solid ${borderColor}`,
+          inset: compact ? 5 : 7,
+          opacity: 0.7,
         }}
       />
 
@@ -101,7 +101,7 @@ function CertificateDocument({
             <motion.div
               className="absolute rounded-full"
               style={{
-                inset: -6,
+                inset: -7,
                 border: "1.5px solid hsl(43, 60%, 65%)",
                 background: "radial-gradient(circle, rgba(255,215,0,0.06) 0%, transparent 70%)",
               }}
@@ -117,13 +117,13 @@ function CertificateDocument({
               background: done
                 ? "linear-gradient(145deg, hsl(43, 80%, 65%) 0%, hsl(38, 85%, 52%) 50%, hsl(33, 80%, 45%) 100%)"
                 : locked
-                  ? "linear-gradient(145deg, hsl(0, 0%, 90%) 0%, hsl(0, 0%, 82%) 100%)"
-                  : "linear-gradient(145deg, hsl(258, 40%, 88%) 0%, hsl(258, 30%, 78%) 100%)",
+                  ? "linear-gradient(145deg, hsl(0, 0%, 88%) 0%, hsl(0, 0%, 78%) 100%)"
+                  : "linear-gradient(145deg, hsl(258, 40%, 86%) 0%, hsl(258, 30%, 74%) 100%)",
               boxShadow: done
                 ? "inset 0 2px 4px rgba(255,255,255,0.35), 0 4px 14px rgba(180,130,20,0.25)"
-                : "inset 0 1px 2px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.06)",
-              outline: `${compact ? 2 : 2.5}px solid ${borderColor}`,
-              outlineOffset: compact ? 2.5 : 3,
+                : "inset 0 1px 2px rgba(255,255,255,0.3), 0 2px 8px rgba(0,0,0,0.08)",
+              outline: `${compact ? 2 : 3}px solid ${borderColor}`,
+              outlineOffset: compact ? 2.5 : 3.5,
             }}
           >
             {done ? (
@@ -143,7 +143,7 @@ function CertificateDocument({
           }`}
           style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
-            fontSize: compact ? 11 : 14,
+            fontSize: compact ? 11 : 16,
             letterSpacing: compact ? "0.14em" : "0.2em",
             lineHeight: 1.3,
           }}
@@ -156,7 +156,7 @@ function CertificateDocument({
           }`}
           style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
-            fontSize: compact ? 9.5 : 12,
+            fontSize: compact ? 9.5 : 13,
             letterSpacing: compact ? "0.12em" : "0.15em",
             marginTop: compact ? 1 : 2,
           }}
@@ -174,24 +174,24 @@ function CertificateDocument({
           /* Compact: mini text lines to look like a full document */
           <div className="w-full flex flex-col items-center" style={{ gap: 3, marginTop: 3 }}>
             <p
-              className={`italic ${done ? "text-amber-700/70" : "text-gray-500/70"}`}
+              className={`italic ${done ? "text-amber-700/80" : "text-gray-500/80"}`}
               style={{ fontFamily: "'Georgia', serif", fontSize: 7 }}
             >
               Concedido a
             </p>
             <div
-              className={`${done ? "bg-amber-300/30" : "bg-gray-300/25"}`}
-              style={{ width: "60%", height: 0.8, borderRadius: 1 }}
+              className={`${done ? "bg-amber-300/40" : "bg-gray-300/35"}`}
+              style={{ width: "60%", height: 1, borderRadius: 1 }}
             />
             <p
-              className={`italic text-center leading-tight ${done ? "text-amber-700/60" : "text-gray-500/60"}`}
+              className={`italic text-center leading-tight ${done ? "text-amber-700/70" : "text-gray-500/70"}`}
               style={{ fontFamily: "'Georgia', serif", fontSize: 6.5, marginTop: 1 }}
             >
               "{trailTitle}"
             </p>
-            <div style={{ marginTop: 4, width: "40%", borderTop: `0.5px dashed ${done ? "hsl(43,50%,70%)" : "hsl(0,0%,85%)"}` }} />
+            <div style={{ marginTop: 4, width: "40%", borderTop: `0.8px dashed ${done ? "hsl(43,50%,65%)" : "hsl(0,0%,78%)"}` }} />
             <p
-              className={`${done ? "text-amber-600/70" : "text-gray-400"}`}
+              className={`${done ? "text-amber-600/80" : "text-gray-500"}`}
               style={{ fontFamily: "'Georgia', serif", fontSize: 9.5, letterSpacing: "0.08em", marginTop: 3 }}
             >
               AIliv Academy
@@ -201,46 +201,46 @@ function CertificateDocument({
           /* Full: real text, no placeholders */
           <div className="w-full flex flex-col items-center" style={{ gap: 4, marginTop: 4 }}>
             <p
-              className={`italic ${done ? "text-amber-700/70" : "text-gray-400/60"}`}
-              style={{ fontFamily: "'Georgia', serif", fontSize: 9 }}
+              className={`italic ${done ? "text-amber-700/80" : "text-gray-400/80"}`}
+              style={{ fontFamily: "'Georgia', serif", fontSize: 10 }}
             >
               Concedido a
             </p>
             <div
               style={{
                 width: "70%",
-                height: 1,
-                borderBottom: `1px solid ${done ? "hsl(43,50%,72%)" : "hsl(0,0%,85%)"}`,
+                height: 1.5,
+                borderBottom: `1.5px solid ${done ? "hsl(43,50%,68%)" : "hsl(0,0%,80%)"}`,
                 marginTop: 8,
                 marginBottom: 2,
               }}
             />
             <p
-              className={`italic text-center leading-snug ${done ? "text-amber-800/60" : "text-gray-400/50"}`}
+              className={`italic text-center leading-snug ${done ? "text-amber-800/70" : "text-gray-400/70"}`}
               style={{ fontFamily: "'Georgia', serif", fontSize: 10, marginTop: 4 }}
             >
               por conclusão da trilha
             </p>
             <p
-              className={`text-center font-medium ${done ? "text-amber-900/70" : "text-gray-500/60"}`}
+              className={`text-center font-medium ${done ? "text-amber-900/80" : "text-gray-500/70"}`}
               style={{ fontFamily: "'Georgia', serif", fontSize: 12, fontStyle: "italic" }}
             >
               "{trailTitle}"
             </p>
 
             {/* Signature area */}
-            <div className="w-full mt-4 pt-3 flex flex-col items-center" style={{ borderTop: `1px dashed ${done ? "hsl(43,50%,72%)" : "hsl(0,0%,85%)"}` }}>
+            <div className="w-full mt-4 pt-3 flex flex-col items-center" style={{ borderTop: `1.5px dashed ${done ? "hsl(43,50%,68%)" : "hsl(0,0%,80%)"}` }}>
               <div
                 style={{
                   width: "35%",
-                  height: 1,
-                  borderBottom: `1px solid ${done ? "hsl(43,50%,72%)" : "hsl(0,0%,85%)"}`,
+                  height: 1.5,
+                  borderBottom: `1.5px solid ${done ? "hsl(43,50%,68%)" : "hsl(0,0%,80%)"}`,
                   marginBottom: 4,
                 }}
               />
               <p
-                className={`font-medium tracking-wide ${done ? "text-amber-600/70" : "text-gray-300"}`}
-                style={{ fontFamily: "'Georgia', serif", fontSize: 10, letterSpacing: "0.08em" }}
+                className={`font-medium tracking-wide ${done ? "text-amber-600/80" : "text-gray-500"}`}
+                style={{ fontFamily: "'Georgia', serif", fontSize: 12, letterSpacing: "0.08em" }}
               >
                 AIliv Academy
               </p>
@@ -261,8 +261,8 @@ function CertificateDocument({
   );
 }
 
-/* ── Progress bar (thin, violet) ── */
-function CertProgress({ value, height = 2 }: { value: number; height?: number }) {
+/* ── Progress bar (violet) ── */
+function CertProgress({ value, height = 4 }: { value: number; height?: number }) {
   return (
     <div className="w-full rounded-full bg-violet-100 overflow-hidden" style={{ height }}>
       <motion.div
@@ -271,6 +271,24 @@ function CertProgress({ value, height = 2 }: { value: number; height?: number })
         animate={{ width: `${value}%` }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       />
+    </div>
+  );
+}
+
+/* ── Motivational text by state ── */
+function MotivationalText({ state, remaining }: { state: CertState; remaining: number }) {
+  if (state === "completed") {
+    return <p className="text-xs text-amber-700 font-semibold">Parabéns! Trilha concluída. 🎉</p>;
+  }
+
+  return (
+    <div className="space-y-1">
+      <p className="text-[13px] font-semibold text-gray-700">
+        {state === "in_progress" ? "Você está no caminho certo!" : "Obtenha seu certificado"}
+      </p>
+      <p className="text-[11px] text-gray-400 leading-snug">
+        Continue e desbloqueie seu certificado personalizado de conclusão
+      </p>
     </div>
   );
 }
@@ -284,10 +302,10 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
 
   const cardBorder = allCompleted
     ? "1.5px solid hsl(43, 55%, 65%)"
-    : "1px solid rgba(0,0,0,0.06)";
+    : "1.5px solid hsl(250, 15%, 88%)";
   const cardShadow = allCompleted
     ? "0 4px 20px rgba(180,130,20,0.15), 0 0 0 3px rgba(217,168,42,0.05)"
-    : "0 2px 12px rgba(0,0,0,0.06)";
+    : "0 4px 20px rgba(0,0,0,0.08)";
 
   /* ── MOBILE: compact horizontal card ── */
   if (isMobile) {
@@ -309,13 +327,13 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
           }}
         >
           <div className="flex items-stretch">
-            {/* Mini certificate preview — 130px wide */}
+            {/* Mini certificate preview */}
             <div
               className="flex-shrink-0 flex items-center justify-center"
               style={{
-                width: "min(195px, 58vw)",
+                width: "min(180px, 50vw)",
                 padding: 10,
-                borderRight: "1px solid rgba(0,0,0,0.04)",
+                borderRight: "1.5px solid hsl(250, 15%, 92%)",
                 boxShadow: "inset -1px 0 3px rgba(0,0,0,0.02)",
               }}
             >
@@ -323,7 +341,7 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
             </div>
 
             {/* Info side */}
-            <div className="flex-1 p-3.5 flex flex-col justify-center gap-2">
+            <div className="flex-1 p-3.5 flex flex-col justify-center gap-2.5">
               <div className="flex items-center gap-1.5">
                 {allCompleted ? (
                   <Sparkles className="w-4 h-4 text-amber-500" />
@@ -335,18 +353,12 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
                 </span>
               </div>
 
-              <p className="text-xs text-gray-400 leading-snug">
-                {allCompleted
-                  ? "Trilha concluída! Toque para ver."
-                  : state === "locked"
-                    ? "Complete as aulas para liberar"
-                    : `${remaining} aula${remaining !== 1 ? "s" : ""} restante${remaining !== 1 ? "s" : ""}`}
-              </p>
+              <MotivationalText state={state} remaining={remaining} />
 
               <div className="flex items-center gap-2">
-                <CertProgress value={progress} height={1.5} />
-                <span className="text-[10px] font-bold text-gray-400">
-                  {completedCount}/{totalLessons}
+                <CertProgress value={progress} height={3} />
+                <span className="text-[10px] font-bold text-gray-500">
+                  {progress}%
                 </span>
               </div>
             </div>
@@ -390,8 +402,8 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
 
               <div className="px-4 pb-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <CertProgress value={progress} height={2} />
-                  <span className="text-xs font-bold text-gray-500">{completedCount}/{totalLessons}</span>
+                  <CertProgress value={progress} height={4} />
+                  <span className="text-xs font-bold text-gray-500">{progress}%</span>
                 </div>
                 {allCompleted && (
                   <button className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
@@ -413,7 +425,7 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-[280px] flex-shrink-0 sticky top-[72px] self-start"
+      className="w-[320px] flex-shrink-0 sticky top-[72px] self-start"
       whileHover={{ y: -2 }}
     >
       <div
@@ -445,17 +457,13 @@ export function V8CertificateCard({ completedCount, totalLessons, allCompleted, 
           <CertificateDocument state={state} trailTitle={trailTitle} />
         </div>
 
-        {/* Progress footer */}
-        <div className="px-4 pb-4">
-          <p className={`text-xs mb-2 ${allCompleted ? "text-amber-700 font-semibold" : "text-gray-400"}`}>
-            {allCompleted
-              ? "Parabéns! Trilha concluída."
-              : `${remaining} aula${remaining !== 1 ? "s" : ""} restante${remaining !== 1 ? "s" : ""}`}
-          </p>
+        {/* Motivational + Progress footer */}
+        <div className="px-4 pb-4 space-y-3">
+          <MotivationalText state={state} remaining={remaining} />
           <div className="flex items-center gap-2.5">
-            <CertProgress value={progress} height={2} />
+            <CertProgress value={progress} height={4} />
             <span className={`text-xs font-bold ${allCompleted ? "text-amber-700" : "text-gray-500"}`}>
-              {completedCount}/{totalLessons}
+              {progress}%
             </span>
           </div>
         </div>
