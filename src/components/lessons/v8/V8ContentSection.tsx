@@ -171,7 +171,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
 
         {/* 2. Image — BEFORE markdown */}
         {section.imageUrl && (
-          <div className="flex justify-center mt-[20px]">
+          <div className="flex justify-center mt-[30px]">
             <V8TrimmedImage
               src={section.imageUrl}
               alt={cleanTitle}
