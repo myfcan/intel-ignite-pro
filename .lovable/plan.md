@@ -1,85 +1,57 @@
 
-# Contrato Visual V8: Tamanho Padrao e Idioma Obrigatorio
+# Reprocessar Imagens V8 — Contrato Visual
 
-## Problema Atual
+## Contexto
 
-1. **Sem contrato de tamanho**: O Gemini gera imagens em tamanho arbitrario. So o GPT cleanup (step 2) forca 512x512 — mas se o GPT falhar e o fallback usar a imagem Gemini original, o tamanho e imprevisivel.
-2. **Sem exigencia de idioma**: O prompt atual diz "NEVER include text", mas na pratica algumas imagens TEM texto (como as da screenshot: "o que exatamente voce quer"). Quando texto e necessario, nao ha regra forcando portugues Brasil.
+A aula `92da570a-32c0-4df0-ac24-be6de43e3e0f` tem 4 secoes com imagens ja geradas no formato antigo (512x512, sem regra pt-BR). A edge function `v8-generate-section-image` ja foi atualizada com o contrato 1024x1024 + pt-BR. Precisamos reprocessar as 4 imagens e atualizar o JSON da aula.
 
-## Solucao
+## Plano
 
-### Arquivo: `supabase/functions/v8-generate-section-image/index.ts`
+### 1. Criar edge function `v8-reprocess-lesson-images`
 
-**1. Contrato de tamanho no prompt Gemini**
+Nova edge function que recebe `lessonId` e:
 
-Adicionar instrucao explicita de resolucao ao prompt de geracao (tanto `buildAutoPrompt` quanto modo `custom`):
+1. Busca a aula no banco (`lessons.content`)
+2. Itera sobre cada secao (`sections[0..3]`)
+3. Para cada secao, chama internamente a mesma logica de geracao (Gemini + GPT cleanup) com o contrato atualizado
+4. Atualiza o `imageUrl` de cada secao no JSON `content`
+5. Salva o JSON atualizado no banco via `UPDATE lessons SET content = ...`
+6. Retorna relatorio com status de cada secao
 
-```
-- OUTPUT SIZE: Generate the image at exactly 1024x1024 pixels (1:1 square)
-- The composition must be centered and fill the frame
-```
-
-Isso garante que mesmo sem o GPT cleanup, a imagem ja nasce no tamanho correto. O GPT cleanup continua redimensionando para 512x512 na saida final.
-
-**2. Idioma pt-BR obrigatorio para textos**
-
-Adicionar ao prompt base:
-
-```
-- LANGUAGE RULE: If any text, label, word, or phrase appears in the image, 
-  it MUST be written in Brazilian Portuguese (pt-BR). 
-  Never use English or any other language.
-  Examples: "Inteligencia Artificial" (not "Artificial Intelligence"), 
-  "Como funciona" (not "How it works")
+Parametros do endpoint:
+```json
+{
+  "lessonId": "92da570a-...",
+  "allowText": false,
+  "sectionsToReprocess": [0, 1, 2, 3]  // opcional, default = todas
+}
 ```
 
-**3. Modo "com texto" explicito**
+Processamento sequencial (nao paralelo) para evitar rate limit do Gemini.
 
-Adicionar um parametro opcional `allowText` ao endpoint. Quando `allowText: true`:
-- Remove a regra "NEVER include text"
-- Adiciona regra de idioma pt-BR
-- Especifica estilo tipografico (fonte limpa, legivel, integrada ao 3D)
+### 2. Adicionar botao "Reprocessar Imagens" no Admin
 
-Quando `allowText: false` (padrao atual), mantem a proibicao de texto.
+No `V8SectionSetup.tsx`, adicionar um botao no topo que dispara o reprocessamento de todas as secoes de uma vez, com progress indicator por secao.
 
-### Mudancas especificas no codigo
+Alternativa mais rapida: executar via `supabase.functions.invoke` direto do console/admin, sem UI dedicada.
 
-**`buildAutoPrompt()` (linha 10-34)**:
-- Adicionar `OUTPUT SIZE: 1024x1024 pixels, square format`
-- Adicionar regra de idioma pt-BR como invariante
+### 3. Execucao imediata
 
-**Modo `custom` (linha 75-77)**:
-- Mesmas regras de tamanho e idioma
+Apos deploy da edge function, chamar via curl ou admin para reprocessar a aula de teste.
 
-**Novo parametro `allowText`** no body do request:
-- Se `true`: remove "NEVER include text" e adiciona regras de tipografia pt-BR
-- Se `false` (default): mantem comportamento atual
+## Arquivos
 
-**`buildEditFormData()` (linha 211-226)**:
-- Manter `size: "1024x1024"` no GPT cleanup (upgrade de 512x512 para consistencia com o Gemini)
+1. **Novo**: `supabase/functions/v8-reprocess-lesson-images/index.ts` — orchestrador de reprocessamento
+2. **Editar**: `supabase/config.toml` — NAO (auto-gerenciado)
+3. **Editar**: `src/components/admin/V8SectionSetup.tsx` — botao "Reprocessar Todas"
 
-### Frontend: `V8ContentSection.tsx`
+## Validacao pos-reprocessamento
 
-- Manter `max-w-[300px]` no render (o contrato de tamanho e do pipeline, nao do player)
-- O player ja faz downscale via CSS — nenhuma mudanca necessaria
+Apos execucao, verificar:
+- Resolucao das imagens no storage (1024x1024)
+- Ausencia de texto em ingles
+- Fundo transparente (alpha channel)
+- URLs atualizadas no JSON da aula
 
-## Resumo do Contrato
-
-```text
-CONTRATO VISUAL V8 — IMAGENS DE SECAO
-========================================
-Resolucao de geracao:  1024x1024 (Gemini)
-Resolucao de entrega:  1024x1024 (pos-GPT cleanup)
-Resolucao de exibicao: max 300px (CSS no player)
-Proporcao:             1:1 (quadrada) ou landscape
-Idioma de texto:       pt-BR obrigatorio
-Texto na imagem:       Proibido por padrao, permitido via allowText=true
-Fundo:                 Branco solido (#FFF) pre-cleanup, transparente pos-cleanup
-```
-
-## Arquivos Modificados
-
-1. `supabase/functions/v8-generate-section-image/index.ts` — contrato de tamanho + idioma + allowText
-2. Redeploy da edge function
-
-## Sem mudancas de banco ou frontend
+## Sem mudancas de banco
+A tabela `lessons` ja tem a coluna `content` (JSONB) — so atualizamos o JSON.
