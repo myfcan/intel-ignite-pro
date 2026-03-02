@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { V8InlinePlayground } from "@/types/v8Lesson";
 import { supabase } from "@/integrations/supabase/client";
-import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle, CheckCircle2, XCircle, Copy } from "lucide-react";
+import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle, CheckCircle2, XCircle, Copy, Loader2 } from "lucide-react";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
@@ -179,8 +179,11 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                 onClick={handleNextPhase}
                 className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
               >
-                Ver Prompt Amador
-                <ArrowRight className="w-4 h-4" />
+                {isLoadingResult ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Gerando...</>
+                ) : (
+                  <>Ver Prompt Amador <ArrowRight className="w-4 h-4" /></>
+                )}
               </button>
             )}
           </motion.div>
@@ -216,8 +219,11 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                 disabled={isLoadingResult}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                Agora o Profissional
-                <ArrowRight className="w-4 h-4" />
+                {isLoadingResult ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Gerando...</>
+                ) : (
+                  <>Agora o Profissional <ArrowRight className="w-4 h-4" /></>
+                )}
               </button>
             )}
           </motion.div>
@@ -253,8 +259,11 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                 disabled={isLoadingResult}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                Comparar
-                <ArrowRight className="w-4 h-4" />
+                {isLoadingResult ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Gerando...</>
+                ) : (
+                  <>Comparar <ArrowRight className="w-4 h-4" /></>
+                )}
               </button>
             )}
           </motion.div>
@@ -435,7 +444,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                       {isEvaluating ? (
-                        <span className="animate-pulse">Avaliando...</span>
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Avaliando...</>
                       ) : (
                         <>
                           <Send className="w-4 h-4" />
@@ -454,7 +463,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
                       >
                         {isEvaluating ? (
-                          <span className="animate-pulse">Avaliando...</span>
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Avaliando...</>
                         ) : (
                           <>
                             <RotateCcw className="w-4 h-4" />
