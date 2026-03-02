@@ -128,7 +128,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
     } finally {
       setIsEvaluating(false);
     }
-  }, [userPrompt, playground, onScore]);
+  }, [userPrompt, playground, onScore, playSound]);
 
   const canRetry = attempts < maxAttempts && (challengeScore === null || challengeScore < 70);
 

@@ -85,7 +85,8 @@ export const V8AudioPlayer = ({
         onPlay?.();
       }).catch(() => {});
     }
-  }, [autoPlay, isLoaded, onPlay]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPlay, isLoaded]);
 
   // Reset on audioUrl change
   useEffect(() => {

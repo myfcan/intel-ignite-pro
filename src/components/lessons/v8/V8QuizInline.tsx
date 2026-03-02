@@ -51,7 +51,7 @@ export const V8QuizInline = ({
       onAnswer(false);
       playSound("quiz-wrong");
     }
-  }, [selected, quiz.options, onAnswer]);
+  }, [selected, quiz.options, onAnswer, playSound]);
 
   const handleShowReinforcement = () => setState("reinforcement");
 
