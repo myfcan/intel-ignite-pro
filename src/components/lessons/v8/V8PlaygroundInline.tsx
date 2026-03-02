@@ -132,7 +132,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
             <p className="text-sm text-slate-700 leading-relaxed">{playground.instruction}</p>
             <button
               onClick={handleNextPhase}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
             >
               Ver Prompt Amador
               <ArrowRight className="w-4 h-4" />
@@ -161,7 +161,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
             <button
               onClick={handleNextPhase}
               disabled={isLoadingResult}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               Agora o Profissional
               <ArrowRight className="w-4 h-4" />
@@ -190,7 +190,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
             <button
               onClick={handleNextPhase}
               disabled={isLoadingResult}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               Comparar
               <ArrowRight className="w-4 h-4" />
@@ -213,7 +213,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
             </div>
             <button
               onClick={handleNextPhase}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
             >
               {playground.userChallenge ? "Sua Vez!" : "Continuar"}
               <ArrowRight className="w-4 h-4" />
@@ -281,7 +281,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                   <button
                     onClick={handleEvaluate}
                     disabled={isEvaluating || !userPrompt.trim()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
                     {isEvaluating ? (
                       <span className="animate-pulse">Avaliando...</span>
@@ -301,7 +301,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
                 {(!canRetry || (challengeScore !== null && challengeScore >= 70)) && (
                   <button
                     onClick={() => setPhase("done")}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
                   >
                     Continuar
                     <ArrowRight className="w-4 h-4" />
@@ -324,7 +324,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore }: V8Playgr
             {onContinue && (
               <button
                 onClick={onContinue}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-sm font-bold hover:opacity-90 transition-opacity"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
               >
                 Continuar Aula
                 <ArrowRight className="w-4 h-4 inline ml-2" />
