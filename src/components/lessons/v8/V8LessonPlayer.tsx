@@ -77,11 +77,15 @@ export const V8LessonPlayer = ({
   useEffect(() => {
     if (state.phase === "content" && state.currentIndex > 0) {
       const timer = setTimeout(() => {
-        itemRefs.current[state.currentIndex]?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 100);
+        const el = itemRefs.current[state.currentIndex];
+        if (el) {
+          const scrollTarget = el.offsetTop - 80;
+          window.scrollTo({
+            top: Math.max(0, scrollTarget),
+            behavior: "smooth",
+          });
+        }
+      }, 150);
       return () => clearTimeout(timer);
     }
   }, [state.currentIndex, state.phase]);
@@ -123,7 +127,7 @@ export const V8LessonPlayer = ({
                     {idx > 0 && <hr className="border-slate-100 mb-[7px]" />}
                     <motion.div
                       ref={(el) => { itemRefs.current[idx] = el; }}
-                      style={{ scrollMarginTop: "80px" }}
+                      
                       initial={idx === state.currentIndex ? { opacity: 0, y: 30 } : false}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
