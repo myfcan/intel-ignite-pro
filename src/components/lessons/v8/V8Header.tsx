@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, List } from "lucide-react";
+import { V8ReportButton } from "./V8ReportButton";
 
 interface V8HeaderProps {
   title: string;
@@ -9,6 +10,8 @@ interface V8HeaderProps {
   onBack: () => void;
   sectionTitles?: string[];
   onNavigateToSection?: (index: number) => void;
+  lessonId?: string;
+  reportContext?: Record<string, unknown>;
 }
 
 /** Strip "Seção X — " prefix */
@@ -21,6 +24,8 @@ export const V8Header = ({
   onBack,
   sectionTitles,
   onNavigateToSection,
+  lessonId,
+  reportContext,
 }: V8HeaderProps) => {
   const [showNav, setShowNav] = useState(false);
   const progress = totalSteps > 0 ? ((currentIndex + 1) / totalSteps) * 100 : 0;
@@ -55,6 +60,11 @@ export const V8Header = ({
           <span className="text-[11px] font-semibold text-slate-400 tabular-nums flex-shrink-0 mr-1">
             {currentIndex + 1}/{totalSteps}
           </span>
+
+          {/* Report button */}
+          {lessonId && (
+            <V8ReportButton lessonId={lessonId} pageContext={reportContext} />
+          )}
 
           {/* Section nav toggle */}
           {sectionTitles && sectionTitles.length > 1 && (

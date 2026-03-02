@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { BookOpen, Headphones, ArrowLeft } from "lucide-react";
+import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
 
 interface V8ModeSelectorProps {
   onSelectMode: (mode: "read" | "listen") => void;
@@ -23,6 +24,13 @@ const modes = [
 ];
 
 export const V8ModeSelector = ({ onSelectMode, onBack, title }: V8ModeSelectorProps) => {
+  const { unlockAudio } = useV7SoundEffects(0.5, true);
+
+  const handleSelectMode = (mode: "read" | "listen") => {
+    unlockAudio();
+    onSelectMode(mode);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -67,7 +75,7 @@ export const V8ModeSelector = ({ onSelectMode, onBack, title }: V8ModeSelectorPr
             transition={{ delay: 0.15 + i * 0.1 }}
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => onSelectMode(mode.id)}
+            onClick={() => handleSelectMode(mode.id)}
             className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-slate-200 bg-white shadow-sm backdrop-blur-xl hover:bg-slate-50 hover:border-indigo-500/30 transition-colors"
           >
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 flex items-center justify-center">

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle, CheckCircle2, XCircle, Copy, Loader2 } from "lucide-react";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 import { V8AudioPlayer } from "./V8AudioPlayer";
+import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
 interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
   onContinue?: () => void;
@@ -18,6 +19,7 @@ const PHASE_ORDER: Phase[] = ["intro", "amateur", "professional", "compare", "ch
 const phaseToIndex = (p: Phase) => PHASE_ORDER.indexOf(p);
 
 export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive = true }: V8PlaygroundInlineProps) => {
+  const { playSound } = useV7SoundEffects(0.6, true);
   const [phase, setPhase] = useState<Phase>("intro");
   const [amateurResult, setAmateurResult] = useState(playground.amateurResult || "");
   const [professionalResult, setProfessionalResult] = useState(playground.professionalResult || "");
@@ -100,6 +102,12 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
 
       const score = data?.score ?? 0;
       setChallengeScore(score);
+      // Play SFX only at evaluation moment (not in done phase)
+      if (score >= 70) {
+        playSound("success");
+      } else {
+        playSound("error");
+      }
       setFeedback(data?.feedback || (score >= 70 ? playground.successMessage : playground.tryAgainMessage));
       setStructuredFeedback({
         verdict: data?.verdict || "",
@@ -392,9 +400,9 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
 
                   {/* Suggestions */}
                   {structuredFeedback?.suggestions && structuredFeedback.suggestions.length > 0 && (
-                    <div className="rounded-xl border border-violet-200 bg-violet-50 p-4">
-                      <p className="text-[10px] font-bold text-violet-500 uppercase mb-2">💡 Sugestões para melhorar</p>
-                      <ul className="space-y-2">
+                     <div className="rounded-xl border border-violet-200 bg-violet-50 p-3">
+                      <p className="text-[10px] font-bold text-violet-500 uppercase mb-1.5">💡 Sugestões para melhorar</p>
+                      <ul className="space-y-1.5">
                         {structuredFeedback.suggestions.map((suggestion, i) => (
                           <li key={i} className="text-xs text-violet-700 leading-relaxed flex items-start gap-2">
                             <span className="text-violet-400 mt-0.5 flex-shrink-0">→</span>
@@ -407,9 +415,9 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
 
                   {/* Improved example */}
                   {structuredFeedback?.improvedExample && (
-                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-[10px] font-bold text-indigo-500 uppercase">✨ Versão Melhorada do Seu Prompt</p>
+                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-[10px] font-bold text-indigo-500 uppercase">✨ Versão Melhorada</p>
                         <button
                           onClick={() => navigator.clipboard.writeText(structuredFeedback.improvedExample || "")}
                           className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-600 transition-colors"
@@ -418,7 +426,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                           Copiar
                         </button>
                       </div>
-                      <p className="text-xs text-indigo-700 font-mono leading-relaxed bg-white/60 rounded-lg p-3 border border-indigo-100">
+                      <p className="text-xs text-indigo-700 font-mono leading-relaxed bg-white/60 rounded-lg p-2 border border-indigo-100">
                         {structuredFeedback.improvedExample}
                       </p>
                     </div>
@@ -510,8 +518,22 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
             animate={{ opacity: 1, scale: 1 }}
             className={`${cardClass} text-center`}
           >
+            {/* Badge: Tarefa concluída or Playground concluído */}
+            <div className="flex justify-center mb-3">
+              {challengeScore !== null && challengeScore >= 70 ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Tarefa concluída
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Playground concluído
+                </div>
+              )}
+            </div>
             <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-slate-600"}`}>
-              {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : "Você completou o desafio. Continue a aula para aprender mais!"}
+              {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : "Você concluiu o playground. Continue a aula para aprender mais!"}
             </p>
             {/* Play success or tryAgain audio */}
             {challengeScore !== null && challengeScore >= 70 && playground.successAudioUrl && (

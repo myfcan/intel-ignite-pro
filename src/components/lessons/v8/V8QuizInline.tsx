@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, ArrowRight, HelpCircle } from "lucide-react";
 import { V8InlineQuiz } from "@/types/v8Lesson";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
+import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
 
 interface V8QuizInlineProps {
   quiz: V8InlineQuiz;
@@ -25,6 +26,7 @@ export const V8QuizInline = ({
   const [selected, setSelected] = useState<string | null>(null);
   const [state, setState] = useState<QuizState>("answering");
   const ctaRef = useRef<HTMLButtonElement>(null);
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   // Deterministic geometric scroll when state changes
   // Only scroll when this is the active item to prevent stale items from hijacking scroll
@@ -43,9 +45,11 @@ export const V8QuizInline = ({
     if (option.isCorrect) {
       setState("correct");
       onAnswer(true);
+      playSound("quiz-correct");
     } else {
       setState("wrong");
       onAnswer(false);
+      playSound("quiz-wrong");
     }
   }, [selected, quiz.options, onAnswer]);
 
