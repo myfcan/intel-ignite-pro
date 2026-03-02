@@ -130,7 +130,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
   // Only scroll when this is the active item to prevent stale items from hijacking scroll
   useEffect(() => {
     if (!isActive) return;
-    if (phase === "intro" || phase === "done") return;
+    if (phase === "intro") return;
     if (isLoadingResult || isEvaluating) return;
 
     return scheduleCTAScroll(
