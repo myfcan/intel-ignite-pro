@@ -303,7 +303,7 @@ serve(async (req) => {
       manualQuizzes = [],
       manualPlaygrounds = [],
       manualExercises = [],
-      generateImages: shouldGenerateImages = true,
+      generateImages: shouldGenerateImages = false,
       lessonTitle = "Aula",
     } = await req.json();
 
