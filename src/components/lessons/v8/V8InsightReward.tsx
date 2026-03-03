@@ -119,8 +119,8 @@ export const V8InsightReward = ({ insight, onContinue, isActive = true }: V8Insi
       ) : (
         <button
           onClick={handleClaim}
-          disabled={claiming}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+          disabled={claiming || !isActive}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {claiming ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Desbloqueando...</>
