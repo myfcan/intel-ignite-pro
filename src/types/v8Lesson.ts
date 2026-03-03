@@ -6,94 +6,86 @@ import { ExerciseConfig } from './guidedLesson';
 
 /**
  * V8Section — Uma seção de conteúdo com áudio individual
- * Cada seção tem seu próprio arquivo MP3 (15-30s)
  */
 export interface V8Section {
-  id: string;                    // ex: 'section-01'
-  title: string;                 // Título exibido em 28px bold
-  content: string;               // Markdown renderizado via react-markdown
-  imageUrl?: string;             // Imagem com gradient overlay
-  audioUrl: string;              // Áudio individual desta seção (15-30s)
-  audioDurationSeconds?: number; // Duração em segundos (para progress bar)
+  id: string;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  audioUrl: string;
+  audioDurationSeconds?: number;
 }
 
 /**
  * V8InlineQuiz — Quiz inserido ENTRE seções
- * Trigger: aparece após sections[afterSectionIndex] via audio.onEnded
  */
 export interface V8InlineQuiz {
-  id: string;                    // ex: 'quiz-01'
-  afterSectionIndex: number;     // Aparece após sections[N]
-  question: string;              // Pergunta exibida
+  id: string;
+  afterSectionIndex: number;
+  question: string;
   options: Array<{
     id: string;
     text: string;
     isCorrect: boolean;
   }>;
-  explanation: string;           // Feedback ao responder
-  reinforcement?: string;        // Texto extra ao errar
-  audioUrl?: string;             // Áudio da pergunta (narrado)
-  reinforcementAudioUrl?: string; // Áudio do reforço ao errar
-  explanationAudioUrl?: string;  // Áudio do feedback (explanation)
+  explanation: string;
+  reinforcement?: string;
+  audioUrl?: string;
+  reinforcementAudioUrl?: string;
+  explanationAudioUrl?: string;
 
-  // ── Quiz type discriminator (P6) ──
-  quizType?: 'multiple-choice' | 'true-false' | 'fill-blank'; // default: 'multiple-choice'
+  quizType?: 'multiple-choice' | 'true-false' | 'fill-blank';
 
   // Campos para true-false
-  statement?: string;            // Afirmação a ser julgada
-  isTrue?: boolean;              // Valor correto
+  statement?: string;
+  isTrue?: boolean;
 
   // Campos para fill-blank
-  sentenceWithBlank?: string;    // Frase com _______ para preencher
-  correctAnswer?: string;        // Resposta correta
-  acceptableAnswers?: string[];  // Respostas alternativas aceitas
+  sentenceWithBlank?: string;
+  correctAnswer?: string;
+  acceptableAnswers?: string[];
+
+  // Phase 7 (Gap 5): Chip options for fill-blank (correct + distractors)
+  chipOptions?: string[];
 }
 
 /**
  * V8InlinePlayground — Playground inserido ENTRE seções
- * Trigger: aparece após sections[afterSectionIndex] via timeline
- * Ordenação: playground ANTES de quiz quando mesmo afterSectionIndex
  */
 export interface V8InlinePlayground {
-  id: string;                    // ex: 'playground-01'
-  afterSectionIndex: number;     // 0-based, validado: 0 <= x < sections.length
+  id: string;
+  afterSectionIndex: number;
 
-  // UI (exibido na tela)
-  title: string;                 // "Teste na Prática"
+  title: string;
   subtitle?: string;
-  instruction: string;           // Texto curto de UI (>= 40 chars)
+  instruction: string;
 
-  // Narração (separada da UI para áudio de qualidade)
-  narration?: string;            // Texto narrado com tags de emoção
-  audioUrl?: string;             // Áudio gerado a partir de narration
+  narration?: string;
+  audioUrl?: string;
 
-  // Prompts comparativos
-  amateurPrompt: string;         // != professionalPrompt (validado)
+  amateurPrompt: string;
   professionalPrompt: string;
-  amateurResult?: string;        // Se preenchido: usa direto (híbrido)
-  professionalResult?: string;   // Se vazio: chama IA na hora
+  amateurResult?: string;
+  professionalResult?: string;
 
-  // Desafio do usuário
   userChallenge?: {
     instruction: string;
     challengePrompt: string;
-    hints: string[];             // max 3 (validado)
-    evaluationCriteria: string[];// ex: "tem objetivo claro", "pede formato"
+    hints: string[];
+    evaluationCriteria: string[];
     scoring?: {
       maxScore: number;
       rubric: Array<{ criterion: string; points: number }>;
     };
-    maxAttempts?: number;        // default 3
+    maxAttempts?: number;
   };
 
-  // Feedback explícito
-  successMessage: string;        // Ação, não motivação vazia
+  successMessage: string;
   tryAgainMessage: string;
-  successAudioUrl?: string;      // Áudio narrado do successMessage
-  tryAgainAudioUrl?: string;     // Áudio narrado do tryAgainMessage
+  successAudioUrl?: string;
+  tryAgainAudioUrl?: string;
   hintOnFail?: string[];
 
-  // Fallback offline
   offlineFallback?: {
     message: string;
     exampleAnswer: string;
@@ -102,41 +94,59 @@ export interface V8InlinePlayground {
 
 /**
  * V8InsightBlock — Insight de recompensa inserido ENTRE seções
- * Trigger: aparece após sections[afterSectionIndex] na timeline
- * Ordenação: playground → insight → quiz
  */
 export interface V8InsightBlock {
-  id: string;                    // UUID real (gerado pelo edge function)
-  afterSectionIndex: number;     // 0-based
-  title: string;                 // "💡 Aprender e Crescer"
-  insightText: string;           // 3 frases de insight
-  creditsReward: number;         // ex: 10
-  audioUrl?: string;             // Áudio opcional (extensibilidade futura)
+  id: string;
+  afterSectionIndex: number;
+  title: string;
+  insightText: string;
+  creditsReward: number;
+  audioUrl?: string;
+}
+
+/**
+ * V8InlineCompleteSentence — Complete-sentence exercise inserido ENTRE seções (Phase 8, Gap 4)
+ * Estilo Coursiv: chips arrastáveis para preencher lacunas
+ */
+export interface V8InlineCompleteSentence {
+  id: string;
+  afterSectionIndex: number;
+  title: string;
+  instruction: string;
+  sentences: Array<{
+    id: string;
+    text: string;              // Frase com _______ como placeholder
+    correctAnswers: string[];  // Respostas corretas
+    options: string[];         // Chips disponíveis (corretas + distratoras)
+    hints?: string[];
+  }>;
+  audioUrl?: string;
 }
 
 /**
  * V8LessonData — Armazenado em lessons.content (JSONB)
- * Discriminado por contentVersion: 'v8'
  */
 export interface V8LessonData {
-  contentVersion: 'v8';          // Discriminador de versão
+  contentVersion: 'v8';
   title: string;
   description?: string;
-  sections: V8Section[];         // Seções de conteúdo
-  inlineQuizzes: V8InlineQuiz[]; // Quizzes mid-lesson
-  inlinePlaygrounds?: V8InlinePlayground[]; // Playgrounds mid-lesson
-  inlineInsights?: V8InsightBlock[]; // Insights mid-lesson (recompensa)
-  exercises: ExerciseConfig[];   // Exercícios finais (reutiliza tipo existente)
+  sections: V8Section[];
+  inlineQuizzes: V8InlineQuiz[];
+  inlinePlaygrounds?: V8InlinePlayground[];
+  inlineInsights?: V8InsightBlock[];
+  inlineCompleteSentences?: V8InlineCompleteSentence[];  // Phase 8 (Gap 4)
+  exercises: ExerciseConfig[];
 }
 
 /**
  * V8PlayerState — Estado do player (gerenciado por useV8Player hook)
  */
 export interface V8PlayerState {
-  currentIndex: number;          // Índice da seção/quiz atual
-  mode: 'read' | 'listen';      // Modo selecionado pelo usuário
-  isPlaying: boolean;            // Áudio tocando?
-  playbackSpeed: number;         // 1 | 1.25 | 1.5 | 2
+  currentIndex: number;
+  mode: 'read' | 'listen';
+  isPlaying: boolean;
+  playbackSpeed: number;
   phase: 'mode-select' | 'content' | 'exercises' | 'completion';
-  scores: number[];              // Scores dos exercícios finais
+  scores: number[];
+  playgroundScores: Record<string, number>;  // Phase 4 (Gap 3): playground.id → score
 }

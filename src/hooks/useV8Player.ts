@@ -1,21 +1,19 @@
 import { useState, useCallback, useMemo } from "react";
-import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground, V8InsightBlock } from "@/types/v8Lesson";
+import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground, V8InsightBlock, V8InlineCompleteSentence } from "@/types/v8Lesson";
 
 /**
  * useV8Player — State machine for V8 lesson navigation.
  *
- * Builds a flat timeline of items (sections + inline quizzes + playgrounds + insights sorted by position)
+ * Builds a flat timeline of items (sections + inline quizzes + playgrounds + insights + complete-sentences)
  * and manages phase transitions: mode-select → content → exercises → completion.
- *
- * V8 uses a single-section model — only one item is visible at a time.
- * `currentIndex` tracks which timeline item is currently displayed.
  */
 
 export type TimelineItem =
   | { type: "section"; index: number }
   | { type: "playground"; playground: V8InlinePlayground }
   | { type: "insight"; insight: V8InsightBlock }
-  | { type: "quiz"; quiz: V8InlineQuiz };
+  | { type: "quiz"; quiz: V8InlineQuiz }
+  | { type: "complete-sentence"; completeSentence: V8InlineCompleteSentence };
 
 export const useV8Player = (lessonData: V8LessonData) => {
   const [state, setState] = useState<V8PlayerState>({
@@ -25,14 +23,16 @@ export const useV8Player = (lessonData: V8LessonData) => {
     playbackSpeed: 1,
     phase: "mode-select",
     scores: [],
+    playgroundScores: {},
   });
 
-  // Build flat timeline: sections interleaved with playgrounds + quizzes
+  // Build flat timeline: sections interleaved with interactions
   const timeline = useMemo<TimelineItem[]>(() => {
     const items: TimelineItem[] = [];
     const quizMap = new Map<number, V8InlineQuiz[]>();
     const playgroundMap = new Map<number, V8InlinePlayground[]>();
     const insightMap = new Map<number, V8InsightBlock[]>();
+    const completeSentenceMap = new Map<number, V8InlineCompleteSentence[]>();
 
     for (const quiz of lessonData.inlineQuizzes) {
       const existing = quizMap.get(quiz.afterSectionIndex) || [];
@@ -52,9 +52,22 @@ export const useV8Player = (lessonData: V8LessonData) => {
       insightMap.set(ins.afterSectionIndex, existing);
     }
 
-    // Order: Section[i] → Playground(s)[i] → Insight(s)[i] → Quiz(zes)[i]
+    for (const cs of (lessonData.inlineCompleteSentences || [])) {
+      const existing = completeSentenceMap.get(cs.afterSectionIndex) || [];
+      existing.push(cs);
+      completeSentenceMap.set(cs.afterSectionIndex, existing);
+    }
+
+    // Order: Section[i] → CompleteSentence(s)[i] → Playground(s)[i] → Insight(s)[i] → Quiz(zes)[i]
     for (let i = 0; i < lessonData.sections.length; i++) {
       items.push({ type: "section", index: i });
+
+      const completeSentences = completeSentenceMap.get(i);
+      if (completeSentences) {
+        for (const cs of completeSentences) {
+          items.push({ type: "complete-sentence", completeSentence: cs });
+        }
+      }
 
       const playgrounds = playgroundMap.get(i);
       if (playgrounds) {
@@ -90,16 +103,11 @@ export const useV8Player = (lessonData: V8LessonData) => {
     setState((prev) => ({ ...prev, mode, phase: "content", currentIndex: 0 }));
   }, []);
 
-  // Advance to next timeline item (used by both modes)
   const advance = useCallback(() => {
     setState((prev) => {
       const nextIndex = prev.currentIndex + 1;
       if (nextIndex >= timeline.length) {
-        // Timeline finished → go to exercises or completion
-        return {
-          ...prev,
-          phase: hasExercises ? "exercises" : "completion",
-        };
+        return { ...prev, phase: hasExercises ? "exercises" : "completion" };
       }
       return { ...prev, currentIndex: nextIndex };
     });
@@ -115,6 +123,15 @@ export const useV8Player = (lessonData: V8LessonData) => {
 
   const addScore = useCallback((score: number) => {
     setState((prev) => ({ ...prev, scores: [...prev.scores, score] }));
+  }, []);
+
+  // Phase 4 (Gap 3): Track playground scores by ID for conditional insight unlock
+  const addPlaygroundScore = useCallback((playgroundId: string, score: number) => {
+    setState((prev) => ({
+      ...prev,
+      playgroundScores: { ...prev.playgroundScores, [playgroundId]: score },
+      scores: [...prev.scores, score],
+    }));
   }, []);
 
   const setPlaybackSpeed = useCallback((speed: number) => {
@@ -136,6 +153,7 @@ export const useV8Player = (lessonData: V8LessonData) => {
     goToExercises,
     goToCompletion,
     addScore,
+    addPlaygroundScore,
     setPlaybackSpeed,
     setIsPlaying,
   };
