@@ -105,13 +105,35 @@ export function parseFullContent(rawText: string): ParseResult {
   for (let i = 0; i < parsedSections.length; i++) {
     const contentTrimmed = parsedSections[i].content.trim();
     const isEmpty = contentTrimmed.length === 0;
-    const isShortResidual = contentTrimmed.length < 100 && contentTrimmed.length > 0 && (sectionHasQuiz.has(i) || sectionHasPlayground.has(i));
+    const isShortResidual = contentTrimmed.length < 100 && contentTrimmed.length > 0;
+    const hasQuiz = sectionHasQuiz.has(i);
+    const hasPlayground = sectionHasPlayground.has(i);
 
     if (isEmpty) {
       removedIndices.push(i);
-    } else if (isShortResidual) {
-      // Keep the section but it's fine — the content is just a short intro to the quiz
-      keptSections.push(parsedSections[i]);
+    } else if (isShortResidual && (hasQuiz || hasPlayground)) {
+      // P5: Merge short residual content into quiz or discard
+      if (hasQuiz) {
+        // Find the quiz(zes) linked to this section
+        for (const q of quizzesWithIndex) {
+          if (q.afterSectionIndex === i) {
+            if (!q.quiz.question || q.quiz.question.trim().length === 0) {
+              // Use residual as question
+              q.quiz.question = contentTrimmed;
+            } else {
+              // Check similarity (first 30 chars) — if similar, discard residual
+              const residualPrefix = contentTrimmed.slice(0, 30).toLowerCase();
+              const questionPrefix = q.quiz.question.slice(0, 30).toLowerCase();
+              // If not similar, we just discard the residual to avoid narration duplication
+              // (the quiz question already covers the content)
+              void residualPrefix;
+              void questionPrefix;
+            }
+          }
+        }
+      }
+      // Remove the section — quiz/playground will stand alone
+      removedIndices.push(i);
     } else {
       keptSections.push(parsedSections[i]);
     }
@@ -233,16 +255,48 @@ export function parseQuizBlocks(rawText: string): ParsedQuiz[] {
     const position = match.index;
 
     const fields = parseFields(blockContent);
-    const options = parseQuizOptions(blockContent);
+    const quizType = (fields.quiztype || fields.quizType || "multiple-choice") as V8InlineQuiz["quizType"];
 
-    const quiz: Omit<V8InlineQuiz, "id" | "afterSectionIndex"> = {
-      question: fields.question || "",
-      options,
-      explanation: fields.explanation || "",
-      reinforcement: fields.reinforcement,
-    };
+    if (quizType === "true-false") {
+      const quiz: Omit<V8InlineQuiz, "id" | "afterSectionIndex"> = {
+        quizType: "true-false",
+        question: fields.question || "",
+        statement: fields.statement || "",
+        isTrue: (fields.istrue || fields.isTrue || "").toLowerCase() === "true",
+        options: [],
+        explanation: fields.explanation || "",
+        reinforcement: fields.reinforcement,
+      };
+      results.push({ quiz, position });
+    } else if (quizType === "fill-blank") {
+      const acceptableRaw = fields.acceptableanswers || fields.acceptableAnswers || "";
+      const acceptableAnswers = acceptableRaw
+        ? acceptableRaw.split(",").map((s: string) => s.trim()).filter(Boolean)
+        : [];
 
-    results.push({ quiz, position });
+      const quiz: Omit<V8InlineQuiz, "id" | "afterSectionIndex"> = {
+        quizType: "fill-blank",
+        question: fields.question || "",
+        sentenceWithBlank: fields.sentencewithblank || fields.sentenceWithBlank || "",
+        correctAnswer: fields.correctanswer || fields.correctAnswer || "",
+        acceptableAnswers,
+        options: [],
+        explanation: fields.explanation || "",
+        reinforcement: fields.reinforcement,
+      };
+      results.push({ quiz, position });
+    } else {
+      // multiple-choice (default)
+      const options = parseQuizOptions(blockContent);
+      const quiz: Omit<V8InlineQuiz, "id" | "afterSectionIndex"> = {
+        quizType: "multiple-choice",
+        question: fields.question || "",
+        options,
+        explanation: fields.explanation || "",
+        reinforcement: fields.reinforcement,
+      };
+      results.push({ quiz, position });
+    }
   }
 
   return results;

@@ -6,6 +6,8 @@ import { V8Header } from "./V8Header";
 import { V8ModeSelector } from "./V8ModeSelector";
 import { V8ContentSection } from "./V8ContentSection";
 import { V8QuizInline } from "./V8QuizInline";
+import { V8QuizTrueFalse } from "./V8QuizTrueFalse";
+import { V8QuizFillBlank } from "./V8QuizFillBlank";
 import { V8PlaygroundInline } from "./V8PlaygroundInline";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
@@ -171,13 +173,31 @@ export const V8LessonPlayer = ({
                       )}
 
                       {item.type === "quiz" && (
-                        <V8QuizInline
-                          quiz={item.quiz}
-                          onAnswer={handleQuizAnswer}
-                          onContinue={isLast ? advance : undefined}
-                          isActiveAudio={state.mode === "listen" && isLast}
-                          isActive={isLast}
-                        />
+                        item.quiz.quizType === 'true-false' ? (
+                          <V8QuizTrueFalse
+                            quiz={item.quiz}
+                            onAnswer={handleQuizAnswer}
+                            onContinue={isLast ? advance : undefined}
+                            isActiveAudio={state.mode === "listen" && isLast}
+                            isActive={isLast}
+                          />
+                        ) : item.quiz.quizType === 'fill-blank' ? (
+                          <V8QuizFillBlank
+                            quiz={item.quiz}
+                            onAnswer={handleQuizAnswer}
+                            onContinue={isLast ? advance : undefined}
+                            isActiveAudio={state.mode === "listen" && isLast}
+                            isActive={isLast}
+                          />
+                        ) : (
+                          <V8QuizInline
+                            quiz={item.quiz}
+                            onAnswer={handleQuizAnswer}
+                            onContinue={isLast ? advance : undefined}
+                            isActiveAudio={state.mode === "listen" && isLast}
+                            isActive={isLast}
+                          />
+                        )
                       )}
 
                       {item.type === "playground" && (

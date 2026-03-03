@@ -35,6 +35,18 @@ export interface V8InlineQuiz {
   audioUrl?: string;             // Áudio da pergunta (narrado)
   reinforcementAudioUrl?: string; // Áudio do reforço ao errar
   explanationAudioUrl?: string;  // Áudio do feedback (explanation)
+
+  // ── Quiz type discriminator (P6) ──
+  quizType?: 'multiple-choice' | 'true-false' | 'fill-blank'; // default: 'multiple-choice'
+
+  // Campos para true-false
+  statement?: string;            // Afirmação a ser julgada
+  isTrue?: boolean;              // Valor correto
+
+  // Campos para fill-blank
+  sentenceWithBlank?: string;    // Frase com _______ para preencher
+  correctAnswer?: string;        // Resposta correta
+  acceptableAnswers?: string[];  // Respostas alternativas aceitas
 }
 
 /**
