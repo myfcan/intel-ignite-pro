@@ -480,7 +480,8 @@ export default function AdminV8Create() {
       // Custom pipeline steps for automated generation
       const autoSteps: PipelineStep[] = [
         { id: 'parse', name: 'Parsing conteúdo bruto', status: 'completed', message: `${parsed.sections.length} seções` },
-        { id: 'ai-generate', name: 'IA gerando quizzes, playgrounds e exercícios', status: 'running' },
+        { id: 'refine', name: 'Refinando conteúdo didático via IA', status: 'pending' },
+        { id: 'ai-generate', name: 'IA gerando quizzes, playgrounds e exercícios', status: 'pending' },
         { id: 'images', name: 'Gerando imagens por seção', status: 'pending' },
         { id: 'build-json', name: 'Montando JSON final', status: 'pending' },
         { id: 'create-draft', name: 'Salvando rascunho no banco', status: 'pending' },
@@ -493,12 +494,59 @@ export default function AdminV8Create() {
       if (parsed.hasManualExercises) {
         addLog('info', `Exercícios manuais detectados: ${parsed.manualExerciseTypes.join(', ')}`);
       }
-      setPipelineProgress(15);
+      setPipelineProgress(10);
 
-      // Step 2: Call edge function (get session early for both AI + audio steps)
+      // Step 1.5: Refine content via AI
+      setPipelineSteps(prev => prev.map(s => s.id === 'refine' ? { ...s, status: 'running' as const } : s));
+      addLog('info', 'Refinando conteúdo didático via IA...');
+
+      // Get auth session early
       const { data: { session: authSession } } = await supabase.auth.getSession();
       if (!authSession) throw new Error("Not authenticated");
 
+      try {
+        const refineResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-refine-content`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authSession.access_token}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({
+              sections: parsed.sections.map(s => ({ title: s.title, content: s.content })),
+            }),
+          }
+        );
+
+        if (refineResponse.ok) {
+          const refineResult = await refineResponse.json();
+          if (refineResult.sections && Array.isArray(refineResult.sections)) {
+            // Replace section content with refined versions
+            for (let i = 0; i < parsed.sections.length && i < refineResult.sections.length; i++) {
+              parsed.sections[i].content = refineResult.sections[i].content;
+              if (refineResult.sections[i].title) {
+                parsed.sections[i].title = refineResult.sections[i].title;
+              }
+            }
+            addLog('success', `Conteúdo refinado: ${refineResult.sections.length} seções melhoradas`);
+          }
+        } else {
+          const errText = await refineResponse.text();
+          addLog('warning', `Refinamento falhou (${refineResponse.status}), usando conteúdo original: ${errText}`);
+        }
+      } catch (refineErr) {
+        addLog('warning', `Refinamento falhou, usando conteúdo original: ${refineErr instanceof Error ? refineErr.message : String(refineErr)}`);
+      }
+
+      setPipelineSteps(prev => prev.map(s => s.id === 'refine' ? { ...s, status: 'completed' as const } : s));
+      setPipelineProgress(20);
+
+      // Auth session already obtained in refine step above
+
+      // Step 2: Call AI to generate quizzes, playgrounds, exercises, images
+      setPipelineSteps(prev => prev.map(s => s.id === 'ai-generate' ? { ...s, status: 'running' as const } : s));
       addLog('info', 'Chamando IA para gerar conteúdo complementar...');
 
       const response = await fetch(

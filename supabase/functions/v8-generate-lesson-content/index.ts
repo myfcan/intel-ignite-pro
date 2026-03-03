@@ -107,6 +107,8 @@ const PLAYGROUND_TOOLS = [
                 professionalPrompt: { type: "string" },
                 successMessage: { type: "string" },
                 tryAgainMessage: { type: "string" },
+                amateurResult: { type: "string", description: "Short, vague, weak result from the amateur prompt — MAX 2 lines" },
+                professionalResult: { type: "string", description: "Detailed, specific, strong result from the professional prompt — 3-5 lines" },
                 userChallenge: {
                   type: "object",
                   properties: {
@@ -118,7 +120,7 @@ const PLAYGROUND_TOOLS = [
                   required: ["instruction", "challengePrompt", "hints", "evaluationCriteria"],
                 },
               },
-              required: ["afterSectionIndex", "title", "instruction", "amateurPrompt", "professionalPrompt", "successMessage", "tryAgainMessage"],
+              required: ["afterSectionIndex", "title", "instruction", "amateurPrompt", "professionalPrompt", "amateurResult", "professionalResult", "successMessage", "tryAgainMessage"],
             },
           },
         },
@@ -172,12 +174,16 @@ Cada quiz deve:
 - Testar compreensão real do conteúdo da seção
 - Ter explicação clara
 - Ter reinforcement (texto extra mostrado ao errar)
-- Estar em Português Brasileiro (pt-BR)`;
+- Estar em Português Brasileiro (pt-BR)
+- NUNCA referencie números de seção na pergunta (ex: "De acordo com a Seção 0", "conforme a Seção 1", "na Seção 3"). A pergunta deve ser autocontida e compreensível sem contexto de numeração.
+- A pergunta NÃO deve mencionar "seção", "seções", "de acordo com", "conforme" seguido de referência numérica.`;
 
 const PLAYGROUND_SYSTEM_PROMPT = `Você é um designer instrucional especializado em prompts de IA.
 Gere playgrounds inline para seções onde faz sentido praticar prompts.
 Cada playground deve:
 - Comparar um prompt amador vs profissional
+- O resultado amador (amateurResult) DEVE ser curto, vago, genérico e visivelmente fraco — máximo 2 linhas. Exemplo: "A natureza é bonita e importante." NÃO gere resultados amadores elaborados com poemas, listas ou parágrafos longos.
+- O resultado profissional (professionalResult) deve ser detalhado, específico e visivelmente superior ao amador — 3-5 linhas com exemplos concretos.
 - Ter instrução com pelo menos 40 caracteres
 - Ter desafio para o usuário escrever seu próprio prompt
 - Estar em Português Brasileiro (pt-BR)
@@ -245,6 +251,7 @@ async function generateImages(
           content: sections[i].content,
           lessonId,
           sectionIndex: i,
+          sectionTitle: sections[i].title,
           allowText: false,
         }),
       });
@@ -305,9 +312,10 @@ serve(async (req) => {
     // ── 1. Determine which sections need quizzes/playgrounds ──
     const sectionsWithQuiz = new Set(manualQuizzes.map((q: any) => q.afterSectionIndex));
     const sectionsWithPlayground = new Set(manualPlaygrounds.map((p: any) => p.afterSectionIndex));
+    // Seções 0 e 1 são introdutórias — NUNCA recebem quiz ou playground gerado
     const sectionsNeedingInteraction = sections
       .map((_: any, i: number) => i)
-      .filter((i: number) => !sectionsWithQuiz.has(i) && !sectionsWithPlayground.has(i));
+      .filter((i: number) => i >= 2 && !sectionsWithQuiz.has(i) && !sectionsWithPlayground.has(i));
 
     console.log(`[v8-generate-lesson-content] Sections needing interaction: ${sectionsNeedingInteraction.join(", ")}`);
 

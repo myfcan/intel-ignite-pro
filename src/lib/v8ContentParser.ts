@@ -82,9 +82,53 @@ export function parseFullContent(rawText: string): ParseResult {
     return idx;
   };
 
-  // 7. Build V8Sections
-  const sections: V8Section[] = parsedSections.map((s, i) => {
-    // Extract imageUrl from section content if present
+  // 6.1. Assign afterSectionIndex BEFORE pruning ghost sections
+  const playgroundsWithIndex = parsedPlaygrounds.map((pg, idx) => ({
+    ...pg,
+    afterSectionIndex: findAfterSectionIndex(pg.position),
+    idx,
+  }));
+  const quizzesWithIndex = parsedQuizzes.map((q, idx) => ({
+    ...q,
+    afterSectionIndex: findAfterSectionIndex(q.position),
+    idx,
+  }));
+
+  // 6.2. Prune ghost sections (empty content after removing [QUIZ]/[PLAYGROUND] blocks)
+  // Also detect short residual content (<100 chars) when section has a quiz — merge/hide
+  const sectionHasQuiz = new Set(quizzesWithIndex.map(q => q.afterSectionIndex));
+  const sectionHasPlayground = new Set(playgroundsWithIndex.map(p => p.afterSectionIndex));
+
+  const removedIndices: number[] = [];
+  const keptSections: typeof parsedSections = [];
+
+  for (let i = 0; i < parsedSections.length; i++) {
+    const contentTrimmed = parsedSections[i].content.trim();
+    const isEmpty = contentTrimmed.length === 0;
+    const isShortResidual = contentTrimmed.length < 100 && contentTrimmed.length > 0 && (sectionHasQuiz.has(i) || sectionHasPlayground.has(i));
+
+    if (isEmpty) {
+      removedIndices.push(i);
+    } else if (isShortResidual) {
+      // Keep the section but it's fine — the content is just a short intro to the quiz
+      keptSections.push(parsedSections[i]);
+    } else {
+      keptSections.push(parsedSections[i]);
+    }
+  }
+
+  // 6.3. Build index remapping: old index -> new index
+  const indexRemap = new Map<number, number>();
+  let newIdx = 0;
+  for (let oldIdx = 0; oldIdx < parsedSections.length; oldIdx++) {
+    if (!removedIndices.includes(oldIdx)) {
+      indexRemap.set(oldIdx, newIdx);
+      newIdx++;
+    }
+  }
+
+  // 7. Build V8Sections from kept sections
+  const sections: V8Section[] = keptSections.map((s, i) => {
     const imageMatch = s.content.match(/^imageUrl:\s*(.+)$/m);
     const imageUrl = imageMatch ? imageMatch[1].trim() : undefined;
     const cleanContent = imageMatch
@@ -100,19 +144,23 @@ export function parseFullContent(rawText: string): ParseResult {
     };
   });
 
-  // 8. Build V8InlinePlaygrounds
-  const inlinePlaygrounds: V8InlinePlayground[] = parsedPlaygrounds.map((pg, i) => ({
-    ...pg.playground,
-    id: `playground-${String(i + 1).padStart(2, "0")}`,
-    afterSectionIndex: findAfterSectionIndex(pg.position),
-  }));
+  // 8. Build V8InlinePlaygrounds with remapped indices
+  const inlinePlaygrounds: V8InlinePlayground[] = playgroundsWithIndex
+    .filter(pg => indexRemap.has(pg.afterSectionIndex))
+    .map((pg, i) => ({
+      ...pg.playground,
+      id: `playground-${String(i + 1).padStart(2, "0")}`,
+      afterSectionIndex: indexRemap.get(pg.afterSectionIndex)!,
+    }));
 
-  // 9. Build V8InlineQuizzes
-  const inlineQuizzes: V8InlineQuiz[] = parsedQuizzes.map((q, i) => ({
-    ...q.quiz,
-    id: `quiz-${String(i + 1).padStart(2, "0")}`,
-    afterSectionIndex: findAfterSectionIndex(q.position),
-  }));
+  // 9. Build V8InlineQuizzes with remapped indices
+  const inlineQuizzes: V8InlineQuiz[] = quizzesWithIndex
+    .filter(q => indexRemap.has(q.afterSectionIndex))
+    .map((q, i) => ({
+      ...q.quiz,
+      id: `quiz-${String(i + 1).padStart(2, "0")}`,
+      afterSectionIndex: indexRemap.get(q.afterSectionIndex)!,
+    }));
 
   // 10. Parse exercise markers [EXERCISE:tipo]
   const exerciseMarkers = parseExerciseMarkers(rawText);

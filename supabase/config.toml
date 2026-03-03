@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.v8-generate-lesson-content]
 verify_jwt = false
+
+[functions.v8-refine-content]
+verify_jwt = false
