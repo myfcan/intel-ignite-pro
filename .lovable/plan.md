@@ -1,208 +1,237 @@
-# Plano: Variedade nos Quizzes Inline (P6) + Correcao P5  
-  
-Atue como um engenheiro sênior responsável pelo sistema V8 e de todo o sistema e banco de dados, atue com obrigação de precisão técnica absoluta.
 
-&nbsp;
+# Auditoria de Performance: Dashboard + Admin
 
-REGRA DESTE PROMPT:  
-  
-Execute todo o plano, mas caso não execute por alguma razão, você é obrigado é dizer:  
-Não implementei todo o plano ou não executei todas asa correções. 
+## Metodologia
 
-&nbsp;
-
-Você NÃO pode mentir.
-
-Você NÃO pode supor.
-
-Você NÃO pode responder com explicações genéricas.
-
-Você NÃO pode omitir dados.
-
-Você deve executar tudo com DADOS REAIS do código atual.
-
-Você deve copiar e colar trechos REAIS do código.
-
-Você deve usar logs reais e timestamps reais.
-
-Se não souber algo, diga explicitamente: “NÃO LOCALIZADO NO CÓDIGO”.  
-  
-TUDO ISSO É MANDATÓRIO
-
-## Escopo
-
-Duas entregas pendentes do plano original:
-
-- **P6**: Expandir quizzes inline de "apenas multiple-choice" para 3 tipos: `multiple-choice`, `true-false`, `fill-blank`
-- **P5**: Completar merge de conteudo residual curto (< 100 chars) quando a secao tem quiz
+Analise completa dos arquivos reais do projeto com foco em: chamadas de rede redundantes, imports pesados, re-renders desnecessarios, waterfalls sequenciais e bloqueios no caminho critico de renderizacao.
 
 ---
 
-## PARTE 1: Variedade nos Quizzes Inline (P6)
+## DASHBOARD (`src/pages/Dashboard.tsx` - 1363 linhas)
 
-### 1.1 Expandir o tipo `V8InlineQuiz` (`src/types/v8Lesson.ts`)
+### PROBLEMA CRITICO 1: Waterfall sequencial de queries no mount
 
-Adicionar campo discriminador `quizType` com union type:
+**Arquivo**: `src/pages/Dashboard.tsx`, linhas 286-458
+
+O `checkAuth` executa queries em CASCATA (uma apos a outra):
 
 ```text
-V8InlineQuiz {
-  ...campos existentes...
-  quizType?: 'multiple-choice' | 'true-false' | 'fill-blank';  // default: 'multiple-choice'
-  
-  // Campos para true-false (apenas quando quizType === 'true-false')
-  statement?: string;       // "O ChatGPT gera respostas em tempo real a partir de buscas na internet."
-  isTrue?: boolean;         // false
-  
-  // Campos para fill-blank (apenas quando quizType === 'fill-blank')
-  sentenceWithBlank?: string;  // "O ChatGPT e um _______ de linguagem treinado com dados ate 2024."
-  correctAnswer?: string;      // "modelo"
-  acceptableAnswers?: string[]; // ["modelo", "modelo de linguagem"]
-}
+1. supabase.auth.getSession()          -- await
+2. supabase.from('users').select(...)  -- await
+3. fetchTrailsWithProgress(userId)     -- await
+   3a. supabase.from('trails').select(...)       -- await
+   3b. supabase.from('lessons').select(...)      -- await
+   3c. supabase.from('user_progress').select(...)-- await
+   3d. supabase.from('courses').select(...)      -- await (condicional)
+   3e. supabase.from('lessons').select(...)      -- await (por course_id)
 ```
 
-Usar `quizType` opcional com default `'multiple-choice'` para compatibilidade retroativa com quizzes existentes.
+**Total**: 5-7 queries sequenciais. Cada uma espera a anterior terminar.
 
-### 1.2 Criar componentes de renderizacao
+**Impacto**: Se cada query leva ~100-200ms, o Dashboard leva 500-1400ms so em queries, ANTES de renderizar qualquer conteudo.
 
-**Arquivo novo**: `src/components/lessons/v8/V8QuizTrueFalse.tsx`
+**Correcao**: Paralelizar queries 3a, 3b, 3c com `Promise.all()`. Queries de trails, lessons e user_progress sao independentes.
 
-- Exibe a `statement` em destaque
-- Dois botoes grandes: "Verdadeiro" e "Falso"
-- Badge "Verdadeiro ou Falso" (verde/vermelho)
-- Feedback, explanation, reinforcement reutilizam a mesma logica do V8QuizInline
-- Audio support identico
+### PROBLEMA CRITICO 2: `useUserGamification` duplica `getSession()` + query `users`
 
-**Arquivo novo**: `src/components/lessons/v8/V8QuizFillBlank.tsx`
+**Arquivo**: `src/hooks/useUserGamification.ts`, linhas 27-101
 
-- Exibe `sentenceWithBlank` com o blank destacado visualmente (underline animado)
-- Input de texto para o usuario digitar a resposta
-- Validacao case-insensitive contra `correctAnswer` e `acceptableAnswers`
-- Badge "Complete a Frase"
-- Feedback, explanation, reinforcement identicos
+Este hook faz INDEPENDENTEMENTE:
+- `supabase.auth.getSession()` (retry ate 3x com delay de 300ms)
+- `supabase.from('users').select('power_score, coins, patent_level, streak_days, total_lessons_completed')`
 
-### 1.3 Atualizar o router de quiz no Player (`V8LessonPlayer.tsx`)
+O Dashboard JA faz `getSession()` no `checkAuth` (linha 288) e JA busca `users.*` (linha 295-299). Ou seja: **a mesma sessao e buscada 2 vezes e a mesma tabela `users` e consultada 2 vezes**.
 
-Onde hoje renderiza:
+**Impacto**: +200-600ms desperdicados (getSession com retry + query duplicada).
+
+**Correcao**: Eliminar a duplicacao. O Dashboard deve buscar os campos de gamificacao na mesma query `users.*` que ja faz, e passar os dados via props/context ao `GamificationHeader`, eliminando o hook `useUserGamification` do Dashboard.
+
+### PROBLEMA CRITICO 3: `DashboardHeader` instancia OUTRO `useUserGamification`
+
+**Arquivo**: `src/components/DashboardHeader.tsx`, linha 27
 
 ```tsx
-{item.type === "quiz" && (
-  <V8QuizInline quiz={item.quiz} ... />
-)}
+const { showPatentCelebration } = useUserGamification();
 ```
 
-Substituir por discriminacao:
+Isso cria uma TERCEIRA instancia do hook, que faz mais uma chamada `getSession()` + query `users`. Total: **3 chamadas getSession e 3 queries na tabela users no mount do Dashboard**.
+
+**Correcao**: Passar `showPatentCelebration` como prop do Dashboard para o DashboardHeader.
+
+### PROBLEMA CRITICO 4: `useDailyMissions` faz 3-4 queries + possivel edge function call
+
+**Arquivo**: `src/hooks/useDailyMissions.ts`, linhas 51-128
+
+O hook `useDailyMissions` e chamado em DOIS lugares:
+1. `DashboardSidebar` -> `MissoesDiarias` (desktop)
+2. `MobileQuickStats` -> `MissoesDiarias` (mobile, dentro de collapsible)
+
+Cada instancia faz:
+1. `supabase.auth.getSession()` -- mais uma vez
+2. `supabase.from('user_daily_missions').select(...)` com join
+3. Possivelmente `supabase.functions.invoke('generate-daily-missions')` se nao existirem missoes
+4. `supabase.from('user_rewards').select(...)` -- TODAS as rewards, sem filtro de data
+5. `supabase.from('user_streaks').select(...)`
+
+E alem disso, cada instancia cria um canal Realtime (linhas 180-204):
+```tsx
+const channel = supabase.channel('daily-missions-updates')
+```
+
+**Impacto**: 2 instancias = 2 canais Realtime + 6-10 queries extras. Rewards sem filtro de data pode retornar centenas de rows.
+
+**Correcao**: 
+- Extrair para um contexto compartilhado ou levantar o estado
+- Filtrar rewards por data: `.eq('collected', false)` ou `.gte('created_at', today)`
+- Renderizar `MissoesDiarias` apenas UMA vez (compartilhada entre mobile/desktop via CSS)
+
+### PROBLEMA CRITICO 5: `useIsAdmin` espera `userId` que depende de `checkAuth`
+
+**Arquivo**: `src/hooks/useIsAdmin.ts` + `src/pages/Dashboard.tsx` linha 89
 
 ```tsx
-{item.type === "quiz" && (
-  item.quiz.quizType === 'true-false' ? (
-    <V8QuizTrueFalse quiz={item.quiz} ... />
-  ) : item.quiz.quizType === 'fill-blank' ? (
-    <V8QuizFillBlank quiz={item.quiz} ... />
-  ) : (
-    <V8QuizInline quiz={item.quiz} ... />
-  )
-)}
+const { isAdmin, canAccessAdmin, loading: adminLoading } = useIsAdmin(user?.id);
 ```
 
-### 1.4 Atualizar `QUIZ_TOOLS` schema (`v8-generate-lesson-content/index.ts`)
+`user?.id` e `undefined` ate `checkAuth` terminar. O hook mantem `loading=true` ate receber userId. Isso BLOQUEIA o render do Dashboard (linha 466-475):
 
-Expandir o schema de quiz para incluir os 3 tipos:
-
-```text
-quizzes[].quizType: enum ["multiple-choice", "true-false", "fill-blank"]
-
-// Campos condicionais por tipo:
-// multiple-choice: options[] (existente)
-// true-false: statement (string), isTrue (boolean)
-// fill-blank: sentenceWithBlank (string), correctAnswer (string), acceptableAnswers (string[])
+```tsx
+if (loading || adminLoading) { return <LoadingSpinner />; }
 ```
 
-Todos os 3 tipos compartilham: `afterSectionIndex`, `question`, `explanation`, `reinforcement`.
+O Dashboard so renderiza APOS: checkAuth completo + useIsAdmin completo. Sao waterfalls encadeados.
 
-### 1.5 Atualizar `QUIZ_SYSTEM_PROMPT`
+**Correcao**: Buscar roles na mesma chamada inicial (dentro de `checkAuth` ou via `Promise.all` com a query de `user_roles`).
 
-Adicionar instrucoes de variedade:
+### PROBLEMA 6: 3 IntersectionObservers com 6 thresholds cada
 
-```text
-- VARIE os tipos de quiz. NAO repita o mesmo tipo consecutivamente.
-- Use "true-false" quando o conteudo tem afirmacoes que podem ser validadas como verdadeiras ou falsas.
-- Use "fill-blank" quando o conteudo tem definicoes ou frases-chave que o aluno deve completar.
-- Use "multiple-choice" como padrao para perguntas de compreensao geral.
-- Em uma aula com 3+ quizzes, use pelo menos 2 tipos diferentes.
-```
+**Arquivo**: `src/pages/Dashboard.tsx`, linhas 131-227
 
-### 1.6 Atualizar parser (`v8ContentParser.ts`)
+Tres IntersectionObservers identicos (V7, V8, Pro), cada um com `threshold: [0.35, 0.45, 0.55, 0.6, 0.7, 0.85]`. Isso gera callbacks frequentes durante scroll.
 
-O bloco `[QUIZ]` manual ja suporta apenas multiple-choice. Adicionar suporte para:
+**Impacto**: Menor (mas mensuravel em dispositivos low-end). Reduzir thresholds para `[0.5, 0.8]` seria suficiente.
 
-```text
-[QUIZ]
-quizType: true-false
-statement: O ChatGPT busca informacoes na internet em tempo real.
-isTrue: false
-explanation: O ChatGPT nao acessa a internet...
-reinforcement: ...
-```
+### PROBLEMA 7: `TRAIL_ICONS` e `TRAIL_GRADIENTS` recriados a cada render
 
-```text
-[QUIZ]
-quizType: fill-blank
-sentenceWithBlank: O ChatGPT e um _______ de linguagem.
-correctAnswer: modelo
-acceptableAnswers: modelo, modelo de linguagem
-explanation: ...
-reinforcement: ...
-```
+**Arquivo**: `src/pages/Dashboard.tsx`, linhas 477-500
+
+Estes objetos estao definidos DENTRO do corpo do componente (apos o `if (loading)`), portanto sao recriados a cada render. Deveriam ser constantes no escopo do modulo.
 
 ---
 
-## PARTE 2: Correcao P5 — Merge de Conteudo Residual
+## Resumo de Queries do Dashboard (MOUNT COMPLETO)
 
-### Problema atual
+| Fonte | Queries | getSession() |
+|---|---|---|
+| `checkAuth` | 2-3 (users, trails, lessons, progress) | 1 |
+| `fetchTrailsWithProgress` | 2-4 (lessons, progress, courses, course-lessons) | 0 |
+| `useUserGamification` (#1 Dashboard) | 1 (users) | 1-3 (retry) |
+| `useUserGamification` (#2 DashboardHeader) | 1 (users) | 1-3 (retry) |
+| `useIsAdmin` | 1 (user_roles) | 0 |
+| `useDailyMissions` (#1 Sidebar) | 3-5 (missions, rewards, streaks + edge fn) | 1 |
+| `useDailyMissions` (#2 Mobile) | 3-5 (missions, rewards, streaks + edge fn) | 1 |
 
-No `v8ContentParser.ts` (linhas 112-114), quando uma secao tem conteudo residual curto (< 100 chars) e um quiz vinculado, o sistema MANTEM a secao normalmente. Isso causa narracao duplicada: o player narra o texto curto da secao E depois narra a pergunta do quiz (que frequentemente e o mesmo conteudo).
+**TOTAL: 13-22 queries + 4-8 chamadas getSession() + 2 canais Realtime**
 
-### Correcao
+### Performance ideal apos correcoes:
 
-Alterar a logica no parser para que, quando detectar conteudo residual curto + quiz vinculado:
+| Fonte | Queries | getSession() |
+|---|---|---|
+| `checkAuth` unificado | 1 (users + gamification) | 1 |
+| `fetchData` paralelo | 4 em Promise.all (trails, lessons, progress, roles) | 0 |
+| `courses` (condicional) | 2 (courses + course-lessons) | 0 |
+| `dailyMissions` (unico) | 3 (missions, rewards filtradas, streaks) | 0 |
 
-1. Extrair o texto residual da secao
-2. Se o quiz NAO tem campo `question` preenchido, usar o texto residual como `question` do quiz
-3. Se o quiz JA tem `question`, verificar similaridade textual simples (primeiras 30 chars). Se similar, DESCARTAR o texto residual
-4. Marcar a secao como "merged" e REMOVER ela da lista final (usando o mesmo mecanismo de ghost sections)
-5. Recalcular `indexRemap` incluindo essas secoes removidas
+**TOTAL: 8-10 queries + 1 getSession() + 1 canal Realtime**
 
-Na pratica, adicionar ao loop de detecao (linha 105-118):
-
-```text
-if (isShortResidual && sectionHasQuiz.has(i)) {
-  // Merge residual content into quiz or remove section
-  removedIndices.push(i);
-  // Optionally prepend residual as quiz context
-} else if (isEmpty) {
-  removedIndices.push(i);
-} else {
-  keptSections.push(parsedSections[i]);
-}
-```
+Reducao: **~60% menos queries, ~80% menos chamadas getSession()**
 
 ---
 
-## Arquivos Modificados
+## ADMIN (`src/pages/Admin.tsx` - 465 linhas)
 
-1. `src/types/v8Lesson.ts` — Expandir `V8InlineQuiz` com `quizType`, `statement`, `isTrue`, `sentenceWithBlank`, `correctAnswer`, `acceptableAnswers`
-2. **NOVO**: `src/components/lessons/v8/V8QuizTrueFalse.tsx` — Componente true-false
-3. **NOVO**: `src/components/lessons/v8/V8QuizFillBlank.tsx` — Componente fill-blank
-4. `src/components/lessons/v8/V8LessonPlayer.tsx` — Router de quiz por tipo
-5. `supabase/functions/v8-generate-lesson-content/index.ts` — `QUIZ_TOOLS` schema + `QUIZ_SYSTEM_PROMPT`
-6. `src/lib/v8ContentParser.ts` — P5 merge + suporte a novos tipos no parser
+### PROBLEMA 1: Import estatico de JSON de 420 linhas
 
-## Ordem de Implementacao
+**Arquivo**: `src/pages/Admin.tsx`, linha 31
 
-1. Expandir tipo `V8InlineQuiz` (retrocompativel)
-2. Criar `V8QuizTrueFalse.tsx`
-3. Criar `V8QuizFillBlank.tsx`
-4. Atualizar router no Player
-5. Atualizar edge function (schema + prompt)
-6. Atualizar parser (P5 merge + novos tipos)
-7. Deploy da edge function
+```tsx
+import V7Aula1InputModelo from '@/data/v7-aula1-input-modelo.json';
+```
+
+Este JSON (420 linhas, ~15-20KB) e importado ESTATICAMENTE e incluido no bundle do Admin. E usado APENAS para copiar para clipboard (linha 54).
+
+O mesmo JSON e importado em MAIS 3 arquivos: `AdminModelos.tsx`, `AdminV7Pipeline.tsx`, `AdminV7vv.tsx`.
+
+**Impacto**: ~20KB adicionado ao bundle do Admin sem necessidade.
+
+**Correcao**: Usar `import()` dinamico no `copyJsonToClipboard`:
+```tsx
+const copyJsonToClipboard = async () => {
+  const { default: json } = await import('@/data/v7-aula1-input-modelo.json');
+  await navigator.clipboard.writeText(JSON.stringify(json, null, 2));
+};
+```
+
+### PROBLEMA 2: Query de roles sem cache
+
+**Arquivo**: `src/pages/Admin.tsx`, linhas 39-50
+
+```tsx
+useEffect(() => {
+  const checkRole = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data: roles } = await supabase
+      .from('user_roles').select('role').eq('user_id', session.user.id);
+    setIsAdminRole((roles || []).some(r => r.role === 'admin'));
+  };
+  checkRole();
+}, []);
+```
+
+O `AdminRoute` wrapper JA verificou roles antes de renderizar o Admin. Esta query e REDUNDANTE.
+
+**Correcao**: Receber `isAdmin` do `AdminRoute` via contexto ou props, eliminando a query duplicada.
+
+### PROBLEMA 3: Icones Lucide pesados
+
+**Arquivo**: `src/pages/Admin.tsx`, linhas 3-24
+
+O Admin importa **21 icones Lucide**. Com tree-shaking do Vite isso e aceitavel, mas combinado com os icones do Dashboard (30+ icones), o bundle total de icones pode ser significativo.
+
+**Impacto**: Menor (~5-10KB gzipped). Nao e prioritario.
+
+### Veredicto Admin
+
+O Admin e leve comparado ao Dashboard. O unico problema real e o JSON importado estaticamente (PROBLEMA 1) e a query de roles redundante (PROBLEMA 2).
+
+---
+
+## PLANO DE CORRECOES (Ordem de Impacto)
+
+### Fase 1 - Eliminar duplicacao de queries (maior impacto)
+1. Remover `useUserGamification()` do `DashboardHeader.tsx` — passar `showPatentCelebration` como prop
+2. No Dashboard, unificar a query `users` do `checkAuth` com os campos de gamificacao, eliminando uma instancia de `useUserGamification`
+3. Integrar `user_roles` na mesma fase de fetch do `checkAuth`, eliminando o waterfall com `useIsAdmin`
+
+### Fase 2 - Paralelizar queries
+4. Converter o waterfall de `fetchTrailsWithProgress` para `Promise.all([trails, lessons, progress])`
+
+### Fase 3 - Unificar MissoesDiarias
+5. Renderizar `MissoesDiarias` uma unica vez e controlar visibilidade via CSS (hidden/block), eliminando a segunda instancia do hook e o segundo canal Realtime
+6. Filtrar `user_rewards` com `.eq('collected', false)` em vez de buscar todas
+
+### Fase 4 - Admin
+7. Converter import do JSON para dinamico no `Admin.tsx`
+8. Remover query de roles redundante no `Admin.tsx` (ja verificada pelo `AdminRoute`)
+
+### Fase 5 - Micro-otimizacoes
+9. Mover `TRAIL_ICONS`, `TRAIL_GRADIENTS`, `TRAIL_CATEGORY_MAP` para fora do componente
+10. Reduzir thresholds dos IntersectionObservers de 6 para 2
+
+### Resultado Esperado
+- De **13-22 queries** para **8-10 queries** no mount
+- De **4-8 chamadas getSession()** para **1**
+- De **2 canais Realtime** para **1**
+- Reducao estimada de **400-800ms** no tempo de carregamento do Dashboard
+- Reducao de **~20KB** no bundle do Admin
