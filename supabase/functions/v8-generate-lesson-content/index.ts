@@ -31,7 +31,7 @@ const EXERCISE_TOOLS = [
                 instruction: { type: "string" },
                 data: {
                   type: "object",
-                  description: "Exercise-specific data following the schema for the chosen type",
+                  description: "Exercise-specific data. MUST contain the required fields for the chosen type. true-false requires 'statements' array. drag-drop requires 'items' and 'categories' arrays. flipcard-quiz requires 'cards' array. timed-quiz requires 'questions' array. multiple-choice requires 'question' string and 'options' array. fill-in-blanks/complete-sentence requires 'sentences' array. scenario-selection requires 'scenarios' array. platform-match requires 'scenarios' and 'platforms' arrays. data-collection requires 'scenario' object. An EMPTY data object {} is INVALID and will be rejected.",
                 },
               },
               required: ["type", "title", "instruction", "data"],
@@ -359,10 +359,13 @@ serve(async (req) => {
         generatedQuizzes = (quizResult.quizzes || []).map((q: any, idx: number) => ({
           ...q,
           id: `quiz-gen-${String(idx + 1).padStart(2, "0")}`,
-          options: q.options.map((o: any, oi: number) => ({
-            ...o,
-            id: `opt-${String(oi + 1).padStart(2, "0")}`,
-          })),
+          // Only map options for multiple-choice quizzes (true-false and fill-blank don't have options)
+          ...(q.quizType === 'multiple-choice' && Array.isArray(q.options) ? {
+            options: q.options.map((o: any, oi: number) => ({
+              ...o,
+              id: `opt-${String(oi + 1).padStart(2, "0")}`,
+            })),
+          } : {}),
         }));
         progress.push(`${generatedQuizzes.length} quizzes gerados`);
       } catch (err) {
@@ -485,13 +488,44 @@ O título deve ser curto e começar com 💡. creditsReward deve ser 10. Portugu
           "generate_exercises",
         );
 
-        generatedExercises = (exerciseResult.exercises || []).map((ex: any, idx: number) => ({
+        const rawExercises = (exerciseResult.exercises || []).map((ex: any, idx: number) => ({
           ...ex,
           id: `exercise-${String(idx + 1).padStart(2, "0")}`,
           passingScore: 70,
           maxAttempts: 3,
         }));
-        progress.push(`${generatedExercises.length} exercícios gerados (tipos: ${generatedExercises.map((e: any) => e.type).join(", ")})`);
+
+        // ── VALIDATION: Reject exercises with empty data objects ──
+        const REQUIRED_DATA_KEYS: Record<string, string[]> = {
+          'true-false': ['statements'],
+          'drag-drop': ['items', 'categories'],
+          'fill-in-blanks': ['sentences'],
+          'complete-sentence': ['sentences'],
+          'multiple-choice': ['question', 'options'],
+          'flipcard-quiz': ['cards'],
+          'timed-quiz': ['questions'],
+          'scenario-selection': ['scenarios'],
+          'platform-match': ['scenarios', 'platforms'],
+          'data-collection': ['scenario'],
+        };
+
+        generatedExercises = rawExercises.filter((ex: any) => {
+          const requiredKeys = REQUIRED_DATA_KEYS[ex.type];
+          if (!requiredKeys) {
+            console.warn(`[v8-generate-lesson-content] Unknown exercise type: ${ex.type}, keeping as-is`);
+            return true;
+          }
+          const dataKeys = Object.keys(ex.data || {});
+          const hasRequired = requiredKeys.some((k: string) => dataKeys.includes(k));
+          if (!hasRequired) {
+            console.error(`[v8-generate-lesson-content] REJECTED exercise ${ex.id} (${ex.type}): data is empty or missing required keys [${requiredKeys.join(', ')}]. Got: [${dataKeys.join(', ')}]`);
+            errors.push(`Exercício ${ex.id} (${ex.type}) rejeitado: data vazio`);
+            return false;
+          }
+          return true;
+        });
+
+        progress.push(`${generatedExercises.length} exercícios válidos de ${rawExercises.length} gerados (tipos: ${generatedExercises.map((e: any) => e.type).join(", ")})`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Exercise generation failed";
         errors.push(`Exercícios: ${msg}`);
