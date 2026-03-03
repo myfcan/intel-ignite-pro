@@ -88,12 +88,26 @@ function validateV8Json(raw: unknown): ValidationResult {
   if (Array.isArray(data.inlineQuizzes)) {
     result.quizCount = data.inlineQuizzes.length;
     (data.inlineQuizzes as V8InlineQuiz[]).forEach((q, i) => {
-      if (!q.question) result.errors.push(`Quiz ${i}: falta question`);
-      if (!Array.isArray(q.options) || q.options.length < 2) {
-        result.errors.push(`Quiz ${i}: mínimo 2 opções`);
+      const qType = q.quizType || 'multiple-choice';
+
+      // Validação por tipo
+      if (qType === 'multiple-choice') {
+        if (!q.question) result.errors.push(`Quiz ${i}: falta question`);
+        if (!Array.isArray(q.options) || q.options.length < 2) {
+          result.errors.push(`Quiz ${i}: mínimo 2 opções`);
+        }
+        const correct = q.options?.filter((o) => o.isCorrect);
+        if (!correct?.length) result.errors.push(`Quiz ${i}: nenhuma opção correta`);
+      } else if (qType === 'true-false') {
+        if (!q.statement) result.errors.push(`Quiz ${i}: falta statement`);
+        if (typeof q.isTrue !== 'boolean') result.errors.push(`Quiz ${i}: falta isTrue (boolean)`);
+      } else if (qType === 'fill-blank') {
+        if (!q.sentenceWithBlank) result.errors.push(`Quiz ${i}: falta sentenceWithBlank`);
+        if (!q.correctAnswer) result.errors.push(`Quiz ${i}: falta correctAnswer`);
       }
-      const correct = q.options?.filter((o) => o.isCorrect);
-      if (!correct?.length) result.errors.push(`Quiz ${i}: nenhuma opção correta`);
+
+      // Validações comuns a todos os tipos
+      if (!q.explanation) result.warnings.push(`Quiz ${i}: falta explanation`);
       if (q.afterSectionIndex < 0 || q.afterSectionIndex >= sectionsLength) {
         result.errors.push(`Quiz ${i}: afterSectionIndex (${q.afterSectionIndex}) fora do range [0, ${sectionsLength - 1}]`);
       }
