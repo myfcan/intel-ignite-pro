@@ -33,20 +33,25 @@ export const V8QuizFillBlank = ({
   isActive = true,
 }: V8QuizFillBlankProps) => {
   const [userInput, setUserInput] = useState("");
+  const [selectedChip, setSelectedChip] = useState<string | null>(null);
   const [state, setState] = useState<QuizState>("answering");
   const ctaRef = useRef<HTMLButtonElement>(null);
   const { playSound } = useV7SoundEffects(0.6, true);
 
+  // Phase 7 (Gap 5): Determine if we have chip options
+  const hasChips = Array.isArray(quiz.chipOptions) && quiz.chipOptions.length > 0;
+  const currentAnswer = hasChips ? (selectedChip || "") : userInput;
+
   useEffect(() => {
     if (!isActive) return;
-    if (!userInput && state === "answering") return;
+    if (!currentAnswer && state === "answering") return;
     return scheduleCTAScroll(() => ctaRef.current);
-  }, [userInput, state, isActive]);
+  }, [currentAnswer, state, isActive]);
 
   const handleConfirm = useCallback(() => {
-    if (!userInput.trim()) return;
+    if (!currentAnswer.trim()) return;
 
-    const normalizedInput = normalize(userInput);
+    const normalizedInput = normalize(currentAnswer);
     const allAcceptable = [
       quiz.correctAnswer || "",
       ...(quiz.acceptableAnswers || []),
@@ -65,7 +70,7 @@ export const V8QuizFillBlank = ({
       onAnswer(false);
       playSound("quiz-wrong");
     }
-  }, [userInput, quiz.correctAnswer, quiz.acceptableAnswers, onAnswer, playSound]);
+  }, [currentAnswer, quiz.correctAnswer, quiz.acceptableAnswers, onAnswer, playSound]);
 
   const handleShowReinforcement = () => setState("reinforcement");
   const isAnswered = state !== "answering";
@@ -82,6 +87,10 @@ export const V8QuizFillBlank = ({
         {isAnswered ? (
           <span className="font-bold text-indigo-700 underline decoration-2 decoration-indigo-400 underline-offset-4">
             {quiz.correctAnswer}
+          </span>
+        ) : selectedChip ? (
+          <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-300">
+            {selectedChip}
           </span>
         ) : (
           <span className="inline-block min-w-[80px] border-b-2 border-indigo-400 mx-1 animate-pulse" />
@@ -109,7 +118,7 @@ export const V8QuizFillBlank = ({
         </div>
       </div>
 
-      {/* Question context */}
+      {/* Question context — engagement instruction only, NOT the sentence (Phase 7) */}
       {quiz.question && (
         <p className="text-sm text-slate-500 leading-relaxed">{quiz.question}</p>
       )}
@@ -121,29 +130,50 @@ export const V8QuizFillBlank = ({
         </p>
       </div>
 
-      {/* Audio */}
-      {quiz.audioUrl && state === "answering" && isActiveAudio && (
-        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay />
-      )}
+      {/* Phase 7: Do NOT autoplay audio for fill-blank (it narrated the sentence with placeholder).
+          Only play explanation/reinforcement audio after answering. */}
 
-      {/* Input */}
+      {/* Input: Chips mode OR text input */}
       {!isAnswered && (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
-            placeholder="Digite sua resposta..."
-            className="flex-1 h-11 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base focus:outline-none focus:border-indigo-500 transition-colors"
-            autoFocus
-          />
-        </div>
+        hasChips ? (
+          /* Phase 7 (Gap 5): Chip-based selection */
+          <div className="flex flex-wrap gap-2">
+            {quiz.chipOptions!.map((chip) => {
+              const isSelected = selectedChip === chip;
+              return (
+                <button
+                  key={chip}
+                  onClick={() => setSelectedChip(isSelected ? null : chip)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    isSelected
+                      ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-400 shadow-sm scale-105'
+                      : 'bg-white text-slate-700 border border-slate-300 hover:border-indigo-400 hover:bg-indigo-50'
+                  }`}
+                >
+                  {chip}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          /* Original text input mode */
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+              placeholder="Digite sua resposta..."
+              className="flex-1 h-11 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base focus:outline-none focus:border-indigo-500 transition-colors"
+              autoFocus
+            />
+          </div>
+        )
       )}
 
       {/* Confirm */}
       <AnimatePresence>
-        {state === "answering" && userInput.trim() && (
+        {state === "answering" && currentAnswer.trim() && (
           <motion.button
             ref={ctaRef}
             initial={{ opacity: 0, y: 10 }}

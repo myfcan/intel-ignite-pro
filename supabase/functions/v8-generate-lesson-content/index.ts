@@ -6,6 +6,32 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ─── Phase 1 (Gap 1): Encoding sanitization for AI-generated Portuguese text ───
+function sanitizeEncoding(text: string): string {
+  if (!text || typeof text !== 'string') return text;
+  const fixes: [RegExp, string][] = [
+    [/\bn o\b/gi, "não é"], [/\bausncia\b/gi, "ausência"], [/\bespecfico\b/gi, "específico"],
+    [/\binformaes\b/gi, "informações"], [/\bdefinio\b/gi, "definição"], [/\bcompreenso\b/gi, "compreensão"],
+    [/\bprtico\b/gi, "prático"], [/\bexplicao\b/gi, "explicação"], [/\bcontedo\b/gi, "conteúdo"],
+    [/\bpossvel\b/gi, "possível"], [/\binteligncia\b/gi, "inteligência"], [/\bexperincia\b/gi, "experiência"],
+    [/\bverdadeiro\b/gi, "verdadeiro"], [/\binterao\b/gi, "interação"],
+    [/(?<!\w)til(?=\s|[.,;:!?]|$)/gi, "útil"],
+  ];
+  let r = text;
+  for (const [p, rep] of fixes) { r = r.replace(p, rep); }
+  r = r.replace(/\s{2,}/g, ' ').trim();
+  if (r !== text) console.warn(`[sanitizeEncoding] Fixed: "${text.slice(0, 60)}..."`);
+  return r;
+}
+
+function sanitizeFields(obj: any, fields: string[]): any {
+  const r = { ...obj };
+  for (const f of fields) {
+    if (typeof r[f] === 'string') r[f] = sanitizeEncoding(r[f]);
+  }
+  return r;
+}
+
 // ─── Exercise type schemas for tool calling ───
 const EXERCISE_TOOLS = [
   {
@@ -85,6 +111,8 @@ const QUIZ_TOOLS = [
                 sentenceWithBlank: { type: "string", description: "Sentence with _______ as placeholder. Required for fill-blank." },
                 correctAnswer: { type: "string", description: "The correct word/phrase. Required for fill-blank." },
                 acceptableAnswers: { type: "array", items: { type: "string" }, description: "Alternative accepted answers for fill-blank." },
+                // Phase 7 (Gap 5): chip options for fill-blank
+                chipOptions: { type: "array", items: { type: "string" }, description: "4-6 chip options for fill-blank (correct + distractors). Required for fill-blank." },
               },
               required: ["afterSectionIndex", "quizType", "question", "explanation"],
             },
@@ -189,14 +217,14 @@ Cada quiz deve:
 VARIEDADE DE TIPOS (OBRIGATÓRIO):
 - VARIE os tipos de quiz. NÃO repita o mesmo tipo consecutivamente.
 - Use "true-false" quando o conteúdo tem afirmações que podem ser validadas como verdadeiras ou falsas. Preencha "statement" e "isTrue".
-- Use "fill-blank" quando o conteúdo tem definições ou frases-chave que o aluno deve completar. Preencha "sentenceWithBlank" (com _______), "correctAnswer" e "acceptableAnswers".
+- Use "fill-blank" quando o conteúdo tem definições ou frases-chave que o aluno deve completar. Preencha "sentenceWithBlank" (com _______), "correctAnswer", "acceptableAnswers" e "chipOptions".
 - Use "multiple-choice" como padrão para perguntas de compreensão geral. Preencha "options" com 3-4 opções (exatamente 1 correta).
 - Em uma aula com 3+ quizzes, use pelo menos 2 tipos diferentes.
 
 REGRAS POR TIPO:
 - multiple-choice: "options" é obrigatório (3-4 opções, 1 correta)
 - true-false: "statement" e "isTrue" são obrigatórios. NÃO preencha "options".
-- fill-blank: "sentenceWithBlank", "correctAnswer" e "acceptableAnswers" são obrigatórios. NÃO preencha "options".`;
+- fill-blank: "sentenceWithBlank", "correctAnswer", "acceptableAnswers" e "chipOptions" são obrigatórios. NÃO preencha "options". O campo "question" deve conter apenas uma instrução de engajamento como "Complete a frase abaixo", NUNCA a frase com lacuna. Gere "chipOptions" com 4-6 opções incluindo a correta e distratoras plausíveis.`;
 
 const PLAYGROUND_SYSTEM_PROMPT = `Você é um designer instrucional especializado em prompts de IA.
 Gere playgrounds inline para seções onde faz sentido praticar prompts.
@@ -367,7 +395,36 @@ serve(async (req) => {
             })),
           } : {}),
         }));
-        progress.push(`${generatedQuizzes.length} quizzes gerados`);
+
+        // ── Phase 1 (Gap 1): Sanitize encoding on all quiz text fields ──
+        generatedQuizzes = generatedQuizzes.map((q: any) => {
+          const sanitized = sanitizeFields(q, ['question', 'explanation', 'reinforcement', 'statement', 'sentenceWithBlank', 'correctAnswer']);
+          // Also sanitize option texts for multiple-choice
+          if (Array.isArray(sanitized.options)) {
+            sanitized.options = sanitized.options.map((o: any) => ({ ...o, text: sanitizeEncoding(o.text || '') }));
+          }
+          if (Array.isArray(sanitized.acceptableAnswers)) {
+            sanitized.acceptableAnswers = sanitized.acceptableAnswers.map((a: string) => sanitizeEncoding(a));
+          }
+          if (Array.isArray(sanitized.chipOptions)) {
+            sanitized.chipOptions = sanitized.chipOptions.map((c: string) => sanitizeEncoding(c));
+          }
+          return sanitized;
+        });
+
+        // ── Phase 2 (Gap 7): Sort by afterSectionIndex + rotate consecutive same types ──
+        generatedQuizzes.sort((a: any, b: any) => a.afterSectionIndex - b.afterSectionIndex);
+        const typeRotation = ['multiple-choice', 'true-false', 'fill-blank'];
+        for (let i = 1; i < generatedQuizzes.length; i++) {
+          if (generatedQuizzes[i].quizType === generatedQuizzes[i - 1].quizType) {
+            const currentType = generatedQuizzes[i].quizType;
+            const nextType = typeRotation.find(t => t !== currentType && t !== (generatedQuizzes[i - 1]?.quizType)) || typeRotation.find(t => t !== currentType) || 'true-false';
+            console.warn(`[v8-generate] Rotating duplicate quiz type at index ${i}: ${currentType} → ${nextType}`);
+            generatedQuizzes[i] = { ...generatedQuizzes[i], quizType: nextType };
+          }
+        }
+
+        progress.push(`${generatedQuizzes.length} quizzes gerados (tipos: ${generatedQuizzes.map((q: any) => q.quizType).join(', ')})`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Quiz generation failed";
         errors.push(`Quizzes: ${msg}`);
@@ -397,11 +454,65 @@ serve(async (req) => {
           ...p,
           id: `playground-gen-${String(idx + 1).padStart(2, "0")}`,
         }));
+
+        // Phase 1: Sanitize encoding on playground text fields
+        generatedPlaygrounds = generatedPlaygrounds.map((p: any) =>
+          sanitizeFields(p, ['title', 'instruction', 'narration', 'amateurPrompt', 'professionalPrompt', 'amateurResult', 'professionalResult', 'successMessage', 'tryAgainMessage'])
+        );
+
         progress.push(`${generatedPlaygrounds.length} playgrounds gerados`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Playground generation failed";
         errors.push(`Playgrounds: ${msg}`);
         console.error("[v8-generate-lesson-content] Playground generation error:", msg);
+      }
+    }
+
+    // ── 3.1 Phase 3 (Gap 2): Force ONE playground at last section ──
+    {
+      const lastIdx = sections.length - 1;
+      const allPg = [...manualPlaygrounds, ...generatedPlaygrounds];
+      const hasPlaygroundAtLast = allPg.some((p: any) => p.afterSectionIndex === lastIdx);
+
+      if (!hasPlaygroundAtLast && generatedPlaygrounds.length > 0) {
+        // Move the playground with highest afterSectionIndex to lastIdx
+        const sorted = [...generatedPlaygrounds].sort((a: any, b: any) => b.afterSectionIndex - a.afterSectionIndex);
+        const moved = sorted[0];
+        console.log(`[v8-generate] Phase 3: Moving playground ${moved.id} from section ${moved.afterSectionIndex} → ${lastIdx}`);
+        moved.afterSectionIndex = lastIdx;
+        // If there's a generated quiz at lastIdx, move it to previous free section
+        const quizAtLast = generatedQuizzes.find((q: any) => q.afterSectionIndex === lastIdx);
+        if (quizAtLast) {
+          const freeSection = Array.from({ length: lastIdx }, (_, i) => lastIdx - 1 - i)
+            .find(i => i >= 2
+              && !generatedQuizzes.some((q: any) => q !== quizAtLast && q.afterSectionIndex === i)
+              && !allPg.some((p: any) => p.afterSectionIndex === i));
+          if (freeSection !== undefined) {
+            console.log(`[v8-generate] Phase 3: Moving quiz ${quizAtLast.id} from section ${lastIdx} → ${freeSection}`);
+            quizAtLast.afterSectionIndex = freeSection;
+          }
+        }
+      } else if (!hasPlaygroundAtLast && allPg.length === 0 && sections.length >= 4) {
+        // No playgrounds at all — create a minimal placeholder for the final section
+        console.warn(`[v8-generate] Phase 3: No playgrounds generated. Adding placeholder at last section ${lastIdx}`);
+        generatedPlaygrounds.push({
+          id: `playground-gen-final`,
+          afterSectionIndex: lastIdx,
+          title: "Sua Vez — Prompt Real",
+          instruction: "Agora é com você! Aplique tudo o que aprendeu nesta aula escrevendo um prompt profissional.",
+          amateurPrompt: "Me ajuda com isso",
+          professionalPrompt: "Preciso de uma análise detalhada sobre X, considerando Y e Z, formatada como lista com prós e contras",
+          amateurResult: "Resultado genérico e vago.",
+          professionalResult: "Análise estruturada com pontos específicos, prós e contras organizados, e recomendação final baseada nos critérios solicitados.",
+          successMessage: "Excelente! Seu prompt demonstra domínio das técnicas aprendidas.",
+          tryAgainMessage: "Quase lá! Tente adicionar mais contexto e especificidade ao seu prompt.",
+          userChallenge: {
+            instruction: "Escreva um prompt profissional aplicando as técnicas desta aula.",
+            challengePrompt: "Crie um prompt que seja específico, contextualizado e com formato definido.",
+            hints: ["Inclua um objetivo claro", "Adicione contexto real", "Defina o formato esperado"],
+            evaluationCriteria: ["Tem objetivo claro", "Inclui contexto", "Define formato"],
+          },
+        });
       }
     }
 
@@ -465,6 +576,9 @@ O título deve ser curto e começar com 💡. creditsReward deve ser 10. Portugu
           .map((ins: any) => ({
             ...ins,
             id: crypto.randomUUID(),
+            // Phase 1: Sanitize encoding
+            title: sanitizeEncoding(ins.title || ''),
+            insightText: sanitizeEncoding(ins.insightText || ''),
           }));
         progress.push(`${generatedInsights.length} insights gerados`);
       } catch (err) {
@@ -570,6 +684,7 @@ O título deve ser curto e começar com 💡. creditsReward deve ser 10. Portugu
       inlineQuizzes: allQuizzes,
       inlinePlaygrounds: allPlaygrounds,
       inlineInsights: generatedInsights,
+      inlineCompleteSentences: [],
       exercises: generatedExercises,
       progress,
       errors: errors.length > 0 ? errors : undefined,

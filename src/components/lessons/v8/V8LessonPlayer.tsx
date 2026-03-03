@@ -10,6 +10,7 @@ import { V8QuizTrueFalse } from "./V8QuizTrueFalse";
 import { V8QuizFillBlank } from "./V8QuizFillBlank";
 import { V8PlaygroundInline } from "./V8PlaygroundInline";
 import { V8InsightReward } from "./V8InsightReward";
+import { V8CompleteSentenceInline } from "./V8CompleteSentenceInline";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
 
@@ -44,12 +45,13 @@ export const V8LessonPlayer = ({
     advance,
     goToCompletion,
     addScore,
+    addPlaygroundScore,
   } = useV8Player(lessonData);
 
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const anchorRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const SECTION_TOP_OFFSET = 88; // header (56px) + visual breathing room (32px)
+  const SECTION_TOP_OFFSET = 88;
 
   const handleQuizAnswer = useCallback(
     (correct: boolean) => {
@@ -73,24 +75,35 @@ export const V8LessonPlayer = ({
     onComplete(state.scores);
   }, [onComplete, state.scores]);
 
-  // Derive audio URL for the current section (used by fixed bottom bar)
+  // Derive audio URL for the current section
   const currentSectionAudioUrl = useMemo(() => {
     if (state.phase !== "content" || !currentItem || currentItem.type !== "section") return null;
     return lessonData.sections[currentItem.index]?.audioUrl ?? null;
   }, [state.phase, currentItem, lessonData.sections]);
 
-  // Auto-scroll to new section using STATIC anchor (immune to framer-motion transforms)
+  // Phase 4 (Gap 3): Compute whether an insight at timeline index is unlockable
+  const isInsightUnlockable = useCallback((timelineIdx: number): boolean => {
+    for (let i = timelineIdx - 1; i >= 0; i--) {
+      const prevItem = timeline[i];
+      if (prevItem.type === 'playground') {
+        const score = state.playgroundScores[prevItem.playground.id];
+        return score !== undefined && score >= 70;
+      }
+      if (prevItem.type === 'section') break;
+    }
+    return true; // No preceding playground found, allow unlock
+  }, [timeline, state.playgroundScores]);
+
+  // Auto-scroll to new section
   useEffect(() => {
     if (state.phase === "content" && state.currentIndex > 0) {
       const anchor = anchorRefs.current[state.currentIndex];
       if (!anchor) return;
 
-      // Double RAF ensures React has committed DOM + layout is calculated
       const rafId1 = requestAnimationFrame(() => {
         const rafId2 = requestAnimationFrame(() => {
           anchor.scrollIntoView({ behavior: "smooth", block: "start" });
 
-          // Anti-drift correction after animation completes (~420ms)
           const driftTimer = setTimeout(() => {
             const rect = anchor.getBoundingClientRect();
             const drift = rect.top - SECTION_TOP_OFFSET;
@@ -99,7 +112,6 @@ export const V8LessonPlayer = ({
             }
           }, 420);
 
-          // Store for cleanup
           (anchor as any).__driftTimer = driftTimer;
         });
         (anchor as any).__rafId2 = rafId2;
@@ -113,12 +125,10 @@ export const V8LessonPlayer = ({
     }
   }, [state.currentIndex, state.phase]);
 
-  // Whether the fixed bottom bar should be visible
   const showFixedBar = state.phase === "content" && currentItem?.type === "section";
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      {/* Header — hidden during mode select */}
       {state.phase !== "mode-select" && (
         <V8Header
           title={lessonData.title}
@@ -130,10 +140,8 @@ export const V8LessonPlayer = ({
         />
       )}
 
-      {/* Content area */}
       <div className={state.phase !== "mode-select" ? "pt-16" : ""}>
         <div className={`max-w-2xl mx-auto px-4 py-6 ${showFixedBar ? "pb-32" : ""}`}>
-          {/* Phase: Mode Select */}
           {state.phase === "mode-select" && (
             <V8ModeSelector
               key="mode-select"
@@ -143,7 +151,6 @@ export const V8LessonPlayer = ({
             />
           )}
 
-          {/* Phase: Content — continuous scroll (rolo) */}
           {state.phase === "content" && (
             <div className="flex flex-col gap-[7px]">
               {timeline.slice(0, state.currentIndex + 1).map((item, idx) => {
@@ -151,7 +158,6 @@ export const V8LessonPlayer = ({
                 return (
                   <div key={`timeline-${idx}`}>
                     {idx > 0 && <hr className="border-slate-100 mb-[7px]" />}
-                    {/* Static scroll anchor — NOT affected by framer-motion transforms */}
                     <div
                       ref={(el) => { anchorRefs.current[idx] = el; }}
                       className="h-px"
@@ -205,7 +211,7 @@ export const V8LessonPlayer = ({
                         <V8PlaygroundInline
                           playground={item.playground}
                           onContinue={isLast ? advance : undefined}
-                          onScore={(s) => addScore(s)}
+                          onScore={(s) => addPlaygroundScore(item.playground.id, s)}
                           isActive={isLast}
                         />
                       )}
@@ -214,6 +220,16 @@ export const V8LessonPlayer = ({
                         <V8InsightReward
                           insight={item.insight}
                           onContinue={isLast ? advance : undefined}
+                          isActive={isLast}
+                          unlockable={isInsightUnlockable(idx)}
+                        />
+                      )}
+
+                      {item.type === "complete-sentence" && (
+                        <V8CompleteSentenceInline
+                          completeSentence={item.completeSentence}
+                          onContinue={isLast ? advance : undefined}
+                          onScore={(s) => addScore(s)}
                           isActive={isLast}
                         />
                       )}
@@ -224,7 +240,6 @@ export const V8LessonPlayer = ({
             </div>
           )}
 
-          {/* Phase: Exercises */}
           {state.phase === "exercises" && renderExercises && (
             <div key="exercises">
               {renderExercises({
@@ -235,7 +250,6 @@ export const V8LessonPlayer = ({
             </div>
           )}
 
-          {/* Phase: Completion */}
           {state.phase === "completion" && renderCompletion && (
             <div key="completion">
               {renderCompletion({
@@ -245,7 +259,6 @@ export const V8LessonPlayer = ({
             </div>
           )}
 
-          {/* Fallback completion */}
           {state.phase === "completion" && !renderCompletion && (
             <div key="completion-fallback" className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
               <h2 className="text-2xl font-bold text-slate-900">Aula Concluída!</h2>
@@ -260,11 +273,9 @@ export const V8LessonPlayer = ({
         </div>
       </div>
 
-      {/* Fixed bottom bar — audio player + Continuar button */}
       {showFixedBar && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-slate-100 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-            {/* Audio player for active section */}
             {currentSectionAudioUrl && (
               <div className="flex-1 min-w-0">
                 <V8AudioPlayer
@@ -276,7 +287,6 @@ export const V8LessonPlayer = ({
               </div>
             )}
 
-            {/* Continuar button — read mode only */}
             {state.mode === "read" && (
               <motion.button
                 key={`continue-${state.currentIndex}`}
