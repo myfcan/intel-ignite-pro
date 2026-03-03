@@ -187,16 +187,19 @@ serve(async (req) => {
         const startTime = Date.now();
 
         // Prompt otimizado para Leonardo.ai
-        const imagePrompt = `Professional educational illustration for a learning platform slide: ${slide.contentIdea}
+        const imagePrompt = `Modern flat vector illustration for a learning platform slide: ${slide.contentIdea}
 
 Style requirements:
-- Modern, clean, professional aesthetic
-- High resolution, ultra sharp focus (16:9 landscape)
-- Vibrant colors with soft gradients
-- Abstract/symbolic representation
+- Modern flat vector illustration with clean bold shapes, thin defined outlines
+- Vibrant harmonious color palette (blues, violets, warm yellows, soft pinks, greens)
+- Stylized human figures with simplified proportions when relevant to the concept
+- Everyday objects (laptops, tablets, documents, charts) in flat geometric shapes
+- NO 3D rendering, NO gradients, NO realistic textures, NO photorealism
+- Only subtle flat color shadows for depth
 - No text, no letters, no numbers, no words anywhere in the image
-- Suitable for professional presentations
-- Photorealistic quality with cinematic lighting`;
+- Professional editorial illustration quality — clean, polished, modern
+- NEVER use brains, lightbulbs, gears, or generic AI symbols
+- High resolution, ultra sharp focus (16:9 landscape)`;
 
         // Gerar imagem com a API selecionada
         const imageDataUrl = api === 'leonardo' 

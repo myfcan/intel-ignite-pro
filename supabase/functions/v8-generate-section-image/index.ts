@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function buildAutoPrompt(content: string, allowText = false, sectionIndex = 0, sectionTitle = ""): string {
+function buildAutoPrompt(content: string, allowText = false, _sectionIndex = 0, sectionTitle = ""): string {
   const cleaned = content
     .replace(/^#{1,3}\s+.*$/gm, "")
     .replace(/[*_`~\[\]()>]/g, "")
@@ -15,37 +15,27 @@ function buildAutoPrompt(content: string, allowText = false, sectionIndex = 0, s
     .trim();
   const words = cleaned.split(/\s+/).slice(0, 150).join(" ");
 
-  // Style rotation to avoid visual monotony
-  const styles = [
-    "isometric 3D illustration with clean geometric shapes and subtle depth",
-    "glassmorphism style with frosted translucent layers and soft light refraction",
-    "clay render (claymorphism) with soft matte surfaces and rounded organic shapes",
-    "minimalist papercraft cutout style with layered paper textures and subtle shadows",
-    "low-poly geometric art with faceted surfaces and vibrant color gradients",
-    "flat vector illustration with bold shapes and modern color blocking",
-  ];
-  const style = styles[sectionIndex % styles.length];
-
   const textRule = allowText
     ? `- Text in the image is ALLOWED but MUST be written in Brazilian Portuguese (pt-BR). Never use English.
-- Use clean, legible sans-serif typography integrated into the style
+- Use clean, legible sans-serif typography integrated into the style.
 - SPELLING RULE: Double-check ALL Portuguese words for correct spelling before rendering.`
     : `- ABSOLUTELY NO TEXT of any kind inside the image. No words, no letters, no labels, no numbers, no banners, no captions, no typography, no characters, no symbols with letters. The image must be 100% visual/iconic with ZERO text.`;
 
-  return `Create a single isolated ${style} object representing this specific educational concept from the section titled "${sectionTitle}": ${words}.
+  return `Create a modern flat vector illustration representing this specific educational concept from the section titled "${sectionTitle}": ${words}.
 
 Style requirements:
-- ${style}
-- Single iconic object only — NO diagrams, flowcharts, arrows, or multi-step sequences
-- Maximum 1 to 3 visual elements total, tightly composed as ONE unit
-- The main object must fill 85-95% of the frame — almost NO padding around it
+- Modern flat vector illustration with clean bold shapes, thin defined outlines, and vibrant harmonious color palette (blues, violets, warm yellows, soft pinks, greens)
+- Character style: stylized human figures with simplified proportions, expressive poses, minimal facial detail but clear emotion — when relevant to the concept
+- Objects: everyday items (laptops, tablets, documents, folders, charts, calendars) rendered in flat geometric shapes with NO realistic shadows — only subtle flat color shadows for depth
+- Single cohesive scene, centered, 1 to 3 visual elements max, tightly composed as ONE unit
+- The main illustration must fill 85-95% of the frame — almost NO padding around it
 - CLEAN SOLID WHITE BACKGROUND (#FFFFFF)
-- Vibrant but not neon colors
-- Subtle shadow underneath the object for depth
+- NO 3D rendering, NO gradients, NO realistic textures, NO photorealism
+- Professional editorial illustration quality — clean, polished, modern
 ${textRule}
 - CRITICAL: NEVER use brains, lightbulbs, gears, cogs, neural networks, circuit boards, or generic AI/technology symbols. These are BANNED. Instead, find a UNIQUE visual metaphor specific to THIS particular concept. Think creatively — use objects from everyday life, nature, tools, or abstract shapes that represent the SPECIFIC idea, not "AI in general".
 - NEVER create infographic-style, diagram-style, or flowchart-style compositions
-- NEVER scatter many small objects — always ONE cohesive central object
+- NEVER scatter many small objects — always ONE cohesive central composition
 - IMPORTANT: Compose the image in a SQUARE (1:1) orientation
 - OUTPUT SIZE: Generate the image at exactly 1024x1024 pixels (1:1 square)
 - The composition must be centered and fill the frame
@@ -93,9 +83,9 @@ serve(async (req) => {
       const customTextRule = allowText === true
         ? `Text in the image is ALLOWED but MUST be in Brazilian Portuguese (pt-BR). Use clean sans-serif typography.`
         : `NO text, labels, banners, arrows.`;
-      prompt = `Create a 3D illustration based on this description: ${customPrompt}.
+      prompt = `Create a modern flat vector illustration based on this description: ${customPrompt}.
 
-Style: modern flat 3D render, single iconic object only, CLEAN SOLID WHITE BACKGROUND (#FFFFFF), soft gradients, smooth surfaces, vibrant colors (indigo, violet, sky blue). Maximum 1-3 visual elements composed as ONE cohesive unit. The main object must fill 85-95% of the frame with almost NO padding. ${customTextRule} NO diagrams, flowcharts, or infographic-style compositions. NO scattered small objects. Polished and professional like Apple/Notion icons. IMPORTANT: Compose in SQUARE (1:1) orientation. OUTPUT SIZE: 1024x1024 pixels (1:1 square). The composition must be centered and fill the frame. LANGUAGE RULE: If any text appears, it MUST be in Brazilian Portuguese (pt-BR). Never use English.`;
+Style: modern flat vector illustration with clean bold shapes, thin defined outlines, vibrant harmonious color palette (blues, violets, warm yellows, soft pinks). Stylized human figures with simplified proportions when relevant. Everyday objects rendered in flat geometric shapes. CLEAN SOLID WHITE BACKGROUND (#FFFFFF). Maximum 1-3 visual elements composed as ONE cohesive unit. The main illustration must fill 85-95% of the frame with almost NO padding. ${customTextRule} NO 3D rendering, NO gradients, NO realistic textures. NO diagrams, flowcharts, or infographic-style compositions. NO scattered small objects. Professional editorial illustration quality. IMPORTANT: Compose in SQUARE (1:1) orientation. OUTPUT SIZE: 1024x1024 pixels (1:1 square). The composition must be centered and fill the frame. LANGUAGE RULE: If any text appears, it MUST be in Brazilian Portuguese (pt-BR). Never use English.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid mode. Use 'auto' or 'custom'" }), {
         status: 400,
