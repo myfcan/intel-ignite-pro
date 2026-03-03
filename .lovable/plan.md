@@ -1,4 +1,9 @@
-# Correcao Sistemica do Pipeline V8 — Todos os Gaps Reais  
+# Plano Completo: Refinamento Didatico + Correcoes Sistemicas do Pipeline V8  
+
+
+&nbsp;
+
+regra: quero que voce execute o plano em 8 fases com diligência e prudencia.  
   
 Atue como um engenheiro sênior responsável pelo runtime de todo o sistema e banco de dados, atue com obrigação de precisão técnica absoluta.
 
@@ -28,169 +33,163 @@ TUDO ISSO É MANDATÓRIO
 
 &nbsp;
 
-## Diagnostico Forense Completo
+## NOVO — STEP 0: Refinamento Didatico via IA (Pre-Pipeline)
 
-Tracei o fluxo completo de processamento de aula V8, linha a linha, e encontrei **5 gaps reais** que impedem o pipeline de funcionar de ponta a ponta.
+### O que e
 
----
+Um passo novo no pipeline automatizado que envia o conteudo bruto de TODAS as secoes para a IA (Gemini Flash) e recebe de volta o texto refinado, ANTES de gerar quizzes, playgrounds, imagens e audio.
 
-## GAP 1 (CRITICO): `handleConvertAndGenerate` nao persiste nem gera audio
+### Onde se encaixa
 
-**Arquivo**: `src/pages/AdminV8Create.tsx`, linhas 454-578
-
-**O que faz**: Chama `v8-generate-lesson-content` (gera quizzes, playgrounds, exercicios, imagens via IA), monta o JSON final em memoria, e PARA.
-
-**O que NAO faz**:
-
-- Nao cria registro no banco de dados
-- Nao chama `v8-generate` (geracao de audio)
-- Nao seta `model: 'v8'`
-
-**Resultado**: Apos clicar "Converter e Gerar Tudo", o usuario tem JSON na tela mas NADA no banco. Se ele salva como rascunho depois, cai no GAP 2.
-
-**Correcao**: Estender `handleConvertAndGenerate` para executar o pipeline completo:
-
-1. Parse conteudo (ja faz)
-2. Chamar `v8-generate-lesson-content` (ja faz)
-3. **NOVO**: Criar draft no banco via `create_lesson_draft`
-4. **NOVO**: Chamar `v8-generate` para gerar todos os audios
-5. **NOVO**: Mapear audio URLs de volta no JSON
-6. **NOVO**: Salvar JSON final no banco com `model: 'v8'`
-
----
-
-## GAP 2 (CRITICO): `handleSave(false)` para aulas NOVAS nao seta `model: 'v8'`
-
-**Arquivo**: `src/pages/AdminV8Create.tsx`, linhas 374-430
-
-**Codigo real** (linhas 396-416):
+O fluxo atual em `handleConvertAndGenerate`:
 
 ```text
-// Para aulas NOVAS (sem savedLessonId):
-create_lesson_draft(...)  // <-- NAO tem parametro model
-setSavedLessonId(draftId);
-
-if (activate) {
-  // SO seta model: 'v8' se ativar
-  update({ is_active: true, status: "publicado", model: "v8" })
-}
-// Se activate = false -> model FICA NULL
+1. Parse conteudo bruto
+2. Chamar v8-generate-lesson-content (quizzes, playgrounds, exercicios, imagens)
+3. Montar JSON
+4. Criar draft
+5. Gerar audios
+6. Mapear URLs
+7. Salvar final
 ```
 
-**A funcao SQL `create_lesson_draft**` (confirmado no banco): insere `title, lesson_type, trail_id, order_index, difficulty_level, estimated_time, is_active, content, exercises, exercises_version, audio_url, word_timestamps` — **NAO TEM coluna `model**`.
-
-**Correcao**: Duas opcoes (ambas necessarias):
-
-1. Apos `create_lesson_draft`, fazer UPDATE imediato: `UPDATE lessons SET model = 'v8' WHERE id = draftId`
-2. Adicionar `p_model` ao `create_lesson_draft` SQL function (melhor a longo prazo)
-
----
-
-## GAP 3 (CRITICO): 3 tipos de audio gerados mas NAO mapeados de volta
-
-**Arquivo**: `src/pages/AdminV8Create.tsx`, linhas 328-339
-
-A edge function `v8-generate` (linhas 207-305) gera audios para:
-
-- `quiz-explanation` (linha 215-228)
-- `playground-success` (linha 261-282)
-- `playground-tryagain` (linha 284-305)
-
-Mas o mapeamento no cliente (linhas 328-339) so cobre:
+O fluxo NOVO:
 
 ```text
-section        -> sections[i].audioUrl           OK
-quiz           -> inlineQuizzes[i].audioUrl      OK
-quiz-reinforcement -> inlineQuizzes[i].reinforcementAudioUrl  OK
-playground     -> inlinePlaygrounds[i].audioUrl  OK
+1. Parse conteudo bruto
+2. **NOVO: Refinamento didatico via IA** <-- aqui
+3. Chamar v8-generate-lesson-content (com texto ja refinado)
+4. Montar JSON
+5. Criar draft
+6. Gerar audios
+7. Mapear URLs
+8. Salvar final
 ```
 
-**FALTAM** (tipos existem em `V8InlineQuiz` e `V8InlinePlayground`):
+### Implementacao
+
+**Arquivo novo**: `supabase/functions/v8-refine-content/index.ts`
+
+Uma edge function dedicada que recebe as secoes e retorna o texto refinado.
+
+**Regras do refinamento (system prompt)**:
+
+1. **Clareza**: O conteudo deve ser didatico e facil de entender para qualquer pessoa, inclusive leigos
+2. **Vocabulario acessivel**: Eliminar girias ambiguas, expressoes com duplo sentido ou frases coloquiais que confundem. Exemplos reais:
+  - "responde no seguro" deve virar algo como "responde de forma generica e cautelosa"
+  - "o que ele faz por tras" deve virar "como ele funciona internamente"
+  - "dar um tapa" em algo deve virar "melhorar" ou "refinar"
+3. **Coerencia narrativa**: Manter o fio condutor da historia, garantindo que cada secao conecte com a anterior de forma logica
+4. **Fluencia**: Vocabulario natural, ritmo de leitura agradavel, sem frases truncadas ou transicoes abruptas
+5. **Tom conversacional mas preciso**: Manter o tom amigavel e acessivel do original, mas sem sacrificar clareza
+6. **Preservar estrutura**: NAO alterar marcadores como `[QUIZ]`, `[PLAYGROUND]`, `[EXERCISE:tipo]`, tags de emocao como `[confiante]`, `[pausa curta]`, `[animado]`, titulos `##`, nem a organizacao das secoes
+7. **Preservar intencao**: O refinamento deve melhorar a FORMA, nao mudar o CONTEUDO conceitual. Os exemplos, metaforas e analogias devem ser mantidos ou melhorados, nunca removidos
+8. **Eliminar redundancias**: Se uma secao introduz um conceito e a seguinte repete a mesma ideia com outras palavras, condensar
+9. **Brevidade**: Secoes de narracoes devem ser objetivas — entre 100 e 300 palavras por secao (15-30s de audio)
+
+**Sugestoes adicionais de regras que proponho adicionar**:
+
+10. **Evitar jargao tecnico nao explicado**: Se um termo tecnico e necessario (ex: "token", "modelo de linguagem"), deve ser explicado na primeira ocorrencia
+11. **Transicoes explicitas**: Cada secao deve comecar com uma frase que conecte ao que veio antes ("Agora que voce entendeu X, vamos ver Y...")
+12. **Exemplos concretos**: Se o texto fala de algo abstrato, deve ter pelo menos um exemplo do mundo real na mesma secao
+13. **Deteccao de texto pre-quiz/playground**: Se a secao termina com uma frase que e literalmente a pergunta do quiz seguinte (como "Responde rapido pra mim: quando o GPT parece generico..."), o refinador deve remover essa frase redundante da secao, pois o quiz ja vai narra-la
+
+### Arquitetura da chamada
 
 ```text
-quiz-explanation     -> inlineQuizzes[i].explanationAudioUrl     PERDIDO
-playground-success   -> inlinePlaygrounds[i].successAudioUrl     PERDIDO
-playground-tryagain  -> inlinePlaygrounds[i].tryAgainAudioUrl    PERDIDO
+callAI(
+  LOVABLE_API_KEY,
+  REFINE_SYSTEM_PROMPT,
+  sections: [{ title, content }],
+  tool: "refine_sections" -> retorna [{ title, content }] refinados
+)
 ```
 
-**Resultado**: ElevenLabs gera o audio, paga-se pela API, o audio e uploadeado para storage, mas a URL nunca e inserida no JSON da aula. O audio existe no bucket mas o player nunca o encontra.
+Usar tool calling (structured output) para garantir que o retorno seja um array de secoes com a mesma quantidade de elementos.
 
-**Correcao**: Adicionar 3 mapeamentos no loop de resultados (linhas 328-339):
+### No cliente (`AdminV8Create.tsx`)
+
+Apos o parse e ANTES de chamar `v8-generate-lesson-content`:
+
+1. Enviar secoes parseadas para `v8-refine-content`
+2. Receber secoes refinadas
+3. Substituir o conteudo das secoes pelo refinado
+4. Continuar o pipeline normalmente
+
+Um novo step aparece no pipeline visual:
 
 ```text
-} else if (r.type === "quiz-explanation" && updatedData.inlineQuizzes[r.index]) {
-  updatedData.inlineQuizzes[r.index].explanationAudioUrl = urlWithCacheBuster;
-} else if (r.type === "playground-success" && updatedData.inlinePlaygrounds?.[r.index]) {
-  updatedData.inlinePlaygrounds[r.index].successAudioUrl = urlWithCacheBuster;
-} else if (r.type === "playground-tryagain" && updatedData.inlinePlaygrounds?.[r.index]) {
-  updatedData.inlinePlaygrounds[r.index].tryAgainAudioUrl = urlWithCacheBuster;
-}
+{ id: 'refine', name: 'Refinando conteudo didatico', status: 'running' }
 ```
 
 ---
 
-## GAP 4 (MODERADO): Roteamento sem fallback em AdminManageLessons
+## CORRECOES EXISTENTES (mantidas do plano anterior)
 
-**Arquivo**: `src/pages/AdminManageLessons.tsx`, linha 385
+### PROBLEMA 1: Quiz narra "De acordo com a Secao 0"
 
-```text
-lesson.model === 'v8' ? `/v8/${lesson.id}` : `/admin/v7/play/${lesson.id}`
-```
+**Arquivo**: `supabase/functions/v8-generate-lesson-content/index.ts`
+**Correcao**: Adicionar ao `QUIZ_SYSTEM_PROMPT`:
 
-Quando `model` e `null` (por causa do GAP 2), a aula abre no player V7 que nao sabe renderizar conteudo V8.
+- "NUNCA referencie numeros de secao na pergunta"
+- "A pergunta deve ser autocontida"
 
-**Correcao**: Adicionar fallback por `contentVersion`:
+### PROBLEMA 2: Imagens repetitivas (cerebro, lampada)
 
-```text
-(lesson.model === 'v8' || (lesson.content as any)?.contentVersion === 'v8')
-  ? `/v8/${lesson.id}`
-  : `/admin/v7/play/${lesson.id}`
-```
+**Arquivo**: `supabase/functions/v8-generate-section-image/index.ts`
+**Correcoes**:
 
-Verificar se `content` esta disponivel na query de listagem. Se nao estiver, a correcao do GAP 2 e suficiente (model sera sempre setado).
+- Banir simbolos genericos: "NEVER use brains, lightbulbs, gears, or generic AI symbols"
+- Rotacao de estilos visuais por indice: isometric, glassmorphism, clay render, papercraft
+- Usar titulo da secao + keywords especificas no prompt (nao so o conceito generico)
+
+### PROBLEMA 3: Secoes 0 e 1 nao devem ter quizzes/playgrounds
+
+**Arquivo**: `supabase/functions/v8-generate-lesson-content/index.ts`
+**Correcao**: Filtrar `i >= 2` na logica de `sectionsNeedingInteraction`
+
+### PROBLEMA 4: Resultado amador do Playground muito robusto
+
+**Arquivo**: `supabase/functions/v8-generate-lesson-content/index.ts`
+**Correcoes**:
+
+- Adicionar `amateurResult` e `professionalResult` como required no `PLAYGROUND_TOOLS` schema
+- Instruir no prompt: "resultado amador DEVE ser curto, vago, maximo 2 linhas"
+
+### PROBLEMA 5: Quiz repete texto da secao
+
+**Mitigacao**: O refinador (Step 0) ja resolve parcialmente ao detectar texto pre-quiz redundante. Adicionalmente no parser:
+
+- Detectar conteudo residual curto (< 100 chars) quando existe quiz manual na secao
+- Mesclar com o quiz ou ocultar
+
+### PROBLEMA 6: Falta de variedade nos quizzes
+
+Limite do contrato atual de quiz inline (multiple-choice). A variedade esta nos exercicios finais. Considerar expansao futura do contrato para true-false e fill-blank inline.
+
+### PROBLEMA 7: Secao fantasma (content vazio)
+
+**Arquivo**: `src/lib/v8ContentParser.ts`
+**Correcoes**:
+
+- Apos remover blocos `[QUIZ]`/`[PLAYGROUND]`, verificar se secao ficou vazia
+- Se vazia, REMOVER a secao da lista
+- Recalcular `afterSectionIndex` de todos os quizzes e playgrounds para compensar indices deslocados
 
 ---
-
-## GAP 5 (MODERADO): Aula existente `b92124bd` precisa de correcao imediata no banco
-
-A aula ja existe com `model: null` e 0 audios. Precisa de:
-
-```sql
-UPDATE lessons SET model = 'v8' WHERE id = 'b92124bd-4243-4ee1-ad88-d2a520dd1f4b';
-```
-
-Isso permite que ela abra no player V8 correto. Os audios precisarao ser regenerados via o botao "Gerar Audios" na interface de criacao.
-
----
-
-## Plano de Implementacao (Ordem)
-
-### Passo 1: Correcao do banco (migracao SQL)
-
-- UPDATE aula existente: `model = 'v8'`
-- Adicionar parametro `p_model` a funcao `create_lesson_draft`
-
-### Passo 2: Correcao do mapeamento de audio (`AdminV8Create.tsx`)
-
-- Adicionar 3 mapeamentos faltantes: `quiz-explanation`, `playground-success`, `playground-tryagain`
-
-### Passo 3: Correcao do `handleSave` para drafts (`AdminV8Create.tsx`)
-
-- Apos `create_lesson_draft`, fazer UPDATE imediato setando `model = 'v8'`
-
-### Passo 4: Pipeline end-to-end no `handleConvertAndGenerate` (`AdminV8Create.tsx`)
-
-- Estender para: parse -> gerar conteudo IA -> criar draft -> gerar audios -> mapear URLs -> salvar final
-- Um unico clique processa tudo
-
-### Passo 5: Fallback de roteamento (`AdminManageLessons.tsx`)
-
-- Adicionar check de `contentVersion` como fallback
 
 ## Arquivos Modificados
 
-1. **Migracao SQL** — UPDATE aula + ALTER FUNCTION `create_lesson_draft`
-2. `**src/pages/AdminV8Create.tsx**` — Mapeamento de audio, handleSave, handleConvertAndGenerate
-3. `**src/pages/AdminManageLessons.tsx**` — Fallback de roteamento
+1. **NOVO**: `supabase/functions/v8-refine-content/index.ts` — Edge function de refinamento didatico
+2. `supabase/functions/v8-generate-lesson-content/index.ts` — Problemas 1, 3, 4
+3. `supabase/functions/v8-generate-section-image/index.ts` — Problema 2
+4. `src/lib/v8ContentParser.ts` — Problemas 5, 7
+5. `src/pages/AdminV8Create.tsx` — Integrar step de refinamento no pipeline
 
-Nenhum arquivo novo. Todas as correcoes sao no codigo existente.
+## Ordem de Implementacao
+
+1. Criar `v8-refine-content` (edge function nova)
+2. Corrigir `v8-generate-lesson-content` (problemas 1, 3, 4)
+3. Corrigir `v8-generate-section-image` (problema 2)
+4. Corrigir `v8ContentParser.ts` (problemas 5, 7)
+5. Integrar refinamento no `AdminV8Create.tsx`
