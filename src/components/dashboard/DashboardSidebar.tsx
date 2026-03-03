@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Flame, ChevronRight, Zap, Crown, Gem } from 'lucide-react';
-import { MissoesDiarias } from '@/components/gamification/MissoesDiarias';
 
 interface DashboardSidebarProps {
   streakDays: number;
   userName: string;
   isLoading?: boolean;
+  missionsContent?: React.ReactNode;
 }
 
 const cardStyle = {
@@ -15,7 +15,7 @@ const cardStyle = {
   boxShadow: '0 1px 2px hsl(0 0% 0% / 0.04), 0 4px 16px hsl(0 0% 0% / 0.03)',
 };
 
-export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: DashboardSidebarProps) => {
+export const DashboardSidebar = ({ streakDays, userName, isLoading = false, missionsContent }: DashboardSidebarProps) => {
   const navigate = useNavigate();
   const streakPercentToGoal = Math.min((streakDays / 30) * 100, 100);
 
@@ -198,7 +198,7 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
               <span className="text-[10px] font-bold" style={{ color: 'hsl(239 84% 55%)' }}>HOJE</span>
             </div>
           </div>
-          <MissoesDiarias compact />
+          {missionsContent}
         </div>
       </motion.div>
     </div>

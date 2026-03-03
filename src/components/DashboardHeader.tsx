@@ -5,7 +5,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Menu, User, Trophy, LogOut, ArrowLeft } from 'lucide-react';
 import { RewardCelebration } from '@/components/gamification/RewardCelebration';
-import { useUserGamification } from '@/hooks/useUserGamification';
 
 interface DashboardHeaderProps {
   user: {
@@ -19,12 +18,12 @@ interface DashboardHeaderProps {
     daily_interaction_limit: number;
     interactions_used_today: number;
   };
+  showPatentCelebration?: boolean;
 }
 
-const DashboardHeader = ({ user }: DashboardHeaderProps) => {
+const DashboardHeader = ({ user, showPatentCelebration = false }: DashboardHeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { showPatentCelebration } = useUserGamification();
   const interactionsRemaining = user.daily_interaction_limit - user.interactions_used_today;
   
   const showBackButton = ['/guides', '/ai-directory', '/prompt-library', '/ai-playground'].includes(location.pathname);
