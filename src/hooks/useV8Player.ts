@@ -1,10 +1,10 @@
 import { useState, useCallback, useMemo } from "react";
-import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground } from "@/types/v8Lesson";
+import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground, V8InsightBlock } from "@/types/v8Lesson";
 
 /**
  * useV8Player — State machine for V8 lesson navigation.
  *
- * Builds a flat timeline of items (sections + inline quizzes + playgrounds sorted by position)
+ * Builds a flat timeline of items (sections + inline quizzes + playgrounds + insights sorted by position)
  * and manages phase transitions: mode-select → content → exercises → completion.
  *
  * V8 uses a single-section model — only one item is visible at a time.
@@ -14,6 +14,7 @@ import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground } from "@
 export type TimelineItem =
   | { type: "section"; index: number }
   | { type: "playground"; playground: V8InlinePlayground }
+  | { type: "insight"; insight: V8InsightBlock }
   | { type: "quiz"; quiz: V8InlineQuiz };
 
 export const useV8Player = (lessonData: V8LessonData) => {
@@ -31,6 +32,7 @@ export const useV8Player = (lessonData: V8LessonData) => {
     const items: TimelineItem[] = [];
     const quizMap = new Map<number, V8InlineQuiz[]>();
     const playgroundMap = new Map<number, V8InlinePlayground[]>();
+    const insightMap = new Map<number, V8InsightBlock[]>();
 
     for (const quiz of lessonData.inlineQuizzes) {
       const existing = quizMap.get(quiz.afterSectionIndex) || [];
@@ -44,6 +46,13 @@ export const useV8Player = (lessonData: V8LessonData) => {
       playgroundMap.set(pg.afterSectionIndex, existing);
     }
 
+    for (const ins of (lessonData.inlineInsights || [])) {
+      const existing = insightMap.get(ins.afterSectionIndex) || [];
+      existing.push(ins);
+      insightMap.set(ins.afterSectionIndex, existing);
+    }
+
+    // Order: Section[i] → Playground(s)[i] → Insight(s)[i] → Quiz(zes)[i]
     for (let i = 0; i < lessonData.sections.length; i++) {
       items.push({ type: "section", index: i });
 
@@ -51,6 +60,13 @@ export const useV8Player = (lessonData: V8LessonData) => {
       if (playgrounds) {
         for (const pg of playgrounds) {
           items.push({ type: "playground", playground: pg });
+        }
+      }
+
+      const insights = insightMap.get(i);
+      if (insights) {
+        for (const ins of insights) {
+          items.push({ type: "insight", insight: ins });
         }
       }
 

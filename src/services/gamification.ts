@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 export type GamificationEventType =
   | 'lesson_completed'
   | 'journey_completed'
-  | 'quiz_answered';
+  | 'quiz_answered'
+  | 'insight_claimed';
 
 export type GamificationResult = {
   xp_delta: number;

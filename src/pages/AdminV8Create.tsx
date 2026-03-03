@@ -605,6 +605,7 @@ export default function AdminV8Create() {
         })),
         inlineQuizzes: result.inlineQuizzes || parsed.inlineQuizzes,
         inlinePlaygrounds: result.inlinePlaygrounds || parsed.inlinePlaygrounds || [],
+        inlineInsights: result.inlineInsights || parsed.inlineInsights || [],
         exercises: result.exercises || [],
       };
 

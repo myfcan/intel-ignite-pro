@@ -101,6 +101,20 @@ export interface V8InlinePlayground {
 }
 
 /**
+ * V8InsightBlock — Insight de recompensa inserido ENTRE seções
+ * Trigger: aparece após sections[afterSectionIndex] na timeline
+ * Ordenação: playground → insight → quiz
+ */
+export interface V8InsightBlock {
+  id: string;                    // UUID real (gerado pelo edge function)
+  afterSectionIndex: number;     // 0-based
+  title: string;                 // "💡 Aprender e Crescer"
+  insightText: string;           // 3 frases de insight
+  creditsReward: number;         // ex: 10
+  audioUrl?: string;             // Áudio opcional (extensibilidade futura)
+}
+
+/**
  * V8LessonData — Armazenado em lessons.content (JSONB)
  * Discriminado por contentVersion: 'v8'
  */
@@ -111,6 +125,7 @@ export interface V8LessonData {
   sections: V8Section[];         // Seções de conteúdo
   inlineQuizzes: V8InlineQuiz[]; // Quizzes mid-lesson
   inlinePlaygrounds?: V8InlinePlayground[]; // Playgrounds mid-lesson
+  inlineInsights?: V8InsightBlock[]; // Insights mid-lesson (recompensa)
   exercises: ExerciseConfig[];   // Exercícios finais (reutiliza tipo existente)
 }
 
