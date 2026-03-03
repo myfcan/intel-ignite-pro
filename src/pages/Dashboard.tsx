@@ -8,10 +8,8 @@ import TrailCard from "@/components/TrailCard";
 import { V8TrailCard } from "@/components/lessons/v8/V8TrailCard";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { motion, AnimatePresence } from "framer-motion";
 import { GamificationHeader } from "@/components/gamification/GamificationHeader";
-import { useUserGamification } from "@/hooks/useUserGamification";
 import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
 import { CourseProgressCard } from "@/components/dashboard/CourseProgressCard";
 import { PointsCard } from "@/components/dashboard/PointsCard";
@@ -78,6 +76,48 @@ const PRO_ICONS: Record<string, any> = {
   'pro-6': Lightbulb,
 };
 
+// ══════ MODULE-LEVEL CONSTANTS (Fase 5: avoid re-creation per render) ══════
+const TRAIL_ICONS: Record<string, any> = {
+  'Brain': Brain,
+  'Target': Target,
+  'Zap': Zap,
+  'Rocket': Rocket,
+  'TrendingUp': TrendingUp,
+  'Crown': Crown,
+  'Code': Code,
+  '🎓': GraduationCap,
+  '📱': Zap,
+  '💼': Target,
+  '💰': DollarSign,
+};
+
+const TRAIL_GRADIENTS: { [key: string]: string } = {
+  'Fundamentos IA': 'from-indigo-500 to-indigo-600',
+  'Domando as IAs nos Negócios': 'from-violet-500 to-violet-600',
+  'Dominando Copyright Com IA': 'from-purple-500 to-purple-600',
+  'Renda Extra com IA': 'from-yellow-500 to-yellow-600',
+  'IA para Profissionais': 'from-blue-500 to-blue-600',
+  'Expert em vendas com IA': 'from-pink-500 to-pink-600',
+  'Dominando as IAs Avançado': 'from-amber-500 to-orange-600',
+  'Vibe Code: Criando Apps com IA': 'from-emerald-500 to-teal-600',
+};
+
+const TRAIL_CATEGORY_MAP: Record<number, string> = {
+  1: 'Fundamentos',
+  2: 'Profissionais',
+  3: 'Negócios',
+  4: 'Copyright',
+  5: 'Renda Extra',
+  6: 'Vendas',
+};
+
+const PATENT_NAMES: Record<number, string> = {
+  0: 'Sem patente',
+  1: 'Operador Básico de I.A.',
+  2: 'Executor de Sistemas',
+  3: 'Estrategista em I.A.',
+};
+
 // Dashboard component - main user dashboard
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -86,8 +126,18 @@ const Dashboard = () => {
   const [trails, setTrails] = useState<Trail[]>([]);
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  const { isAdmin, canAccessAdmin, loading: adminLoading } = useIsAdmin(user?.id);
-  const { stats: gamificationStats, isLoading: gamificationLoading, refresh: refreshGamification } = useUserGamification();
+  // Fase 1: Unified admin state (no separate useIsAdmin hook — fetched in checkAuth)
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [canAccessAdmin, setCanAccessAdmin] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(true);
+  // Fase 1: Unified gamification state (no separate useUserGamification hook — fetched in checkAuth)
+  const [gamificationStats, setGamificationStats] = useState<{
+    powerScore: number; coins: number; patentLevel: number; patentName: string;
+    streakDays: number; lessonsCompleted: number;
+  } | null>(null);
+  const [gamificationLoading, setGamificationLoading] = useState(true);
+  const [showPatentCelebration, setShowPatentCelebration] = useState(false);
+  const prevPatentLevelRef = useRef<number | null>(null);
   
   // V8 courses (jornadas dentro da trilha V8)
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
@@ -148,7 +198,7 @@ const Dashboard = () => {
       },
       {
         root,
-        threshold: [0.35, 0.45, 0.55, 0.6, 0.7, 0.85],
+        threshold: [0.5, 0.8],
       }
     );
 
@@ -181,7 +231,7 @@ const Dashboard = () => {
           setSnapActiveIndexV8(best.idx);
         }
       },
-      { root, threshold: [0.35, 0.45, 0.55, 0.6, 0.7, 0.85] }
+      { root, threshold: [0.5, 0.8] }
     );
 
     snapItemRefsV8.current.forEach((el) => el && observer.observe(el));
@@ -213,7 +263,7 @@ const Dashboard = () => {
           setSnapActiveIndexPro(best.idx);
         }
       },
-      { root, threshold: [0.35, 0.45, 0.55, 0.6, 0.7, 0.85] }
+      { root, threshold: [0.5, 0.8] }
     );
 
     snapItemRefsPro.current.forEach((el) => el && observer.observe(el));
@@ -292,23 +342,35 @@ const Dashboard = () => {
         return;
       }
 
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
+      const userId = session.user.id;
 
-      if (error) {
-        console.error('Error fetching user:', error);
-        throw error;
+      // ══════ Fase 1: Single getSession + parallel queries for users + roles ══════
+      const [userResult, rolesResult] = await Promise.all([
+        supabase.from('users').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', userId),
+      ]);
+
+      if (userResult.error) {
+        console.error('Error fetching user:', userResult.error);
+        throw userResult.error;
       }
 
+      // Process roles immediately (eliminates useIsAdmin waterfall)
+      const roles = (rolesResult.data || []).map((r: any) => r.role);
+      const hasAdmin = roles.includes('admin');
+      const hasSupervisor = roles.includes('supervisor');
+      setIsAdmin(hasAdmin);
+      setCanAccessAdmin(hasAdmin || hasSupervisor);
+      setAdminLoading(false);
+
+      let finalUser = userResult.data;
+
       // If user doesn't exist, create automatically
-      if (!userData) {
+      if (!finalUser) {
         const { data: newUser, error: createError } = await supabase
           .from('users')
           .insert({
-            id: session.user.id,
+            id: userId,
             email: session.user.email || '',
             name: session.user.user_metadata?.name || 'Usuário',
             onboarding_completed: false,
@@ -320,14 +382,33 @@ const Dashboard = () => {
           console.error('Error creating user:', createError);
           throw createError;
         }
-        setUser(newUser);
-        // Fetch trails immediately after setting user
-        await fetchTrailsWithProgress(newUser.id);
-      } else {
-        setUser(userData);
-        // Fetch trails immediately after setting user
-        await fetchTrailsWithProgress(userData.id);
+        finalUser = newUser;
       }
+
+      setUser(finalUser);
+
+      // ══════ Fase 1: Extract gamification from same users query (no separate hook) ══════
+      const patentLevel = finalUser.patent_level || 0;
+      const newStats = {
+        powerScore: finalUser.power_score || 0,
+        coins: finalUser.coins || 0,
+        patentLevel,
+        patentName: PATENT_NAMES[patentLevel] || PATENT_NAMES[0],
+        streakDays: finalUser.streak_days || 0,
+        lessonsCompleted: finalUser.total_lessons_completed || 0,
+      };
+      setGamificationStats(newStats);
+      setGamificationLoading(false);
+
+      // Detect patent level up
+      if (prevPatentLevelRef.current !== null && patentLevel > prevPatentLevelRef.current) {
+        setShowPatentCelebration(true);
+        setTimeout(() => setShowPatentCelebration(false), 3500);
+      }
+      prevPatentLevelRef.current = patentLevel;
+
+      // Fetch trails (already uses parallel queries internally)
+      await fetchTrailsWithProgress(userId);
     } catch (error: any) {
       console.error('Error checking auth:', error);
       toast({
@@ -344,80 +425,61 @@ const Dashboard = () => {
 
   const fetchTrailsWithProgress = async (userId: string) => {
     try {
-      // Fetch all trails
-      const { data: trailsData, error: trailsError } = await supabase
-        .from('trails')
-        .select('*')
-        .eq('is_active', true)
-        .order('order_index');
+      // ══════ Fase 2: Parallel queries with Promise.all ══════
+      const [trailsResult, lessonsResult, progressResult] = await Promise.all([
+        supabase.from('trails').select('*').eq('is_active', true).order('order_index'),
+        supabase.from('lessons').select('id, trail_id, course_id').eq('is_active', true),
+        supabase.from('user_progress').select('lesson_id, status').eq('user_id', userId).eq('status', 'completed'),
+      ]);
 
-      if (trailsError) throw trailsError;
-      setTrails(trailsData || []);
+      if (trailsResult.error) throw trailsResult.error;
+      
+      const trailsData = trailsResult.data || [];
+      const allLessons = lessonsResult.data || [];
+      const allProgress = progressResult.data || [];
 
-      // OPTIMIZATION: Fetch all data with only 2 queries instead of N queries per trail
-      // 1. Fetch all active lessons at once
-      const { data: allLessons } = await supabase
-        .from('lessons')
-        .select('id, trail_id')
-        .eq('is_active', true);
-
-      // 2. Fetch all user progress at once
-      const { data: allProgress } = await supabase
-        .from('user_progress')
-        .select('lesson_id, status')
-        .eq('user_id', userId)
-        .eq('status', 'completed');
+      setTrails(trailsData);
 
       // Create a map of completed lesson IDs for fast lookup
-      const completedLessonIds = new Set(allProgress?.map(p => p.lesson_id) || []);
+      const completedLessonIds = new Set(allProgress.map(p => p.lesson_id));
 
       // Group lessons by trail_id in memory
       const lessonsByTrail = new Map<string, string[]>();
-      allLessons?.forEach(lesson => {
-        if (!lessonsByTrail.has(lesson.trail_id)) {
+      allLessons.forEach(lesson => {
+        if (lesson.trail_id && !lessonsByTrail.has(lesson.trail_id)) {
           lessonsByTrail.set(lesson.trail_id, []);
         }
-        lessonsByTrail.get(lesson.trail_id)!.push(lesson.id);
+        if (lesson.trail_id) {
+          lessonsByTrail.get(lesson.trail_id)!.push(lesson.id);
+        }
       });
 
       // Calculate progress for each trail in memory
-      // NOTE: Usamos isAdmin diretamente aqui, mas será recalculado no useEffect quando isAdmin mudar
       const progressData: TrailProgress[] = [];
       
-      for (const trail of trailsData || []) {
+      for (const trail of trailsData) {
         const lessonIds = lessonsByTrail.get(trail.id) || [];
         const totalLessons = lessonIds.length;
-        
-        // Count how many of this trail's lessons are completed
         const completedLessons = lessonIds.filter(id => completedLessonIds.has(id)).length;
         const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
-        // Determine status - inicialmente sem considerar isAdmin (será recalculado)
         let status: 'active' | 'completed' | 'locked';
         if (progress === 100) {
           status = 'completed';
         } else if (trail.order_index === 1) {
-          // A primeira trilha sempre está desbloqueada
           status = 'active';
         } else {
-          // Trilhas seguintes só desbloqueiam quando a anterior estiver completa
           const previousTrailProgress = progressData[progressData.length - 1];
           status = previousTrailProgress?.status === 'completed' ? 'active' : 'locked';
         }
 
-        progressData.push({
-          trailId: trail.id,
-          completedLessons,
-          totalLessons,
-          progress,
-          status
-        });
+        progressData.push({ trailId: trail.id, completedLessons, totalLessons, progress, status });
       }
 
       setTrailsProgress(progressData);
 
-      // Fetch V8 courses (jornadas) para mostrar como cards individuais
-      const v8TrailIds = (trailsData || []).filter(t => t.trail_type === 'v8').map(t => t.id);
+      // Fetch V8 courses (conditional — only if v8 trails exist)
+      const v8TrailIds = trailsData.filter(t => t.trail_type === 'v8').map(t => t.id);
       if (v8TrailIds.length > 0) {
         const { data: coursesData } = await supabase
           .from('courses')
@@ -427,16 +489,9 @@ const Dashboard = () => {
           .order('order_index');
 
         if (coursesData && coursesData.length > 0) {
-          // Fetch lessons by course_id for progress
-          const courseIds = coursesData.map(c => c.id);
-          const { data: courseLessons } = await supabase
-            .from('lessons')
-            .select('id, course_id')
-            .in('course_id', courseIds)
-            .eq('is_active', true);
-
+          // We already have allLessons with course_id — no need for extra query!
           const v8CoursesWithProgress: V8Course[] = coursesData.map(course => {
-            const lessons = (courseLessons || []).filter(l => l.course_id === course.id);
+            const lessons = allLessons.filter(l => l.course_id === course.id);
             const completed = lessons.filter(l => completedLessonIds.has(l.id)).length;
             return {
               id: course.id,
@@ -474,31 +529,6 @@ const Dashboard = () => {
     );
   }
 
-  const TRAIL_ICONS: Record<string, any> = {
-    'Brain': Brain,
-    'Target': Target,
-    'Zap': Zap,
-    'Rocket': Rocket,
-    'TrendingUp': TrendingUp,
-    'Crown': Crown,
-    'Code': Code,
-    '🎓': GraduationCap,
-    '📱': Zap,
-    '💼': Target,
-    '💰': DollarSign,
-  };
-
-  const TRAIL_GRADIENTS: { [key: string]: string } = {
-    'Fundamentos IA': 'from-indigo-500 to-indigo-600',
-    'Domando as IAs nos Negócios': 'from-violet-500 to-violet-600',
-    'Dominando Copyright Com IA': 'from-purple-500 to-purple-600',
-    'Renda Extra com IA': 'from-yellow-500 to-yellow-600',
-    'IA para Profissionais': 'from-blue-500 to-blue-600',
-    'Expert em vendas com IA': 'from-pink-500 to-pink-600',
-    'Dominando as IAs Avançado': 'from-amber-500 to-orange-600',
-    'Vibe Code: Criando Apps com IA': 'from-emerald-500 to-teal-600',
-  };
-
   // Find active trail for CourseProgressCard
   const activeTrail = trails.find((trail, index) => {
     const tp = trailsProgressWithStatus.find(p => p.trailId === trail.id);
@@ -508,18 +538,9 @@ const Dashboard = () => {
     ? trailsProgressWithStatus.find(p => p.trailId === activeTrail.id)
     : null;
 
-  const TRAIL_CATEGORY_MAP: Record<number, string> = {
-    1: 'Fundamentos',
-    2: 'Profissionais',
-    3: 'Negócios',
-    4: 'Copyright',
-    5: 'Renda Extra',
-    6: 'Vendas',
-  };
-
   return (
     <div className="min-h-screen relative" data-layout-id={DASHBOARD_LAYOUT_ID} style={{ background: 'linear-gradient(180deg, #F0F1F5 0%, #E8E9EF 50%, #F0F1F5 100%)' }}>
-      <DashboardHeader user={user!} />
+      <DashboardHeader user={user!} showPatentCelebration={showPatentCelebration} />
       <BuildBadge isAdmin={isAdmin} />
       
       {/* Gamification Header */}
@@ -556,6 +577,7 @@ const Dashboard = () => {
               streakDays={gamificationStats?.streakDays ?? 0}
               userName={user?.name?.split(' ')[0] || 'Aluno'}
               isLoading={gamificationLoading}
+              missionsContent={<MissoesDiarias compact />}
             />
 
             {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
@@ -1345,6 +1367,7 @@ const Dashboard = () => {
               streakDays={gamificationStats?.streakDays ?? 0}
               userName={user?.name?.split(' ')[0] || 'Aluno'}
               isLoading={gamificationLoading}
+              missionsContent={<MissoesDiarias compact />}
             />
           </div>
         </div>

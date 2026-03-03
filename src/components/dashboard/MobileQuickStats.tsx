@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Flame, Crown, Gem, ChevronRight, ChevronDown, Sparkles, Zap } from 'lucide-react';
-import { MissoesDiarias } from '@/components/gamification/MissoesDiarias';
 
 interface MobileQuickStatsProps {
   streakDays: number;
   userName: string;
   isLoading?: boolean;
+  missionsContent?: React.ReactNode;
 }
 
 const getGreeting = () => {
@@ -24,7 +24,7 @@ const getMotivationalLine = (streak: number) => {
   return 'Comece sua sequência hoje!';
 };
 
-export const MobileQuickStats = ({ streakDays, userName, isLoading = false }: MobileQuickStatsProps) => {
+export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent }: MobileQuickStatsProps) => {
   const navigate = useNavigate();
   const [missionsOpen, setMissionsOpen] = useState(false);
   const streakPercent = Math.min((streakDays / 30) * 100, 100);
@@ -227,7 +227,7 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false }: Mo
               className="overflow-hidden"
             >
               <div className="px-4 pb-4 pt-1">
-                <MissoesDiarias compact />
+                {missionsContent}
               </div>
             </motion.div>
           )}

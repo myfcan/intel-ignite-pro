@@ -93,11 +93,12 @@ export function useDailyMissions() {
         setMissions(missionsData || []);
       }
 
-      // Load rewards
+      // Fase 3: Filter rewards to only uncollected (avoids fetching hundreds of rows)
       const { data: rewardsData, error: rewardsError } = await supabase
         .from('user_rewards')
         .select('*')
         .eq('user_id', session.user.id)
+        .eq('collected', false)
         .order('created_at', { ascending: false });
 
       if (rewardsError) throw rewardsError;
