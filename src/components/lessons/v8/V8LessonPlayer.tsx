@@ -9,6 +9,7 @@ import { V8QuizInline } from "./V8QuizInline";
 import { V8QuizTrueFalse } from "./V8QuizTrueFalse";
 import { V8QuizFillBlank } from "./V8QuizFillBlank";
 import { V8PlaygroundInline } from "./V8PlaygroundInline";
+import { V8InsightReward } from "./V8InsightReward";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
 
@@ -205,6 +206,14 @@ export const V8LessonPlayer = ({
                           playground={item.playground}
                           onContinue={isLast ? advance : undefined}
                           onScore={(s) => addScore(s)}
+                          isActive={isLast}
+                        />
+                      )}
+
+                      {item.type === "insight" && (
+                        <V8InsightReward
+                          insight={item.insight}
+                          onContinue={isLast ? advance : undefined}
                           isActive={isLast}
                         />
                       )}

@@ -402,6 +402,76 @@ serve(async (req) => {
       }
     }
 
+    // ── 3.5. Generate inline insights (1 per playground) ──
+    let generatedInsights: any[] = [];
+    const allPlaygroundsForInsights = [...manualPlaygrounds, ...generatedPlaygrounds];
+    if (allPlaygroundsForInsights.length > 0) {
+      progress.push("Gerando insights inline...");
+      try {
+        const INSIGHT_TOOLS = [
+          {
+            type: "function",
+            function: {
+              name: "generate_inline_insights",
+              description: "Generate insight reward blocks for sections with playgrounds. Each insight has 3 sentences: (1) highlight the skill shift, (2) before vs after contrast, (3) practical application today.",
+              parameters: {
+                type: "object",
+                properties: {
+                  insights: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        afterSectionIndex: { type: "number", description: "0-based section index this insight follows (same as the playground)" },
+                        title: { type: "string", description: "Short title like '💡 Aprender e Crescer'" },
+                        insightText: { type: "string", description: "3 sentences: (1) Percebeu a virada? (2) Antes X, agora Y. (3) Aplica hoje em..." },
+                        creditsReward: { type: "number", description: "Credits reward, typically 10" },
+                      },
+                      required: ["afterSectionIndex", "title", "insightText", "creditsReward"],
+                    },
+                  },
+                },
+                required: ["insights"],
+              },
+            },
+          },
+        ];
+
+        const INSIGHT_SYSTEM_PROMPT = `Você é um designer instrucional. Gere blocos de insight de recompensa para seções que possuem playgrounds.
+Cada insight deve ter exatamente 3 frases:
+1. "Percebeu a virada?" — destaque a mudança de habilidade
+2. "Antes X, agora Y" — contraste antes/depois
+3. "Aplica hoje em..." — aplicação prática imediata
+
+O título deve ser curto e começar com 💡. creditsReward deve ser 10. Português Brasileiro (pt-BR).`;
+
+        const insightSectionsContent = allPlaygroundsForInsights.map((p: any) =>
+          `Playground após seção ${p.afterSectionIndex}: ${sections[p.afterSectionIndex]?.title || "?"}\nInstrução: ${p.instruction?.slice(0, 200) || ""}`
+        ).join("\n\n");
+
+        const insightResult = await callAI(
+          LOVABLE_API_KEY,
+          INSIGHT_SYSTEM_PROMPT,
+          `Gere insights para estes playgrounds:\n\n${insightSectionsContent}\n\nÍndices válidos: ${allPlaygroundsForInsights.map((p: any) => p.afterSectionIndex).join(", ")}`,
+          INSIGHT_TOOLS,
+          "generate_inline_insights",
+        );
+
+        generatedInsights = (insightResult.insights || [])
+          .filter((ins: any) => ins.afterSectionIndex >= 0 && ins.afterSectionIndex < sections.length)
+          .map((ins: any) => ({
+            ...ins,
+            id: crypto.randomUUID(),
+          }));
+        progress.push(`${generatedInsights.length} insights gerados`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Insight generation failed";
+        errors.push(`Insights: ${msg}`);
+        console.error("[v8-generate-lesson-content] Insight generation error:", msg);
+        generatedInsights = [];
+      }
+    }
+
     // ── 4. Generate final exercises (2-4 from 10 types) ──
     let generatedExercises: any[] = [];
     if (manualExercises.length === 0) {
@@ -465,6 +535,7 @@ serve(async (req) => {
       sections: updatedSections,
       inlineQuizzes: allQuizzes,
       inlinePlaygrounds: allPlaygrounds,
+      inlineInsights: generatedInsights,
       exercises: generatedExercises,
       progress,
       errors: errors.length > 0 ? errors : undefined,

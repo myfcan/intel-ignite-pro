@@ -533,7 +533,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
               )}
             </div>
             <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-slate-600"}`}>
-              {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : "Você concluiu o playground. Continue a aula para aprender mais!"}
+            {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : "Você concluiu o playground. Continue a aula para aprender mais!"}
             </p>
             {/* Play success or tryAgain audio */}
             {challengeScore !== null && challengeScore >= 70 && playground.successAudioUrl && (
@@ -543,14 +543,31 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
               <V8AudioPlayer audioUrl={playground.tryAgainAudioUrl} autoPlay />
             )}
             {onContinue && (
-              <button
-                ref={ctaRef}
-                onClick={onContinue}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
-              >
-                Continuar Aula
-                <ArrowRight className="w-4 h-4 inline ml-2" />
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                <button
+                  onClick={() => {
+                    setPhase("intro");
+                    setAttempts(0);
+                    setChallengeScore(null);
+                    setFeedback(null);
+                    setStructuredFeedback(null);
+                    setUserPrompt("");
+                    setShowHints(false);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-slate-300 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Repetir tarefa
+                </button>
+                <button
+                  ref={ctaRef}
+                  onClick={onContinue}
+                  className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                >
+                  Continuar Aula
+                  <ArrowRight className="w-4 h-4 inline ml-2" />
+                </button>
+              </div>
             )}
           </motion.div>
         )}
