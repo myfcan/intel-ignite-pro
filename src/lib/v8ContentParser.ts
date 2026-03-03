@@ -317,19 +317,37 @@ function parseQuizOptions(block: string): V8InlineQuiz["options"] {
     }
 
     if (inOptions) {
-      // Match "- [x] text" or "- [ ] text"
-      const optMatch = trimmed.match(/^-\s*\[(x|\s)\]\s*(.+)$/i);
-      if (optMatch) {
+      // Format 1: "- [x] text" or "- [ ] text" (checkbox format)
+      const checkboxMatch = trimmed.match(/^-\s*\[(x|\s)\]\s*(.+)$/i);
+      if (checkboxMatch) {
         options.push({
           id: `opt-${String(options.length + 1).padStart(2, "0")}`,
-          text: optMatch[2].trim(),
-          isCorrect: optMatch[1].toLowerCase() === "x",
+          text: checkboxMatch[2].trim(),
+          isCorrect: checkboxMatch[1].toLowerCase() === "x",
         });
-      } else if (trimmed === "") {
+        continue;
+      }
+
+      // Format 2: Plain text lines (no checkbox) — first non-empty line is correct
+      // Supports bare lines under "options:" header
+      if (trimmed === "") {
         continue; // skip blank lines inside options
-      } else if (trimmed.includes(":") && !trimmed.startsWith("-")) {
-        // Hit next field
+      }
+
+      // Stop if we hit another field (key: value pattern, but not a continuation line)
+      if (trimmed.includes(":") && !trimmed.startsWith("-") && /^[a-zA-Z]/.test(trimmed)) {
         inOptions = false;
+        continue;
+      }
+
+      // Plain line — treat as option. First option is correct by convention.
+      const cleanText = trimmed.startsWith("- ") ? trimmed.slice(2).trim() : trimmed;
+      if (cleanText.length > 0) {
+        options.push({
+          id: `opt-${String(options.length + 1).padStart(2, "0")}`,
+          text: cleanText,
+          isCorrect: options.length === 0, // First option is correct by default
+        });
       }
     }
   }
