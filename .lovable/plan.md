@@ -1,15 +1,13 @@
-# Plano Completo: Refinamento Didatico + Correcoes Sistemicas do Pipeline V8  
-
-
-&nbsp;
-
-regra: quero que voce execute o plano em 8 fases com diligência e prudencia.  
+# Plano: Variedade nos Quizzes Inline (P6) + Correcao P5  
   
-Atue como um engenheiro sênior responsável pelo runtime de todo o sistema e banco de dados, atue com obrigação de precisão técnica absoluta.
+Atue como um engenheiro sênior responsável pelo sistema V8 e de todo o sistema e banco de dados, atue com obrigação de precisão técnica absoluta.
 
 &nbsp;
 
-REGRA DESTE PROMPT:
+REGRA DESTE PROMPT:  
+  
+Execute todo o plano, mas caso não execute por alguma razão, você é obrigado é dizer:  
+Não implementei todo o plano ou não executei todas asa correções. 
 
 &nbsp;
 
@@ -31,165 +29,180 @@ Se não souber algo, diga explicitamente: “NÃO LOCALIZADO NO CÓDIGO”.
   
 TUDO ISSO É MANDATÓRIO
 
-&nbsp;
+## Escopo
 
-## NOVO — STEP 0: Refinamento Didatico via IA (Pre-Pipeline)
+Duas entregas pendentes do plano original:
 
-### O que e
+- **P6**: Expandir quizzes inline de "apenas multiple-choice" para 3 tipos: `multiple-choice`, `true-false`, `fill-blank`
+- **P5**: Completar merge de conteudo residual curto (< 100 chars) quando a secao tem quiz
 
-Um passo novo no pipeline automatizado que envia o conteudo bruto de TODAS as secoes para a IA (Gemini Flash) e recebe de volta o texto refinado, ANTES de gerar quizzes, playgrounds, imagens e audio.
+---
 
-### Onde se encaixa
+## PARTE 1: Variedade nos Quizzes Inline (P6)
 
-O fluxo atual em `handleConvertAndGenerate`:
+### 1.1 Expandir o tipo `V8InlineQuiz` (`src/types/v8Lesson.ts`)
+
+Adicionar campo discriminador `quizType` com union type:
 
 ```text
-1. Parse conteudo bruto
-2. Chamar v8-generate-lesson-content (quizzes, playgrounds, exercicios, imagens)
-3. Montar JSON
-4. Criar draft
-5. Gerar audios
-6. Mapear URLs
-7. Salvar final
+V8InlineQuiz {
+  ...campos existentes...
+  quizType?: 'multiple-choice' | 'true-false' | 'fill-blank';  // default: 'multiple-choice'
+  
+  // Campos para true-false (apenas quando quizType === 'true-false')
+  statement?: string;       // "O ChatGPT gera respostas em tempo real a partir de buscas na internet."
+  isTrue?: boolean;         // false
+  
+  // Campos para fill-blank (apenas quando quizType === 'fill-blank')
+  sentenceWithBlank?: string;  // "O ChatGPT e um _______ de linguagem treinado com dados ate 2024."
+  correctAnswer?: string;      // "modelo"
+  acceptableAnswers?: string[]; // ["modelo", "modelo de linguagem"]
+}
 ```
 
-O fluxo NOVO:
+Usar `quizType` opcional com default `'multiple-choice'` para compatibilidade retroativa com quizzes existentes.
 
-```text
-1. Parse conteudo bruto
-2. **NOVO: Refinamento didatico via IA** <-- aqui
-3. Chamar v8-generate-lesson-content (com texto ja refinado)
-4. Montar JSON
-5. Criar draft
-6. Gerar audios
-7. Mapear URLs
-8. Salvar final
+### 1.2 Criar componentes de renderizacao
+
+**Arquivo novo**: `src/components/lessons/v8/V8QuizTrueFalse.tsx`
+
+- Exibe a `statement` em destaque
+- Dois botoes grandes: "Verdadeiro" e "Falso"
+- Badge "Verdadeiro ou Falso" (verde/vermelho)
+- Feedback, explanation, reinforcement reutilizam a mesma logica do V8QuizInline
+- Audio support identico
+
+**Arquivo novo**: `src/components/lessons/v8/V8QuizFillBlank.tsx`
+
+- Exibe `sentenceWithBlank` com o blank destacado visualmente (underline animado)
+- Input de texto para o usuario digitar a resposta
+- Validacao case-insensitive contra `correctAnswer` e `acceptableAnswers`
+- Badge "Complete a Frase"
+- Feedback, explanation, reinforcement identicos
+
+### 1.3 Atualizar o router de quiz no Player (`V8LessonPlayer.tsx`)
+
+Onde hoje renderiza:
+
+```tsx
+{item.type === "quiz" && (
+  <V8QuizInline quiz={item.quiz} ... />
+)}
 ```
 
-### Implementacao
+Substituir por discriminacao:
 
-**Arquivo novo**: `supabase/functions/v8-refine-content/index.ts`
-
-Uma edge function dedicada que recebe as secoes e retorna o texto refinado.
-
-**Regras do refinamento (system prompt)**:
-
-1. **Clareza**: O conteudo deve ser didatico e facil de entender para qualquer pessoa, inclusive leigos
-2. **Vocabulario acessivel**: Eliminar girias ambiguas, expressoes com duplo sentido ou frases coloquiais que confundem. Exemplos reais:
-  - "responde no seguro" deve virar algo como "responde de forma generica e cautelosa"
-  - "o que ele faz por tras" deve virar "como ele funciona internamente"
-  - "dar um tapa" em algo deve virar "melhorar" ou "refinar"
-3. **Coerencia narrativa**: Manter o fio condutor da historia, garantindo que cada secao conecte com a anterior de forma logica
-4. **Fluencia**: Vocabulario natural, ritmo de leitura agradavel, sem frases truncadas ou transicoes abruptas
-5. **Tom conversacional mas preciso**: Manter o tom amigavel e acessivel do original, mas sem sacrificar clareza
-6. **Preservar estrutura**: NAO alterar marcadores como `[QUIZ]`, `[PLAYGROUND]`, `[EXERCISE:tipo]`, tags de emocao como `[confiante]`, `[pausa curta]`, `[animado]`, titulos `##`, nem a organizacao das secoes
-7. **Preservar intencao**: O refinamento deve melhorar a FORMA, nao mudar o CONTEUDO conceitual. Os exemplos, metaforas e analogias devem ser mantidos ou melhorados, nunca removidos
-8. **Eliminar redundancias**: Se uma secao introduz um conceito e a seguinte repete a mesma ideia com outras palavras, condensar
-9. **Brevidade**: Secoes de narracoes devem ser objetivas — entre 100 e 300 palavras por secao (15-30s de audio)
-
-**Sugestoes adicionais de regras que proponho adicionar**:
-
-10. **Evitar jargao tecnico nao explicado**: Se um termo tecnico e necessario (ex: "token", "modelo de linguagem"), deve ser explicado na primeira ocorrencia
-11. **Transicoes explicitas**: Cada secao deve comecar com uma frase que conecte ao que veio antes ("Agora que voce entendeu X, vamos ver Y...")
-12. **Exemplos concretos**: Se o texto fala de algo abstrato, deve ter pelo menos um exemplo do mundo real na mesma secao
-13. **Deteccao de texto pre-quiz/playground**: Se a secao termina com uma frase que e literalmente a pergunta do quiz seguinte (como "Responde rapido pra mim: quando o GPT parece generico..."), o refinador deve remover essa frase redundante da secao, pois o quiz ja vai narra-la
-
-### Arquitetura da chamada
-
-```text
-callAI(
-  LOVABLE_API_KEY,
-  REFINE_SYSTEM_PROMPT,
-  sections: [{ title, content }],
-  tool: "refine_sections" -> retorna [{ title, content }] refinados
-)
+```tsx
+{item.type === "quiz" && (
+  item.quiz.quizType === 'true-false' ? (
+    <V8QuizTrueFalse quiz={item.quiz} ... />
+  ) : item.quiz.quizType === 'fill-blank' ? (
+    <V8QuizFillBlank quiz={item.quiz} ... />
+  ) : (
+    <V8QuizInline quiz={item.quiz} ... />
+  )
+)}
 ```
 
-Usar tool calling (structured output) para garantir que o retorno seja um array de secoes com a mesma quantidade de elementos.
+### 1.4 Atualizar `QUIZ_TOOLS` schema (`v8-generate-lesson-content/index.ts`)
 
-### No cliente (`AdminV8Create.tsx`)
-
-Apos o parse e ANTES de chamar `v8-generate-lesson-content`:
-
-1. Enviar secoes parseadas para `v8-refine-content`
-2. Receber secoes refinadas
-3. Substituir o conteudo das secoes pelo refinado
-4. Continuar o pipeline normalmente
-
-Um novo step aparece no pipeline visual:
+Expandir o schema de quiz para incluir os 3 tipos:
 
 ```text
-{ id: 'refine', name: 'Refinando conteudo didatico', status: 'running' }
+quizzes[].quizType: enum ["multiple-choice", "true-false", "fill-blank"]
+
+// Campos condicionais por tipo:
+// multiple-choice: options[] (existente)
+// true-false: statement (string), isTrue (boolean)
+// fill-blank: sentenceWithBlank (string), correctAnswer (string), acceptableAnswers (string[])
+```
+
+Todos os 3 tipos compartilham: `afterSectionIndex`, `question`, `explanation`, `reinforcement`.
+
+### 1.5 Atualizar `QUIZ_SYSTEM_PROMPT`
+
+Adicionar instrucoes de variedade:
+
+```text
+- VARIE os tipos de quiz. NAO repita o mesmo tipo consecutivamente.
+- Use "true-false" quando o conteudo tem afirmacoes que podem ser validadas como verdadeiras ou falsas.
+- Use "fill-blank" quando o conteudo tem definicoes ou frases-chave que o aluno deve completar.
+- Use "multiple-choice" como padrao para perguntas de compreensao geral.
+- Em uma aula com 3+ quizzes, use pelo menos 2 tipos diferentes.
+```
+
+### 1.6 Atualizar parser (`v8ContentParser.ts`)
+
+O bloco `[QUIZ]` manual ja suporta apenas multiple-choice. Adicionar suporte para:
+
+```text
+[QUIZ]
+quizType: true-false
+statement: O ChatGPT busca informacoes na internet em tempo real.
+isTrue: false
+explanation: O ChatGPT nao acessa a internet...
+reinforcement: ...
+```
+
+```text
+[QUIZ]
+quizType: fill-blank
+sentenceWithBlank: O ChatGPT e um _______ de linguagem.
+correctAnswer: modelo
+acceptableAnswers: modelo, modelo de linguagem
+explanation: ...
+reinforcement: ...
 ```
 
 ---
 
-## CORRECOES EXISTENTES (mantidas do plano anterior)
+## PARTE 2: Correcao P5 — Merge de Conteudo Residual
 
-### PROBLEMA 1: Quiz narra "De acordo com a Secao 0"
+### Problema atual
 
-**Arquivo**: `supabase/functions/v8-generate-lesson-content/index.ts`
-**Correcao**: Adicionar ao `QUIZ_SYSTEM_PROMPT`:
+No `v8ContentParser.ts` (linhas 112-114), quando uma secao tem conteudo residual curto (< 100 chars) e um quiz vinculado, o sistema MANTEM a secao normalmente. Isso causa narracao duplicada: o player narra o texto curto da secao E depois narra a pergunta do quiz (que frequentemente e o mesmo conteudo).
 
-- "NUNCA referencie numeros de secao na pergunta"
-- "A pergunta deve ser autocontida"
+### Correcao
 
-### PROBLEMA 2: Imagens repetitivas (cerebro, lampada)
+Alterar a logica no parser para que, quando detectar conteudo residual curto + quiz vinculado:
 
-**Arquivo**: `supabase/functions/v8-generate-section-image/index.ts`
-**Correcoes**:
+1. Extrair o texto residual da secao
+2. Se o quiz NAO tem campo `question` preenchido, usar o texto residual como `question` do quiz
+3. Se o quiz JA tem `question`, verificar similaridade textual simples (primeiras 30 chars). Se similar, DESCARTAR o texto residual
+4. Marcar a secao como "merged" e REMOVER ela da lista final (usando o mesmo mecanismo de ghost sections)
+5. Recalcular `indexRemap` incluindo essas secoes removidas
 
-- Banir simbolos genericos: "NEVER use brains, lightbulbs, gears, or generic AI symbols"
-- Rotacao de estilos visuais por indice: isometric, glassmorphism, clay render, papercraft
-- Usar titulo da secao + keywords especificas no prompt (nao so o conceito generico)
+Na pratica, adicionar ao loop de detecao (linha 105-118):
 
-### PROBLEMA 3: Secoes 0 e 1 nao devem ter quizzes/playgrounds
-
-**Arquivo**: `supabase/functions/v8-generate-lesson-content/index.ts`
-**Correcao**: Filtrar `i >= 2` na logica de `sectionsNeedingInteraction`
-
-### PROBLEMA 4: Resultado amador do Playground muito robusto
-
-**Arquivo**: `supabase/functions/v8-generate-lesson-content/index.ts`
-**Correcoes**:
-
-- Adicionar `amateurResult` e `professionalResult` como required no `PLAYGROUND_TOOLS` schema
-- Instruir no prompt: "resultado amador DEVE ser curto, vago, maximo 2 linhas"
-
-### PROBLEMA 5: Quiz repete texto da secao
-
-**Mitigacao**: O refinador (Step 0) ja resolve parcialmente ao detectar texto pre-quiz redundante. Adicionalmente no parser:
-
-- Detectar conteudo residual curto (< 100 chars) quando existe quiz manual na secao
-- Mesclar com o quiz ou ocultar
-
-### PROBLEMA 6: Falta de variedade nos quizzes
-
-Limite do contrato atual de quiz inline (multiple-choice). A variedade esta nos exercicios finais. Considerar expansao futura do contrato para true-false e fill-blank inline.
-
-### PROBLEMA 7: Secao fantasma (content vazio)
-
-**Arquivo**: `src/lib/v8ContentParser.ts`
-**Correcoes**:
-
-- Apos remover blocos `[QUIZ]`/`[PLAYGROUND]`, verificar se secao ficou vazia
-- Se vazia, REMOVER a secao da lista
-- Recalcular `afterSectionIndex` de todos os quizzes e playgrounds para compensar indices deslocados
+```text
+if (isShortResidual && sectionHasQuiz.has(i)) {
+  // Merge residual content into quiz or remove section
+  removedIndices.push(i);
+  // Optionally prepend residual as quiz context
+} else if (isEmpty) {
+  removedIndices.push(i);
+} else {
+  keptSections.push(parsedSections[i]);
+}
+```
 
 ---
 
 ## Arquivos Modificados
 
-1. **NOVO**: `supabase/functions/v8-refine-content/index.ts` — Edge function de refinamento didatico
-2. `supabase/functions/v8-generate-lesson-content/index.ts` — Problemas 1, 3, 4
-3. `supabase/functions/v8-generate-section-image/index.ts` — Problema 2
-4. `src/lib/v8ContentParser.ts` — Problemas 5, 7
-5. `src/pages/AdminV8Create.tsx` — Integrar step de refinamento no pipeline
+1. `src/types/v8Lesson.ts` — Expandir `V8InlineQuiz` com `quizType`, `statement`, `isTrue`, `sentenceWithBlank`, `correctAnswer`, `acceptableAnswers`
+2. **NOVO**: `src/components/lessons/v8/V8QuizTrueFalse.tsx` — Componente true-false
+3. **NOVO**: `src/components/lessons/v8/V8QuizFillBlank.tsx` — Componente fill-blank
+4. `src/components/lessons/v8/V8LessonPlayer.tsx` — Router de quiz por tipo
+5. `supabase/functions/v8-generate-lesson-content/index.ts` — `QUIZ_TOOLS` schema + `QUIZ_SYSTEM_PROMPT`
+6. `src/lib/v8ContentParser.ts` — P5 merge + suporte a novos tipos no parser
 
 ## Ordem de Implementacao
 
-1. Criar `v8-refine-content` (edge function nova)
-2. Corrigir `v8-generate-lesson-content` (problemas 1, 3, 4)
-3. Corrigir `v8-generate-section-image` (problema 2)
-4. Corrigir `v8ContentParser.ts` (problemas 5, 7)
-5. Integrar refinamento no `AdminV8Create.tsx`
+1. Expandir tipo `V8InlineQuiz` (retrocompativel)
+2. Criar `V8QuizTrueFalse.tsx`
+3. Criar `V8QuizFillBlank.tsx`
+4. Atualizar router no Player
+5. Atualizar edge function (schema + prompt)
+6. Atualizar parser (P5 merge + novos tipos)
+7. Deploy da edge function
