@@ -89,10 +89,8 @@ export const V8QuizTrueFalse = ({
         </p>
       </div>
 
-      {/* Audio */}
-      {quiz.audioUrl && state === "answering" && isActiveAudio && (
-        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay />
-      )}
+      {/* Phase 7: Do NOT autoplay statement audio for true-false (it narrates the full statement).
+          Only play explanation/reinforcement audio after answering. */}
 
       {/* True / False buttons */}
       <div className="grid grid-cols-2 gap-3">
