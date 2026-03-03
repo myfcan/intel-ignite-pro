@@ -576,8 +576,8 @@ export default function AdminV8Create() {
             sections: parsed.sections.map(s => ({ title: s.title, content: s.content })),
             manualQuizzes: parsed.inlineQuizzes,
             manualPlaygrounds: parsed.inlinePlaygrounds || [],
-            manualExercises: parsed.hasManualExercises ? [] : [], // Future: pass parsed exercise data
-            generateImages: true,
+            manualExercises: parsed.hasManualExercises ? [] : [],
+            generateImages: false,
             lessonTitle: parsed.title,
           }),
         }
@@ -590,19 +590,82 @@ export default function AdminV8Create() {
 
       const result = await response.json();
 
-      // Update pipeline steps
+      // Update AI-generate step
       setPipelineSteps(prev => prev.map(s => 
-        s.id === 'ai-generate' ? { ...s, status: 'completed' as const, message: `${result.inlineQuizzes?.length || 0} quizzes, ${result.exercises?.length || 0} exercícios` } :
-        s.id === 'images' ? { ...s, status: 'completed' as const, message: `${result.sections?.filter((s: any) => s.imageUrl).length || 0} imagens` } :
-        s
+        s.id === 'ai-generate' ? { ...s, status: 'completed' as const, message: `${result.inlineQuizzes?.length || 0} quizzes, ${result.exercises?.length || 0} exercícios` } : s
       ));
-      setPipelineProgress(80);
+      setPipelineProgress(40);
 
       // Log progress messages from edge function
       (result.progress || []).forEach((msg: string) => addLog('info', msg));
       (result.errors || []).forEach((msg: string) => addLog('warning', msg));
 
-      // Step 3: Build final JSON
+      // ── Step 3: Batched image generation (1 section at a time from frontend) ──
+      setPipelineSteps(prev => prev.map(s => s.id === 'images' ? { ...s, status: 'running' as const } : s));
+      addLog('info', `Gerando imagens em lotes: ${parsed.sections.length} seções...`);
+
+      const imageResults: Array<{ index: number; imageUrl?: string; error?: string }> = [];
+      const draftId = `draft-${Date.now()}`;
+      
+      for (let i = 0; i < parsed.sections.length; i++) {
+        addLog('info', `Imagem seção ${i + 1}/${parsed.sections.length}: "${parsed.sections[i].title}"`);
+        setPipelineSteps(prev => prev.map(s => 
+          s.id === 'images' ? { ...s, message: `Seção ${i + 1}/${parsed.sections.length}` } : s
+        ));
+        setPipelineProgress(40 + Math.round((i / parsed.sections.length) * 30));
+
+        try {
+          const imgResponse = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-section-image`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authSession.access_token}`,
+                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              },
+              body: JSON.stringify({
+                mode: "auto",
+                content: parsed.sections[i].content,
+                lessonId: draftId,
+                sectionIndex: i,
+                sectionTitle: parsed.sections[i].title,
+                allowText: false,
+              }),
+            }
+          );
+
+          if (imgResponse.ok) {
+            const imgData = await imgResponse.json();
+            imageResults.push({ index: i, imageUrl: imgData.imageUrl });
+            addLog('success', `Imagem seção ${i + 1} ✓`);
+          } else {
+            const errText = await imgResponse.text();
+            imageResults.push({ index: i, error: `HTTP ${imgResponse.status}` });
+            addLog('warning', `Imagem seção ${i + 1} falhou: ${errText.slice(0, 100)}`);
+          }
+        } catch (imgErr) {
+          imageResults.push({ index: i, error: imgErr instanceof Error ? imgErr.message : "Unknown" });
+          addLog('warning', `Imagem seção ${i + 1} erro: ${imgErr instanceof Error ? imgErr.message : "Unknown"}`);
+        }
+      }
+
+      const successImgs = imageResults.filter(r => r.imageUrl).length;
+      setPipelineSteps(prev => prev.map(s => 
+        s.id === 'images' ? { ...s, status: 'completed' as const, message: `${successImgs}/${parsed.sections.length} imagens` } : s
+      ));
+      setPipelineProgress(70);
+      addLog('success', `${successImgs}/${parsed.sections.length} imagens geradas`);
+
+      // Merge image URLs into result sections
+      const sectionsWithImages = (result.sections || parsed.sections).map((s: any, i: number) => {
+        const imgResult = imageResults.find(r => r.index === i);
+        return { ...s, ...(imgResult?.imageUrl ? { imageUrl: imgResult.imageUrl } : {}) };
+      });
+      result.sections = sectionsWithImages;
+
+
+      // Step 4: Build final JSON
       setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'running' as const } : s));
       addLog('info', 'Montando JSON final...');
 
