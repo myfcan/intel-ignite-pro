@@ -49,7 +49,7 @@ const QUIZ_TOOLS = [
     type: "function",
     function: {
       name: "generate_inline_quizzes",
-      description: "Generate inline quizzes for sections that lack interactions. Each quiz tests comprehension of the section content.",
+      description: "Generate inline quizzes for sections that lack interactions. Each quiz tests comprehension of the section content. Vary quiz types — do NOT repeat the same type consecutively.",
       parameters: {
         type: "object",
         properties: {
@@ -59,7 +59,11 @@ const QUIZ_TOOLS = [
               type: "object",
               properties: {
                 afterSectionIndex: { type: "number", description: "0-based index of the section this quiz follows" },
-                question: { type: "string" },
+                quizType: { type: "string", enum: ["multiple-choice", "true-false", "fill-blank"], description: "Type of quiz. Vary types across the lesson." },
+                question: { type: "string", description: "Context question or prompt for the quiz" },
+                explanation: { type: "string" },
+                reinforcement: { type: "string" },
+                // multiple-choice fields
                 options: {
                   type: "array",
                   minItems: 3,
@@ -72,11 +76,17 @@ const QUIZ_TOOLS = [
                     },
                     required: ["text", "isCorrect"],
                   },
+                  description: "Required for multiple-choice. Omit for other types.",
                 },
-                explanation: { type: "string" },
-                reinforcement: { type: "string" },
+                // true-false fields
+                statement: { type: "string", description: "Statement to judge as true or false. Required for true-false." },
+                isTrue: { type: "boolean", description: "Whether the statement is true. Required for true-false." },
+                // fill-blank fields
+                sentenceWithBlank: { type: "string", description: "Sentence with _______ as placeholder. Required for fill-blank." },
+                correctAnswer: { type: "string", description: "The correct word/phrase. Required for fill-blank." },
+                acceptableAnswers: { type: "array", items: { type: "string" }, description: "Alternative accepted answers for fill-blank." },
               },
-              required: ["afterSectionIndex", "question", "options", "explanation"],
+              required: ["afterSectionIndex", "quizType", "question", "explanation"],
             },
           },
         },
@@ -170,13 +180,23 @@ Gere IDs únicos para todos os elementos (ex: "item-1", "cat-1", "stmt-1").`;
 
 const QUIZ_SYSTEM_PROMPT = `Você é um designer instrucional. Gere quizzes inline para seções de aula que NÃO possuem interações.
 Cada quiz deve:
-- Ter 3-4 opções (exatamente 1 correta)
-- Testar compreensão real do conteúdo da seção
 - Ter explicação clara
 - Ter reinforcement (texto extra mostrado ao errar)
 - Estar em Português Brasileiro (pt-BR)
 - NUNCA referencie números de seção na pergunta (ex: "De acordo com a Seção 0", "conforme a Seção 1", "na Seção 3"). A pergunta deve ser autocontida e compreensível sem contexto de numeração.
-- A pergunta NÃO deve mencionar "seção", "seções", "de acordo com", "conforme" seguido de referência numérica.`;
+- A pergunta NÃO deve mencionar "seção", "seções", "de acordo com", "conforme" seguido de referência numérica.
+
+VARIEDADE DE TIPOS (OBRIGATÓRIO):
+- VARIE os tipos de quiz. NÃO repita o mesmo tipo consecutivamente.
+- Use "true-false" quando o conteúdo tem afirmações que podem ser validadas como verdadeiras ou falsas. Preencha "statement" e "isTrue".
+- Use "fill-blank" quando o conteúdo tem definições ou frases-chave que o aluno deve completar. Preencha "sentenceWithBlank" (com _______), "correctAnswer" e "acceptableAnswers".
+- Use "multiple-choice" como padrão para perguntas de compreensão geral. Preencha "options" com 3-4 opções (exatamente 1 correta).
+- Em uma aula com 3+ quizzes, use pelo menos 2 tipos diferentes.
+
+REGRAS POR TIPO:
+- multiple-choice: "options" é obrigatório (3-4 opções, 1 correta)
+- true-false: "statement" e "isTrue" são obrigatórios. NÃO preencha "options".
+- fill-blank: "sentenceWithBlank", "correctAnswer" e "acceptableAnswers" são obrigatórios. NÃO preencha "options".`;
 
 const PLAYGROUND_SYSTEM_PROMPT = `Você é um designer instrucional especializado em prompts de IA.
 Gere playgrounds inline para seções onde faz sentido praticar prompts.
