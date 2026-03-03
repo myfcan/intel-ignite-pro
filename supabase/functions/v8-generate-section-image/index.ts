@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function buildAutoPrompt(content: string, allowText = false): string {
+function buildAutoPrompt(content: string, allowText = false, sectionIndex = 0, sectionTitle = ""): string {
   const cleaned = content
     .replace(/^#{1,3}\s+.*$/gm, "")
     .replace(/[*_`~\[\]()>]/g, "")
@@ -15,32 +15,41 @@ function buildAutoPrompt(content: string, allowText = false): string {
     .trim();
   const words = cleaned.split(/\s+/).slice(0, 150).join(" ");
 
+  // Style rotation to avoid visual monotony
+  const styles = [
+    "isometric 3D illustration with clean geometric shapes and subtle depth",
+    "glassmorphism style with frosted translucent layers and soft light refraction",
+    "clay render (claymorphism) with soft matte surfaces and rounded organic shapes",
+    "minimalist papercraft cutout style with layered paper textures and subtle shadows",
+    "low-poly geometric art with faceted surfaces and vibrant color gradients",
+    "flat vector illustration with bold shapes and modern color blocking",
+  ];
+  const style = styles[sectionIndex % styles.length];
+
   const textRule = allowText
     ? `- Text in the image is ALLOWED but MUST be written in Brazilian Portuguese (pt-BR). Never use English.
-- Use clean, legible sans-serif typography integrated into the 3D style
-- Examples: "Inteligência Artificial" (not "Artificial Intelligence"), "Como funciona" (not "How it works")
-- SPELLING RULE: Double-check ALL Portuguese words for correct spelling before rendering. Common mistakes to AVOID: "exaztmente" (correct: "exatamente"), "voce" (correct: "você"), "nao" (correct: "não"), "informaçao" (correct: "informação"), "inteligencia" (correct: "inteligência"). Every single word MUST be spelled correctly in standard Brazilian Portuguese with proper accents (á, é, í, ó, ú, ã, õ, ç, ê, â).`
-    : `- ABSOLUTELY NO TEXT of any kind inside the image. No words, no letters, no labels, no numbers, no banners, no captions, no typography, no characters, no symbols with letters. The image must be 100% visual/iconic with ZERO text or written characters anywhere. If you feel the urge to add text, replace it with a pure iconic symbol instead.`;
+- Use clean, legible sans-serif typography integrated into the style
+- SPELLING RULE: Double-check ALL Portuguese words for correct spelling before rendering.`
+    : `- ABSOLUTELY NO TEXT of any kind inside the image. No words, no letters, no labels, no numbers, no banners, no captions, no typography, no characters, no symbols with letters. The image must be 100% visual/iconic with ZERO text.`;
 
-  return `Create a single isolated 3D illustration object representing this educational concept: ${words}.
+  return `Create a single isolated ${style} object representing this specific educational concept from the section titled "${sectionTitle}": ${words}.
 
 Style requirements:
-- Modern flat 3D render, clean and minimal
-- Single iconic 3D object only — NO diagrams, flowcharts, arrows, or multi-step sequences
+- ${style}
+- Single iconic object only — NO diagrams, flowcharts, arrows, or multi-step sequences
 - Maximum 1 to 3 visual elements total, tightly composed as ONE unit
 - The main object must fill 85-95% of the frame — almost NO padding around it
 - CLEAN SOLID WHITE BACKGROUND (#FFFFFF)
-- Soft gradients, smooth surfaces, rounded edges
-- Vibrant but not neon colors (indigo, violet, sky blue, warm tones)
-- Think Apple/Notion style icons: polished, friendly, professional
+- Vibrant but not neon colors
 - Subtle shadow underneath the object for depth
 ${textRule}
+- CRITICAL: NEVER use brains, lightbulbs, gears, cogs, neural networks, circuit boards, or generic AI/technology symbols. These are BANNED. Instead, find a UNIQUE visual metaphor specific to THIS particular concept. Think creatively — use objects from everyday life, nature, tools, or abstract shapes that represent the SPECIFIC idea, not "AI in general".
 - NEVER create infographic-style, diagram-style, or flowchart-style compositions
 - NEVER scatter many small objects — always ONE cohesive central object
 - IMPORTANT: Compose the image in a SQUARE (1:1) orientation
 - OUTPUT SIZE: Generate the image at exactly 1024x1024 pixels (1:1 square)
 - The composition must be centered and fill the frame
-- LANGUAGE RULE: If any text, label, word, or phrase appears in the image, it MUST be written in Brazilian Portuguese (pt-BR). Never use English or any other language.`;
+- LANGUAGE RULE: If any text appears, it MUST be in Brazilian Portuguese (pt-BR). Never use English.`;
 }
 
 serve(async (req) => {
@@ -49,7 +58,7 @@ serve(async (req) => {
   }
 
   try {
-    const { mode, content, customPrompt, lessonId, sectionIndex, allowText } = await req.json();
+    const { mode, content, customPrompt, lessonId, sectionIndex, allowText, sectionTitle } = await req.json();
 
     if (!mode || !lessonId || sectionIndex === undefined) {
       return new Response(JSON.stringify({ error: "Missing required fields: mode, lessonId, sectionIndex" }), {
@@ -73,7 +82,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      prompt = buildAutoPrompt(content, allowText === true);
+      prompt = buildAutoPrompt(content, allowText === true, sectionIndex, sectionTitle || "");
     } else if (mode === "custom") {
       if (!customPrompt) {
         return new Response(JSON.stringify({ error: "customPrompt is required for custom mode" }), {
