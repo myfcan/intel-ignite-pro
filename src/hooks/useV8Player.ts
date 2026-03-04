@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo } from "react";
-import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground, V8InsightBlock, V8InlineCompleteSentence } from "@/types/v8Lesson";
+import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground, V8InsightBlock, V8InlineCompleteSentence, V8InlineExercise } from "@/types/v8Lesson";
 import { PASS_SCORE } from "@/constants/v8Rules";
 
 /**
  * useV8Player — State machine for V8 lesson navigation.
  *
- * Builds a flat timeline of items (sections + inline quizzes + playgrounds + insights + complete-sentences)
+ * Builds a flat timeline of items (sections + inline quizzes + playgrounds + insights + complete-sentences + inline-exercises)
  * and manages phase transitions: mode-select → content → exercises → completion.
  */
 
@@ -14,7 +14,8 @@ export type TimelineItem =
   | { type: "playground"; playground: V8InlinePlayground }
   | { type: "insight"; insight: V8InsightBlock }
   | { type: "quiz"; quiz: V8InlineQuiz }
-  | { type: "complete-sentence"; completeSentence: V8InlineCompleteSentence };
+  | { type: "complete-sentence"; completeSentence: V8InlineCompleteSentence }
+  | { type: "inline-exercise"; exercise: V8InlineExercise };
 
 export const useV8Player = (lessonData: V8LessonData) => {
   const [state, setState] = useState<V8PlayerState>({
@@ -34,6 +35,7 @@ export const useV8Player = (lessonData: V8LessonData) => {
     const playgroundMap = new Map<number, V8InlinePlayground[]>();
     const insightMap = new Map<number, V8InsightBlock[]>();
     const completeSentenceMap = new Map<number, V8InlineCompleteSentence[]>();
+    const inlineExerciseMap = new Map<number, V8InlineExercise[]>();
 
     for (const quiz of lessonData.inlineQuizzes) {
       const existing = quizMap.get(quiz.afterSectionIndex) || [];
@@ -59,7 +61,13 @@ export const useV8Player = (lessonData: V8LessonData) => {
       completeSentenceMap.set(cs.afterSectionIndex, existing);
     }
 
-    // Order: Section[i] → CompleteSentence(s)[i] → Playground(s)[i] → Insight(s)[i] → Quiz(zes)[i]
+    for (const ex of (lessonData.inlineExercises || [])) {
+      const existing = inlineExerciseMap.get(ex.afterSectionIndex) || [];
+      existing.push(ex);
+      inlineExerciseMap.set(ex.afterSectionIndex, existing);
+    }
+
+    // Order: Section[i] → CompleteSentence(s)[i] → InlineExercise(s)[i] → Playground(s)[i] → Insight(s)[i] → Quiz(zes)[i]
     for (let i = 0; i < lessonData.sections.length; i++) {
       items.push({ type: "section", index: i });
 
@@ -67,6 +75,13 @@ export const useV8Player = (lessonData: V8LessonData) => {
       if (completeSentences) {
         for (const cs of completeSentences) {
           items.push({ type: "complete-sentence", completeSentence: cs });
+        }
+      }
+
+      const inlineExercises = inlineExerciseMap.get(i);
+      if (inlineExercises) {
+        for (const ex of inlineExercises) {
+          items.push({ type: "inline-exercise", exercise: ex });
         }
       }
 

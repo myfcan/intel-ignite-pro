@@ -87,7 +87,7 @@ export const V8InsightReward = ({ insight, onContinue, isActive = true, unlockab
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 space-y-4"
+      className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 pb-8 space-y-4 mb-6"
     >
       {/* Header */}
       <div className="flex items-center gap-2">

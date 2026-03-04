@@ -124,12 +124,45 @@ const QUIZ_TOOLS = [
   },
 ];
 
+const INLINE_EXERCISE_TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "generate_inline_exercises",
+      description: "Generate inline exercises for sections between content sections. These replace intermediate playgrounds. Choose from 4 reliable types.",
+      parameters: {
+        type: "object",
+        properties: {
+          exercises: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                afterSectionIndex: { type: "number", description: "0-based section index this exercise follows" },
+                type: { type: "string", enum: ["true-false", "multiple-choice", "complete-sentence", "fill-in-blanks"] },
+                title: { type: "string" },
+                instruction: { type: "string" },
+                data: {
+                  type: "object",
+                  description: "Exercise data. true-false: { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }. fill-in-blanks: { sentences: [{ id, text (use _______ as placeholder), correctAnswers: [], hint }], feedback: { allCorrect, someCorrect, needsReview } }. complete-sentence: { sentences: [{ id, text (use _______ as placeholder), correctAnswers: [], options: [] }] }. multiple-choice: { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }.",
+                },
+              },
+              required: ["afterSectionIndex", "type", "title", "instruction", "data"],
+            },
+          },
+        },
+        required: ["exercises"],
+      },
+    },
+  },
+];
+
 const PLAYGROUND_TOOLS = [
   {
     type: "function",
     function: {
       name: "generate_inline_playgrounds",
-      description: "Generate inline playgrounds for sections where practical prompt exercise makes sense. Compare amateur vs professional prompts.",
+      description: "Generate inline playgrounds for sections where practical prompt exercise makes sense.",
       parameters: {
         type: "object",
         properties: {
@@ -227,8 +260,8 @@ REGRAS POR TIPO:
 - fill-blank: "sentenceWithBlank", "correctAnswer", "acceptableAnswers" e "chipOptions" são obrigatórios. NÃO preencha "options". O campo "question" deve conter apenas uma instrução de engajamento como "Complete a frase abaixo", NUNCA a frase com lacuna. Gere "chipOptions" com 4-6 opções incluindo a correta e distratoras plausíveis.`;
 
 const PLAYGROUND_SYSTEM_PROMPT = `Você é um designer instrucional especializado em prompts de IA.
-Gere playgrounds inline para seções onde faz sentido praticar prompts.
-Cada playground deve:
+Gere UM playground para a ÚLTIMA seção da aula onde o aluno pratica escrevendo prompts.
+O playground deve:
 - Comparar um prompt amador vs profissional
 - O resultado amador (amateurResult) DEVE ser curto, vago, genérico e visivelmente fraco — máximo 2 linhas. Exemplo: "A natureza é bonita e importante." NÃO gere resultados amadores elaborados com poemas, listas ou parágrafos longos.
 - O resultado profissional (professionalResult) deve ser detalhado, específico e visivelmente superior ao amador — 3-5 linhas com exemplos concretos.
@@ -236,6 +269,24 @@ Cada playground deve:
 - Ter desafio para o usuário escrever seu próprio prompt
 - Estar em Português Brasileiro (pt-BR)
 - Ter hints e critérios de avaliação`;
+
+const INLINE_EXERCISE_SYSTEM_PROMPT = `Você é um designer instrucional especializado em educação sobre I.A.
+Gere exercícios interativos inline para seções intermediárias de uma aula.
+
+REGRAS:
+1. VARIE os tipos — NÃO repita o mesmo tipo consecutivamente
+2. Use Português Brasileiro (pt-BR)
+3. Cada exercício deve testar conhecimento real da seção correspondente
+4. NÃO referencie números de seção na pergunta
+
+TIPOS DISPONÍVEIS E SCHEMAS:
+- true-false: { statements: [{ id: "stmt-1", text: "afirmação", correct: true/false, explanation: "..." }], feedback: { perfect: "...", good: "...", needsReview: "..." } }
+- fill-in-blanks: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], hint: "dica" }], feedback: { allCorrect: "...", someCorrect: "...", needsReview: "..." } }
+- complete-sentence: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], options: ["opção1", "opção2", "opção3", "resposta"] }] }
+- multiple-choice: Use o formato true-false (statements) para compatibilidade do player.
+
+Gere IDs únicos para todos os elementos (ex: "stmt-1", "sent-1").
+Gere 2-4 statements/sentences por exercício.`;
 
 async function callAI(
   apiKey: string,
@@ -432,106 +483,152 @@ serve(async (req) => {
       }
     }
 
-    // ── 3. Generate inline playgrounds (for ~30% of remaining sections) ──
-    let generatedPlaygrounds: any[] = [];
-    const sectionsForPlayground = sectionsNeedingInteraction.filter((_: number, i: number) => i % 3 === 1);
-    if (sectionsForPlayground.length > 0) {
-      progress.push("Gerando playgrounds inline...");
+    // ── 3. Generate inline exercises for intermediate sections (replaces intermediate playgrounds) ──
+    let generatedInlineExercises: any[] = [];
+    // Sections that have quizzes already should not also get inline exercises
+    const sectionsForInlineExercise = sectionsNeedingInteraction.filter((_: number, i: number) => i % 2 === 0);
+    if (sectionsForInlineExercise.length > 0) {
+      progress.push("Gerando exercícios inline...");
       try {
-        const pgSectionsContent = sectionsForPlayground.map((i: number) => 
+        const exSectionsContent = sectionsForInlineExercise.map((i: number) =>
           `Seção ${i} (index ${i}): ${sections[i].title}\n${sections[i].content?.slice(0, 400) || ""}`
         ).join("\n\n");
 
-        const pgResult = await callAI(
+        const exResult = await callAI(
           LOVABLE_API_KEY,
-          PLAYGROUND_SYSTEM_PROMPT,
-          `Gere playgrounds para estas seções:\n\n${pgSectionsContent}\n\nÍndices válidos: ${sectionsForPlayground.join(", ")}`,
-          PLAYGROUND_TOOLS,
-          "generate_inline_playgrounds",
+          INLINE_EXERCISE_SYSTEM_PROMPT,
+          `Gere exercícios inline para estas seções:\n\n${exSectionsContent}\n\nÍndices válidos: ${sectionsForInlineExercise.join(", ")}`,
+          INLINE_EXERCISE_TOOLS,
+          "generate_inline_exercises",
         );
 
-        generatedPlaygrounds = (pgResult.playgrounds || []).map((p: any, idx: number) => ({
-          ...p,
-          id: `playground-gen-${String(idx + 1).padStart(2, "0")}`,
-        }));
+        const INLINE_REQUIRED_DATA_KEYS: Record<string, string[]> = {
+          'true-false': ['statements'],
+          'fill-in-blanks': ['sentences'],
+          'complete-sentence': ['sentences'],
+          'multiple-choice': ['statements'],
+        };
 
-        // Phase 1: Sanitize encoding on playground text fields
-        generatedPlaygrounds = generatedPlaygrounds.map((p: any) =>
-          sanitizeFields(p, ['title', 'instruction', 'narration', 'amateurPrompt', 'professionalPrompt', 'amateurResult', 'professionalResult', 'successMessage', 'tryAgainMessage'])
-        );
+        generatedInlineExercises = (exResult.exercises || [])
+          .map((ex: any, idx: number) => ({
+            ...ex,
+            id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
+            title: sanitizeEncoding(ex.title || ''),
+            instruction: sanitizeEncoding(ex.instruction || ''),
+          }))
+          .filter((ex: any) => {
+            const requiredKeys = INLINE_REQUIRED_DATA_KEYS[ex.type];
+            if (!requiredKeys) {
+              console.warn(`[v8-generate] Unknown inline exercise type: ${ex.type}, rejecting`);
+              return false;
+            }
+            const dataKeys = Object.keys(ex.data || {});
+            const hasRequired = requiredKeys.some((k: string) => dataKeys.includes(k));
+            if (!hasRequired) {
+              console.error(`[v8-generate] REJECTED inline exercise ${ex.id} (${ex.type}): missing required keys [${requiredKeys.join(', ')}]`);
+              return false;
+            }
+            return true;
+          });
 
-        progress.push(`${generatedPlaygrounds.length} playgrounds gerados`);
+        // Rotate consecutive same types
+        const inlineTypeRotation = ['true-false', 'fill-in-blanks', 'complete-sentence', 'multiple-choice'];
+        for (let i = 1; i < generatedInlineExercises.length; i++) {
+          if (generatedInlineExercises[i].type === generatedInlineExercises[i - 1].type) {
+            const currentType = generatedInlineExercises[i].type;
+            const nextType = inlineTypeRotation.find(t => t !== currentType) || 'true-false';
+            console.warn(`[v8-generate] Rotating duplicate inline exercise type at index ${i}: ${currentType} → ${nextType}`);
+            generatedInlineExercises[i] = { ...generatedInlineExercises[i], type: nextType };
+          }
+        }
+
+        progress.push(`${generatedInlineExercises.length} exercícios inline gerados (tipos: ${generatedInlineExercises.map((e: any) => e.type).join(', ')})`);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Playground generation failed";
-        errors.push(`Playgrounds: ${msg}`);
-        console.error("[v8-generate-lesson-content] Playground generation error:", msg);
+        const msg = err instanceof Error ? err.message : "Inline exercise generation failed";
+        errors.push(`Inline exercises: ${msg}`);
+        console.error("[v8-generate-lesson-content] Inline exercise generation error:", msg);
       }
     }
 
-    // ── 3.1 Phase 3 (Gap 2): Force ONE playground at last section ──
+    // ── 3.1 Phase 9: Generate ONE playground at LAST section only (no intermediate playgrounds) ──
+    let generatedPlaygrounds: any[] = [];
     {
       const lastIdx = sections.length - 1;
-      const allPg = [...manualPlaygrounds, ...generatedPlaygrounds];
-      const hasPlaygroundAtLast = allPg.some((p: any) => p.afterSectionIndex === lastIdx);
+      const hasManualAtLast = manualPlaygrounds.some((p: any) => p.afterSectionIndex === lastIdx);
 
-      if (!hasPlaygroundAtLast && generatedPlaygrounds.length > 0) {
-        // Move the generated playground with highest afterSectionIndex to lastIdx
-        const sorted = [...generatedPlaygrounds].sort((a: any, b: any) => b.afterSectionIndex - a.afterSectionIndex);
-        const moved = sorted[0];
-        console.log(`[v8-generate] Phase 3: Moving generated playground ${moved.id} from section ${moved.afterSectionIndex} → ${lastIdx}`);
-        moved.afterSectionIndex = lastIdx;
-        // If there's a generated quiz at lastIdx, move it to previous free section
-        const quizAtLast = generatedQuizzes.find((q: any) => q.afterSectionIndex === lastIdx);
-        if (quizAtLast) {
-          const freeSection = Array.from({ length: lastIdx }, (_, i) => lastIdx - 1 - i)
-            .find(i => i >= 2
-              && !generatedQuizzes.some((q: any) => q !== quizAtLast && q.afterSectionIndex === i)
-              && !allPg.some((p: any) => p.afterSectionIndex === i));
-          if (freeSection !== undefined) {
-            console.log(`[v8-generate] Phase 3: Moving quiz ${quizAtLast.id} from section ${lastIdx} → ${freeSection}`);
-            quizAtLast.afterSectionIndex = freeSection;
-          }
+      // Force all manual playgrounds to last section
+      for (const mp of manualPlaygrounds) {
+        if (mp.afterSectionIndex !== lastIdx) {
+          console.log(`[v8-generate] Phase 9: Moving manual playground from section ${mp.afterSectionIndex} → ${lastIdx}`);
+          mp.afterSectionIndex = lastIdx;
         }
-      } else if (!hasPlaygroundAtLast && manualPlaygrounds.length > 0 && generatedPlaygrounds.length === 0) {
-        // Phase 5 fix: Only manual playgrounds exist, none at last section — MOVE the one with highest index
-        const sortedManual = [...manualPlaygrounds].sort((a: any, b: any) => b.afterSectionIndex - a.afterSectionIndex);
-        const moved = sortedManual[0];
-        console.log(`[v8-generate] Phase 5: Moving manual playground from section ${moved.afterSectionIndex} → ${lastIdx}`);
-        moved.afterSectionIndex = lastIdx;
-        // Also resolve quiz conflict at lastIdx (check both manual and generated quizzes)
-        const allQuizzes = [...(manualQuizzes || []), ...generatedQuizzes];
-        const quizAtLast = allQuizzes.find((q: any) => q.afterSectionIndex === lastIdx);
-        if (quizAtLast) {
-          const freeSection = Array.from({ length: lastIdx }, (_, i) => lastIdx - 1 - i)
-            .find(i => i >= 2
-              && !allQuizzes.some((q: any) => q !== quizAtLast && q.afterSectionIndex === i)
-              && !allPg.some((p: any) => p.afterSectionIndex === i));
-          if (freeSection !== undefined) {
-            console.log(`[v8-generate] Phase 5: Moving conflicting quiz from section ${lastIdx} → ${freeSection}`);
-            quizAtLast.afterSectionIndex = freeSection;
+      }
+
+      if (!hasManualAtLast && manualPlaygrounds.length === 0 && sections.length >= 4) {
+        // Generate ONE playground for the final section
+        progress.push("Gerando playground final...");
+        try {
+          const lastSectionContent = `Seção ${lastIdx} (index ${lastIdx}): ${sections[lastIdx].title}\n${sections[lastIdx].content?.slice(0, 500) || ""}`;
+
+          const pgResult = await callAI(
+            LOVABLE_API_KEY,
+            PLAYGROUND_SYSTEM_PROMPT,
+            `Gere UM playground para a última seção desta aula "${lessonTitle}":\n\n${lastSectionContent}\n\nÍndice obrigatório para afterSectionIndex: ${lastIdx}`,
+            PLAYGROUND_TOOLS,
+            "generate_inline_playgrounds",
+          );
+
+          const rawPg = (pgResult.playgrounds || [])[0];
+          if (rawPg) {
+            rawPg.afterSectionIndex = lastIdx; // Force last section
+            rawPg.id = `playground-gen-final`;
+            const sanitized = sanitizeFields(rawPg, ['title', 'instruction', 'narration', 'amateurPrompt', 'professionalPrompt', 'amateurResult', 'professionalResult', 'successMessage', 'tryAgainMessage']);
+            generatedPlaygrounds.push(sanitized);
+            progress.push("1 playground final gerado");
           }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Playground generation failed";
+          errors.push(`Playground: ${msg}`);
+          console.error("[v8-generate-lesson-content] Playground generation error:", msg);
         }
-      } else if (!hasPlaygroundAtLast && allPg.length === 0 && sections.length >= 4) {
-        // No playgrounds at all — create a minimal placeholder for the final section
-        console.warn(`[v8-generate] Phase 3: No playgrounds generated. Adding placeholder at last section ${lastIdx}`);
-        generatedPlaygrounds.push({
-          id: `playground-gen-final`,
-          afterSectionIndex: lastIdx,
-          title: "Sua Vez — Prompt Real",
-          instruction: "Agora é com você! Aplique tudo o que aprendeu nesta aula escrevendo um prompt profissional.",
-          amateurPrompt: "Me ajuda com isso",
-          professionalPrompt: "Preciso de uma análise detalhada sobre X, considerando Y e Z, formatada como lista com prós e contras",
-          amateurResult: "Resultado genérico e vago.",
-          professionalResult: "Análise estruturada com pontos específicos, prós e contras organizados, e recomendação final baseada nos critérios solicitados.",
-          successMessage: "Excelente! Seu prompt demonstra domínio das técnicas aprendidas.",
-          tryAgainMessage: "Quase lá! Tente adicionar mais contexto e especificidade ao seu prompt.",
-          userChallenge: {
-            instruction: "Escreva um prompt profissional aplicando as técnicas desta aula.",
-            challengePrompt: "Crie um prompt que seja específico, contextualizado e com formato definido.",
-            hints: ["Inclua um objetivo claro", "Adicione contexto real", "Defina o formato esperado"],
-            evaluationCriteria: ["Tem objetivo claro", "Inclui contexto", "Define formato"],
-          },
-        });
+
+        // Fallback placeholder if generation failed
+        if (generatedPlaygrounds.length === 0) {
+          console.warn(`[v8-generate] Phase 9: Playground generation failed. Adding placeholder at last section ${lastIdx}`);
+          generatedPlaygrounds.push({
+            id: `playground-gen-final`,
+            afterSectionIndex: lastIdx,
+            title: "Sua Vez — Prompt Real",
+            instruction: "Agora é com você! Aplique tudo o que aprendeu nesta aula escrevendo um prompt profissional.",
+            amateurPrompt: "Me ajuda com isso",
+            professionalPrompt: "Preciso de uma análise detalhada sobre X, considerando Y e Z, formatada como lista com prós e contras",
+            amateurResult: "Resultado genérico e vago.",
+            professionalResult: "Análise estruturada com pontos específicos, prós e contras organizados, e recomendação final baseada nos critérios solicitados.",
+            successMessage: "Excelente! Seu prompt demonstra domínio das técnicas aprendidas.",
+            tryAgainMessage: "Quase lá! Tente adicionar mais contexto e especificidade ao seu prompt.",
+            userChallenge: {
+              instruction: "Escreva um prompt profissional aplicando as técnicas desta aula.",
+              challengePrompt: "Crie um prompt que seja específico, contextualizado e com formato definido.",
+              hints: ["Inclua um objetivo claro", "Adicione contexto real", "Defina o formato esperado"],
+              evaluationCriteria: ["Tem objetivo claro", "Inclui contexto", "Define formato"],
+            },
+          });
+        }
+      }
+
+      // Resolve quiz conflict at lastIdx
+      const allPg = [...manualPlaygrounds, ...generatedPlaygrounds];
+      const allQuizzesForConflict = [...(manualQuizzes || []), ...generatedQuizzes];
+      const quizAtLast = allQuizzesForConflict.find((q: any) => q.afterSectionIndex === lastIdx);
+      if (quizAtLast && allPg.some((p: any) => p.afterSectionIndex === lastIdx)) {
+        const freeSection = Array.from({ length: lastIdx }, (_, i) => lastIdx - 1 - i)
+          .find(i => i >= 2
+            && !allQuizzesForConflict.some((q: any) => q !== quizAtLast && q.afterSectionIndex === i)
+            && !allPg.some((p: any) => p.afterSectionIndex === i));
+        if (freeSection !== undefined) {
+          console.log(`[v8-generate] Phase 9: Moving quiz from section ${lastIdx} → ${freeSection}`);
+          quizAtLast.afterSectionIndex = freeSection;
+        }
       }
     }
 
@@ -704,12 +801,13 @@ O título deve ser curto e começar com 💡. creditsReward deve ser 10. Portugu
       inlinePlaygrounds: allPlaygrounds,
       inlineInsights: generatedInsights,
       inlineCompleteSentences: [],
+      inlineExercises: generatedInlineExercises,
       exercises: generatedExercises,
       progress,
       errors: errors.length > 0 ? errors : undefined,
     };
 
-    console.log(`[v8-generate-lesson-content] Done: ${allQuizzes.length} quizzes, ${allPlaygrounds.length} playgrounds, ${generatedExercises.length} exercises, ${imageResults.filter(r => r.imageUrl).length} images`);
+    console.log(`[v8-generate-lesson-content] Done: ${allQuizzes.length} quizzes, ${allPlaygrounds.length} playgrounds, ${generatedInlineExercises.length} inline exercises, ${generatedExercises.length} final exercises, ${imageResults.filter(r => r.imageUrl).length} images`);
 
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

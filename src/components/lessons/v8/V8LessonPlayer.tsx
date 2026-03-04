@@ -11,6 +11,7 @@ import { V8QuizFillBlank } from "./V8QuizFillBlank";
 import { V8PlaygroundInline } from "./V8PlaygroundInline";
 import { V8InsightReward } from "./V8InsightReward";
 import { V8CompleteSentenceInline } from "./V8CompleteSentenceInline";
+import { V8InlineExercise } from "./V8InlineExercise";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
 import { PASS_SCORE } from "@/constants/v8Rules";
@@ -259,6 +260,15 @@ export const V8LessonPlayer = ({
                       {item.type === "complete-sentence" && (
                         <V8CompleteSentenceInline
                           completeSentence={item.completeSentence}
+                          onContinue={isLast ? advance : undefined}
+                          onScore={(s) => addScore(s)}
+                          isActive={isLast}
+                        />
+                      )}
+
+                      {item.type === "inline-exercise" && (
+                        <V8InlineExercise
+                          exercise={item.exercise}
                           onContinue={isLast ? advance : undefined}
                           onScore={(s) => addScore(s)}
                           isActive={isLast}
