@@ -18,82 +18,98 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
+// Retry wrapper for lazy imports — handles stale chunk errors after deploys
+function lazyRetry(factory: () => Promise<any>) {
+  return lazy(() =>
+    factory().catch((err) => {
+      const key = 'ailiv_chunk_retry';
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+        return new Promise(() => {}); // never resolves, page will reload
+      }
+      sessionStorage.removeItem(key);
+      throw err;
+    })
+  );
+}
+
 // Lazy loaded pages - loaded on demand
-const Onboarding = lazy(() => import("./pages/Onboarding"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const TrailDetail = lazy(() => import("./pages/TrailDetail"));
-const CourseDetail = lazy(() => import("./pages/CourseDetail"));
-const Lesson = lazy(() => import("./pages/Lesson"));
-const LessonInteractive = lazy(() => import("./pages/LessonInteractive"));
-const Achievements = lazy(() => import("./pages/Achievements"));
-const AchievementsPage = lazy(() => import("./pages/AchievementsPage"));
-const Leaderboard = lazy(() => import("./pages/Leaderboard"));
-const Profile = lazy(() => import("./pages/Profile"));
+const Onboarding = lazyRetry(() => import("./pages/Onboarding"));
+const Dashboard = lazyRetry(() => import("./pages/Dashboard"));
+const TrailDetail = lazyRetry(() => import("./pages/TrailDetail"));
+const CourseDetail = lazyRetry(() => import("./pages/CourseDetail"));
+const Lesson = lazyRetry(() => import("./pages/Lesson"));
+const LessonInteractive = lazyRetry(() => import("./pages/LessonInteractive"));
+const Achievements = lazyRetry(() => import("./pages/Achievements"));
+const AchievementsPage = lazyRetry(() => import("./pages/AchievementsPage"));
+const Leaderboard = lazyRetry(() => import("./pages/Leaderboard"));
+const Profile = lazyRetry(() => import("./pages/Profile"));
 
 // Feature pages - lazy loaded
-const Guides = lazy(() => import("./pages/Guides"));
-const GuideDetail = lazy(() => import("./pages/GuideDetail"));
-const AIDirectory = lazy(() => import("./pages/AIDirectory"));
-const PromptLibrary = lazy(() => import("./pages/PromptLibrary"));
-const PromptCategory = lazy(() => import("./pages/PromptCategory"));
-const AIPlayground = lazy(() => import("./pages/AIPlayground"));
-const CursoExclusivo = lazy(() => import("./pages/CursoExclusivo"));
-const AllTrails = lazy(() => import("./pages/AllTrails"));
+const Guides = lazyRetry(() => import("./pages/Guides"));
+const GuideDetail = lazyRetry(() => import("./pages/GuideDetail"));
+const AIDirectory = lazyRetry(() => import("./pages/AIDirectory"));
+const PromptLibrary = lazyRetry(() => import("./pages/PromptLibrary"));
+const PromptCategory = lazyRetry(() => import("./pages/PromptCategory"));
+const AIPlayground = lazyRetry(() => import("./pages/AIPlayground"));
+const CursoExclusivo = lazyRetry(() => import("./pages/CursoExclusivo"));
+const AllTrails = lazyRetry(() => import("./pages/AllTrails"));
 
 // Admin pages - lazy loaded (heavy components)
-const Admin = lazy(() => import("./pages/Admin"));
-const AdminUpdateTimestamps = lazy(() => import("./pages/AdminUpdateTimestamps"));
-const AdminAudioGenerator = lazy(() => import("./pages/AdminAudioGenerator"));
-const AdminAudioBatch = lazy(() => import("./pages/AdminAudioBatch"));
-const AdminSyncTester = lazy(() => import("./pages/AdminSyncTester"));
-const AdminSyncLessons = lazy(() => import("./pages/AdminSyncLessons"));
-const AdminDebugTimestamps = lazy(() => import("./pages/AdminDebugTimestamps"));
-const AdminLessonTester = lazy(() => import("./pages/AdminLessonTester"));
-const AdminBatchLessons = lazy(() => import("./pages/AdminBatchLessons"));
-const AdminIntonationTest = lazy(() => import("./pages/AdminIntonationTest"));
-const AdminValidationSystem = lazy(() => import("./pages/AdminValidationSystem"));
-const AdminPipelineTest = lazy(() => import("./pages/AdminPipelineTest"));
-const AdminPipelineHub = lazy(() => import("./pages/AdminPipelineHub"));
-const AdminManualHub = lazy(() => import("./pages/AdminManualHub"));
-const AdminCreateLessonV3 = lazy(() => import("./pages/AdminCreateLessonV3"));
-const AdminTestImageGeneration = lazy(() => import("./pages/AdminTestImageGeneration"));
-const AdminPipelineCreateSingle = lazy(() => import("./pages/AdminPipelineCreateSingle"));
-const AdminPipelineCreateBatch = lazy(() => import("./pages/AdminPipelineCreateBatch"));
-const AdminMicroVisualSandbox = lazy(() => import("./pages/AdminMicroVisualSandbox"));
-const AdminPipelineMonitor = lazy(() => import("./pages/AdminPipelineMonitor"));
-const AdminManageLessons = lazy(() => import("./pages/AdminManageLessons"));
-const AdminLessonDebug = lazy(() => import("./pages/AdminLessonDebug"));
-const AdminFixLessonExercises = lazy(() => import("./pages/AdminFixLessonExercises"));
-const AdminPlaygroundSessions = lazy(() => import("./pages/AdminPlaygroundSessions"));
-const AdminV5CardConfig = lazy(() => import("./pages/AdminV5CardConfig"));
-const AdminTestCardSync = lazy(() => import("./pages/AdminTestCardSync"));
-const TestCard = lazy(() => import("./pages/TestCard"));
-const AdminV7Create = lazy(() => import("./pages/AdminV7Create"));
-const AdminV7Preview = lazy(() => import("./pages/AdminV7Preview"));
-const AdminV7vv = lazy(() => import("./pages/AdminV7vv"));
-const AdminV7Pipeline = lazy(() => import("./pages/AdminV7Pipeline"));
-const AdminV7Diagnostic = lazy(() => import("./pages/AdminV7Diagnostic"));
-const V7CinematicDemo = lazy(() => import("./pages/V7CinematicDemo"));
-const V7CinematicPlayer = lazy(() => import("./pages/V7CinematicPlayer"));
-const V7LessonTest = lazy(() => import("./pages/V7LessonTest"));
+const Admin = lazyRetry(() => import("./pages/Admin"));
+const AdminUpdateTimestamps = lazyRetry(() => import("./pages/AdminUpdateTimestamps"));
+const AdminAudioGenerator = lazyRetry(() => import("./pages/AdminAudioGenerator"));
+const AdminAudioBatch = lazyRetry(() => import("./pages/AdminAudioBatch"));
+const AdminSyncTester = lazyRetry(() => import("./pages/AdminSyncTester"));
+const AdminSyncLessons = lazyRetry(() => import("./pages/AdminSyncLessons"));
+const AdminDebugTimestamps = lazyRetry(() => import("./pages/AdminDebugTimestamps"));
+const AdminLessonTester = lazyRetry(() => import("./pages/AdminLessonTester"));
+const AdminBatchLessons = lazyRetry(() => import("./pages/AdminBatchLessons"));
+const AdminIntonationTest = lazyRetry(() => import("./pages/AdminIntonationTest"));
+const AdminValidationSystem = lazyRetry(() => import("./pages/AdminValidationSystem"));
+const AdminPipelineTest = lazyRetry(() => import("./pages/AdminPipelineTest"));
+const AdminPipelineHub = lazyRetry(() => import("./pages/AdminPipelineHub"));
+const AdminManualHub = lazyRetry(() => import("./pages/AdminManualHub"));
+const AdminCreateLessonV3 = lazyRetry(() => import("./pages/AdminCreateLessonV3"));
+const AdminTestImageGeneration = lazyRetry(() => import("./pages/AdminTestImageGeneration"));
+const AdminPipelineCreateSingle = lazyRetry(() => import("./pages/AdminPipelineCreateSingle"));
+const AdminPipelineCreateBatch = lazyRetry(() => import("./pages/AdminPipelineCreateBatch"));
+const AdminMicroVisualSandbox = lazyRetry(() => import("./pages/AdminMicroVisualSandbox"));
+const AdminPipelineMonitor = lazyRetry(() => import("./pages/AdminPipelineMonitor"));
+const AdminManageLessons = lazyRetry(() => import("./pages/AdminManageLessons"));
+const AdminLessonDebug = lazyRetry(() => import("./pages/AdminLessonDebug"));
+const AdminFixLessonExercises = lazyRetry(() => import("./pages/AdminFixLessonExercises"));
+const AdminPlaygroundSessions = lazyRetry(() => import("./pages/AdminPlaygroundSessions"));
+const AdminV5CardConfig = lazyRetry(() => import("./pages/AdminV5CardConfig"));
+const AdminTestCardSync = lazyRetry(() => import("./pages/AdminTestCardSync"));
+const TestCard = lazyRetry(() => import("./pages/TestCard"));
+const AdminV7Create = lazyRetry(() => import("./pages/AdminV7Create"));
+const AdminV7Preview = lazyRetry(() => import("./pages/AdminV7Preview"));
+const AdminV7vv = lazyRetry(() => import("./pages/AdminV7vv"));
+const AdminV7Pipeline = lazyRetry(() => import("./pages/AdminV7Pipeline"));
+const AdminV7Diagnostic = lazyRetry(() => import("./pages/AdminV7Diagnostic"));
+const V7CinematicDemo = lazyRetry(() => import("./pages/V7CinematicDemo"));
+const V7CinematicPlayer = lazyRetry(() => import("./pages/V7CinematicPlayer"));
+const V7LessonTest = lazyRetry(() => import("./pages/V7LessonTest"));
 
 // V8 Read & Listen Premium
-const V8TrailDetail = lazy(() => import("./pages/V8TrailDetail"));
-const V8Lesson = lazy(() => import("./pages/V8Lesson"));
-const AdminV8Create = lazy(() => import("./pages/AdminV8Create"));
-const ChatDesignDemo = lazy(() => import("./pages/ChatDesignDemo"));
-const V7Documentation = lazy(() => import("./pages/V7Documentation"));
-const Admin3DDemos = lazy(() => import("./pages/Admin3DDemos"));
-const AdminDebugs = lazy(() => import("./pages/AdminDebugs"));
-const AdminTimedQuizDemo = lazy(() => import("./pages/AdminTimedQuizDemo"));
-const AdminFlipCardQuizDemo = lazy(() => import("./pages/AdminFlipCardQuizDemo"));
-const AdminExerciseLibrary = lazy(() => import("./pages/AdminExerciseLibrary"));
-const AdminModelos = lazy(() => import("./pages/AdminModelos"));
-const AdminContracts = lazy(() => import("./pages/AdminContracts"));
-const C10Report = lazy(() => import("./pages/admin/C10Report"));
-const AdminUserManagement = lazy(() => import("./pages/AdminUserManagement"));
-const AdminImageLab = lazy(() => import("./pages/AdminImageLab"));
-const AdminAudioPreview = lazy(() => import("./pages/AdminAudioPreview"));
+const V8TrailDetail = lazyRetry(() => import("./pages/V8TrailDetail"));
+const V8Lesson = lazyRetry(() => import("./pages/V8Lesson"));
+const AdminV8Create = lazyRetry(() => import("./pages/AdminV8Create"));
+const ChatDesignDemo = lazyRetry(() => import("./pages/ChatDesignDemo"));
+const V7Documentation = lazyRetry(() => import("./pages/V7Documentation"));
+const Admin3DDemos = lazyRetry(() => import("./pages/Admin3DDemos"));
+const AdminDebugs = lazyRetry(() => import("./pages/AdminDebugs"));
+const AdminTimedQuizDemo = lazyRetry(() => import("./pages/AdminTimedQuizDemo"));
+const AdminFlipCardQuizDemo = lazyRetry(() => import("./pages/AdminFlipCardQuizDemo"));
+const AdminExerciseLibrary = lazyRetry(() => import("./pages/AdminExerciseLibrary"));
+const AdminModelos = lazyRetry(() => import("./pages/AdminModelos"));
+const AdminContracts = lazyRetry(() => import("./pages/AdminContracts"));
+const C10Report = lazyRetry(() => import("./pages/admin/C10Report"));
+const AdminUserManagement = lazyRetry(() => import("./pages/AdminUserManagement"));
+const AdminImageLab = lazyRetry(() => import("./pages/AdminImageLab"));
+const AdminAudioPreview = lazyRetry(() => import("./pages/AdminAudioPreview"));
 
 const queryClient = new QueryClient();
 
