@@ -10,7 +10,7 @@ interface V8ContentSectionProps {
 
 /** Strip "Seção X — " prefix from section titles */
 const cleanSectionTitle = (title: string) =>
-  title.replace(/^Seção\s*\d+\s*[—–\-]\s*/i, "");
+  title.replace(/^#{1,6}\s*/, "").replace(/^Seção\s*\d+\s*[—–\-:]\s*/i, "");
 
 /** Strip emotion/direction tags like [confiante], [pause], etc. */
 const stripEmotionTags = (text: string) =>
