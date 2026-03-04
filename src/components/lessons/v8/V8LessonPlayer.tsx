@@ -17,6 +17,7 @@ import { PASS_SCORE } from "@/constants/v8Rules";
 
 interface V8LessonPlayerProps {
   lessonData: V8LessonData;
+  lessonId?: string;
   onComplete: (scores: number[]) => void;
   onBack: () => void;
   renderExercises?: (props: {
@@ -32,6 +33,7 @@ interface V8LessonPlayerProps {
 
 export const V8LessonPlayer = ({
   lessonData,
+  lessonId,
   onComplete,
   onBack,
   renderExercises,
@@ -231,6 +233,7 @@ export const V8LessonPlayer = ({
                       {item.type === "playground" && (
                         <V8PlaygroundInline
                           playground={item.playground}
+                          lessonId={lessonId}
                           onContinue={isLast ? advance : undefined}
                           onScore={(s) => addPlaygroundScore(item.playground.id, s)}
                           isActive={isLast}

@@ -148,6 +148,7 @@ export default function V8Lesson() {
   return (
     <V8LessonPlayer
       lessonData={playerData}
+      lessonId={lessonId}
       onComplete={handleComplete}
       onBack={handleBack}
       renderExercises={({ exercises: exs, onComplete: onExComplete, onScoreUpdate }) => (

@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2, Puzzle } from "lucide-react";
 import { V8InlineCompleteSentence } from "@/types/v8Lesson";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
+import { PASS_SCORE } from "@/constants/v8Rules";
 
 interface V8CompleteSentenceInlineProps {
   completeSentence: V8InlineCompleteSentence;
@@ -63,7 +64,7 @@ export const V8CompleteSentenceInline = ({
     setSubmitted(true);
 
     const score = Math.round((correctCount / completeSentence.sentences.length) * 100);
-    if (score >= 70) playSound("success");
+    if (score >= PASS_SCORE) playSound("success");
     else playSound("error");
     onScore?.(score);
   }, [answers, completeSentence.sentences, onScore, playSound]);
