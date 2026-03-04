@@ -5,6 +5,8 @@ import { V8InlineQuiz } from "@/types/v8Lesson";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
+import { useAudioFirstLock } from "./useAudioFirstLock";
+import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
 
 interface V8QuizFillBlankProps {
   quiz: V8InlineQuiz;
@@ -37,8 +39,8 @@ export const V8QuizFillBlank = ({
   const [state, setState] = useState<QuizState>("answering");
   const ctaRef = useRef<HTMLButtonElement>(null);
   const { playSound } = useV7SoundEffects(0.6, true);
+  const { audioLocked, onAudioEnded } = useAudioFirstLock(quiz.audioUrl, isActiveAudio);
 
-  // Phase 7 (Gap 5): Determine if we have chip options
   const hasChips = Array.isArray(quiz.chipOptions) && quiz.chipOptions.length > 0;
   const currentAnswer = hasChips ? (selectedChip || "") : userInput;
 
@@ -75,7 +77,6 @@ export const V8QuizFillBlank = ({
   const handleShowReinforcement = () => setState("reinforcement");
   const isAnswered = state !== "answering";
 
-  // Render sentence with blank highlighted
   const renderSentence = () => {
     const sentence = quiz.sentenceWithBlank || "";
     const parts = sentence.split("_______");
@@ -118,7 +119,7 @@ export const V8QuizFillBlank = ({
         </div>
       </div>
 
-      {/* Question context — engagement instruction only, NOT the sentence (Phase 7) */}
+      {/* Question context */}
       {quiz.question && (
         <p className="text-sm text-slate-500 leading-relaxed">{quiz.question}</p>
       )}
@@ -130,50 +131,57 @@ export const V8QuizFillBlank = ({
         </p>
       </div>
 
-      {/* Phase 7: Do NOT autoplay audio for fill-blank (it narrated the sentence with placeholder).
-          Only play explanation/reinforcement audio after answering. */}
+      {/* Audio player for narration — locks inputs until finished */}
+      {quiz.audioUrl && state === "answering" && isActiveAudio && (
+        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay onEnded={onAudioEnded} />
+      )}
+
+      {/* Audio lock hint */}
+      {audioLocked && state === "answering" && <V8AudioLockOverlay />}
 
       {/* Input: Chips mode OR text input */}
       {!isAnswered && (
-        hasChips ? (
-          /* Phase 7 (Gap 5): Chip-based selection */
-          <div className="flex flex-wrap gap-2">
-            {quiz.chipOptions!.map((chip) => {
-              const isSelected = selectedChip === chip;
-              return (
-                <button
-                  key={chip}
-                  onClick={() => setSelectedChip(isSelected ? null : chip)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                    isSelected
-                      ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-400 shadow-sm scale-105'
-                      : 'bg-white text-slate-700 border border-slate-300 hover:border-indigo-400 hover:bg-indigo-50'
-                  }`}
-                >
-                  {chip}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          /* Original text input mode */
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
-              placeholder="Digite sua resposta..."
-              className="flex-1 h-11 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base focus:outline-none focus:border-indigo-500 transition-colors"
-              autoFocus
-            />
-          </div>
-        )
+        <div className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+          {hasChips ? (
+            <div className="flex flex-wrap gap-2">
+              {quiz.chipOptions!.map((chip) => {
+                const isSelected = selectedChip === chip;
+                return (
+                  <button
+                    key={chip}
+                    onClick={() => setSelectedChip(isSelected ? null : chip)}
+                    disabled={audioLocked}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      isSelected
+                        ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-400 shadow-sm scale-105'
+                        : 'bg-white text-slate-700 border border-slate-300 hover:border-indigo-400 hover:bg-indigo-50'
+                    }`}
+                  >
+                    {chip}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+                placeholder="Digite sua resposta..."
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base focus:outline-none focus:border-indigo-500 transition-colors"
+                autoFocus={!audioLocked}
+                disabled={audioLocked}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {/* Confirm */}
       <AnimatePresence>
-        {state === "answering" && currentAnswer.trim() && (
+        {state === "answering" && currentAnswer.trim() && !audioLocked && (
           <motion.button
             ref={ctaRef}
             initial={{ opacity: 0, y: 10 }}

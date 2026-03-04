@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { V8LessonData } from "@/types/v8Lesson";
+import { V8LessonData, V8InlineQuiz, V8InlinePlayground, V8InlineCompleteSentence, V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
 import { useV8Player } from "@/hooks/useV8Player";
 import { V8Header } from "./V8Header";
 import { V8ModeSelector } from "./V8ModeSelector";
@@ -89,6 +89,33 @@ export const V8LessonPlayer = ({
     if (hasV8ForbiddenNarrationMarkers(section.content || "")) return null;
     return section.audioUrl ?? null;
   }, [state.phase, currentItem, lessonData.sections]);
+
+  // Preload next timeline item's audio to eliminate latency
+  const nextAudioUrl = useMemo(() => {
+    if (state.phase !== "content") return null;
+    const nextIdx = state.currentIndex + 1;
+    if (nextIdx >= timeline.length) return null;
+    const nextItem = timeline[nextIdx];
+    switch (nextItem.type) {
+      case "section": return lessonData.sections[nextItem.index]?.audioUrl ?? null;
+      case "quiz": return nextItem.quiz.audioUrl ?? null;
+      case "playground": return nextItem.playground.audioUrl ?? null;
+      case "complete-sentence": return nextItem.completeSentence.audioUrl ?? null;
+      case "inline-exercise": return nextItem.exercise.audioUrl ?? null;
+      case "insight": return nextItem.insight.audioUrl ?? null;
+      default: return null;
+    }
+  }, [state.phase, state.currentIndex, timeline, lessonData.sections]);
+
+  // Preload audio into browser cache
+  useEffect(() => {
+    if (!nextAudioUrl) return;
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.src = nextAudioUrl;
+    // Just loading into cache, no play
+    return () => { audio.src = ""; };
+  }, [nextAudioUrl]);
 
   // Phase 4 (Gap 3): Compute whether an insight at timeline index is unlockable
   const isInsightUnlockable = useCallback((timelineIdx: number): boolean => {
@@ -267,6 +294,7 @@ export const V8LessonPlayer = ({
                           onContinue={isLast ? advance : undefined}
                           onScore={(s) => addScore(s)}
                           isActive={isLast}
+                          isActiveAudio={state.mode === "listen" && isLast}
                         />
                       )}
 
@@ -276,6 +304,7 @@ export const V8LessonPlayer = ({
                           onContinue={isLast ? advance : undefined}
                           onScore={(s) => addScore(s)}
                           isActive={isLast}
+                          isActiveAudio={state.mode === "listen" && isLast}
                         />
                       )}
                     </motion.div>

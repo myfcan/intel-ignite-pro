@@ -5,6 +5,8 @@ import { V8InlineQuiz } from "@/types/v8Lesson";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
+import { useAudioFirstLock } from "./useAudioFirstLock";
+import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
 
 interface V8QuizInlineProps {
   quiz: V8InlineQuiz;
@@ -27,13 +29,11 @@ export const V8QuizInline = ({
   const [state, setState] = useState<QuizState>("answering");
   const ctaRef = useRef<HTMLButtonElement>(null);
   const { playSound } = useV7SoundEffects(0.6, true);
+  const { audioLocked, onAudioEnded } = useAudioFirstLock(quiz.audioUrl, isActiveAudio);
 
-  // Deterministic geometric scroll when state changes
-  // Only scroll when this is the active item to prevent stale items from hijacking scroll
   useEffect(() => {
     if (!isActive) return;
     if (!selected && state === "answering") return;
-
     return scheduleCTAScroll(() => ctaRef.current);
   }, [selected, state, isActive]);
 
@@ -54,7 +54,6 @@ export const V8QuizInline = ({
   }, [selected, quiz.options, onAnswer, playSound]);
 
   const handleShowReinforcement = () => setState("reinforcement");
-
   const isAnswered = state !== "answering";
 
   return (
@@ -80,13 +79,16 @@ export const V8QuizInline = ({
         {quiz.question}
       </h3>
 
-      {/* Question audio */}
+      {/* Question audio — plays narration, locks options until finished */}
       {quiz.audioUrl && state === "answering" && isActiveAudio && (
-        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay />
+        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay onEnded={onAudioEnded} />
       )}
 
+      {/* Audio lock hint */}
+      {audioLocked && state === "answering" && <V8AudioLockOverlay />}
+
       {/* Options */}
-      <div className="flex flex-col gap-2.5">
+      <div className={`flex flex-col gap-2.5 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
         {quiz.options.map((option) => {
           let borderColor = "border-slate-200";
           let bgColor = "bg-white";
@@ -114,8 +116,8 @@ export const V8QuizInline = ({
             <motion.button
               key={option.id}
               onClick={() => !isAnswered && setSelected(option.id)}
-              disabled={isAnswered}
-              whileTap={!isAnswered ? { scale: 0.98 } : undefined}
+              disabled={isAnswered || audioLocked}
+              whileTap={!isAnswered && !audioLocked ? { scale: 0.98 } : undefined}
               className={`w-full text-left px-4 py-3.5 rounded-xl border ${borderColor} ${bgColor} ${textColor} transition-colors text-[15px] leading-snug`}
             >
               <div className="flex items-center gap-3">
@@ -134,7 +136,7 @@ export const V8QuizInline = ({
 
       {/* Confirm button */}
       <AnimatePresence>
-        {state === "answering" && selected && (
+        {state === "answering" && selected && !audioLocked && (
           <motion.button
             ref={ctaRef}
             initial={{ opacity: 0, y: 10 }}
@@ -158,13 +160,9 @@ export const V8QuizInline = ({
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-              <span className="font-semibold text-emerald-700 text-sm">
-                Correto!
-              </span>
+              <span className="font-semibold text-emerald-700 text-sm">Correto!</span>
             </div>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              {quiz.explanation}
-            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">{quiz.explanation}</p>
             {quiz.explanationAudioUrl && isActiveAudio && (
               <V8AudioPlayer audioUrl={quiz.explanationAudioUrl} autoPlay />
             )}
@@ -191,13 +189,9 @@ export const V8QuizInline = ({
           >
             <div className="flex items-center gap-2">
               <XCircle className="w-5 h-5 text-red-500" />
-              <span className="font-semibold text-red-700 text-sm">
-                Não foi dessa vez
-              </span>
+              <span className="font-semibold text-red-700 text-sm">Não foi dessa vez</span>
             </div>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              {quiz.explanation}
-            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">{quiz.explanation}</p>
             {quiz.explanationAudioUrl && isActiveAudio && (
               <V8AudioPlayer audioUrl={quiz.explanationAudioUrl} autoPlay />
             )}
@@ -235,9 +229,7 @@ export const V8QuizInline = ({
             <span className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">
               Reforço
             </span>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              {quiz.reinforcement}
-            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">{quiz.reinforcement}</p>
             {quiz.reinforcementAudioUrl && (
               <V8AudioPlayer audioUrl={quiz.reinforcementAudioUrl} autoPlay={isActiveAudio} />
             )}

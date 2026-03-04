@@ -9,21 +9,21 @@ import { FlipCardQuizExercise } from "@/components/lessons/FlipCardQuizExercise"
 import { ScenarioSelectionExercise } from "@/components/lessons/ScenarioSelectionExercise";
 import { PlatformMatchExercise } from "@/components/lessons/PlatformMatchExercise";
 import { TimedQuizExercise } from "@/components/lessons/TimedQuizExercise";
-
-/**
- * V8InlineExercise — Wrapper that renders inline exercises within the V8 timeline.
- * Supports 8 types per V8-C01 contract with explicit prop adapters per type.
- */
+import { V8AudioPlayer } from "./V8AudioPlayer";
+import { useAudioFirstLock } from "./useAudioFirstLock";
+import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
 
 interface V8InlineExerciseProps {
   exercise: V8InlineExerciseType;
   onContinue?: () => void;
   onScore?: (score: number) => void;
   isActive?: boolean;
+  isActiveAudio?: boolean;
 }
 
-export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = true }: V8InlineExerciseProps) => {
+export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = true, isActiveAudio = false }: V8InlineExerciseProps) => {
   const [completed, setCompleted] = useState(false);
+  const { audioLocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
 
   const handleComplete = useCallback((score: number) => {
     setCompleted(true);
@@ -141,7 +141,18 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
       transition={{ duration: 0.4 }}
       className="space-y-3"
     >
-      {renderExercise()}
+      {/* Audio player for narration — locks exercise until finished */}
+      {exercise.audioUrl && isActiveAudio && !completed && (
+        <V8AudioPlayer audioUrl={exercise.audioUrl} autoPlay onEnded={onAudioEnded} />
+      )}
+
+      {/* Audio lock hint */}
+      {audioLocked && !completed && <V8AudioLockOverlay />}
+
+      {/* Exercise content */}
+      <div className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+        {renderExercise()}
+      </div>
 
       {completed && onContinue && (
         <motion.button
