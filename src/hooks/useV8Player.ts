@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground, V8InsightBlock, V8InlineCompleteSentence } from "@/types/v8Lesson";
+import { PASS_SCORE } from "@/constants/v8Rules";
 
 /**
  * useV8Player — State machine for V8 lesson navigation.
@@ -117,6 +118,10 @@ export const useV8Player = (lessonData: V8LessonData) => {
     setState((prev) => ({ ...prev, phase: "exercises" }));
   }, []);
 
+  const goToIndex = useCallback((idx: number) => {
+    setState((prev) => ({ ...prev, currentIndex: Math.min(idx, timeline.length - 1), phase: "content" }));
+  }, [timeline.length]);
+
   const goToCompletion = useCallback(() => {
     setState((prev) => ({ ...prev, phase: "completion" }));
   }, []);
@@ -151,6 +156,7 @@ export const useV8Player = (lessonData: V8LessonData) => {
     selectMode,
     advance,
     goToExercises,
+    goToIndex,
     goToCompletion,
     addScore,
     addPlaygroundScore,

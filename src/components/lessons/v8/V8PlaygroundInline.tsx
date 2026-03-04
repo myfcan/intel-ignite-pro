@@ -6,6 +6,7 @@ import { Lightbulb, ArrowRight, Send, RotateCcw, Sparkles, AlertTriangle, CheckC
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
+import { PASS_SCORE } from "@/constants/v8Rules";
 interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
   onContinue?: () => void;
@@ -103,12 +104,12 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
       const score = data?.score ?? 0;
       setChallengeScore(score);
       // Play SFX only at evaluation moment (not in done phase)
-      if (score >= 70) {
+      if (score >= PASS_SCORE) {
         playSound("success");
       } else {
         playSound("error");
       }
-      setFeedback(data?.feedback || (score >= 70 ? playground.successMessage : playground.tryAgainMessage));
+      setFeedback(data?.feedback || (score >= PASS_SCORE ? playground.successMessage : playground.tryAgainMessage));
       setStructuredFeedback({
         verdict: data?.verdict || "",
         feedback: data?.feedback || "",
@@ -117,9 +118,8 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
         improvedExample: data?.improvedExample || "",
       });
 
-      if (score >= 70) {
-        onScore?.(score);
-      }
+      // Always report score so insight unlock guard works correctly
+      onScore?.(score);
     } catch {
       // Offline fallback
       setFeedback(playground.offlineFallback?.message || "Avaliação indisponível no momento. Continue a aula.");
@@ -130,7 +130,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
     }
   }, [userPrompt, playground, onScore, playSound]);
 
-  const canRetry = attempts < maxAttempts && (challengeScore === null || challengeScore < 70);
+  const canRetry = attempts < maxAttempts && (challengeScore === null || challengeScore < PASS_SCORE);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
@@ -356,18 +356,18 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
               {feedback && (
                 <div className="mt-3 space-y-3">
                   {/* Header: verdict + score */}
-                  <div className={`p-4 rounded-xl border ${challengeScore !== null && challengeScore >= 70 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-bold ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-700" : "text-amber-700"}`}>
-                        {structuredFeedback?.verdict || (challengeScore !== null && challengeScore >= 70 ? "Excelente!" : "Quase lá!")}
-                      </span>
-                      {challengeScore !== null && (
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${challengeScore >= 70 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                          {challengeScore}/100
-                        </span>
-                      )}
-                    </div>
-                    <p className={`text-sm leading-relaxed ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-amber-600"}`}>
+                    <div className={`p-4 rounded-xl border ${challengeScore !== null && challengeScore >= PASS_SCORE ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+                     <div className="flex items-center justify-between mb-1">
+                       <span className={`text-sm font-bold ${challengeScore !== null && challengeScore >= PASS_SCORE ? "text-emerald-700" : "text-amber-700"}`}>
+                         {structuredFeedback?.verdict || (challengeScore !== null && challengeScore >= PASS_SCORE ? "Excelente!" : "Quase lá!")}
+                       </span>
+                       {challengeScore !== null && (
+                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${challengeScore >= PASS_SCORE ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                           {challengeScore}/100
+                         </span>
+                       )}
+                     </div>
+                     <p className={`text-sm leading-relaxed ${challengeScore !== null && challengeScore >= PASS_SCORE ? "text-emerald-600" : "text-amber-600"}`}>
                       {structuredFeedback?.feedback || feedback}
                     </p>
                   </div>
@@ -435,7 +435,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
               )}
 
               {/* Hint on fail */}
-              {feedback && challengeScore !== null && challengeScore < 70 && playground.hintOnFail && attempts <= playground.hintOnFail.length && (
+              {feedback && challengeScore !== null && challengeScore < PASS_SCORE && playground.hintOnFail && attempts <= playground.hintOnFail.length && (
                 <div className="mt-2 flex items-start gap-2 text-xs text-violet-600">
                   <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                   {playground.hintOnFail[attempts - 1]}
@@ -463,7 +463,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                     </button>
                   )}
 
-                  {attempts > 0 && canRetry && challengeScore !== null && challengeScore < 70 && (
+                  {attempts > 0 && canRetry && challengeScore !== null && challengeScore < PASS_SCORE && (
                     <div className="flex flex-col sm:flex-row gap-2">
                       <button
                         ref={ctaRef}
@@ -490,7 +490,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                     </div>
                   )}
 
-                  {((!canRetry && attempts > 0) || (challengeScore !== null && challengeScore >= 70)) && (
+                  {((!canRetry && attempts > 0) || (challengeScore !== null && challengeScore >= PASS_SCORE)) && (
                     <button
                       ref={ctaRef}
                       onClick={() => setPhase("done")}
@@ -520,7 +520,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
           >
             {/* Badge: Tarefa concluída or Playground concluído */}
             <div className="flex justify-center mb-3">
-              {challengeScore !== null && challengeScore >= 70 ? (
+            {challengeScore !== null && challengeScore >= PASS_SCORE ? (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-semibold">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Tarefa concluída
@@ -532,14 +532,14 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
                 </div>
               )}
             </div>
-            <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= 70 ? "text-emerald-600" : "text-slate-600"}`}>
-            {challengeScore !== null && challengeScore >= 70 ? playground.successMessage : "Você concluiu o playground. Continue a aula para aprender mais!"}
+            <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= PASS_SCORE ? "text-emerald-600" : "text-slate-600"}`}>
+            {challengeScore !== null && challengeScore >= PASS_SCORE ? playground.successMessage : "Você concluiu o playground. Continue a aula para aprender mais!"}
             </p>
             {/* Play success or tryAgain audio */}
-            {challengeScore !== null && challengeScore >= 70 && playground.successAudioUrl && (
+            {challengeScore !== null && challengeScore >= PASS_SCORE && playground.successAudioUrl && (
               <V8AudioPlayer audioUrl={playground.successAudioUrl} autoPlay />
             )}
-            {(challengeScore === null || challengeScore < 70) && playground.tryAgainAudioUrl && (
+            {(challengeScore === null || challengeScore < PASS_SCORE) && playground.tryAgainAudioUrl && (
               <V8AudioPlayer audioUrl={playground.tryAgainAudioUrl} autoPlay />
             )}
             {onContinue && (

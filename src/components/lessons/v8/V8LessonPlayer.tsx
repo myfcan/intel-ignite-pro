@@ -13,6 +13,7 @@ import { V8InsightReward } from "./V8InsightReward";
 import { V8CompleteSentenceInline } from "./V8CompleteSentenceInline";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
+import { PASS_SCORE } from "@/constants/v8Rules";
 
 interface V8LessonPlayerProps {
   lessonData: V8LessonData;
@@ -43,6 +44,7 @@ export const V8LessonPlayer = ({
     currentItem,
     selectMode,
     advance,
+    goToIndex,
     goToCompletion,
     addScore,
     addPlaygroundScore,
@@ -87,12 +89,31 @@ export const V8LessonPlayer = ({
       const prevItem = timeline[i];
       if (prevItem.type === 'playground') {
         const score = state.playgroundScores[prevItem.playground.id];
-        return score !== undefined && score >= 70;
+        return score !== undefined && score >= PASS_SCORE;
       }
       if (prevItem.type === 'section') break;
     }
     return true; // No preceding playground found, allow unlock
   }, [timeline, state.playgroundScores]);
+
+  // Find the timeline index of the playground preceding a given insight index
+  const findPrecedingPlaygroundIndex = useCallback((timelineIdx: number): number | null => {
+    for (let i = timelineIdx - 1; i >= 0; i--) {
+      if (timeline[i].type === 'playground') return i;
+      if (timeline[i].type === 'section') break;
+    }
+    return null;
+  }, [timeline]);
+
+  // Get playgroundId for the playground preceding a given insight index
+  const getPrecedingPlaygroundId = useCallback((timelineIdx: number): string | null => {
+    for (let i = timelineIdx - 1; i >= 0; i--) {
+      const item = timeline[i];
+      if (item.type === 'playground') return item.playground.id;
+      if (item.type === 'section') break;
+    }
+    return null;
+  }, [timeline]);
 
   // Auto-scroll to new section
   useEffect(() => {
@@ -222,6 +243,13 @@ export const V8LessonPlayer = ({
                           onContinue={isLast ? advance : undefined}
                           isActive={isLast}
                           unlockable={isInsightUnlockable(idx)}
+                          playgroundId={getPrecedingPlaygroundId(idx) ?? undefined}
+                          onRetryPlayground={() => {
+                            const pgIdx = findPrecedingPlaygroundIndex(idx);
+                            if (pgIdx !== null) {
+                              goToIndex(pgIdx);
+                            }
+                          }}
                         />
                       )}
 
