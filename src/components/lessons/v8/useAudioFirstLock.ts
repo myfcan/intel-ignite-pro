@@ -1,12 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 /**
  * useAudioFirstLock — Audio-First UX hook for V8 exercises in "listen" mode.
  * Locks interactions until the narration audio finishes playing.
- * 
- * @param audioUrl - The audio URL for the exercise narration
- * @param isActiveAudio - Whether this component should play audio (listen mode + active)
- * @returns { audioLocked, onAudioEnded } — lock state and callback to pass to V8AudioPlayer's onEnded
+ * Returns `justUnlocked` for a 1.5s window after unlock for visual feedback.
  */
 export function useAudioFirstLock(
   audioUrl: string | undefined | null,
@@ -14,15 +11,23 @@ export function useAudioFirstLock(
 ) {
   const shouldLock = isActiveAudio && !!audioUrl;
   const [audioLocked, setAudioLocked] = useState(shouldLock);
+  const [justUnlocked, setJustUnlocked] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Reset lock when audioUrl or active state changes
   useEffect(() => {
     setAudioLocked(shouldLock);
+    setJustUnlocked(false);
   }, [shouldLock]);
+
+  // Cleanup timer
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const onAudioEnded = useCallback(() => {
     setAudioLocked(false);
+    setJustUnlocked(true);
+    timerRef.current = setTimeout(() => setJustUnlocked(false), 1500);
   }, []);
 
-  return { audioLocked, onAudioEnded };
+  return { audioLocked, justUnlocked, onAudioEnded };
 }

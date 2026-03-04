@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, Loader2 } from "lucide-react";
 
 interface V8AudioPlayerProps {
   audioUrl: string;
@@ -139,53 +139,63 @@ export const V8AudioPlayer = ({
     <div className="w-full flex items-center gap-2.5 h-11 px-3 rounded-xl border border-slate-200 bg-slate-50">
       <audio ref={audioRef} src={audioUrl} preload="auto" />
 
-      {/* Play / Pause */}
-      <button
-        onClick={togglePlay}
-        className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0 shadow-sm"
-        aria-label={isPlaying ? "Pausar" : "Reproduzir"}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          {isPlaying ? (
-            <motion.div
-              key="pause"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              transition={{ duration: 0.12 }}
-            >
-              <Pause className="w-3 h-3" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="play"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              transition={{ duration: 0.12 }}
-            >
-              <Play className="w-3 h-3 ml-0.5" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </button>
+      {/* Play / Pause / Loading */}
+      {autoPlay && !isLoaded ? (
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        </div>
+      ) : (
+        <button
+          onClick={togglePlay}
+          className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0 shadow-sm"
+          aria-label={isPlaying ? "Pausar" : "Reproduzir"}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {isPlaying ? (
+              <motion.div
+                key="pause"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                transition={{ duration: 0.12 }}
+              >
+                <Pause className="w-3 h-3" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="play"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                transition={{ duration: 0.12 }}
+              >
+                <Play className="w-3 h-3 ml-0.5" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </button>
+      )}
 
       {/* Progress bar */}
       <div
         className="relative flex-1 h-1 rounded-full bg-slate-200 cursor-pointer group"
         onClick={handleSeekBar}
       >
-        <motion.div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
-          style={{ width: `${progress}%` }}
-          layout
-          transition={{ type: "tween", duration: 0.1 }}
-        />
+        {autoPlay && !isLoaded ? (
+          <div className="absolute inset-0 rounded-full bg-slate-300 animate-pulse" />
+        ) : (
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
+            style={{ width: `${progress}%` }}
+            layout
+            transition={{ type: "tween", duration: 0.1 }}
+          />
+        )}
       </div>
 
       {/* Time */}
       <span className="text-[10px] font-mono text-slate-400 tabular-nums flex-shrink-0 min-w-[52px] text-center">
-        {formatTime(currentTime)}/{formatTime(duration)}
+        {autoPlay && !isLoaded ? "..." : `${formatTime(currentTime)}/${formatTime(duration)}`}
       </span>
 
       {/* Speed */}

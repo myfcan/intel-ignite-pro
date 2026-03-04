@@ -29,7 +29,7 @@ export const V8CompleteSentenceInline = ({
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<Record<string, boolean>>({});
   const ctaRef = useRef<HTMLButtonElement>(null);
-  const { audioLocked, onAudioEnded } = useAudioFirstLock(completeSentence.audioUrl, isActiveAudio);
+  const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(completeSentence.audioUrl, isActiveAudio);
 
   useEffect(() => {
     if (!isActive || !submitted) return;
@@ -132,7 +132,7 @@ export const V8CompleteSentenceInline = ({
       {audioLocked && !submitted && <V8AudioLockOverlay />}
 
       {/* Sentences */}
-      <div className={`space-y-4 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+      <div className={`space-y-4 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse p-2" : ""}`}>
         {completeSentence.sentences.map(sentence => (
           <div key={sentence.id} className="space-y-3">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
