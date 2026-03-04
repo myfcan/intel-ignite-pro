@@ -247,6 +247,9 @@ Cada quiz deve:
 - NUNCA referencie números de seção na pergunta (ex: "De acordo com a Seção 0", "conforme a Seção 1", "na Seção 3"). A pergunta deve ser autocontida e compreensível sem contexto de numeração.
 - A pergunta NÃO deve mencionar "seção", "seções", "de acordo com", "conforme" seguido de referência numérica.
 
+PROIBIÇÕES:
+- NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo. O quiz deve ir DIRETO ao conteúdo sem labels de categorização.
+
 VARIEDADE DE TIPOS (OBRIGATÓRIO):
 - VARIE os tipos de quiz. NÃO repita o mesmo tipo consecutivamente.
 - Use "true-false" quando o conteúdo tem afirmações que podem ser validadas como verdadeiras ou falsas. Preencha "statement" e "isTrue".
@@ -268,7 +271,16 @@ O playground deve:
 - Ter instrução com pelo menos 40 caracteres
 - Ter desafio para o usuário escrever seu próprio prompt
 - Estar em Português Brasileiro (pt-BR)
-- Ter hints e critérios de avaliação`;
+- Ter hints e critérios de avaliação
+
+PROIBIÇÕES:
+- NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo.
+- NUNCA use tom apressado no enunciado. Proibido: "Responda rapidamente", "confie no seu instinto", "você tem pouco tempo", "sem pensar muito", "responda agora". Essas frases são anti-pedagógicas.
+
+TOM OBRIGATÓRIO:
+- O enunciado deve guiar o aluno a PENSAR e ANALISAR antes de agir.
+- Use frases como: "Analise o cenário abaixo", "Observe como...", "Teste sua habilidade aplicando as técnicas desta aula", "Compare os dois prompts e identifique...".
+- O playground é um exercício de reflexão aplicada, não uma prova relâmpago.`;
 
 const INLINE_EXERCISE_SYSTEM_PROMPT = `Você é um designer instrucional especializado em educação sobre I.A.
 Gere exercícios interativos inline para seções intermediárias de uma aula.
@@ -279,6 +291,9 @@ REGRAS:
 3. Cada exercício deve testar conhecimento real da seção correspondente
 4. NÃO referencie números de seção na pergunta
 
+PROIBIÇÕES:
+- NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo. Vá DIRETO ao exercício.
+
 TIPOS DISPONÍVEIS E SCHEMAS:
 - true-false: { statements: [{ id: "stmt-1", text: "afirmação", correct: true/false, explanation: "..." }], feedback: { perfect: "...", good: "...", needsReview: "..." } }
 - fill-in-blanks: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], hint: "dica" }], feedback: { allCorrect: "...", someCorrect: "...", needsReview: "..." } }
@@ -287,6 +302,59 @@ TIPOS DISPONÍVEIS E SCHEMAS:
 
 Gere IDs únicos para todos os elementos (ex: "stmt-1", "sent-1").
 Gere 2-4 statements/sentences por exercício.`;
+
+// ─── Coursiv Prompt Builder: tool schema + system prompt ───
+const COURSIV_BUILDER_TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "generate_coursiv_exercise",
+      description: "Generate a Coursiv-style complete-sentence exercise focused on professional prompt construction. The student fills blanks in prompt sentences using chip options.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Short title like 'Monte o Prompt Profissional'" },
+          instruction: { type: "string", description: "Instruction like 'Complete as frases abaixo escolhendo os chips corretos para montar um prompt eficiente.'" },
+          sentences: {
+            type: "array",
+            minItems: 1,
+            maxItems: 2,
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                text: { type: "string", description: "Sentence with _______ as placeholder. Must be about prompt construction (audience, context, format, tone, etc.)" },
+                correctAnswers: { type: "array", items: { type: "string" }, description: "Correct answer(s) for the blank" },
+                options: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 5, description: "Chip options: correct answer + plausible distractors" },
+              },
+              required: ["id", "text", "correctAnswers", "options"],
+            },
+          },
+        },
+        required: ["title", "instruction", "sentences"],
+      },
+    },
+  },
+];
+
+const COURSIV_SYSTEM_PROMPT = `Você é um designer instrucional especializado em construção de prompts de IA.
+
+Sua tarefa é gerar um exercício do tipo "complete a frase" (Coursiv) onde o aluno monta partes de um prompt profissional preenchendo lacunas com chips.
+
+REGRAS:
+1. Gere 1-2 frases que representem a ESTRUTURA de um prompt profissional relacionado ao tema da aula.
+2. Cada frase deve ter exatamente UMA lacuna (_______ como placeholder).
+3. A lacuna deve representar um componente-chave do prompt: público-alvo, contexto, formato de saída, tom, objetivo, restrição, etc.
+4. Os chips (options) devem ter 3-5 opções: a correta + distratoras plausíveis mas claramente erradas no contexto.
+5. Use Português Brasileiro (pt-BR).
+6. O exercício deve testar a habilidade de MONTAR prompts, não conhecimento teórico.
+7. NUNCA gere subtítulos meta como "Segmento vida real" ou "Atividade prática:".
+8. As frases devem parecer prompts reais que o aluno usaria em uma ferramenta de IA.
+
+EXEMPLO de frase válida:
+"Crie uma lista de _______ para um freelancer de design que quer prospectar clientes no LinkedIn."
+Opções: ["estratégias de prospecção", "receitas de bolo", "exercícios físicos", "planetas do sistema solar"]
+Resposta correta: ["estratégias de prospecção"]`;
 
 async function callAI(
   apiKey: string,
@@ -411,12 +479,15 @@ serve(async (req) => {
     // ── 1. Determine which sections need quizzes/playgrounds ──
     const sectionsWithQuiz = new Set(manualQuizzes.map((q: any) => q.afterSectionIndex));
     const sectionsWithPlayground = new Set(manualPlaygrounds.map((p: any) => p.afterSectionIndex));
+    const lastIdx = sections.length - 1;
+    const coursivTargetIdx = lastIdx >= 4 ? lastIdx - 1 : -1; // Reserve penultimate for Coursiv
     // Seções 0 e 1 são introdutórias — NUNCA recebem quiz ou playground gerado
+    // Also exclude coursivTargetIdx to prevent interaction stacking
     const sectionsNeedingInteraction = sections
       .map((_: any, i: number) => i)
-      .filter((i: number) => i >= 2 && !sectionsWithQuiz.has(i) && !sectionsWithPlayground.has(i));
+      .filter((i: number) => i >= 2 && !sectionsWithQuiz.has(i) && !sectionsWithPlayground.has(i) && i !== coursivTargetIdx);
 
-    console.log(`[v8-generate-lesson-content] Sections needing interaction: ${sectionsNeedingInteraction.join(", ")}`);
+    console.log(`[v8-generate-lesson-content] Sections needing interaction: ${sectionsNeedingInteraction.join(", ")}${coursivTargetIdx >= 0 ? ` (coursiv reserved at ${coursivTargetIdx})` : ''}`);
 
     // ── 2. Generate inline quizzes for sections without interactions ──
     let generatedQuizzes: any[] = [];
@@ -550,10 +621,47 @@ serve(async (req) => {
       }
     }
 
+    // ── 3.05 Coursiv Prompt Builder (penultimate section) ──
+    let generatedCoursivSentences: any[] = [];
+    if (coursivTargetIdx >= 0) {
+      progress.push("Gerando exercício Coursiv (montagem de prompt)...");
+      try {
+        const coursivSectionContent = `Seção ${coursivTargetIdx} (index ${coursivTargetIdx}): ${sections[coursivTargetIdx].title}\n${sections[coursivTargetIdx].content?.slice(0, 500) || ""}`;
+
+        const coursivResult = await callAI(
+          LOVABLE_API_KEY,
+          COURSIV_SYSTEM_PROMPT,
+          `Gere um exercício Coursiv de montagem de prompt para esta seção da aula "${lessonTitle}":\n\n${coursivSectionContent}\n\nafterSectionIndex obrigatório: ${coursivTargetIdx}`,
+          COURSIV_BUILDER_TOOLS,
+          "generate_coursiv_exercise",
+        );
+
+        if (coursivResult && coursivResult.sentences && coursivResult.sentences.length > 0) {
+          const coursivExercise = {
+            id: `coursiv-gen-01`,
+            afterSectionIndex: coursivTargetIdx,
+            title: sanitizeEncoding(coursivResult.title || 'Monte o Prompt Profissional'),
+            instruction: sanitizeEncoding(coursivResult.instruction || 'Complete as frases escolhendo os chips corretos.'),
+            sentences: coursivResult.sentences.map((s: any) => ({
+              ...s,
+              text: sanitizeEncoding(s.text || ''),
+              correctAnswers: (s.correctAnswers || []).map((a: string) => sanitizeEncoding(a)),
+              options: (s.options || []).map((o: string) => sanitizeEncoding(o)),
+            })),
+          };
+          generatedCoursivSentences.push(coursivExercise);
+          progress.push(`1 exercício Coursiv gerado (afterSection: ${coursivTargetIdx})`);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Coursiv generation failed";
+        errors.push(`Coursiv: ${msg}`);
+        console.error("[v8-generate-lesson-content] Coursiv generation error:", msg);
+      }
+    }
+
     // ── 3.1 Phase 9: Generate ONE playground at LAST section only (no intermediate playgrounds) ──
     let generatedPlaygrounds: any[] = [];
     {
-      const lastIdx = sections.length - 1;
       const hasManualAtLast = manualPlaygrounds.some((p: any) => p.afterSectionIndex === lastIdx);
 
       // Force all manual playgrounds to last section
@@ -800,7 +908,7 @@ O título deve ser curto e começar com 💡. creditsReward deve ser 10. Portugu
       inlineQuizzes: allQuizzes,
       inlinePlaygrounds: allPlaygrounds,
       inlineInsights: generatedInsights,
-      inlineCompleteSentences: [],
+      inlineCompleteSentences: generatedCoursivSentences,
       inlineExercises: generatedInlineExercises,
       exercises: generatedExercises,
       progress,
