@@ -22,13 +22,23 @@ import NotFound from "./pages/NotFound";
 function lazyRetry(factory: () => Promise<any>) {
   return lazy(() =>
     factory().catch((err) => {
-      const key = 'ailiv_chunk_retry';
-      if (!sessionStorage.getItem(key)) {
-        sessionStorage.setItem(key, '1');
+      // Use a per-module key so different modules can each retry independently
+      const moduleName = err?.message?.match(/\/src\/pages\/(\w+)\.tsx/)?.[1] || 'unknown';
+      const key = `ailiv_chunk_retry_${moduleName}`;
+      const retryCount = parseInt(sessionStorage.getItem(key) || '0', 10);
+      
+      if (retryCount < 2) {
+        sessionStorage.setItem(key, String(retryCount + 1));
+        // Clear all caches before reload to ensure fresh chunks
+        if ('caches' in window) {
+          caches.keys().then(names => names.forEach(n => caches.delete(n)));
+        }
+        console.warn(`[AIliv:LazyRetry] Module "${moduleName}" failed, retry #${retryCount + 1}`);
         window.location.reload();
         return new Promise(() => {}); // never resolves, page will reload
       }
       sessionStorage.removeItem(key);
+      console.error(`[AIliv:LazyRetry] Module "${moduleName}" failed after ${retryCount} retries`, err);
       throw err;
     })
   );
