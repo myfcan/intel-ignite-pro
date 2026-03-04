@@ -27,9 +27,10 @@ const trimmedImageCache = new Map<string, string>();
 const TRIM_VERSION = 2;
 
 const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
-  const [resolvedSrc, setResolvedSrc] = useState(() =>
-    trimmedImageCache.get(`${TRIM_VERSION}:${src}`) ?? src
+  const [resolvedSrc, setResolvedSrc] = useState<string | null>(() =>
+    trimmedImageCache.get(`${TRIM_VERSION}:${src}`) ?? null
   );
+  const [ready, setReady] = useState(() => !!trimmedImageCache.get(`${TRIM_VERSION}:${src}`));
 
   useEffect(() => {
     let cancelled = false;
@@ -38,10 +39,13 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
     const cached = trimmedImageCache.get(cacheKey);
     if (cached) {
       setResolvedSrc(cached);
+      setReady(true);
       return;
     }
 
-    setResolvedSrc(src);
+    // Don't show anything until processing is done
+    setResolvedSrc(null);
+    setReady(false);
 
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -58,14 +62,8 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
 
         sourceCtx.drawImage(img, 0, 0);
 
-        const { data, width, height } = sourceCtx.getImageData(
-          0,
-          0,
-          sourceCanvas.width,
-          sourceCanvas.height
-        );
+        const { data, width, height } = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
 
-        // Amostrar cor de fundo dos 4 cantos
         const sampleBg = (px: number, py: number) => {
           const i = (py * width + px) * 4;
           return [data[i], data[i + 1], data[i + 2]];
@@ -97,7 +95,7 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
         }
 
         if (maxX < 0 || maxY < 0) {
-          if (!cancelled) setResolvedSrc(src);
+          if (!cancelled) { setResolvedSrc(src); setReady(true); }
           return;
         }
 
@@ -114,39 +112,36 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
         const croppedCtx = croppedCanvas.getContext("2d");
         if (!croppedCtx) throw new Error("NO_CROPPED_CONTEXT");
 
-        croppedCtx.drawImage(
-          sourceCanvas,
-          cropX,
-          cropY,
-          cropWidth,
-          cropHeight,
-          0,
-          0,
-          cropWidth,
-          cropHeight
-        );
+        croppedCtx.drawImage(sourceCanvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
         const croppedSrc = croppedCanvas.toDataURL("image/png");
         trimmedImageCache.set(cacheKey, croppedSrc);
 
-        if (!cancelled) setResolvedSrc(croppedSrc);
+        if (!cancelled) { setResolvedSrc(croppedSrc); setReady(true); }
       } catch {
-        if (!cancelled) setResolvedSrc(src);
+        if (!cancelled) { setResolvedSrc(src); setReady(true); }
       }
     };
 
     img.onerror = () => {
-      if (!cancelled) setResolvedSrc(src);
+      if (!cancelled) { setResolvedSrc(src); setReady(true); }
     };
 
     img.src = src;
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [src]);
 
-  return <img src={resolvedSrc} alt={alt} className={`block ${className ?? ''}`} loading="lazy" />;
+  if (!resolvedSrc) return <div className="w-full max-w-[300px] aspect-square mx-auto" />;
+
+  return (
+    <img
+      src={resolvedSrc}
+      alt={alt}
+      className={`block transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'} ${className ?? ''}`}
+      loading="lazy"
+    />
+  );
 };
 
 export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps>(
