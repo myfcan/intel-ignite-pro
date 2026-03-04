@@ -124,8 +124,9 @@ export interface V8InlineCompleteSentence {
 }
 
 /**
- * V8InlineExercise — Exercício interativo inline ENTRE seções (Phase 9)
- * Suporta 4 tipos confiáveis: true-false, multiple-choice, complete-sentence, fill-in-blanks
+ * V8InlineExercise — Exercício interativo inline ENTRE seções (V8-C01)
+ * Suporta 8 tipos: true-false, multiple-choice, complete-sentence, fill-in-blanks,
+ * flipcard-quiz, scenario-selection, platform-match, timed-quiz
  */
 export interface V8InlineExercise {
   id: string;
