@@ -27,10 +27,9 @@ const trimmedImageCache = new Map<string, string>();
 const TRIM_VERSION = 2;
 
 const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
-  const [resolvedSrc, setResolvedSrc] = useState<string | null>(() =>
-    trimmedImageCache.get(`${TRIM_VERSION}:${src}`) ?? null
-  );
-  const [ready, setReady] = useState(() => !!trimmedImageCache.get(`${TRIM_VERSION}:${src}`));
+  const cachedSrc = trimmedImageCache.get(`${TRIM_VERSION}:${src}`);
+  const [resolvedSrc, setResolvedSrc] = useState<string | null>(cachedSrc ?? null);
+  const [visible, setVisible] = useState(!!cachedSrc);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,13 +38,12 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
     const cached = trimmedImageCache.get(cacheKey);
     if (cached) {
       setResolvedSrc(cached);
-      setReady(true);
+      setVisible(true);
       return;
     }
 
-    // Don't show anything until processing is done
     setResolvedSrc(null);
-    setReady(false);
+    setVisible(false);
 
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -95,7 +93,11 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
         }
 
         if (maxX < 0 || maxY < 0) {
-          if (!cancelled) { setResolvedSrc(src); setReady(true); }
+          if (!cancelled) {
+            setResolvedSrc(src);
+            // Delay visibility to next frame so transition works
+            requestAnimationFrame(() => { if (!cancelled) setVisible(true); });
+          }
           return;
         }
 
@@ -117,14 +119,24 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
         const croppedSrc = croppedCanvas.toDataURL("image/png");
         trimmedImageCache.set(cacheKey, croppedSrc);
 
-        if (!cancelled) { setResolvedSrc(croppedSrc); setReady(true); }
+        if (!cancelled) {
+          setResolvedSrc(croppedSrc);
+          // Set visible on NEXT frame so the img renders at opacity-0 first
+          requestAnimationFrame(() => { if (!cancelled) setVisible(true); });
+        }
       } catch {
-        if (!cancelled) { setResolvedSrc(src); setReady(true); }
+        if (!cancelled) {
+          setResolvedSrc(src);
+          requestAnimationFrame(() => { if (!cancelled) setVisible(true); });
+        }
       }
     };
 
     img.onerror = () => {
-      if (!cancelled) { setResolvedSrc(src); setReady(true); }
+      if (!cancelled) {
+        setResolvedSrc(src);
+        requestAnimationFrame(() => { if (!cancelled) setVisible(true); });
+      }
     };
 
     img.src = src;
@@ -138,7 +150,7 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
     <img
       src={resolvedSrc}
       alt={alt}
-      className={`block transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'} ${className ?? ''}`}
+      className={`block transition-opacity duration-500 ease-out ${visible ? 'opacity-100' : 'opacity-0'} ${className ?? ''}`}
       loading="lazy"
     />
   );
