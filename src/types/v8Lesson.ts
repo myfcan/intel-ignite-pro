@@ -124,6 +124,20 @@ export interface V8InlineCompleteSentence {
 }
 
 /**
+ * V8InlineExercise — Exercício interativo inline ENTRE seções (Phase 9)
+ * Suporta 4 tipos confiáveis: true-false, multiple-choice, complete-sentence, fill-in-blanks
+ */
+export interface V8InlineExercise {
+  id: string;
+  afterSectionIndex: number;
+  type: 'true-false' | 'multiple-choice' | 'complete-sentence' | 'fill-in-blanks';
+  title: string;
+  instruction: string;
+  data: Record<string, any>;
+  audioUrl?: string;
+}
+
+/**
  * V8LessonData — Armazenado em lessons.content (JSONB)
  */
 export interface V8LessonData {
@@ -135,6 +149,7 @@ export interface V8LessonData {
   inlinePlaygrounds?: V8InlinePlayground[];
   inlineInsights?: V8InsightBlock[];
   inlineCompleteSentences?: V8InlineCompleteSentence[];  // Phase 8 (Gap 4)
+  inlineExercises?: V8InlineExercise[];  // Phase 9: Inline exercises (4 reliable types)
   exercises: ExerciseConfig[];
 }
 
