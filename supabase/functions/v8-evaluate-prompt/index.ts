@@ -115,6 +115,7 @@ serve(async (req) => {
         amateurResult,
         challengePrompt,
         playgroundId,
+        lessonId,
       } = body;
 
       if (!userPrompt?.trim()) return jsonResp({ error: "userPrompt is required" }, 400);
@@ -139,7 +140,7 @@ serve(async (req) => {
             const adminClient = createClient(supabaseUrl, serviceRoleKey);
             await adminClient.from('user_playground_sessions').insert({
               user_id: userId,
-              lesson_id: '00000000-0000-0000-0000-000000000000', // placeholder if not provided
+              lesson_id: lessonId || '00000000-0000-0000-0000-000000000000',
               user_prompt: userPrompt.trim(),
               ai_response: null,
               ai_feedback: 'Copy detected',
@@ -294,7 +295,7 @@ REGRAS OBRIGATÓRIAS:
 
     const finalScore = (parsedResult as any)?.score ?? 50;
     const finalPassed = finalScore >= 81; // PASS_SCORE
-    const { playgroundId } = body;
+    const { playgroundId, lessonId } = body;
 
     // ─── Phase 4: Persist evaluation attempt ───
     if (mode === "evaluate" && userId && serviceRoleKey) {
@@ -302,7 +303,7 @@ REGRAS OBRIGATÓRIAS:
         const adminClient = createClient(supabaseUrl, serviceRoleKey);
         await adminClient.from('user_playground_sessions').insert({
           user_id: userId,
-          lesson_id: '00000000-0000-0000-0000-000000000000', // placeholder
+          lesson_id: lessonId || '00000000-0000-0000-0000-000000000000',
           user_prompt: body.userPrompt?.trim() || '',
           ai_response: content.substring(0, 2000),
           ai_feedback: (parsedResult as any)?.feedback || '',

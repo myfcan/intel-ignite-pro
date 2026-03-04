@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Trophy, Zap, Coins, Flame, ArrowRight, RotateCcw } from "lucide-react";
 import confetti from "canvas-confetti";
 import { registerGamificationEvent } from "@/services/gamification";
+import { PASS_SCORE } from "@/constants/v8Rules";
 import { updateMissionProgress } from "@/lib/updateMissionProgress";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -61,7 +62,7 @@ export const V8CompletionScreen = ({
 
     register();
 
-    if (avgScore >= 70) {
+    if (avgScore >= PASS_SCORE) {
       setTimeout(() => {
         confetti({
           particleCount: 120,

@@ -9,6 +9,7 @@ import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundE
 import { PASS_SCORE } from "@/constants/v8Rules";
 interface V8PlaygroundInlineProps {
   playground: V8InlinePlayground;
+  lessonId?: string;
   onContinue?: () => void;
   onScore?: (score: number) => void;
   isActive?: boolean;
@@ -19,7 +20,7 @@ type Phase = "intro" | "amateur" | "professional" | "compare" | "challenge" | "d
 const PHASE_ORDER: Phase[] = ["intro", "amateur", "professional", "compare", "challenge", "done"];
 const phaseToIndex = (p: Phase) => PHASE_ORDER.indexOf(p);
 
-export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive = true }: V8PlaygroundInlineProps) => {
+export const V8PlaygroundInline = ({ playground, lessonId, onContinue, onScore, isActive = true }: V8PlaygroundInlineProps) => {
   const { playSound } = useV7SoundEffects(0.6, true);
   const [phase, setPhase] = useState<Phase>("intro");
   const [amateurResult, setAmateurResult] = useState(playground.amateurResult || "");
@@ -103,6 +104,7 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
           amateurResult: playground.amateurResult || "",
           challengePrompt: playground.userChallenge.challengePrompt || "",
           playgroundId: playground.id || "",
+          lessonId: lessonId || "",
         },
       });
 
