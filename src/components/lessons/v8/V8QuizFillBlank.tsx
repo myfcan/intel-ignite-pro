@@ -39,7 +39,7 @@ export const V8QuizFillBlank = ({
   const [state, setState] = useState<QuizState>("answering");
   const ctaRef = useRef<HTMLButtonElement>(null);
   const { playSound } = useV7SoundEffects(0.6, true);
-  const { audioLocked, onAudioEnded } = useAudioFirstLock(quiz.audioUrl, isActiveAudio);
+  const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(quiz.audioUrl, isActiveAudio);
 
   const hasChips = Array.isArray(quiz.chipOptions) && quiz.chipOptions.length > 0;
   const currentAnswer = hasChips ? (selectedChip || "") : userInput;
@@ -141,7 +141,7 @@ export const V8QuizFillBlank = ({
 
       {/* Input: Chips mode OR text input */}
       {!isAnswered && (
-        <div className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+        <div className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}>
           {hasChips ? (
             <div className="flex flex-wrap gap-2">
               {quiz.chipOptions!.map((chip) => {

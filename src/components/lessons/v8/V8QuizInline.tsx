@@ -29,7 +29,7 @@ export const V8QuizInline = ({
   const [state, setState] = useState<QuizState>("answering");
   const ctaRef = useRef<HTMLButtonElement>(null);
   const { playSound } = useV7SoundEffects(0.6, true);
-  const { audioLocked, onAudioEnded } = useAudioFirstLock(quiz.audioUrl, isActiveAudio);
+  const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(quiz.audioUrl, isActiveAudio);
 
   useEffect(() => {
     if (!isActive) return;
@@ -88,7 +88,7 @@ export const V8QuizInline = ({
       {audioLocked && state === "answering" && <V8AudioLockOverlay />}
 
       {/* Options */}
-      <div className={`flex flex-col gap-2.5 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+      <div className={`flex flex-col gap-2.5 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}>
         {quiz.options.map((option) => {
           let borderColor = "border-slate-200";
           let bgColor = "bg-white";

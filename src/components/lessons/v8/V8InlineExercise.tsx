@@ -23,7 +23,7 @@ interface V8InlineExerciseProps {
 
 export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = true, isActiveAudio = false }: V8InlineExerciseProps) => {
   const [completed, setCompleted] = useState(false);
-  const { audioLocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
+  const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
 
   const handleComplete = useCallback((score: number) => {
     setCompleted(true);
@@ -150,7 +150,7 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
       {audioLocked && !completed && <V8AudioLockOverlay />}
 
       {/* Exercise content */}
-      <div className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+      <div className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}>
         {renderExercise()}
       </div>
 
