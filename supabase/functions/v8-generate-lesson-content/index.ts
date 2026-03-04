@@ -475,10 +475,10 @@ serve(async (req) => {
       const hasPlaygroundAtLast = allPg.some((p: any) => p.afterSectionIndex === lastIdx);
 
       if (!hasPlaygroundAtLast && generatedPlaygrounds.length > 0) {
-        // Move the playground with highest afterSectionIndex to lastIdx
+        // Move the generated playground with highest afterSectionIndex to lastIdx
         const sorted = [...generatedPlaygrounds].sort((a: any, b: any) => b.afterSectionIndex - a.afterSectionIndex);
         const moved = sorted[0];
-        console.log(`[v8-generate] Phase 3: Moving playground ${moved.id} from section ${moved.afterSectionIndex} → ${lastIdx}`);
+        console.log(`[v8-generate] Phase 3: Moving generated playground ${moved.id} from section ${moved.afterSectionIndex} → ${lastIdx}`);
         moved.afterSectionIndex = lastIdx;
         // If there's a generated quiz at lastIdx, move it to previous free section
         const quizAtLast = generatedQuizzes.find((q: any) => q.afterSectionIndex === lastIdx);
@@ -489,6 +489,25 @@ serve(async (req) => {
               && !allPg.some((p: any) => p.afterSectionIndex === i));
           if (freeSection !== undefined) {
             console.log(`[v8-generate] Phase 3: Moving quiz ${quizAtLast.id} from section ${lastIdx} → ${freeSection}`);
+            quizAtLast.afterSectionIndex = freeSection;
+          }
+        }
+      } else if (!hasPlaygroundAtLast && manualPlaygrounds.length > 0 && generatedPlaygrounds.length === 0) {
+        // Phase 5 fix: Only manual playgrounds exist, none at last section — MOVE the one with highest index
+        const sortedManual = [...manualPlaygrounds].sort((a: any, b: any) => b.afterSectionIndex - a.afterSectionIndex);
+        const moved = sortedManual[0];
+        console.log(`[v8-generate] Phase 5: Moving manual playground from section ${moved.afterSectionIndex} → ${lastIdx}`);
+        moved.afterSectionIndex = lastIdx;
+        // Also resolve quiz conflict at lastIdx (check both manual and generated quizzes)
+        const allQuizzes = [...(manualQuizzes || []), ...generatedQuizzes];
+        const quizAtLast = allQuizzes.find((q: any) => q.afterSectionIndex === lastIdx);
+        if (quizAtLast) {
+          const freeSection = Array.from({ length: lastIdx }, (_, i) => lastIdx - 1 - i)
+            .find(i => i >= 2
+              && !allQuizzes.some((q: any) => q !== quizAtLast && q.afterSectionIndex === i)
+              && !allPg.some((p: any) => p.afterSectionIndex === i));
+          if (freeSection !== undefined) {
+            console.log(`[v8-generate] Phase 5: Moving conflicting quiz from section ${lastIdx} → ${freeSection}`);
             quizAtLast.afterSectionIndex = freeSection;
           }
         }

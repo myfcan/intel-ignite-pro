@@ -1202,8 +1202,14 @@ export type Database = {
           ai_feedback: string | null
           ai_response: string | null
           created_at: string | null
+          evaluation_payload: Json | null
           id: string
+          is_copy: boolean | null
           lesson_id: string
+          passed: boolean | null
+          playground_id: string | null
+          score: number | null
+          similarity: number | null
           tokens_used: number | null
           user_id: string
           user_prompt: string
@@ -1212,8 +1218,14 @@ export type Database = {
           ai_feedback?: string | null
           ai_response?: string | null
           created_at?: string | null
+          evaluation_payload?: Json | null
           id?: string
+          is_copy?: boolean | null
           lesson_id: string
+          passed?: boolean | null
+          playground_id?: string | null
+          score?: number | null
+          similarity?: number | null
           tokens_used?: number | null
           user_id: string
           user_prompt: string
@@ -1222,8 +1234,14 @@ export type Database = {
           ai_feedback?: string | null
           ai_response?: string | null
           created_at?: string | null
+          evaluation_payload?: Json | null
           id?: string
+          is_copy?: boolean | null
           lesson_id?: string
+          passed?: boolean | null
+          playground_id?: string | null
+          score?: number | null
+          similarity?: number | null
           tokens_used?: number | null
           user_id?: string
           user_prompt?: string
