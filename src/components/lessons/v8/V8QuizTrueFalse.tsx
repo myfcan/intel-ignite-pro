@@ -5,6 +5,8 @@ import { V8InlineQuiz } from "@/types/v8Lesson";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
+import { useAudioFirstLock } from "./useAudioFirstLock";
+import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
 
 interface V8QuizTrueFalseProps {
   quiz: V8InlineQuiz;
@@ -27,6 +29,7 @@ export const V8QuizTrueFalse = ({
   const [state, setState] = useState<QuizState>("answering");
   const ctaRef = useRef<HTMLButtonElement>(null);
   const { playSound } = useV7SoundEffects(0.6, true);
+  const { audioLocked, onAudioEnded } = useAudioFirstLock(quiz.audioUrl, isActiveAudio);
 
   useEffect(() => {
     if (!isActive) return;
@@ -36,10 +39,10 @@ export const V8QuizTrueFalse = ({
 
   const handleSelect = useCallback(
     (value: boolean) => {
-      if (state !== "answering") return;
+      if (state !== "answering" || audioLocked) return;
       setSelected(value);
     },
-    [state]
+    [state, audioLocked]
   );
 
   const handleConfirm = useCallback(() => {
@@ -89,11 +92,16 @@ export const V8QuizTrueFalse = ({
         </p>
       </div>
 
-      {/* Phase 7: Do NOT autoplay statement audio for true-false (it narrates the full statement).
-          Only play explanation/reinforcement audio after answering. */}
+      {/* Audio player for narration — locks buttons until finished */}
+      {quiz.audioUrl && state === "answering" && isActiveAudio && (
+        <V8AudioPlayer audioUrl={quiz.audioUrl} autoPlay onEnded={onAudioEnded} />
+      )}
+
+      {/* Audio lock hint */}
+      {audioLocked && state === "answering" && <V8AudioLockOverlay />}
 
       {/* True / False buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`grid grid-cols-2 gap-3 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
         {[true, false].map((value) => {
           const label = value ? "Verdadeiro" : "Falso";
           let borderColor = "border-slate-200";
@@ -122,8 +130,8 @@ export const V8QuizTrueFalse = ({
             <motion.button
               key={String(value)}
               onClick={() => handleSelect(value)}
-              disabled={isAnswered}
-              whileTap={!isAnswered ? { scale: 0.97 } : undefined}
+              disabled={isAnswered || audioLocked}
+              whileTap={!isAnswered && !audioLocked ? { scale: 0.97 } : undefined}
               className={`w-full text-center px-4 py-4 rounded-xl border-2 ${borderColor} ${bgColor} ${textColor} transition-colors text-base font-semibold`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -142,7 +150,7 @@ export const V8QuizTrueFalse = ({
 
       {/* Confirm */}
       <AnimatePresence>
-        {state === "answering" && selected !== null && (
+        {state === "answering" && selected !== null && !audioLocked && (
           <motion.button
             ref={ctaRef}
             initial={{ opacity: 0, y: 10 }}

@@ -5,30 +5,31 @@ import { V8InlineCompleteSentence } from "@/types/v8Lesson";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
 import { PASS_SCORE } from "@/constants/v8Rules";
+import { V8AudioPlayer } from "./V8AudioPlayer";
+import { useAudioFirstLock } from "./useAudioFirstLock";
+import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
 
 interface V8CompleteSentenceInlineProps {
   completeSentence: V8InlineCompleteSentence;
   onContinue?: () => void;
   onScore?: (score: number) => void;
   isActive?: boolean;
+  isActiveAudio?: boolean;
 }
 
-/**
- * V8CompleteSentenceInline — Phase 8 (Gap 4)
- * Coursiv-style chip-based fill-blank exercise inline in the lesson timeline.
- * Users tap chips to fill blanks in sentences.
- */
 export const V8CompleteSentenceInline = ({
   completeSentence,
   onContinue,
   onScore,
   isActive = true,
+  isActiveAudio = false,
 }: V8CompleteSentenceInlineProps) => {
   const { playSound } = useV7SoundEffects(0.6, true);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<Record<string, boolean>>({});
   const ctaRef = useRef<HTMLButtonElement>(null);
+  const { audioLocked, onAudioEnded } = useAudioFirstLock(completeSentence.audioUrl, isActiveAudio);
 
   useEffect(() => {
     if (!isActive || !submitted) return;
@@ -36,7 +37,7 @@ export const V8CompleteSentenceInline = ({
   }, [submitted, isActive]);
 
   const handleChipSelect = useCallback((sentenceId: string, chip: string) => {
-    if (submitted) return;
+    if (submitted || audioLocked) return;
     setAnswers(prev => {
       if (prev[sentenceId] === chip) {
         const next = { ...prev };
@@ -45,7 +46,7 @@ export const V8CompleteSentenceInline = ({
       }
       return { ...prev, [sentenceId]: chip };
     });
-  }, [submitted]);
+  }, [submitted, audioLocked]);
 
   const handleSubmit = useCallback(() => {
     const newResults: Record<string, boolean> = {};
@@ -122,55 +123,66 @@ export const V8CompleteSentenceInline = ({
         <p className="text-sm text-slate-500 mt-1">{completeSentence.instruction}</p>
       </div>
 
+      {/* Audio player for narration — locks chips until finished */}
+      {completeSentence.audioUrl && !submitted && isActiveAudio && (
+        <V8AudioPlayer audioUrl={completeSentence.audioUrl} autoPlay onEnded={onAudioEnded} />
+      )}
+
+      {/* Audio lock hint */}
+      {audioLocked && !submitted && <V8AudioLockOverlay />}
+
       {/* Sentences */}
-      {completeSentence.sentences.map(sentence => (
-        <div key={sentence.id} className="space-y-3">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-slate-900 font-medium">{renderSentence(sentence)}</p>
-          </div>
-
-          {/* Chip options */}
-          {!submitted && (
-            <div className="flex flex-wrap gap-2">
-              {sentence.options.map(option => {
-                const isSelected = answers[sentence.id] === option;
-                return (
-                  <button
-                    key={option}
-                    onClick={() => handleChipSelect(sentence.id, option)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      isSelected
-                        ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-400 shadow-sm scale-105'
-                        : 'bg-white text-slate-700 border border-slate-300 hover:border-indigo-400 hover:bg-indigo-50'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                );
-              })}
+      <div className={`space-y-4 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+        {completeSentence.sentences.map(sentence => (
+          <div key={sentence.id} className="space-y-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-slate-900 font-medium">{renderSentence(sentence)}</p>
             </div>
-          )}
 
-          {/* Submitted: show correct answer if wrong */}
-          {submitted && !results[sentence.id] && (
-            <p className="text-xs text-red-600 font-medium">
-              ❌ Resposta correta: {sentence.correctAnswers[0]}
-            </p>
-          )}
-          {submitted && results[sentence.id] && (
-            <p className="text-xs text-emerald-600 font-medium">✅ Correto!</p>
-          )}
+            {/* Chip options */}
+            {!submitted && (
+              <div className="flex flex-wrap gap-2">
+                {sentence.options.map(option => {
+                  const isSelected = answers[sentence.id] === option;
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => handleChipSelect(sentence.id, option)}
+                      disabled={audioLocked}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        isSelected
+                          ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-400 shadow-sm scale-105'
+                          : 'bg-white text-slate-700 border border-slate-300 hover:border-indigo-400 hover:bg-indigo-50'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-          {/* Hints */}
-          {sentence.hints && sentence.hints.length > 0 && !submitted && (
-            <p className="text-xs text-amber-600">💡 {sentence.hints.join(' • ')}</p>
-          )}
-        </div>
-      ))}
+            {/* Submitted: show correct answer if wrong */}
+            {submitted && !results[sentence.id] && (
+              <p className="text-xs text-red-600 font-medium">
+                ❌ Resposta correta: {sentence.correctAnswers[0]}
+              </p>
+            )}
+            {submitted && results[sentence.id] && (
+              <p className="text-xs text-emerald-600 font-medium">✅ Correto!</p>
+            )}
+
+            {/* Hints */}
+            {sentence.hints && sentence.hints.length > 0 && !submitted && (
+              <p className="text-xs text-amber-600">💡 {sentence.hints.join(' • ')}</p>
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* Submit */}
       <AnimatePresence>
-        {!submitted && allAnswered && (
+        {!submitted && allAnswered && !audioLocked && (
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
