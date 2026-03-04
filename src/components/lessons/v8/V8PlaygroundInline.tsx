@@ -96,6 +96,13 @@ export const V8PlaygroundInline = ({ playground, onContinue, onScore, isActive =
           evaluationCriteria: playground.userChallenge.evaluationCriteria,
           rubric: playground.userChallenge.scoring?.rubric,
           maxScore: playground.userChallenge.scoring?.maxScore ?? 100,
+          // Anti-copy context (Phase 3)
+          professionalPrompt: playground.professionalPrompt || "",
+          amateurPrompt: playground.amateurPrompt || "",
+          professionalResult: playground.professionalResult || "",
+          amateurResult: playground.amateurResult || "",
+          challengePrompt: playground.userChallenge.challengePrompt || "",
+          playgroundId: playground.id || "",
         },
       });
 
