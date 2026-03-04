@@ -15,7 +15,6 @@ import { V8InlineExercise } from "./V8InlineExercise";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
 import { PASS_SCORE } from "@/constants/v8Rules";
-import { hasV8ForbiddenNarrationMarkers } from "@/lib/v8TextSanitizer";
 
 interface V8LessonPlayerProps {
   lessonData: V8LessonData;
@@ -86,7 +85,6 @@ export const V8LessonPlayer = ({
     if (state.phase !== "content" || !currentItem || currentItem.type !== "section") return null;
     const section = lessonData.sections[currentItem.index];
     if (!section) return null;
-    if (hasV8ForbiddenNarrationMarkers(section.content || "")) return null;
     return section.audioUrl ?? null;
   }, [state.phase, currentItem, lessonData.sections]);
 
