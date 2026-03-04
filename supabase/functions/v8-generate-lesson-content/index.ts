@@ -15,7 +15,7 @@ function sanitizeEncoding(text: string): string {
     [/\bprtico\b/gi, "prático"], [/\bexplicao\b/gi, "explicação"], [/\bcontedo\b/gi, "conteúdo"],
     [/\bpossvel\b/gi, "possível"], [/\binteligncia\b/gi, "inteligência"], [/\bexperincia\b/gi, "experiência"],
     [/\bverdadeiro\b/gi, "verdadeiro"], [/\binterao\b/gi, "interação"],
-    [/(?<!\w)til(?=\s|[.,;:!?]|$)/gi, "útil"],
+    [/(?<![a-záéíóúâêôãõçà])til(?=\s|[.,;:!?]|$)/gi, "útil"],
   ];
   let r = text;
   for (const [p, rep] of fixes) { r = r.replace(p, rep); }
@@ -129,7 +129,7 @@ const INLINE_EXERCISE_TOOLS = [
     type: "function",
     function: {
       name: "generate_inline_exercises",
-      description: "Generate inline exercises for sections between content sections. These replace intermediate playgrounds. Choose from 4 reliable types.",
+      description: "Generate inline exercises for sections between content sections. Choose from 8 types per V8-C01 contract.",
       parameters: {
         type: "object",
         properties: {
@@ -139,12 +139,12 @@ const INLINE_EXERCISE_TOOLS = [
               type: "object",
               properties: {
                 afterSectionIndex: { type: "number", description: "0-based section index this exercise follows" },
-                type: { type: "string", enum: ["true-false", "multiple-choice", "complete-sentence", "fill-in-blanks"] },
+                type: { type: "string", enum: ["true-false", "multiple-choice", "complete-sentence", "fill-in-blanks", "flipcard-quiz", "scenario-selection", "platform-match", "timed-quiz"] },
                 title: { type: "string" },
                 instruction: { type: "string" },
                 data: {
                   type: "object",
-                  description: "Exercise data. true-false: { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }. fill-in-blanks: { sentences: [{ id, text (use _______ as placeholder), correctAnswers: [], hint }], feedback: { allCorrect, someCorrect, needsReview } }. complete-sentence: { sentences: [{ id, text (use _______ as placeholder), correctAnswers: [], options: [] }] }. multiple-choice: { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }.",
+                  description: "Exercise data. true-false: { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }. fill-in-blanks: { sentences: [{ id, text (use _______ as placeholder), correctAnswers: [], hint }], feedback: { allCorrect, someCorrect, needsReview } }. complete-sentence: { sentences: [{ id, text (use _______ as placeholder), correctAnswers: [], options: [] }] }. multiple-choice: { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }. flipcard-quiz: { cards: [{ id, front: { label, color }, back: { text }, options: [{ id, text, isCorrect }], explanation }] }. scenario-selection: { scenarios: [{ id, situation, options: [], correctAnswer, explanation }] }. platform-match: { scenarios: [{ id, text, correctPlatform, emoji }], platforms: [{ id, name, icon, color }] }. timed-quiz: { timePerQuestion: 15, bonusPerSecondLeft: 2, timeoutPenalty: 'skip', visualTheme: 'cyber', questions: [{ id, question, options: [{ id, text, isCorrect }], explanation }] }.",
                 },
               },
               required: ["afterSectionIndex", "type", "title", "instruction", "data"],
@@ -286,7 +286,7 @@ const INLINE_EXERCISE_SYSTEM_PROMPT = `Você é um designer instrucional especia
 Gere exercícios interativos inline para seções intermediárias de uma aula.
 
 REGRAS:
-1. VARIE os tipos — NÃO repita o mesmo tipo consecutivamente
+1. Gere EXATAMENTE o tipo solicitado para cada seção — o tipo é obrigatório e definido pelo contrato V8-C01.
 2. Use Português Brasileiro (pt-BR)
 3. Cada exercício deve testar conhecimento real da seção correspondente
 4. NÃO referencie números de seção na pergunta
@@ -298,10 +298,14 @@ TIPOS DISPONÍVEIS E SCHEMAS:
 - true-false: { statements: [{ id: "stmt-1", text: "afirmação", correct: true/false, explanation: "..." }], feedback: { perfect: "...", good: "...", needsReview: "..." } }
 - fill-in-blanks: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], hint: "dica" }], feedback: { allCorrect: "...", someCorrect: "...", needsReview: "..." } }
 - complete-sentence: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], options: ["opção1", "opção2", "opção3", "resposta"] }] }
-- multiple-choice: Use o formato true-false (statements) para compatibilidade do player.
+- multiple-choice: Use o formato true-false (statements) para compatibilidade do player. { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }
+- flipcard-quiz: { cards: [{ id: "card-1", front: { label: "Conceito X", color: "#6366f1" }, back: { text: "explicação" }, options: [{ id: "opt-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
+- scenario-selection: { scenarios: [{ id: "sc-1", situation: "descrição do cenário", options: ["opção A", "opção B", "opção C"], correctAnswer: "opção A", explanation: "..." }] }
+- platform-match: { scenarios: [{ id: "pm-1", text: "caso de uso", correctPlatform: "ChatGPT", emoji: "🤖" }], platforms: [{ id: "plat-1", name: "ChatGPT", icon: "🤖", color: "#10a37f" }, { id: "plat-2", name: "Midjourney", icon: "🎨", color: "#5865f2" }] }
+- timed-quiz: { timePerQuestion: 15, bonusPerSecondLeft: 2, timeoutPenalty: "skip", visualTheme: "cyber", questions: [{ id: "tq-1", question: "pergunta", options: [{ id: "tqo-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
 
-Gere IDs únicos para todos os elementos (ex: "stmt-1", "sent-1").
-Gere 2-4 statements/sentences por exercício.`;
+Gere IDs únicos para todos os elementos.
+Gere 2-4 statements/sentences/cards/questions por exercício.`;
 
 // ─── Coursiv Prompt Builder: tool schema + system prompt ───
 const COURSIV_BUILDER_TOOLS = [
@@ -317,8 +321,8 @@ const COURSIV_BUILDER_TOOLS = [
           instruction: { type: "string", description: "Instruction like 'Complete as frases abaixo escolhendo os chips corretos para montar um prompt eficiente.'" },
           sentences: {
             type: "array",
-            minItems: 1,
-            maxItems: 2,
+            minItems: 4,
+            maxItems: 6,
             items: {
               type: "object",
               properties: {
@@ -342,7 +346,7 @@ const COURSIV_SYSTEM_PROMPT = `Você é um designer instrucional especializado e
 Sua tarefa é gerar um exercício do tipo "complete a frase" (Coursiv) onde o aluno monta partes de um prompt profissional preenchendo lacunas com chips.
 
 REGRAS:
-1. Gere 1-2 frases que representem a ESTRUTURA de um prompt profissional relacionado ao tema da aula.
+1. Gere 4-6 frases que representem a ESTRUTURA de um prompt profissional relacionado ao tema da aula. Cada frase tem UMA lacuna.
 2. Cada frase deve ter exatamente UMA lacuna (_______ como placeholder).
 3. A lacuna deve representar um componente-chave do prompt: público-alvo, contexto, formato de saída, tom, objetivo, restrição, etc.
 4. Os chips (options) devem ter 3-5 opções: a correta + distratoras plausíveis mas claramente erradas no contexto.
@@ -476,99 +480,56 @@ serve(async (req) => {
       `### Seção ${i + 1}: ${s.title}\n${s.content?.slice(0, 500) || ""}`
     ).join("\n\n");
 
-    // ── 1. Determine which sections need quizzes/playgrounds ──
+    // ── 1. V8-C01 Contract: Deterministic section-interaction map ──
     const sectionsWithQuiz = new Set(manualQuizzes.map((q: any) => q.afterSectionIndex));
     const sectionsWithPlayground = new Set(manualPlaygrounds.map((p: any) => p.afterSectionIndex));
     const lastIdx = sections.length - 1;
-    const coursivTargetIdx = lastIdx >= 4 ? lastIdx - 1 : -1; // Reserve penultimate for Coursiv
-    // Seções 0 e 1 são introdutórias — NUNCA recebem quiz ou playground gerado
-    // Also exclude coursivTargetIdx to prevent interaction stacking
-    const sectionsNeedingInteraction = sections
-      .map((_: any, i: number) => i)
-      .filter((i: number) => i >= 2 && !sectionsWithQuiz.has(i) && !sectionsWithPlayground.has(i) && i !== coursivTargetIdx);
+    const coursivTargetIdx = lastIdx >= 4 ? lastIdx - 1 : -1;
 
-    console.log(`[v8-generate-lesson-content] Sections needing interaction: ${sectionsNeedingInteraction.join(", ")}${coursivTargetIdx >= 0 ? ` (coursiv reserved at ${coursivTargetIdx})` : ''}`);
+    // V8-C01 contract: fixed interaction types per section index (0-based)
+    // Sections 0-1: no interaction (introductory)
+    // Sections 2-6: mapped types (random pick from pool)
+    // lastIdx-1: Coursiv (handled separately)
+    // lastIdx: Playground (handled separately)
+    const V8_C01_MAP: Record<number, string[]> = {
+      2: ['multiple-choice', 'flipcard-quiz'],
+      3: ['complete-sentence', 'scenario-selection'],
+      4: ['true-false'],
+      5: ['platform-match'],
+      6: ['timed-quiz', 'fill-in-blanks'],
+    };
 
-    // ── 2. Generate inline quizzes for sections without interactions ──
-    let generatedQuizzes: any[] = [];
-    if (sectionsNeedingInteraction.length > 0) {
-      progress.push("Gerando quizzes inline...");
-      try {
-        const quizSectionsContent = sectionsNeedingInteraction.map((i: number) => 
-          `Seção ${i} (index ${i}): ${sections[i].title}\n${sections[i].content?.slice(0, 400) || ""}`
-        ).join("\n\n");
+    // Build interaction assignments for this lesson
+    const interactionAssignments: Array<{ sectionIndex: number; type: string }> = [];
+    for (let i = 2; i < sections.length; i++) {
+      // Skip if section has manual quiz/playground, or is reserved for Coursiv/Playground
+      if (sectionsWithQuiz.has(i) || sectionsWithPlayground.has(i)) continue;
+      if (i === coursivTargetIdx || i === lastIdx) continue;
 
-        const quizResult = await callAI(
-          LOVABLE_API_KEY,
-          QUIZ_SYSTEM_PROMPT,
-          `Gere quizzes para estas seções que NÃO possuem interações:\n\n${quizSectionsContent}\n\nÍndices válidos para afterSectionIndex: ${sectionsNeedingInteraction.join(", ")}`,
-          QUIZ_TOOLS,
-          "generate_inline_quizzes",
-        );
+      const pool = V8_C01_MAP[i];
+      if (!pool) continue; // No mapping for this index (sections 7+ beyond coursiv/playground)
 
-        generatedQuizzes = (quizResult.quizzes || []).map((q: any, idx: number) => ({
-          ...q,
-          id: `quiz-gen-${String(idx + 1).padStart(2, "0")}`,
-          // Only map options for multiple-choice quizzes (true-false and fill-blank don't have options)
-          ...(q.quizType === 'multiple-choice' && Array.isArray(q.options) ? {
-            options: q.options.map((o: any, oi: number) => ({
-              ...o,
-              id: `opt-${String(oi + 1).padStart(2, "0")}`,
-            })),
-          } : {}),
-        }));
-
-        // ── Phase 1 (Gap 1): Sanitize encoding on all quiz text fields ──
-        generatedQuizzes = generatedQuizzes.map((q: any) => {
-          const sanitized = sanitizeFields(q, ['question', 'explanation', 'reinforcement', 'statement', 'sentenceWithBlank', 'correctAnswer']);
-          // Also sanitize option texts for multiple-choice
-          if (Array.isArray(sanitized.options)) {
-            sanitized.options = sanitized.options.map((o: any) => ({ ...o, text: sanitizeEncoding(o.text || '') }));
-          }
-          if (Array.isArray(sanitized.acceptableAnswers)) {
-            sanitized.acceptableAnswers = sanitized.acceptableAnswers.map((a: string) => sanitizeEncoding(a));
-          }
-          if (Array.isArray(sanitized.chipOptions)) {
-            sanitized.chipOptions = sanitized.chipOptions.map((c: string) => sanitizeEncoding(c));
-          }
-          return sanitized;
-        });
-
-        // ── Phase 2 (Gap 7): Sort by afterSectionIndex + rotate consecutive same types ──
-        generatedQuizzes.sort((a: any, b: any) => a.afterSectionIndex - b.afterSectionIndex);
-        const typeRotation = ['multiple-choice', 'true-false', 'fill-blank'];
-        for (let i = 1; i < generatedQuizzes.length; i++) {
-          if (generatedQuizzes[i].quizType === generatedQuizzes[i - 1].quizType) {
-            const currentType = generatedQuizzes[i].quizType;
-            const nextType = typeRotation.find(t => t !== currentType && t !== (generatedQuizzes[i - 1]?.quizType)) || typeRotation.find(t => t !== currentType) || 'true-false';
-            console.warn(`[v8-generate] Rotating duplicate quiz type at index ${i}: ${currentType} → ${nextType}`);
-            generatedQuizzes[i] = { ...generatedQuizzes[i], quizType: nextType };
-          }
-        }
-
-        progress.push(`${generatedQuizzes.length} quizzes gerados (tipos: ${generatedQuizzes.map((q: any) => q.quizType).join(', ')})`);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Quiz generation failed";
-        errors.push(`Quizzes: ${msg}`);
-        console.error("[v8-generate-lesson-content] Quiz generation error:", msg);
-      }
+      const selectedType = pool[Math.floor(Math.random() * pool.length)];
+      interactionAssignments.push({ sectionIndex: i, type: selectedType });
     }
 
-    // ── 3. Generate inline exercises for intermediate sections (replaces intermediate playgrounds) ──
+    console.log(`[v8-generate-lesson-content] V8-C01 map: ${interactionAssignments.map(a => `S${a.sectionIndex}→${a.type}`).join(', ')}${coursivTargetIdx >= 0 ? ` | Coursiv→S${coursivTargetIdx}` : ''} | Playground→S${lastIdx}`);
+
+    // ── 2. Generate inline exercises via unified pipeline (V8-C01) ──
+    let generatedQuizzes: any[] = []; // Empty — quizzes are now unified into inlineExercises
     let generatedInlineExercises: any[] = [];
-    // Sections that have quizzes already should not also get inline exercises
-    const sectionsForInlineExercise = sectionsNeedingInteraction.filter((_: number, i: number) => i % 2 === 0);
-    if (sectionsForInlineExercise.length > 0) {
-      progress.push("Gerando exercícios inline...");
+    if (interactionAssignments.length > 0) {
+      progress.push("Gerando exercícios inline (V8-C01)...");
       try {
-        const exSectionsContent = sectionsForInlineExercise.map((i: number) =>
-          `Seção ${i} (index ${i}): ${sections[i].title}\n${sections[i].content?.slice(0, 400) || ""}`
-        ).join("\n\n");
+        const assignmentPrompt = interactionAssignments.map(a => {
+          const section = sections[a.sectionIndex];
+          return `Seção ${a.sectionIndex} (index ${a.sectionIndex}): "${section.title}"\nConteúdo: ${section.content?.slice(0, 400) || ""}\n→ TIPO OBRIGATÓRIO: ${a.type}`;
+        }).join("\n\n---\n\n");
 
         const exResult = await callAI(
           LOVABLE_API_KEY,
           INLINE_EXERCISE_SYSTEM_PROMPT,
-          `Gere exercícios inline para estas seções:\n\n${exSectionsContent}\n\nÍndices válidos: ${sectionsForInlineExercise.join(", ")}`,
+          `Gere exercícios inline para estas seções. CADA EXERCÍCIO DEVE SER DO TIPO ESPECIFICADO:\n\n${assignmentPrompt}\n\nÍndices válidos para afterSectionIndex: ${interactionAssignments.map(a => a.sectionIndex).join(", ")}`,
           INLINE_EXERCISE_TOOLS,
           "generate_inline_exercises",
         );
@@ -578,6 +539,10 @@ serve(async (req) => {
           'fill-in-blanks': ['sentences'],
           'complete-sentence': ['sentences'],
           'multiple-choice': ['statements'],
+          'flipcard-quiz': ['cards'],
+          'scenario-selection': ['scenarios'],
+          'platform-match': ['scenarios'],
+          'timed-quiz': ['questions'],
         };
 
         generatedInlineExercises = (exResult.exercises || [])
@@ -602,18 +567,7 @@ serve(async (req) => {
             return true;
           });
 
-        // Rotate consecutive same types
-        const inlineTypeRotation = ['true-false', 'fill-in-blanks', 'complete-sentence', 'multiple-choice'];
-        for (let i = 1; i < generatedInlineExercises.length; i++) {
-          if (generatedInlineExercises[i].type === generatedInlineExercises[i - 1].type) {
-            const currentType = generatedInlineExercises[i].type;
-            const nextType = inlineTypeRotation.find(t => t !== currentType) || 'true-false';
-            console.warn(`[v8-generate] Rotating duplicate inline exercise type at index ${i}: ${currentType} → ${nextType}`);
-            generatedInlineExercises[i] = { ...generatedInlineExercises[i], type: nextType };
-          }
-        }
-
-        progress.push(`${generatedInlineExercises.length} exercícios inline gerados (tipos: ${generatedInlineExercises.map((e: any) => e.type).join(', ')})`);
+        progress.push(`${generatedInlineExercises.length} exercícios inline gerados (V8-C01: ${generatedInlineExercises.map((e: any) => e.type).join(', ')})`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Inline exercise generation failed";
         errors.push(`Inline exercises: ${msg}`);
