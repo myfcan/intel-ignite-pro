@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ─── Phase 1 (Gap 1): Encoding sanitization for AI-generated Portuguese text ───
+// ─── Phase 1 (Gap 1): Encoding + pedagogical sanitization for AI-generated Portuguese text ───
 function sanitizeEncoding(text: string): string {
   if (!text || typeof text !== 'string') return text;
   const fixes: [RegExp, string][] = [
@@ -24,10 +24,25 @@ function sanitizeEncoding(text: string): string {
   return r;
 }
 
+function sanitizePedagogicalText(text: string): string {
+  if (!text || typeof text !== 'string') return text;
+
+  return text
+    .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
+    .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
+    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function sanitizeV8Text(text: string): string {
+  return sanitizePedagogicalText(sanitizeEncoding(text));
+}
+
 function sanitizeFields(obj: any, fields: string[]): any {
   const r = { ...obj };
   for (const f of fields) {
-    if (typeof r[f] === 'string') r[f] = sanitizeEncoding(r[f]);
+    if (typeof r[f] === 'string') r[f] = sanitizeV8Text(r[f]);
   }
   return r;
 }
@@ -449,7 +464,7 @@ serve(async (req) => {
   }
 
   try {
-    const {
+    let {
       sections,
       manualQuizzes = [],
       manualPlaygrounds = [],
@@ -464,6 +479,12 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    sections = sections.map((s: any) => ({
+      ...s,
+      title: sanitizeV8Text(String(s?.title || '')),
+      content: sanitizeV8Text(String(s?.content || '')),
+    }));
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -549,8 +570,8 @@ serve(async (req) => {
           .map((ex: any, idx: number) => ({
             ...ex,
             id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
-            title: sanitizeEncoding(ex.title || ''),
-            instruction: sanitizeEncoding(ex.instruction || ''),
+            title: sanitizeV8Text(ex.title || ''),
+            instruction: sanitizeV8Text(ex.instruction || ''),
           }))
           .filter((ex: any) => {
             const requiredKeys = INLINE_REQUIRED_DATA_KEYS[ex.type];
@@ -594,13 +615,13 @@ serve(async (req) => {
           const coursivExercise = {
             id: `coursiv-gen-01`,
             afterSectionIndex: coursivTargetIdx,
-            title: sanitizeEncoding(coursivResult.title || 'Monte o Prompt Profissional'),
-            instruction: sanitizeEncoding(coursivResult.instruction || 'Complete as frases escolhendo os chips corretos.'),
+            title: sanitizeV8Text(coursivResult.title || 'Monte o Prompt Profissional'),
+            instruction: sanitizeV8Text(coursivResult.instruction || 'Complete as frases escolhendo os chips corretos.'),
             sentences: coursivResult.sentences.map((s: any) => ({
               ...s,
-              text: sanitizeEncoding(s.text || ''),
-              correctAnswers: (s.correctAnswers || []).map((a: string) => sanitizeEncoding(a)),
-              options: (s.options || []).map((o: string) => sanitizeEncoding(o)),
+              text: sanitizeV8Text(s.text || ''),
+              correctAnswers: (s.correctAnswers || []).map((a: string) => sanitizeV8Text(a)),
+              options: (s.options || []).map((o: string) => sanitizeV8Text(o)),
             })),
           };
           generatedCoursivSentences.push(coursivExercise);
@@ -755,8 +776,8 @@ O título deve ser curto e começar com 💡. creditsReward deve ser 10. Portugu
             ...ins,
             id: crypto.randomUUID(),
             // Phase 1: Sanitize encoding
-            title: sanitizeEncoding(ins.title || ''),
-            insightText: sanitizeEncoding(ins.insightText || ''),
+            title: sanitizeV8Text(ins.title || ''),
+            insightText: sanitizeV8Text(ins.insightText || ''),
           }));
         progress.push(`${generatedInsights.length} insights gerados`);
       } catch (err) {

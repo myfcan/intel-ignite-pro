@@ -1,4 +1,5 @@
 import { V8InlinePlayground, V8InlineQuiz, V8Section, V8LessonData } from "@/types/v8Lesson";
+import { sanitizeV8PedagogicalText } from "@/lib/v8TextSanitizer";
 
 // ─── Types ───
 
@@ -55,7 +56,7 @@ export function parseFullContent(rawText: string): ParseResult {
   if (description && description.trim().length > 20 && !META_KEYWORDS.test(description)) {
     const introSection: ParsedSection = {
       title: "Abertura",
-      content: description,
+      content: sanitizeV8PedagogicalText(description),
       position: 0,
     };
     parsedSections.unshift(introSection);
@@ -224,14 +225,16 @@ export function parseSections(rawText: string): ParsedSection[] {
     let content = rawText.slice(start, end);
 
     // Remove any [PLAYGROUND] or [QUIZ] blocks from section content
-    content = content
-      .replace(/\[PLAYGROUND\]\s*\n[\s\S]*?(?=\n##\s|\n\[(?:PLAYGROUND|QUIZ)\]|\s*$)/gi, "")
-      .replace(/\[QUIZ\]\s*\n[\s\S]*?(?=\n##\s|\n\[(?:PLAYGROUND|QUIZ)\]|\s*$)/gi, "")
-      .trim();
+    content = sanitizeV8PedagogicalText(
+      content
+        .replace(/\[PLAYGROUND\]\s*\n[\s\S]*?(?=\n##\s|\n\[(?:PLAYGROUND|QUIZ)\]|\s*$)/gi, "")
+        .replace(/\[QUIZ\]\s*\n[\s\S]*?(?=\n##\s|\n\[(?:PLAYGROUND|QUIZ)\]|\s*$)/gi, "")
+        .trim()
+    );
 
     if (content || matches[i].title) {
       results.push({
-        title: matches[i].title,
+        title: sanitizeV8PedagogicalText(matches[i].title),
         content,
         position: matches[i].index,
       });

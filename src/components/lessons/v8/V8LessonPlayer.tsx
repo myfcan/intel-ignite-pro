@@ -15,6 +15,7 @@ import { V8InlineExercise } from "./V8InlineExercise";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
 import { PASS_SCORE } from "@/constants/v8Rules";
+import { hasV8ForbiddenNarrationMarkers } from "@/lib/v8TextSanitizer";
 
 interface V8LessonPlayerProps {
   lessonData: V8LessonData;
@@ -83,7 +84,10 @@ export const V8LessonPlayer = ({
   // Derive audio URL for the current section
   const currentSectionAudioUrl = useMemo(() => {
     if (state.phase !== "content" || !currentItem || currentItem.type !== "section") return null;
-    return lessonData.sections[currentItem.index]?.audioUrl ?? null;
+    const section = lessonData.sections[currentItem.index];
+    if (!section) return null;
+    if (hasV8ForbiddenNarrationMarkers(section.content || "")) return null;
+    return section.audioUrl ?? null;
   }, [state.phase, currentItem, lessonData.sections]);
 
   // Phase 4 (Gap 3): Compute whether an insight at timeline index is unlockable
@@ -328,7 +332,7 @@ export const V8LessonPlayer = ({
               </div>
             )}
 
-            {state.mode === "read" && (
+            {(state.mode === "read" || (state.mode === "listen" && !currentSectionAudioUrl)) && (
               <motion.button
                 key={`continue-${state.currentIndex}`}
                 initial={{ opacity: 0, y: 10 }}
