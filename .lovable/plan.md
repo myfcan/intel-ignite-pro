@@ -1,64 +1,44 @@
 
 
-# Plano: Audio-First Lock + Preload para Exercicios no Modo "Ouvir"
+# Plano: Loading Indicator no Audio + Efeito de Unlock nos Exercicios
 
-## Dois Problemas
+## 1. Loading indicator no audio (spinner/pulse quando preload nao completou)
 
-1. **Exercicios interativos ficam liberados imediatamente** no modo "ouvir" — o usuario pode clicar antes de ouvir o enunciado narrado
-2. **Latencia no start do audio** — quando uma secao ou exercicio entra, o audio demora a comecar porque so inicia o `preload` no momento da renderizacao
+**Onde:** `V8AudioPlayer.tsx`
 
-## Solucao
+O componente ja tem estado `isLoaded` que fica `false` ate o `canplaythrough` ou `durationchange` disparar. Basta:
 
-### 1. Audio-First Lock (todos os componentes interativos)
+- Quando `autoPlay === true` e `isLoaded === false`: mostrar um indicador de loading (pulse no botao play ou skeleton na barra)
+- Quando `isLoaded === true`: transicao suave para o player normal
 
-Quando `mode === "listen"` e o componente tem `audioUrl`, as opcoes/inputs ficam bloqueados ate o audio terminar.
+Implementacao: substituir o botao play por um spinner animado (Loader2 com `animate-spin`) enquanto `!isLoaded && autoPlay`. O resto do player (barra, tempo) mostra skeleton pulse.
 
-**Componentes afetados:**
+## 2. Efeito de "unlock" quando o exercicio libera apos narracao
 
-| Componente | audioUrl | Lock |
-|---|---|---|
-| `V8QuizInline` | `quiz.audioUrl` | Opcoes disabled ate `onEnded` |
-| `V8QuizTrueFalse` | `quiz.audioUrl` | Botoes V/F disabled ate `onEnded` |
-| `V8QuizFillBlank` | `quiz.audioUrl` | Input/chips disabled ate `onEnded` |
-| `V8CompleteSentenceInline` | `completeSentence.audioUrl` | Chips disabled ate `onEnded` |
-| `V8InlineExercise` | `exercise.audioUrl` | Exercicio inteiro locked ate `onEnded` |
-| `V8PlaygroundInline` | `playground.audioUrl` | Ja tem fluxo de fases — sem mudanca |
+**Onde:** Todos os wrappers de opcoes nos 5 componentes que usam `audioLocked`
 
-**Implementacao por componente:**
+Quando `audioLocked` transiciona de `true` para `false`, as opcoes precisam de um efeito visual que chame a atencao do usuario — indicando "agora voce pode interagir".
 
-- Estado `audioLocked = true` quando `isActiveAudio && audioUrl` existe
-- `V8AudioPlayer` com `onEnded={() => setAudioLocked(false)}`
-- Overlay visual: opcoes com `opacity-40 pointer-events-none` + badge "🎧 Ouça o enunciado..."
-- Transicao suave via `motion.div` ao desbloquear
-- No modo "read" ou sem audioUrl: `audioLocked = false` (sem impacto)
+**Implementacao:**
 
-### 2. Audio Preload Antecipado (eliminar latencia)
+- No `useAudioFirstLock.ts`: adicionar estado `justUnlocked` que fica `true` por ~1.5s apos o unlock
+- Quando `justUnlocked === true`: aplicar animacao de pulse + glow nas opcoes (ring de indigo com pulse, scale sutil)
+- Apos 1.5s: `justUnlocked` volta a `false` e as opcoes ficam no estado normal
 
-O audio da **proxima secao/exercicio** deve comecar a carregar ANTES de ser necessario.
+**Efeito visual:** As opcoes entram com `scale(0.95) → scale(1)` + um ring pulsante `ring-2 ring-indigo-400 animate-pulse` que desaparece apos 1.5s. Isso cria a sensacao clara de "ativou, pode interagir agora".
 
-**Implementacao no `V8LessonPlayer`:**
+## Arquivos editados
 
-- Calcular o `nextAudioUrl` olhando `timeline[currentIndex + 1]` e extraindo o audioUrl do proximo item (secao, quiz, exercise, etc)
-- Renderizar um `<link rel="preload" as="audio" href={nextAudioUrl}>` no head OU criar um `new Audio(url)` com `preload="auto"` sem play
-- Isso garante que quando o item ativo muda, o audio ja esta no cache do browser e o `autoPlay` dispara instantaneamente
+1. `V8AudioPlayer.tsx` — loading state visual (spinner no botao, skeleton na barra)
+2. `useAudioFirstLock.ts` — adicionar `justUnlocked` com timer de 1.5s
+3. `V8QuizInline.tsx` — aplicar classe de unlock effect
+4. `V8QuizTrueFalse.tsx` — aplicar classe de unlock effect
+5. `V8QuizFillBlank.tsx` — aplicar classe de unlock effect
+6. `V8CompleteSentenceInline.tsx` — aplicar classe de unlock effect
+7. `V8InlineExercise.tsx` — aplicar classe de unlock effect
 
-**Alteracao no `V8AudioPlayer`:**
+## Zero risco
 
-- Adicionar evento `canplaythrough` para garantir que o `autoPlay` so dispara quando o buffer esta pronto (ja existe parcialmente)
-- Nenhuma mudanca estrutural necessaria
-
-### 3. Arquivos Editados
-
-1. `V8QuizInline.tsx` — adicionar `audioLocked` state + overlay
-2. `V8QuizTrueFalse.tsx` — adicionar `audioLocked` state + overlay
-3. `V8QuizFillBlank.tsx` — adicionar `audioLocked` state + overlay
-4. `V8CompleteSentenceInline.tsx` — adicionar player de audio + `audioLocked` + overlay
-5. `V8InlineExercise.tsx` — receber `mode` prop, renderizar player + lock quando `mode === "listen"` e `audioUrl` existe
-6. `V8LessonPlayer.tsx` — passar `mode` para componentes + logica de preload do proximo audio
-
-### 4. Riscos
-
-- **Zero risco no modo "read"**: lock so ativa quando `isActiveAudio === true` ou `mode === "listen"` + `audioUrl` presente
-- **Zero mudanca no backend**: apenas frontend
-- **Preload**: se o proximo item nao tiver audio, nada acontece (graceful no-op)
+- Loading indicator: so aparece quando `autoPlay && !isLoaded` (nao afeta modo read)
+- Unlock effect: so dispara quando `audioLocked` transiciona de true→false (nunca no modo read)
 
