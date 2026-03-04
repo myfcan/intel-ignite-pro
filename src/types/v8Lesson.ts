@@ -130,7 +130,7 @@ export interface V8InlineCompleteSentence {
 export interface V8InlineExercise {
   id: string;
   afterSectionIndex: number;
-  type: 'true-false' | 'multiple-choice' | 'complete-sentence' | 'fill-in-blanks';
+  type: 'true-false' | 'multiple-choice' | 'complete-sentence' | 'fill-in-blanks' | 'flipcard-quiz' | 'scenario-selection' | 'platform-match' | 'timed-quiz';
   title: string;
   instruction: string;
   data: Record<string, any>;

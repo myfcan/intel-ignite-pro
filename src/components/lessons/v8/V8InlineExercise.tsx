@@ -5,13 +5,14 @@ import { V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
 import { TrueFalseExercise } from "@/components/lessons/TrueFalseExercise";
 import { FillInBlanksExercise } from "@/components/lessons/FillInBlanksExercise";
 import { CompleteSentenceExercise } from "@/components/lessons/CompleteSentenceExercise";
+import { FlipCardQuizExercise } from "@/components/lessons/FlipCardQuizExercise";
+import { ScenarioSelectionExercise } from "@/components/lessons/ScenarioSelectionExercise";
+import { PlatformMatchExercise } from "@/components/lessons/PlatformMatchExercise";
+import { TimedQuizExercise } from "@/components/lessons/TimedQuizExercise";
 
 /**
  * V8InlineExercise — Wrapper that renders inline exercises within the V8 timeline.
- * Supports 4 reliable types with explicit prop adapters per type.
- * 
- * Note: multiple-choice is rendered using TrueFalseExercise-style adapter
- * since the existing MultipleChoiceExercise expects different props.
+ * Supports 8 types per V8-C01 contract with explicit prop adapters per type.
  */
 
 interface V8InlineExerciseProps {
@@ -66,8 +67,6 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
         );
 
       case "multiple-choice":
-        // Adapt multiple-choice data to TrueFalseExercise format
-        // Each question becomes a "statement" with true/false based on correctness
         if (data.statements) {
           return (
             <TrueFalseExercise
@@ -79,11 +78,51 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
             />
           );
         }
-        // Fallback: if data has question/options format, render as simple quiz
         return (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">
             Exercício não renderizável (formato incompatível)
           </div>
+        );
+
+      case "flipcard-quiz":
+        return (
+          <FlipCardQuizExercise
+            title={title}
+            instruction={instruction}
+            data={data as any}
+            onComplete={handleComplete}
+          />
+        );
+
+      case "scenario-selection":
+        return (
+          <ScenarioSelectionExercise
+            title={title}
+            instruction={instruction}
+            data={data as any}
+            onComplete={handleComplete}
+          />
+        );
+
+      case "platform-match":
+        return (
+          <PlatformMatchExercise
+            title={title}
+            instruction={instruction}
+            scenarios={data.scenarios || []}
+            platforms={data.platforms || []}
+            onComplete={handleComplete}
+          />
+        );
+
+      case "timed-quiz":
+        return (
+          <TimedQuizExercise
+            title={title}
+            instruction={instruction}
+            data={data as any}
+            onComplete={handleComplete}
+          />
         );
 
       default:
