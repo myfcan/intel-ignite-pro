@@ -51,6 +51,15 @@ interface AudioResult {
   sizeKB: number;
 }
 
+function sanitizeNarrationText(text: string): string {
+  return text
+    .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
+    .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
+    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -121,16 +130,16 @@ serve(async (req) => {
 
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
-      // Strip markdown for TTS (basic cleanup)
-      const plainText = stripMarkdownForTTS(section.content);
+      // Strip markdown for TTS + pedagogical sanitization
+      const plainText = stripMarkdownForTTS(sanitizeNarrationText(section.content || ''));
       if (!plainText.trim()) {
         console.log(`[v8-generate] ⏭️ Skipping empty section ${i}`);
         continue;
       }
 
       // Previous/next text for request stitching
-      const prevText = i > 0 ? stripMarkdownForTTS(sections[i - 1].content).slice(-200) : undefined;
-      const nextText = i < sections.length - 1 ? stripMarkdownForTTS(sections[i + 1].content).slice(0, 200) : undefined;
+      const prevText = i > 0 ? stripMarkdownForTTS(sanitizeNarrationText(sections[i - 1].content || '')).slice(-200) : undefined;
+      const nextText = i < sections.length - 1 ? stripMarkdownForTTS(sanitizeNarrationText(sections[i + 1].content || '')).slice(0, 200) : undefined;
 
       try {
         const audioBuffer = await generateTTS(elevenLabsKey, plainText, prevText, nextText);
@@ -160,8 +169,8 @@ serve(async (req) => {
 
       // Quiz question audio
       try {
-        const questionText = quiz.question;
-        const audioBuffer = await generateTTS(elevenLabsKey, questionText);
+          const questionText = sanitizeNarrationText(quiz.question || '');
+          const audioBuffer = await generateTTS(elevenLabsKey, questionText);
         const storagePath = `v8/${lessonId}/quiz-${i}.mp3`;
         const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
         const durationEstimate = estimateDuration(audioBuffer.byteLength);
@@ -184,7 +193,7 @@ serve(async (req) => {
       // Quiz reinforcement audio (if exists)
       if (quiz.reinforcement?.trim()) {
         try {
-          const audioBuffer = await generateTTS(elevenLabsKey, quiz.reinforcement);
+          const audioBuffer = await generateTTS(elevenLabsKey, sanitizeNarrationText(quiz.reinforcement));
           const storagePath = `v8/${lessonId}/quiz-${i}-reinforcement.mp3`;
           const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
           const durationEstimate = estimateDuration(audioBuffer.byteLength);
@@ -207,7 +216,7 @@ serve(async (req) => {
       // Quiz explanation audio (feedback after answer)
       if (quiz.explanation?.trim()) {
         try {
-          const audioBuffer = await generateTTS(elevenLabsKey, quiz.explanation);
+          const audioBuffer = await generateTTS(elevenLabsKey, sanitizeNarrationText(quiz.explanation));
           const storagePath = `v8/${lessonId}/quiz-${i}-explanation.mp3`;
           const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
           const durationEstimate = estimateDuration(audioBuffer.byteLength);
@@ -231,7 +240,7 @@ serve(async (req) => {
     // ─── 5b. GENERATE AUDIO FOR PLAYGROUNDS (narration field) ───
     for (let i = 0; i < playgrounds.length; i++) {
       const pg = playgrounds[i];
-      const narrationText = pg.narration?.trim();
+      const narrationText = sanitizeNarrationText(pg.narration?.trim() || '');
       if (!narrationText) {
         console.log(`[v8-generate] ⏭️ Skipping playground ${i} (no narration)`);
         continue;
@@ -261,7 +270,7 @@ serve(async (req) => {
       // Playground successMessage audio
       if (pg.successMessage?.trim()) {
         try {
-          const audioBuffer = await generateTTS(elevenLabsKey, pg.successMessage);
+          const audioBuffer = await generateTTS(elevenLabsKey, sanitizeNarrationText(pg.successMessage));
           const storagePath = `v8/${lessonId}/playground-${i}-success.mp3`;
           const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
           const durationEstimate = estimateDuration(audioBuffer.byteLength);
@@ -284,7 +293,7 @@ serve(async (req) => {
       // Playground tryAgainMessage audio
       if (pg.tryAgainMessage?.trim()) {
         try {
-          const audioBuffer = await generateTTS(elevenLabsKey, pg.tryAgainMessage);
+          const audioBuffer = await generateTTS(elevenLabsKey, sanitizeNarrationText(pg.tryAgainMessage));
           const storagePath = `v8/${lessonId}/playground-${i}-tryagain.mp3`;
           const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
           const durationEstimate = estimateDuration(audioBuffer.byteLength);

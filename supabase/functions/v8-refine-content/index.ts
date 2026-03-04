@@ -44,6 +44,8 @@ REGRAS OBRIGATÓRIAS:
 13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (como "Responde rápido pra mim: quando o GPT parece genérico..."), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
 
 IMPORTANTE:
+- NUNCA gere rótulos meta-narrativos como "Segmento vida real desta atividade:", "Atividade prática:" ou "Contexto real:".
+- NUNCA use frases anti-pedagógicas como "Responda rapidamente" ou "Confie nos seus instintos".
 - Retorne EXATAMENTE o mesmo número de seções recebidas.
 - Cada seção deve manter o mesmo título (pode melhorar levemente se necessário).
 - O conteúdo deve estar em Português Brasileiro (pt-BR).`;
@@ -74,6 +76,15 @@ const REFINE_TOOLS = [
     },
   },
 ];
+
+function sanitizePedagogicalText(text: string): string {
+  return text
+    .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
+    .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
+    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -160,9 +171,14 @@ serve(async (req) => {
       refinedSections.length = sections.length;
     }
 
-    console.log(`[v8-refine-content] Successfully refined ${refinedSections.length} sections`);
+    const sanitizedSections = refinedSections.map((s: any, i: number) => ({
+      title: sanitizePedagogicalText(String(s?.title || sections[i]?.title || '')),
+      content: sanitizePedagogicalText(String(s?.content || sections[i]?.content || '')),
+    }));
 
-    return new Response(JSON.stringify({ sections: refinedSections }), {
+    console.log(`[v8-refine-content] Successfully refined ${sanitizedSections.length} sections`);
+
+    return new Response(JSON.stringify({ sections: sanitizedSections }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

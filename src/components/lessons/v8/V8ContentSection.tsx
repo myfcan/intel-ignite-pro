@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { V8Section } from "@/types/v8Lesson";
+import { sanitizeV8PedagogicalText } from "@/lib/v8TextSanitizer";
 
 interface V8ContentSectionProps {
   section: V8Section;
@@ -11,10 +12,6 @@ interface V8ContentSectionProps {
 /** Strip "Seção X — " prefix from section titles */
 const cleanSectionTitle = (title: string) =>
   title.replace(/^#{1,6}\s*/, "").replace(/^Seção\s*\d+\s*[—–\-:]\s*/i, "");
-
-/** Strip emotion/direction tags like [confiante], [pause], etc. */
-const stripEmotionTags = (text: string) =>
-  text.replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, "");
 
 interface V8TrimmedImageProps {
   src: string;
@@ -166,8 +163,8 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
 
 export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps>(
   ({ section, mode, sectionIndex }, ref) => {
-    const cleanTitle = cleanSectionTitle(section.title);
-    const sanitizedContent = stripEmotionTags(section.content);
+    const cleanTitle = cleanSectionTitle(sanitizeV8PedagogicalText(section.title));
+    const sanitizedContent = sanitizeV8PedagogicalText(section.content);
 
     return (
       <div
