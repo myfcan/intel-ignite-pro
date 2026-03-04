@@ -1,147 +1,239 @@
-  
-Atue como um engenheiro sênior responsável pelo sistema V8 de todo o sistema e banco de dados, atue com obrigação de precisão técnica absoluta.  
-Auditoria do Plano — 7 Gaps Reais Identificados
-
-Analisei cada fase do plano consolidado contra o código-fonte real. O diagnóstico dos 8 problemas está correto, mas o plano de correção tem gaps que causariam falhas na implementação.  
 
 
-&nbsp;
+## Auditoria Forense do Plano Consolidado — Dados Reais do Código
 
-REGRA DESTE PROMPT:  
-  
-Execute todo o plano, mas caso não execute algo ou algum item por alguma razão, você é obrigado é dizer:  
-Não implementei todo o plano ou não executei todas asa correções. 
-
-Você NÃO pode mentir.
-
-Você NÃO pode supor.
-
-Você NÃO pode responder com explicações genéricas.
-
-Você NÃO pode omitir dados.
-
-Você deve executar tudo com DADOS REAIS do código atual.
-
-Você deve copiar e colar trechos REAIS do código.
-
-Você deve usar logs reais e timestamps reais.
-
-Se não souber algo, diga explicitamente: “NÃO LOCALIZADO NO CÓDIGO”.  
-  
-TUDO ISSO É MANDATÓRIO
-
-&nbsp;
+Analisei cada fase do plano contra o código-fonte real. Abaixo, os gaps reais encontrados, sem omissão.
 
 ---
 
-### Gap 1: Sanitização NÃO restaura caracteres perdidos (Fase 1)
+### FASE 0 — Regra PASS_SCORE = 81
 
-O plano propõe `text.replace(/\s{2,}/g, ' ')` e detecção de palavras corrompidas. Mas isso apenas colapsa espaços duplos — **não restaura "é", "ã", "ê" perdidos**. "Um prompt curto  vago" continuaria como "Um prompt curto vago" (sem o "é").
+**Status: Plano correto, mas incompleto na cobertura.**
 
-A detecção via regex (`/(n o|ausncia|especfico)/g`) pode alertar, mas não corrigir automaticamente sem um dicionário de mapeamento ou re-geração do campo.
+O plano diz "aplicar em V8PlaygroundInline e V8LessonPlayer". Mas o código real tem **4 pontos distintos** com threshold `>= 70` em `V8PlaygroundInline.tsx`:
 
-**Correção do plano:** A sanitização deve incluir um mapa de correções conhecidas (`{"n o": "não é", "ausncia": "ausência", "especfico": "específico", "til": "útil", "informaes": "informações"}`). Se uma palavra corrompida é detectada, aplicar correção. Se o texto ainda tiver duplos espaços após correção, logar warning e re-gerar o campo via nova chamada à IA (single field, barato).
+1. **Linha 106**: `if (score >= 70)` — SFX de sucesso
+2. **Linha 111**: `if (score >= 70)` — feedback message choice
+3. **Linha 120-122**: `if (score >= 70)` — `onScore?.(score)` (propaga score para player)
+4. **Linha 133**: `challengeScore < 70` — controle de retry
+5. **Linha 438**: `challengeScore < 70` — hint on fail
+6. **Linha 466**: `challengeScore < 70` — retry button visibility
+7. **Linha 493**: `challengeScore >= 70` — continue button
+8. **Linha 523**: `challengeScore >= 70` — "Tarefa concluída" badge
+9. **Linha 535-536**: `challengeScore >= 70` — success message
+10. **Linha 539**: `challengeScore >= 70` — success audio
+11. **Linha 542**: `challengeScore < 70` — tryAgain audio
 
----
+**Gap real:** O plano não lista esses 11 pontos. Se a constante for criada mas aplicada só em 2-3 locais, o sistema fica inconsistente. Precisa de um find-and-replace exaustivo de `>= 70` e `< 70` neste arquivo.
 
-### Gap 2: Playground final — lógica de posicionamento incompleta (Fase 7)
-
-O plano diz "forçar playground com `afterSectionIndex = sections.length - 1`". Mas no código real (linha 380):
-
+Adicionalmente, em `V8LessonPlayer.tsx` linha 89-95, `isInsightUnlockable` usa `score >= 70`:
 ```typescript
-const sectionsForPlayground = sectionsNeedingInteraction.filter((_: number, i: number) => i % 3 === 1);
+const score = state.playgroundScores[prevItem.playground.id];
+return score !== undefined && score >= 70;
 ```
-
-`sectionsNeedingInteraction` exclui seções que JÁ têm quiz ou playground manual. Se a última seção já recebeu um quiz gerado (etapa 2), ela NÃO está em `sectionsNeedingInteraction` e o playground nunca será atribuído a ela.
-
-**Correção do plano:** A lógica deve ser:
-
-1. Gerar quizzes normalmente (etapa 2)
-2. Gerar playgrounds normalmente (etapa 3)
-3. **Pós-processamento:** Verificar se algum playground tem `afterSectionIndex === lastIndex`. Se não, mover o playground com maior `afterSectionIndex` para `lastIndex`. Se houver quiz em `lastIndex`, mover esse quiz para a penúltima seção livre. Se não há nenhum playground gerado, forçar geração de 1 playground para `lastIndex`.
+Esse é o **12o ponto** que precisa mudar.
 
 ---
 
-### Gap 3: Insight condicional — player não rastreia scores por item (Fase 3)
+### FASE 1 — UX Insight Bloqueado + Refazer Desafio
 
-O plano diz "o timeline sabe se o playground anterior teve score >= 70". Mas no código real (`useV8Player.ts`, linha 116-118):
+**Status: Plano correto em conceito, mas tem um gap de implementação de scroll.**
 
+O plano diz: "V8LessonPlayer localiza playground anterior no timeline e faz scrollIntoView no retry".
+
+**Gap real:** O `itemRefs` no `V8LessonPlayer.tsx` (linha 46) armazena refs **por índice do timeline**, não por tipo. Para o scroll funcionar, o `onRetryPlayground` precisa:
+
+1. Encontrar o índice do playground anterior no `timeline` a partir do índice do insight atual
+2. Usar `itemRefs.current[playgroundIdx]` para scroll
+
+Isso é viável com o código atual, mas **o plano não especifica que o playground precisa ser "reativado"**. Quando o usuário scrolla de volta ao playground, ele já estará no estado `done` (phase = "done") e o `isActive` será `false`. O playground **não reseta automaticamente** — o usuário verá o card de "Tarefa concluída" sem possibilidade de refazer.
+
+**Correção necessária:** O scroll sozinho **não basta**. O `V8PlaygroundInline` tem um botão "Repetir tarefa" (linha 548-556) que reseta o estado interno, mas ele só aparece quando `onContinue` existe (ou seja, quando é o item ativo). Com `isActive=false`, esse botão pode não estar visível.
+
+Opções reais:
+- (A) Ao clicar "Refazer Desafio" no insight, **resetar o currentIndex do player** para o índice do playground (via novo callback `goToIndex`), tornando-o o item ativo novamente. Isso tem side-effect: o timeline "retrocede".
+- (B) Manter scroll visual + forçar re-render do playground com um `retryKey` incrementado. Mais complexo.
+
+A opção (A) é mais simples e alinhada com a UX desejada. O plano precisa incluir um `goToIndex(idx)` no `useV8Player`.
+
+---
+
+### FASE 2 — Remover Falso Positivo de Claim
+
+**Status: Plano correto. O código real confirma o problema.**
+
+Linha 74-77 de `V8InsightReward.tsx`:
 ```typescript
-const addScore = useCallback((score: number) => {
-    setState((prev) => ({ ...prev, scores: [...prev.scores, score] }));
-}, []);
+} catch (err) {
+  console.warn("[V8InsightReward] Claim timeout/error, applying optimistic:", err);
+  setClaimed(true);
+  confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });
+}
 ```
 
-`scores[]` é um array flat sem nenhum mapeamento para timeline items. O player **não sabe** qual score pertence a qual playground.
+O catch **marca como claimed** e **dispara confetti** em caso de erro/timeout. Isso é o falso positivo. Remover é direto.
 
-**Correção do plano:** Adicionar ao state um `Map<string, number>` (`playgroundScores`) indexado por `playground.id`. No `V8LessonPlayer.tsx`, quando `V8PlaygroundInline` chama `onScore(s)`, gravar `playgroundScores[playground.id] = s`. Depois, ao renderizar `V8InsightReward`, buscar o playground imediatamente anterior na timeline e checar seu score.
-
----
-
-### Gap 4: Complete-sentence inline desapareceu do plano consolidado (Problema 4)
-
-O Problema 4 analisa corretamente a necessidade de criar `V8CompleteSentenceInline`. Mas nas **Fases de Correção Consolidadas** (Fase 1-7), esse item **não aparece**. Foi esquecido.
-
-**Correção do plano:** Adicionar Fase 4.5 — "Criar `V8CompleteSentenceInline` como novo tipo de timeline". Requer:
-
-- Novo tipo `"complete-sentence"` no `TimelineItem` union (`useV8Player.ts`, linha 14-18)
-- Novo campo `inlineCompleteSentences` na `V8LessonData`
-- Renderização no `V8LessonPlayer.tsx` dentro do timeline loop
-- Geração no pipeline com tool schema dedicado
+Sem gaps adicionais.
 
 ---
 
-### Gap 5: Fill-blank chips sem dados no pipeline (Fase 5)
+### FASE 3 — Anti-Cópia no Avaliador
 
-O plano propõe criar `V8QuizFillBlankChips` com chips arrastáveis, mas o schema QUIZ_TOOLS (linhas 47-97) **não inclui `chipOptions**`. A IA não geraria esse campo.
+**Status: Gap grave — o plano não envia os dados de contexto do frontend.**
 
-**Correção do plano:** Adicionar ao schema `QUIZ_TOOLS` (linha 86-87):
-
-```
-chipOptions: { type: "array", items: { type: "string" }, description: "Opções de chip para fill-blank (corretas + distratoras). Required for fill-blank." }
+O código real de `V8PlaygroundInline.tsx` (linhas 91-98) envia ao `v8-evaluate-prompt`:
+```typescript
+body: {
+  mode: "evaluate",
+  userPrompt: userPrompt.trim(),
+  evaluationCriteria: playground.userChallenge.evaluationCriteria,
+  rubric: playground.userChallenge.scoring?.rubric,
+  maxScore: playground.userChallenge.scoring?.maxScore ?? 100,
+}
 ```
 
-E no `QUIZ_SYSTEM_PROMPT`, instruir: "Para fill-blank, gere chipOptions com 4-6 opções incluindo a correta e distratoras plausíveis."
+**Faltam no body atual:** `professionalPrompt`, `amateurPrompt`, `professionalResult`, `amateurResult`, `challengePrompt`. Sem esses campos, o backend **não tem contra o que comparar** para detectar cópia.
+
+O plano diz "enviar contexto completo" mas não detalha **quais campos exatos** precisam ser adicionados ao body. Isso pode ser esquecido na implementação.
+
+**Além disso:** O `v8-evaluate-prompt` (linhas 59-105) atualmente **não recebe** esses campos e o system prompt não instrui a IA a detectar cópia. O plano precisa de:
+1. Frontend: adicionar ao body `{ professionalPrompt, amateurPrompt, professionalResult, amateurResult }`
+2. Backend: receber esses campos, fazer comparação de similaridade server-side **antes** de chamar a IA (normalizar + Levenshtein/Jaccard simples em Deno)
+3. Se similaridade > threshold: retornar `{ score: 0, passed: false, is_copy: true }` sem gastar chamada de IA
+
+A detecção **não pode depender da IA** para ser confiável — deve ser algorítmica no servidor.
 
 ---
 
-### Gap 6: Créditos → XP quebra a função do banco (Fase 6)
+### FASE 4 — Backend como Fonte de Verdade
 
-O plano diz "renomear `creditsReward` para `xpReward`". Mas a DB function `register_gamification_event` (código real):
+**Status: Gap estrutural — tabela `user_playground_sessions` já existe mas com schema incompatível.**
 
-```sql
-ELSIF p_event_type = 'insight_claimed' THEN
-    v_xp_delta := 10;
-    v_coins_delta := COALESCE((p_payload->>'credits')::INTEGER, 10);
+Schema atual de `user_playground_sessions`:
+```
+- id uuid (PK)
+- user_id uuid
+- lesson_id uuid       ← tipo UUID, não text
+- tokens_used integer
+- user_prompt text
+- ai_response text
+- ai_feedback text
+- created_at timestamp
 ```
 
-Se o campo mudar para `xpReward` no front, o `payload` enviado usará `xp` em vez de `credits`, e `v_coins_delta` cairá no fallback `10` em vez de ler o valor real.
+**Colunas faltantes para o plano:**
+- `playground_id text` — não existe
+- `score integer` — não existe
+- `passed boolean` — não existe
+- `is_copy boolean` — não existe
+- `similarity numeric` — não existe
+- `evaluation_payload jsonb` — não existe
 
-**Correção do plano:** A mudança deve ser **apenas cosmética na UI** — manter o campo `creditsReward` nos dados e `credits` no payload, mas trocar a label exibida de "créditos" para "XP". Alternativamente, atualizar a DB function para ler `(p_payload->>'xp')` junto com o rename.
+O plano diz "adicionar colunas estruturais". Isso é correto. Mas tem um detalhe: `lesson_id` é do tipo `uuid`, e o `V8PlaygroundInline` **não recebe** `lessonId` como prop atualmente. Para persistir a tentativa, o frontend precisa passar `lessonId` ao `v8-evaluate-prompt`, que hoje também não o recebe.
+
+**Correção:** Propagar `lessonId` do `V8LessonPlayer` → `V8PlaygroundInline` → body do `v8-evaluate-prompt`.
+
+**Segundo gap:** O `register_gamification_event` é uma DB function PL/pgSQL. Para validar a última tentativa, ela precisaria fazer um `SELECT` em `user_playground_sessions`. Mas o `insight_claimed` event recebe `event_reference_id` (que é o `insight.id`), **não o `playground_id`**. A function precisaria:
+1. Receber `playground_id` no payload (`p_payload->>'playground_id'`)
+2. Fazer lookup: `SELECT score, is_copy FROM user_playground_sessions WHERE user_id = v_user_id AND playground_id = p_payload->>'playground_id' ORDER BY created_at DESC LIMIT 1`
+3. Se `score < 81 OR is_copy = true`: setar `v_xp_delta = 0, v_coins_delta = 0`
+
+O plano menciona isso vagamente mas não especifica que o `playground_id` precisa ser adicionado ao payload do `handleClaim` em `V8InsightReward.tsx`. Atualmente (linha 59):
+```typescript
+registerGamificationEvent("insight_claimed", insight.id, {
+  credits: insight.creditsReward,
+})
+```
+Falta `playground_id` no objeto de payload. E o `V8InsightReward` **não recebe** `playgroundId` como prop.
+
+**Cadeia de propagação necessária:**
+`V8LessonPlayer` → calcula `playgroundId` do playground anterior → passa como prop para `V8InsightReward` → inclui no payload de `registerGamificationEvent`.
 
 ---
 
-### Gap 7: Rotação de quizzes sem ordenação por afterSectionIndex (Fase 2)
+### FASE 5 — Playground Clímax na Última Seção
 
-O plano diz "se dois quizzes consecutivos têm o mesmo quizType, rotacionar". Mas "consecutivos" no array gerado pode não corresponder à ordem real da timeline. Quizzes devem ser ordenados por `afterSectionIndex` **antes** de verificar consecutividade.
+**Status: Plano quase correto, mas tem gap no caso "apenas manuais".**
 
-**Correção do plano:** Após geração, ordenar `generatedQuizzes.sort((a, b) => a.afterSectionIndex - b.afterSectionIndex)` e então aplicar rotação nos consecutivos do mesmo tipo.
+Código real (linhas 471-516):
+- Linha 477: `if (!hasPlaygroundAtLast && generatedPlaygrounds.length > 0)` — **só move gerados**
+- Linha 495: `else if (!hasPlaygroundAtLast && allPg.length === 0 && sections.length >= 4)` — cria placeholder se **zero playgrounds**
+
+**Gap confirmado:** Se `manualPlaygrounds.length > 0` e `generatedPlaygrounds.length === 0` e nenhum está no `lastIdx`:
+- Condição 1 falha (`generatedPlaygrounds.length > 0` é false)
+- Condição 2 falha (`allPg.length === 0` é false, porque existem manuais)
+- Resultado: **nenhuma ação**. Playground manual fica onde está.
+
+O plano propõe "duplicar/mover o manual de maior índice". Isso é correto como conceito, mas "duplicar" gera um playground com os mesmos dados na última seção E na posição original. Isso pode confundir o aluno (vê o mesmo desafio duas vezes). **Mover** é mais limpo.
+
+**Risco adicional:** O código usa `manualPlaygrounds` e `generatedPlaygrounds` como arrays separados. Mover um manual requer alterar `manualPlaygrounds[i].afterSectionIndex`, que é uma referência direta ao objeto no `lessonData.inlinePlaygrounds`. Isso funciona, mas precisa ser feito com cuidado para não corromper dados que serão persistidos.
 
 ---
 
-## Plano Consolidado Corrigido (versão final)
+### FASE 6 — Imagem com Loading Profissional
 
+**Status: Gap real confirmado no código.**
 
-| Fase | Escopo                                                                            | Arquivos                                                                                                           | Gap corrigido |
-| ---- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------- |
-| 1    | Sanitização + mapa de correções + re-geração condicional                          | `v8-generate-lesson-content/index.ts`                                                                              | Gap 1         |
-| 2    | Rotação quiz com sort por afterSectionIndex                                       | `v8-generate-lesson-content/index.ts`                                                                              | Gap 7         |
-| 3    | Playground forçado na última seção (pós-processamento)                            | `v8-generate-lesson-content/index.ts`                                                                              | Gap 2         |
-| 4    | Insight condicional com `playgroundScores` map                                    | `useV8Player.ts`, `V8LessonPlayer.tsx`, `V8InsightReward.tsx`                                                      | Gap 3         |
-| 5    | Confetti no desbloqueio XP                                                        | `V8InsightReward.tsx`                                                                                              | —             |
-| 6    | Label "créditos" → "XP" (cosmético, sem rename de campo)                          | `V8InsightReward.tsx`                                                                                              | Gap 6         |
-| 7    | Fill-blank: narração engajamento + chipOptions no schema + `V8QuizFillBlankChips` | `V8QuizFillBlank.tsx`, `v8-generate-lesson-content/index.ts`                                                       | Gap 5         |
-| 8    | Complete-sentence inline (novo tipo timeline)                                     | `useV8Player.ts`, `V8LessonPlayer.tsx`, `v8-generate-lesson-content/index.ts`, novo `V8CompleteSentenceInline.tsx` | Gap 4         |
+O `V8TrimmedImage` atual (linhas 29-156 de `V8ContentSection.tsx`) tem estes problemas reais:
 
+1. **Linha 147**: Quando `resolvedSrc` é null (processing), renderiza `<div className="w-full max-w-[300px] aspect-square mx-auto" />` — um div **vazio e transparente**. Sem skeleton, sem shimmer, sem indicação visual de loading. Isso é o "amador".
 
-**Escopo total:** ~8 arquivos, ~200 linhas de mudança. Fases 1-3 são backend (pipeline), Fases 4-8 são frontend (player/components).
+2. **Sem `decode()`**: O código faz `requestAnimationFrame` para atrasar `setVisible(true)`, mas **não usa `img.decode()`**. Isso significa que em browsers rápidos com cache, a imagem pode renderizar parcialmente antes do fade completar.
+
+3. **Cache hit com rAF desnecessário**: Nas linhas 39-41, quando há cache hit, o componente seta `visible=true` sincronamente. Porém, no `useState` inicial (linhas 31-32), se o cache já existe, `visible` começa como `true` — ou seja, **não há transição nenhuma** no cache hit (correto, não é um bug, mas o plano propõe "sempre iniciar em opacidade 0" o que quebraria isso).
+
+**Correção do plano para imagem:**
+- Adicionar skeleton/shimmer visual no estado `resolvedSrc === null`
+- Usar `img.decode()` antes de `setVisible(true)` para garantir que o frame de opacidade 0 ocorra antes do browser pintar pixels
+- **Não** forçar fade em cache hit (seria regressão visual — a imagem já processada deve aparecer imediatamente)
+
+---
+
+### GAPS ADICIONAIS NÃO COBERTOS PELO PLANO
+
+**Gap A — `onScore` só é chamado com `score >= 70`**
+
+`V8PlaygroundInline.tsx` linha 120-122:
+```typescript
+if (score >= 70) {
+  onScore?.(score);
+}
+```
+
+Se o score for < 70, `onScore` **nunca é chamado**, e `playgroundScores` no player **nunca recebe o valor**. Isso significa que `isInsightUnlockable` no `V8LessonPlayer` (que checa `state.playgroundScores[prevItem.playground.id]`) vai ter `score === undefined` e retornar `true` pelo fallback "No preceding playground found".
+
+**Consequência:** Se o usuário tira 50, o insight aparece como **desbloqueável** porque o score nunca foi registrado. O guard falha silenciosamente.
+
+**Correção:** `onScore` deve ser chamado **sempre**, independente do score. A decisão de unlock deve ser feita no `isInsightUnlockable` baseada no valor real.
+
+**Gap B — Temperatura da IA não está configurada**
+
+O `v8-evaluate-prompt` (linha 122-126) usa:
+```typescript
+body: JSON.stringify({
+  model: "google/gemini-2.5-flash-lite",
+  messages,
+}),
+```
+
+**Não há `temperature`** no body. O plano propõe "temperatura baixa/zero" mas o modelo `gemini-2.5-flash-lite` pode não suportar `temperature: 0` via Lovable AI gateway (depende da API). Precisa ser testado. Se não suportar, a variância permanece.
+
+---
+
+### RESUMO: GAPS REAIS ENCONTRADOS
+
+| # | Gap | Severidade | Fase afetada |
+|---|-----|-----------|-------------|
+| 1 | 11 pontos de `>= 70` em V8PlaygroundInline, plano não enumera | Média | Fase 0 |
+| 2 | Scroll de retry não reseta estado do playground (precisa `goToIndex`) | **Alta** | Fase 1 |
+| 3 | Frontend não envia `professionalPrompt`/`amateurPrompt` ao avaliador | **Alta** | Fase 3 |
+| 4 | Anti-cópia depende de IA no plano, deveria ser algorítmico server-side | Média | Fase 3 |
+| 5 | `playground_id` não propagado: LessonPlayer → InsightReward → gamification payload | **Alta** | Fase 4 |
+| 6 | `lessonId` não propagado: LessonPlayer → PlaygroundInline → evaluate body | **Alta** | Fase 4 |
+| 7 | Manual playgrounds: "duplicar" cria confusão, "mover" é mais limpo | Baixa | Fase 5 |
+| 8 | Skeleton/shimmer ausente no placeholder de loading da imagem | Média | Fase 6 |
+| 9 | `onScore` condicionado a `>= 70` — scores baixos nunca registrados, guard falha | **Crítica** | Fase 0/4 |
+| 10 | Temperatura da IA não configurada no body da request | Média | Fase 3 |
+
+**Veredicto:** O plano cobre os problemas certos mas tem **4 gaps de severidade alta/crítica** que causariam falhas silenciosas na implementação. O Gap 9 é o mais grave: todo o sistema de insight lock/unlock depende de `playgroundScores`, mas scores < 70 nunca são registrados, então o guard **sempre retorna true** para tentativas fracassadas.
+
