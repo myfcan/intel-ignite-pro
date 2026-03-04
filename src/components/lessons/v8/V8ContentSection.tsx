@@ -95,8 +95,6 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
         if (maxX < 0 || maxY < 0) {
           if (!cancelled) {
             setResolvedSrc(src);
-            // Delay visibility to next frame so transition works
-            requestAnimationFrame(() => { if (!cancelled) setVisible(true); });
           }
           return;
         }
@@ -121,13 +119,10 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
 
         if (!cancelled) {
           setResolvedSrc(croppedSrc);
-          // Set visible on NEXT frame so the img renders at opacity-0 first
-          requestAnimationFrame(() => { if (!cancelled) setVisible(true); });
         }
       } catch {
         if (!cancelled) {
           setResolvedSrc(src);
-          requestAnimationFrame(() => { if (!cancelled) setVisible(true); });
         }
       }
     };
@@ -135,7 +130,6 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
     img.onerror = () => {
       if (!cancelled) {
         setResolvedSrc(src);
-        requestAnimationFrame(() => { if (!cancelled) setVisible(true); });
       }
     };
 
@@ -144,7 +138,11 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
     return () => { cancelled = true; };
   }, [src]);
 
-  if (!resolvedSrc) return <div className="w-full max-w-[300px] aspect-square mx-auto" />;
+  if (!resolvedSrc) {
+    return (
+      <div className={`block w-full max-w-[300px] aspect-square mx-auto rounded-2xl bg-slate-100 animate-pulse ${className ?? ''}`} />
+    );
+  }
 
   return (
     <img
@@ -152,6 +150,16 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
       alt={alt}
       className={`block transition-opacity duration-500 ease-out ${visible ? 'opacity-100' : 'opacity-0'} ${className ?? ''}`}
       loading="lazy"
+      onLoad={(e) => {
+        if (!visible) {
+          const imgEl = e.currentTarget;
+          if (imgEl.decode) {
+            imgEl.decode().then(() => setVisible(true)).catch(() => setVisible(true));
+          } else {
+            requestAnimationFrame(() => setVisible(true));
+          }
+        }
+      }}
     />
   );
 };
