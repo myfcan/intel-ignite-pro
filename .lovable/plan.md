@@ -1,50 +1,72 @@
 
 
-## Plano: Preservar estado visual de exercícios completados no rolo
+## Plano: Fix Sistêmico — Eliminar Botões Duplicados em TODOS os Exercícios
 
-### Problema
+### Causa Raiz
 
-Quando o usuário avança para o próximo item (clicando "Continuar Aula"), os exercícios anteriores perdem o feedback visual (score, resultado) porque:
+O problema não é de um componente — é arquitetural. Cada componente filho de exercício gerencia seus próprios botões de navegação (Tentar Novamente / Continuar Aula) E/OU se auto-destrói com `return null` após completar. Enquanto isso, o pai `V8InlineExercise` TAMBÉM renderiza botões. Resultado: duplicação em todos os tipos.
 
-1. **FlipCardQuizExercise**: `handleContinue` chama `setShowResult(false)` — esconde o resumo de resultado
-2. **V8InlineExercise**: Os botões CTA (Continuar/Tentar) somem porque `onContinue` vira `undefined` quando `isLast=false` — aceitável para botões, mas o score/badge também some
-3. **V8QuizInline**: Feedback de "Correto"/"Errado" fica visível (OK), mas botões CTA somem — sem problema
-4. **V8CompleteSentenceInline**: Mesma lógica — botões somem mas estado visual some junto
+### Regra Arquitetural
 
-### Regra UX
+**O pai `V8InlineExercise` é o ÚNICO dono dos botões de navegação.** Componentes filhos devem:
+- Mostrar feedback visual (correto/errado, explicação, score)
+- Chamar `onComplete(score)` imediatamente quando o resultado é determinado
+- NUNCA renderizar botões "Continuar" ou "Tentar Novamente"
+- NUNCA usar `setTimeout(() => onComplete(...))` para auto-avançar
+- NUNCA usar `if (completed) return null` — o exercício permanece visível no rolo
 
-Tudo permanece no rolo. O usuário pode rolar para cima e ver toda a jornada: seções lidas, exercícios completados com seus resultados. Somente os botões de ação (Continuar/Tentar) devem sumir quando o item não é mais o ativo.
+### Componentes Afetados (6 arquivos)
 
-### Mudanças
+**1. `TimedQuizExercise.tsx`** — Tela de resultado final (isFinished)
+- Remover grid de botões internos (linhas 248-255)
+- Chamar `onComplete(finalPercent)` ao entrar em `isFinished` (no `advanceQuestion`)
+- Manter o card de resultado visível (Trophy, score, feedback)
 
-**1. `FlipCardQuizExercise.tsx`**
-- Remover `setShowResult(false)` do `handleContinue` — o resumo de resultado deve permanecer visível
-- Os botões CTA internos já são guardados por `{onContinue && ...}`, então somem naturalmente quando o item deixa de ser ativo
+**2. `TrueFalseExercise.tsx`** — Acerto e erro
+- Remover `if (completed) return null` (linha 87) — exercício some inteiro!
+- Remover estado `completed` e `handleContinue`
+- Remover botões internos "Tentar Novamente" + "Continuar Aula" (linhas 188-198)
+- No acerto: remover `setTimeout` — chamar `onComplete(100)` direto
+- No erro: chamar `onComplete(0)` direto
 
-**2. `V8InlineExercise.tsx`**
-- Separar o badge de resultado dos botões CTA
-- Quando `completed=true` e `onContinue=undefined` (item passado): mostrar um badge read-only com o score (ex: "Exercício concluído ✓") sem botões de ação
-- Quando `completed=true` e `onContinue` existe (item ativo): mostrar Fluxo A/B com botões como hoje
+**3. `ScenarioSelectionExercise.tsx`** — Cenários
+- Remover `if (completed) return null` (linha 118) — exercício some inteiro!
+- Remover estado `completed`, `handleContinue`
+- Remover botões internos (linhas 278-306)
+- Remover `setTimeout(() => { setCompleted(true); onComplete(...) }, 2000)` nos simple-choice
+- Chamar `onComplete(score)` imediatamente ao confirmar
 
-**3. `V8QuizInline.tsx`**
-- Já funciona bem — feedback de "Correto" e "Errado" persiste mesmo sem `onContinue`
-- Apenas garantir que o bloco de feedback não depende de `onContinue` para renderizar (já é o caso — os botões dentro do feedback é que dependem, correto)
+**4. `PlatformMatchExercise.tsx`** — Match de plataformas
+- Remover `setTimeout(() => onComplete(score), 1000)` (linha 108)
+- Chamar `onComplete(score)` imediatamente quando o último cenário é respondido
 
-**4. `V8CompleteSentenceInline.tsx`**
-- Mesmo padrão do V8InlineExercise: separar badge de resultado dos botões
-- Manter o estado visual de blanks preenchidos (corretos em verde, errados em vermelho) visível após completar
+**5. `CompleteSentenceExercise.tsx`** — Completar sentença
+- Remover `setTimeout(() => onComplete(score), 2000)` (linha 91)
+- Chamar `onComplete(score)` imediatamente
 
-### Resumo visual
+**6. `FlipCardQuizExercise.tsx`** — Já parcialmente correto
+- Remover botões internos do card de resultado — o pai já renderiza os botões via `onContinue` prop
+- Manter o card de score visível (Trophy, X/Y acertos)
+- Chamar `onComplete(score)` ao finalizar, mas NÃO renderizar botões
+
+### V8InlineExercise (pai) — Já correto
+O pai já tem a lógica certa:
+- Badge read-only quando `completed && !onContinue`
+- Botões Fluxo A/B quando `completed && onContinue`
+- Retry via `exerciseKey` reset
+
+Só precisa ajustar o case `flipcard-quiz` para usar `handleComplete` em vez de bypass direto.
+
+### Resumo Visual
 
 ```text
-Item completado (não-ativo):
-  ├─ Exercício visível (read-only, sem interação)
-  ├─ Score badge: "✓ Exercício concluído" ou "X/Y acertos"
-  └─ SEM botões de ação
+ANTES (bugado):
+  Filho: [feedback] [Tentar Novamente] [Continuar Aula]  ← botões internos
+  Pai:   [Tentar Novamente] [Continuar Aula]              ← botões do wrapper
+  = DUPLICAÇÃO
 
-Item ativo:
-  ├─ Exercício interativo
-  ├─ Score badge após completar
-  └─ Botões Fluxo A/B
+DEPOIS (correto):
+  Filho: [feedback visual / score / explicação]            ← só feedback
+  Pai:   [Tentar Novamente] [Continuar Aula]              ← único set de botões
 ```
 
