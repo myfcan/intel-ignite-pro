@@ -185,18 +185,20 @@ export const MultipleChoiceExercise = ({
             </div>
             <Button
               onClick={handleTryAgain}
-              variant="outline"
               className="w-full h-10 sm:h-12 text-sm sm:text-base"
               size="lg"
             >
               Tentar Novamente
             </Button>
-            <button
+            <Button
               onClick={handleContinue}
-              className="w-full text-center text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+              variant="outline"
+              className="w-full h-10 sm:h-12 text-sm sm:text-base"
+              size="lg"
             >
-              Pular e continuar →
-            </button>
+              Continuar Aula
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
         )}
       </div>
