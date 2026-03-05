@@ -159,7 +159,49 @@ const INLINE_EXERCISE_TOOLS = [
                 instruction: { type: "string" },
                 data: {
                   type: "object",
-                  description: "Exercise data. true-false: { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }. fill-in-blanks: { sentences: [{ id, text (use _______ as placeholder), correctAnswers: [], hint }], feedback: { allCorrect, someCorrect, needsReview } }. complete-sentence: { sentences: [{ id, text (use _______ as placeholder), correctAnswers: [], options: [] }] }. multiple-choice: { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }. flipcard-quiz: { cards: [{ id, front: { label, color }, back: { text }, options: [{ id, text, isCorrect }], explanation }] }. scenario-selection: { scenarios: [{ id, situation, options: [], correctAnswer, explanation }] }. platform-match: { scenarios: [{ id, text, correctPlatform, emoji }], platforms: [{ id, name, icon, color }] }. timed-quiz: { timePerQuestion: 15, bonusPerSecondLeft: 2, timeoutPenalty: 'skip', visualTheme: 'cyber', questions: [{ id, question, options: [{ id, text, isCorrect }], explanation }] }.",
+                  additionalProperties: true,
+                  properties: {
+                    statements: {
+                      type: "array",
+                      description: "For true-false and multiple-choice: [{ id, text, correct: boolean, explanation }]",
+                      items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" }, correct: { type: "boolean" }, explanation: { type: "string" } }, required: ["id", "text", "correct", "explanation"] }
+                    },
+                    sentences: {
+                      type: "array",
+                      description: "For fill-in-blanks and complete-sentence: [{ id, text (use _______ as placeholder), correctAnswers: [], options?: [], hint? }]",
+                      items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" }, correctAnswers: { type: "array", items: { type: "string" } }, options: { type: "array", items: { type: "string" } }, hint: { type: "string" } }, required: ["id", "text", "correctAnswers"] }
+                    },
+                    cards: {
+                      type: "array",
+                      description: "For flipcard-quiz: [{ id, front: { label, color }, back: { text }, options: [{ id, text, isCorrect }], explanation }]",
+                      items: { type: "object", properties: { id: { type: "string" }, front: { type: "object", properties: { label: { type: "string" }, color: { type: "string" } } }, back: { type: "object", properties: { text: { type: "string" } } }, options: { type: "array", items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" }, isCorrect: { type: "boolean" } } } }, explanation: { type: "string" } }, required: ["id", "front", "back", "options", "explanation"] }
+                    },
+                    scenarios: {
+                      type: "array",
+                      description: "For scenario-selection: [{ id, situation, options: [], correctAnswer, explanation }]. For platform-match: [{ id, text, correctPlatform, emoji }]",
+                      items: { type: "object", additionalProperties: true, properties: { id: { type: "string" } }, required: ["id"] }
+                    },
+                    platforms: {
+                      type: "array",
+                      description: "For platform-match only: [{ id, name, icon, color }]",
+                      items: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, icon: { type: "string" }, color: { type: "string" } }, required: ["id", "name", "icon", "color"] }
+                    },
+                    questions: {
+                      type: "array",
+                      description: "For timed-quiz: [{ id, question, options: [{ id, text, isCorrect }], explanation }]",
+                      items: { type: "object", properties: { id: { type: "string" }, question: { type: "string" }, options: { type: "array", items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" }, isCorrect: { type: "boolean" } } } }, explanation: { type: "string" } }, required: ["id", "question", "options", "explanation"] }
+                    },
+                    feedback: {
+                      type: "object",
+                      description: "Feedback messages: { perfect, good, needsReview }",
+                      properties: { perfect: { type: "string" }, good: { type: "string" }, needsReview: { type: "string" } }
+                    },
+                    timePerQuestion: { type: "number", description: "For timed-quiz: seconds per question (default 15)" },
+                    bonusPerSecondLeft: { type: "number", description: "For timed-quiz: bonus points per second remaining" },
+                    timeoutPenalty: { type: "string", description: "For timed-quiz: what happens on timeout (default 'skip')" },
+                    visualTheme: { type: "string", description: "For timed-quiz: visual theme (default 'cyber')" }
+                  },
+                  description: "Exercise-specific data. MUST contain the required fields for the chosen type. true-false/multiple-choice → 'statements'. fill-in-blanks/complete-sentence → 'sentences'. flipcard-quiz → 'cards'. scenario-selection → 'scenarios'. platform-match → 'scenarios' AND 'platforms'. timed-quiz → 'questions'. An EMPTY data object {} is INVALID.",
                 },
               },
               required: ["afterSectionIndex", "type", "title", "instruction", "data"],
@@ -565,6 +607,9 @@ serve(async (req) => {
           "generate_inline_exercises",
         );
 
+        // Log AI exercise structure for diagnostics
+        console.log(`[v8-generate] AI exercises: ${JSON.stringify((exResult.exercises || []).map((ex: any) => ({ type: ex.type, s: ex.afterSectionIndex, dk: Object.keys(ex.data || {}) })))}`);
+
         const INLINE_REQUIRED_DATA_KEYS: Record<string, string[]> = {
           'true-false': ['statements'],
           'fill-in-blanks': ['sentences'],
@@ -576,8 +621,35 @@ serve(async (req) => {
           'timed-quiz': ['questions'],
         };
 
+        // ── DATA NORMALIZATION: Rescue exercise data from root level into data object ──
+        const normalizeExerciseData = (ex: any): any => {
+          const dataKeysByType: Record<string, string[]> = {
+            'true-false': ['statements', 'feedback'],
+            'fill-in-blanks': ['sentences', 'feedback'],
+            'complete-sentence': ['sentences'],
+            'multiple-choice': ['statements', 'feedback', 'question', 'options', 'correctAnswer', 'explanation'],
+            'flipcard-quiz': ['cards'],
+            'scenario-selection': ['scenarios'],
+            'platform-match': ['scenarios', 'platforms'],
+            'timed-quiz': ['questions', 'timePerQuestion', 'bonusPerSecondLeft', 'timeoutPenalty', 'visualTheme'],
+          };
+          const keysToMove = dataKeysByType[ex.type] || [];
+          const currentData = ex.data && typeof ex.data === 'object' ? { ...ex.data } : {};
+          let rescued = false;
+          for (const key of keysToMove) {
+            if (!(key in currentData) && key in ex) {
+              currentData[key] = ex[key];
+              rescued = true;
+            }
+          }
+          if (rescued) {
+            console.warn(`[v8-generate] DATA RESCUE for ${ex.type}: moved keys from root into data`);
+          }
+          return { ...ex, data: currentData };
+        };
+
         generatedInlineExercises = (exResult.exercises || [])
-          .map((ex: any, idx: number) => ({
+          .map((ex: any, idx: number) => normalizeExerciseData({
             ...ex,
             id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
             title: sanitizeV8Text(ex.title || ''),
