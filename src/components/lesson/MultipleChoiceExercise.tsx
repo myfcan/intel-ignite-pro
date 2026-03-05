@@ -183,14 +183,24 @@ export const MultipleChoiceExercise = ({
                 </div>
               </div>
             </div>
-            <Button
-              onClick={handleTryAgain}
-              variant="outline"
-              className="w-full h-10 sm:h-12 text-sm sm:text-base"
-              size="lg"
-            >
-              Tentar Novamente
-            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+              <Button
+                onClick={handleTryAgain}
+                variant="outline"
+                className="w-full h-10 sm:h-12 text-sm sm:text-base"
+                size="lg"
+              >
+                Tentar Novamente
+              </Button>
+              <Button
+                onClick={handleContinue}
+                className="w-full h-10 sm:h-12 text-sm sm:text-base gap-2"
+                size="lg"
+              >
+                Continuar Aula
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         )}
       </div>
