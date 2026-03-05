@@ -50,14 +50,18 @@ export function TrueFalseExercise({
     );
   }
 
-  const isCorrect = userAnswer === statement.correct;
+  // Normalize correct value from JSON (could be string "true"/"false" or boolean)
+  const normalizedCorrect = typeof statement.correct === 'string' 
+    ? statement.correct === 'true' 
+    : Boolean(statement.correct);
+  const isCorrect = userAnswer === normalizedCorrect;
 
   const handleAnswer = (answer: boolean) => {
     if (answered) return;
     setUserAnswer(answer);
     setAnswered(true);
 
-    const correct = answer === statement.correct;
+    const correct = answer === normalizedCorrect;
     if (correct) {
       playSound('quiz-correct');
       confetti({ particleCount: 60, spread: 50, origin: { y: 0.5 } });
