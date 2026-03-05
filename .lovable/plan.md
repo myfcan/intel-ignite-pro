@@ -1,72 +1,49 @@
 
 
-## Plano: Fix Sistêmico — Eliminar Botões Duplicados em TODOS os Exercícios
+## Plano: Regra V8-C01 — Coursiv Prompt Builder com 14 palavras e exatamente 4 lacunas
 
-### Causa Raiz
+### Regra Nova
 
-O problema não é de um componente — é arquitetural. Cada componente filho de exercício gerencia seus próprios botões de navegação (Tentar Novamente / Continuar Aula) E/OU se auto-destrói com `return null` após completar. Enquanto isso, o pai `V8InlineExercise` TAMBÉM renderiza botões. Resultado: duplicação em todos os tipos.
+O exercício Coursiv (Sessão 8) deve seguir estas restrições estritas:
+1. **Exatamente 4 lacunas** (não 4-6 como hoje)
+2. **Máximo 14 palavras** por sentença (incluindo os placeholders como "palavras")
+3. **Chips = exatamente as 4 respostas corretas** (sem distratores), exibidos em ordem embaralhada
 
-### Regra Arquitetural
+### Mudanças
 
-**O pai `V8InlineExercise` é o ÚNICO dono dos botões de navegação.** Componentes filhos devem:
-- Mostrar feedback visual (correto/errado, explicação, score)
-- Chamar `onComplete(score)` imediatamente quando o resultado é determinado
-- NUNCA renderizar botões "Continuar" ou "Tentar Novamente"
-- NUNCA usar `setTimeout(() => onComplete(...))` para auto-avançar
-- NUNCA usar `if (completed) return null` — o exercício permanece visível no rolo
+**1. `supabase/functions/v8-generate-lesson-content/index.ts` — COURSIV_BUILDER_TOOLS**
+- `correctAnswers`: mudar `minItems: 4, maxItems: 6` → `minItems: 4, maxItems: 4`
+- `options`: remover — o campo deixa de ser gerado pela IA (chips = correctAnswers embaralhados)
+- `text` description: "...com exatamente 4 _______ e no máximo 14 palavras no total"
 
-### Componentes Afetados (6 arquivos)
+**2. `supabase/functions/v8-generate-lesson-content/index.ts` — COURSIV_SYSTEM_PROMPT**
+- Atualizar regras:
+  - "O campo text deve conter EXATAMENTE 4 placeholders" (não 4-6)
+  - "A frase deve ter no máximo 14 palavras (incluindo os placeholders como palavras)"
+  - "NÃO gere distratores. O campo options deve conter APENAS as 4 respostas corretas"
+- Atualizar exemplo para refletir 14 palavras e 4 blanks sem distratores
 
-**1. `TimedQuizExercise.tsx`** — Tela de resultado final (isFinished)
-- Remover grid de botões internos (linhas 248-255)
-- Chamar `onComplete(finalPercent)` ao entrar em `isFinished` (no `advanceQuestion`)
-- Manter o card de resultado visível (Trophy, score, feedback)
+**3. `supabase/functions/v8-generate-lesson-content/index.ts` — Quality Gate (linhas 799-847)**
+- Blank count: `blankCount < 4 || blankCount > 6` → `blankCount !== 4`
+- Adicionar validação de word count: contar palavras do texto (split por espaço), rejeitar se > 14
+- Options: garantir que `options` contém exatamente as correctAnswers (sem extras)
 
-**2. `TrueFalseExercise.tsx`** — Acerto e erro
-- Remover `if (completed) return null` (linha 87) — exercício some inteiro!
-- Remover estado `completed` e `handleContinue`
-- Remover botões internos "Tentar Novamente" + "Continuar Aula" (linhas 188-198)
-- No acerto: remover `setTimeout` — chamar `onComplete(100)` direto
-- No erro: chamar `onComplete(0)` direto
+**4. `src/components/lessons/v8/V8CompleteSentenceInline.tsx` — Frontend**
+- No `useMemo`, quando `sentences.length === 1`: usar `correctAnswers` como `wordBank` (ignorar `options` se vier com distratores por backward compat)
+- Isso já é parcialmente o caso (`allChips = sentences[0].options?.length ? options : correct`), mas forçar: `wordBank = shuffle([...correct])` sempre
 
-**3. `ScenarioSelectionExercise.tsx`** — Cenários
-- Remover `if (completed) return null` (linha 118) — exercício some inteiro!
-- Remover estado `completed`, `handleContinue`
-- Remover botões internos (linhas 278-306)
-- Remover `setTimeout(() => { setCompleted(true); onComplete(...) }, 2000)` nos simple-choice
-- Chamar `onComplete(score)` imediatamente ao confirmar
+**5. `src/types/v8Lesson.ts` — V8InlineCompleteSentence**
+- Atualizar o comentário do tipo para refletir: "exatamente 4 lacunas, máx 14 palavras, chips = correctAnswers only"
 
-**4. `PlatformMatchExercise.tsx`** — Match de plataformas
-- Remover `setTimeout(() => onComplete(score), 1000)` (linha 108)
-- Chamar `onComplete(score)` imediatamente quando o último cenário é respondido
-
-**5. `CompleteSentenceExercise.tsx`** — Completar sentença
-- Remover `setTimeout(() => onComplete(score), 2000)` (linha 91)
-- Chamar `onComplete(score)` imediatamente
-
-**6. `FlipCardQuizExercise.tsx`** — Já parcialmente correto
-- Remover botões internos do card de resultado — o pai já renderiza os botões via `onContinue` prop
-- Manter o card de score visível (Trophy, X/Y acertos)
-- Chamar `onComplete(score)` ao finalizar, mas NÃO renderizar botões
-
-### V8InlineExercise (pai) — Já correto
-O pai já tem a lógica certa:
-- Badge read-only quando `completed && !onContinue`
-- Botões Fluxo A/B quando `completed && onContinue`
-- Retry via `exerciseKey` reset
-
-Só precisa ajustar o case `flipcard-quiz` para usar `handleComplete` em vez de bypass direto.
-
-### Resumo Visual
+### Resumo
 
 ```text
-ANTES (bugado):
-  Filho: [feedback] [Tentar Novamente] [Continuar Aula]  ← botões internos
-  Pai:   [Tentar Novamente] [Continuar Aula]              ← botões do wrapper
-  = DUPLICAÇÃO
+ANTES:
+  text: "Crie um _______ de _______ para _______ no formato de _______ com tom _______" (5 blanks, 20+ palavras)
+  options: ["roteiro", "vendas", "empresas", "lista", "persuasivo", "acadêmico", "relatório", "estudantes"]  (8 chips)
 
-DEPOIS (correto):
-  Filho: [feedback visual / score / explicação]            ← só feedback
-  Pai:   [Tentar Novamente] [Continuar Aula]              ← único set de botões
+DEPOIS:
+  text: "Crie um _______ para _______ no formato _______ com tom _______" (4 blanks, ≤14 palavras)
+  options: ["roteiro", "empresas", "lista", "persuasivo"]  (4 chips, embaralhados)
 ```
 
