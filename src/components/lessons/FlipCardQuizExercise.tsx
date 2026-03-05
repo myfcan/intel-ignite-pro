@@ -200,7 +200,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
         </AnimatePresence>
 
         <div
-          className="relative w-full h-[360px] cursor-pointer"
+          className="relative w-full h-[480px] cursor-pointer"
           style={{ transformStyle: 'preserve-3d' }}
           onClick={() => !isFlipped && position === 'center' && flipCard(index)}
         >
@@ -228,7 +228,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
               boxShadow: isGlowing ? colors.glow : isAnswered && isCorrect ? '0 0 20px rgba(52,211,153,0.3)' : 'none',
             }}
           >
-            <p className="text-white/90 text-base font-medium mb-4 leading-relaxed">{card.back.text}</p>
+            <p className="text-white/90 text-sm font-medium mb-3 leading-relaxed line-clamp-4">{card.back.text}</p>
 
             <div className="flex flex-col gap-2 mt-auto">
               {card.options.map((opt, oi) => {
@@ -244,7 +244,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
                     transition={{ delay: 0.1 * oi + 0.3 }}
                     disabled={isAnswered}
                     onClick={(e) => { e.stopPropagation(); selectOption(index, opt.id); }}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 border ${
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 border ${
                       showResult && optCorrect
                         ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300'
                         : showResult && isSelected && !optCorrect
@@ -254,7 +254,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
                             : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20'
                     }`}
                   >
-                    {opt.text}
+                    <span className="line-clamp-2">{opt.text}</span>
                   </motion.button>
                 );
               })}
