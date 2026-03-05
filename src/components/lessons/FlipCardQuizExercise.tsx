@@ -220,7 +220,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
 
           {/* BACK */}
           <motion.div
-            className={`absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/95 border ${isAnswered ? (isCorrect ? 'border-emerald-400/50' : 'border-red-400/50') : isGlowing ? colors.border : 'border-white/15'} shadow-2xl flex flex-col p-5 backface-hidden overflow-y-auto`}
+            className={`absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/95 border ${isAnswered ? (isCorrect ? 'border-emerald-400/50' : 'border-red-400/50') : isGlowing ? colors.border : 'border-white/15'} shadow-2xl flex flex-col p-4 backface-hidden overflow-y-auto`}
             animate={{ rotateY: isFlipped ? 0 : -180 }}
             transition={{ duration: 0.6, ease: 'easeInOut' }}
             style={{
@@ -228,9 +228,9 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
               boxShadow: isGlowing ? colors.glow : isAnswered && isCorrect ? '0 0 20px rgba(52,211,153,0.3)' : 'none',
             }}
           >
-            <p className="text-white/90 text-sm font-medium mb-3 leading-relaxed line-clamp-4">{card.back.text}</p>
+            <p className="text-white/90 text-sm font-medium mb-2 leading-relaxed line-clamp-4">{card.back.text}</p>
 
-            <div className="flex flex-col gap-2 mt-auto">
+            <div className="flex flex-col gap-1.5">
               {card.options.map((opt, oi) => {
                 const isSelected = selectedOptions[index] === opt.id;
                 const showResult = isAnswered;
