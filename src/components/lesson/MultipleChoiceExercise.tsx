@@ -183,24 +183,20 @@ export const MultipleChoiceExercise = ({
                 </div>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <Button
-                onClick={handleTryAgain}
-                variant="outline"
-                className="w-full sm:flex-1 h-10 sm:h-12 text-sm sm:text-base"
-                size="lg"
-              >
-                Tentar Novamente
-              </Button>
-              <Button
-                onClick={handleContinue}
-                className="w-full sm:flex-1 h-10 sm:h-12 text-sm sm:text-base"
-                size="lg"
-              >
-                Continuar
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
+            <Button
+              onClick={handleTryAgain}
+              variant="outline"
+              className="w-full h-10 sm:h-12 text-sm sm:text-base"
+              size="lg"
+            >
+              Tentar Novamente
+            </Button>
+            <button
+              onClick={handleContinue}
+              className="w-full text-center text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              Pular e continuar →
+            </button>
           </div>
         )}
       </div>
