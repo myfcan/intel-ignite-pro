@@ -90,13 +90,7 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
               correctAnswer={correctOpt?.text || data.options[0].text}
               explanation={data.explanation || ""}
               onComplete={(isCorrect: boolean) => {
-                const score = isCorrect ? 100 : 0;
-                onScore?.(score);
-                if (onContinue) {
-                  onContinue();
-                  return;
-                }
-                setCompleted(true);
+                handleComplete(isCorrect ? 100 : 0);
               }}
             />
           );
@@ -125,14 +119,7 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
             title={title}
             instruction={instruction}
             data={data as any}
-            onComplete={(score: number) => {
-              onScore?.(score);
-              if (onContinue) {
-                onContinue();
-                return;
-              }
-              setCompleted(true);
-            }}
+            onComplete={handleComplete}
           />
         );
 
