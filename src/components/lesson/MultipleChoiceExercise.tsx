@@ -183,18 +183,18 @@ export const MultipleChoiceExercise = ({
                 </div>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Button
                 onClick={handleTryAgain}
                 variant="outline"
-                className="flex-1 h-10 sm:h-12 text-sm sm:text-base"
+                className="w-full sm:flex-1 h-10 sm:h-12 text-sm sm:text-base"
                 size="lg"
               >
                 Tentar Novamente
               </Button>
               <Button
                 onClick={handleContinue}
-                className="flex-1 h-10 sm:h-12 text-sm sm:text-base"
+                className="w-full sm:flex-1 h-10 sm:h-12 text-sm sm:text-base"
                 size="lg"
               >
                 Continuar
