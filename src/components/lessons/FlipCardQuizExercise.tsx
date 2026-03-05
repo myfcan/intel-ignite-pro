@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useV7SoundEffects } from '@/components/lessons/v7/cinematic/useV7SoundEffects';
 import { FlipCardQuizExerciseData } from '@/types/exerciseSchemas';
-import { ChevronLeft, ChevronRight, Brain, Zap, Target, Lightbulb, Sparkles, RotateCcw } from 'lucide-react';
+import { Brain, Zap, Target, Lightbulb, Sparkles, RotateCcw } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import confetti from 'canvas-confetti';
 
@@ -200,7 +200,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
         </AnimatePresence>
 
         <div
-          className="relative w-full h-[480px] cursor-pointer"
+          className={`relative w-full ${isMobile ? 'h-[420px]' : 'h-[480px]'} cursor-pointer`}
           style={{ transformStyle: 'preserve-3d' }}
           onClick={() => !isFlipped && position === 'center' && flipCard(index)}
         >
@@ -334,41 +334,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
         )}
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-center gap-6 mt-6">
-        <button
-          onClick={() => setActiveIndex(i => Math.max(0, i - 1))}
-          disabled={activeIndex === 0}
-          className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        {/* Dots */}
-        <div className="flex gap-2">
-          {cards.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveIndex(i)}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                i === activeIndex
-                  ? 'bg-cyan-400 scale-125'
-                  : answeredCards.has(i)
-                    ? correctCards.has(i) ? 'bg-emerald-400/70' : 'bg-red-400/70'
-                    : 'bg-white/20'
-              }`}
-            />
-          ))}
-        </div>
-
-        <button
-          onClick={() => setActiveIndex(i => Math.min(totalCards - 1, i + 1))}
-          disabled={activeIndex === totalCards - 1}
-          className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
+      {/* Navigation dots only (no arrows, progress bar already shows count) */}
     </div>
   );
 }
