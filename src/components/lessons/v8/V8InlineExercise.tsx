@@ -84,7 +84,15 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
               options={data.options.map((o: any) => o.text)}
               correctAnswer={correctOpt?.text || data.options[0].text}
               explanation={data.explanation || ""}
-              onComplete={(isCorrect: boolean) => handleComplete(isCorrect ? 100 : 0)}
+              onComplete={(isCorrect: boolean) => {
+                const score = isCorrect ? 100 : 0;
+                onScore?.(score);
+                if (onContinue) {
+                  onContinue();
+                  return;
+                }
+                setCompleted(true);
+              }}
             />
           );
         }
