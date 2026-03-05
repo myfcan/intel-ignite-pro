@@ -1,32 +1,39 @@
 
 
-## Diagnóstico
+## Plano: Padronizar regra de saída de exercícios (Fluxo A / Fluxo B)
 
-O problema é claro: a lógica de deduplicação no `useV8Player.ts` está **invertida**.
+### Regra Universal
 
-Quando um `inlineQuiz` (V8InlineQuiz) e um `inlineExercise` (V8InlineExercise) existem no mesmo `afterSectionIndex`, o código atual **prioriza o Quiz e descarta o Exercise**. Mas pelo contrato V8-C01:
+- **Fluxo A (Acertou):** Mostra apenas `[Continuar Aula]`. Avança somente no clique. Sem auto-advance.
+- **Fluxo B (Errou):** Mostra `[Tentar Novamente]` + `[Continuar Aula]`. Reset no retry, avança no continuar.
 
-- **Sessão 4 (índice 3)** deve ser **Complete-Sentence ou Scenario-Selection** — tipos que vêm dos `inlineExercises`
-- O `inlineQuiz` nesse índice é um multiple-choice genérico redundante
+### Arquivos e mudanças
 
-O resultado: o exercício correto do contrato é descartado, e um quiz genérico de múltipla escolha aparece no lugar.
+**1. `V8InlineExercise.tsx`** (8 tipos de exercício)
+- Remover `setTimeout(() => onContinue(), 1200)` do `handleComplete`
+- O botão "Continuar Aula" já existe (linha 189-201) e aparece quando `completed === true` — manter
+- Adicionar estado `passed` (score >= PASS_SCORE) para decidir se mostra só "Continuar" ou "Tentar Novamente" + "Continuar"
+- Adicionar botão "Tentar Novamente" quando `completed && !passed`, resetando `completed` para re-renderizar o exercício
+- O `timed-quiz` (linha 147-158) chama `onContinue?.()` direto — mudar para usar `handleComplete` como os demais
 
-## Plano
+**2. `V8QuizInline.tsx`** (quiz de múltipla escolha inline)
+- Remover `setTimeout(() => onContinue(), 1200)` do `handleConfirm` (acerto)
+- No estado `correct`: adicionar botão `[Continuar Aula]` (hoje não tem nenhum, só auto-avança)
+- No estado `wrong`: já tem `[Tentar Novamente]` + `[Continuar Aula]` — manter como está
+- Ajustar `handleContinueAfterWrong` para ser reutilizado no fluxo de acerto também (renomear para `handleContinue`)
 
-### 1. Inverter a prioridade de deduplicação em `useV8Player.ts`
+**3. `V8CompleteSentenceInline.tsx`** (Coursiv / Monte o Prompt)
+- Remover `setTimeout(() => onContinue(), 1200)` do `handleSubmit`
+- Quando acertou tudo (`correctCount === blankCount`): adicionar botão `[Continuar Aula]` (hoje falta)
+- Quando errou: já tem `[Tentar Novamente]` + `[Continuar Aula]` — manter
 
-Alterar a lógica para: **se um `inlineExercise` existe num índice, pular o `inlineQuiz` nesse mesmo índice** (não o contrário).
+### Resumo visual
 
 ```text
-Antes:  Se quiz existe → pula exercise (ERRADO)
-Depois: Se exercise existe → pula quiz (CORRETO)
+Exercício finalizado
+  ├─ Acertou → [Continuar Aula]
+  └─ Errou   → [Tentar Novamente] [Continuar Aula]
 ```
 
-Isso garante que os tipos definidos pelo contrato V8-C01 (complete-sentence, scenario-selection, platform-match, etc.) sempre tenham prioridade sobre quizzes genéricos de múltipla escolha.
-
-### Impacto
-
-- Sessões que só têm `inlineQuiz` (sem `inlineExercise`) continuam funcionando normalmente
-- Sessões com ambos passam a mostrar o `inlineExercise` (tipo correto do contrato)
-- Nenhum outro arquivo precisa ser alterado
+Nenhum `setTimeout` de auto-advance. Tudo manual por clique/toque.
 
