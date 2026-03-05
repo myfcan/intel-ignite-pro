@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useV7SoundEffects } from '@/components/lessons/v7/cinematic/useV7SoundEffects';
@@ -57,7 +57,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
   const [correctCards, setCorrectCards] = useState<Set<number>>(new Set());
   const [showGlow, setShowGlow] = useState<number | null>(null);
   const [shakeCard, setShakeCard] = useState<number | null>(null);
-  const [showWrongFeedback, setShowWrongFeedback] = useState(false);
+  const [showResult, setShowResult] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
 
   const cards = data.cards;
@@ -72,19 +72,19 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
     setCorrectCards(new Set());
     setShowGlow(null);
     setShakeCard(null);
-    setShowWrongFeedback(false);
+    setShowResult(false);
     setFinalScore(0);
   }, []);
 
-  const handleContinueAfterWrong = useCallback(() => {
-    setShowWrongFeedback(false);
+  const handleContinue = useCallback(() => {
+    setShowResult(false);
     onComplete(finalScore);
   }, [onComplete, finalScore]);
 
   useEffect(() => {
-    if (!showWrongFeedback) return;
+    if (!showResult) return;
     return scheduleCTAScroll(() => feedbackActionsRef.current);
-  }, [showWrongFeedback]);
+  }, [showResult]);
 
   const flipCard = useCallback((index: number) => {
     if (flippedCards.has(index)) return;
@@ -125,23 +125,19 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
       const newCompleted = answeredCards.size + 1;
       if (newCompleted === totalCards) {
         const totalCorrect = correctCards.size + 1;
-        const score = (totalCorrect / totalCards) * 100;
+        const score = Math.round((totalCorrect / totalCards) * 100);
         setFinalScore(score);
         if (score === 100) {
           playSound('level-up');
           setTimeout(() => playSound('completion'), 200);
           setTimeout(() => confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } }), 300);
-          setTimeout(() => onComplete(score), 2000);
+        } else if (score >= 60) {
+          playSound('level-up');
+          setTimeout(() => confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } }), 300);
         } else {
-          // Mixed results — show retry/continue
-          if (score >= 60) {
-            playSound('level-up');
-            setTimeout(() => confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } }), 300);
-          } else {
-            playSound('streak-bonus');
-          }
-          setTimeout(() => setShowWrongFeedback(true), 1500);
+          playSound('streak-bonus');
         }
+        setTimeout(() => setShowResult(true), 1500);
       } else {
         // Auto-advance after delay
         setTimeout(() => {
@@ -155,12 +151,11 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
 
       const newCompleted = answeredCards.size + 1;
       const totalCorrect = correctCards.size;
-      const score = (totalCorrect / totalCards) * 100;
+      const score = Math.round((totalCorrect / totalCards) * 100);
       setFinalScore(score);
 
       if (newCompleted === totalCards) {
-        // Last card — show retry/continue buttons
-        setShowWrongFeedback(true);
+        setTimeout(() => setShowResult(true), 1500);
       } else {
         // Not last card — auto-advance
         setTimeout(() => {
@@ -361,21 +356,39 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
         )}
       </div>
 
-      {/* Wrong feedback: Retry + Continue */}
-      {showWrongFeedback && (
+      {/* Result feedback: score + Flow A/B buttons */}
+      {showResult && (
         <motion.div
           ref={feedbackActionsRef}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-4"
+          className="mt-6 space-y-3"
         >
-          <Button onClick={handleTryAgain} variant="outline" className="w-full">
-            Tentar Novamente
-          </Button>
-          <Button onClick={handleContinueAfterWrong} className="w-full gap-2">
-            Continuar Aula
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+          {/* Score badge */}
+          <div className={`flex items-center gap-2 p-4 rounded-xl border ${
+            finalScore === 100
+              ? "border-emerald-200 bg-emerald-50"
+              : "border-amber-200 bg-amber-50"
+          }`}>
+            <CheckCircle2 className={`w-5 h-5 ${finalScore === 100 ? "text-emerald-500" : "text-amber-500"}`} />
+            <span className={`text-sm font-semibold ${finalScore === 100 ? "text-emerald-700" : "text-amber-700"}`}>
+              {correctCards.size}/{totalCards} acertos!
+            </span>
+          </div>
+
+          {/* Flow A (passed) → [Continuar Aula] / Flow B (failed) → [Tentar Novamente] + [Continuar Aula] */}
+          <div className={`grid gap-2 ${finalScore < 100 ? "grid-cols-1 sm:grid-cols-2" : ""}`}>
+            {finalScore < 100 && (
+              <Button onClick={handleTryAgain} variant="outline" className="w-full gap-2">
+                <RotateCcw className="w-4 h-4" />
+                Tentar Novamente
+              </Button>
+            )}
+            <Button onClick={handleContinue} className="w-full gap-2">
+              Continuar Aula
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
         </motion.div>
       )}
     </div>
