@@ -365,6 +365,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
         <motion.div
           ref={feedbackActionsRef}
           initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-4"
         >
           <Button onClick={handleTryAgain} variant="outline" className="w-full">
