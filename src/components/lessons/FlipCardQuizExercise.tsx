@@ -199,91 +199,91 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
           )}
         </AnimatePresence>
 
-        <div
-          className={`relative w-full ${isMobile ? 'h-[420px]' : 'h-[480px]'} cursor-pointer`}
-          style={{ transformStyle: 'preserve-3d' }}
-          onClick={() => !isFlipped && position === 'center' && flipCard(index)}
-        >
-          {/* FRONT */}
-          <motion.div
-            className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${colors.gradient} border border-white/10 shadow-2xl flex flex-col items-center justify-center gap-4 p-6 backface-hidden`}
-            animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={{ duration: 0.6, ease: 'easeInOut' }}
-            style={{ backfaceVisibility: 'hidden' }}
-          >
-            <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <IconComp className="w-8 h-8 text-white/90" />
-            </div>
-            <span className="text-white/90 text-lg font-semibold tracking-wide">{card.front.label}</span>
-            <span className="text-white/50 text-sm mt-2">Toque para revelar</span>
-          </motion.div>
+        <div className="w-full cursor-pointer">
+          {/* FRONT — only visible when not flipped */}
+          {!isFlipped && (
+            <motion.div
+              className={`rounded-2xl bg-gradient-to-br ${colors.gradient} border border-white/10 shadow-2xl flex flex-col items-center justify-center gap-4 p-6 min-h-[200px]`}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              onClick={() => position === 'center' && flipCard(index)}
+            >
+              <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                <IconComp className="w-7 h-7 text-white/90" />
+              </div>
+              <span className="text-white/90 text-lg font-semibold tracking-wide">{card.front.label}</span>
+              <span className="text-white/50 text-xs">Toque para revelar</span>
+            </motion.div>
+          )}
 
-          {/* BACK */}
-          <motion.div
-            className={`absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/95 border ${isAnswered ? (isCorrect ? 'border-emerald-400/50' : 'border-red-400/50') : isGlowing ? colors.border : 'border-white/15'} shadow-2xl flex flex-col p-4 backface-hidden overflow-y-auto`}
-            animate={{ rotateY: isFlipped ? 0 : -180 }}
-            transition={{ duration: 0.6, ease: 'easeInOut' }}
-            style={{
-              backfaceVisibility: 'hidden',
-              boxShadow: isGlowing ? colors.glow : isAnswered && isCorrect ? '0 0 20px rgba(52,211,153,0.3)' : 'none',
-            }}
-          >
-            <p className="text-white/90 text-sm font-medium mb-2 leading-relaxed line-clamp-4">{card.back.text}</p>
+          {/* BACK — only visible when flipped */}
+          {isFlipped && (
+            <motion.div
+              className={`rounded-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/95 border ${isAnswered ? (isCorrect ? 'border-emerald-400/50' : 'border-red-400/50') : isGlowing ? colors.border : 'border-white/15'} shadow-2xl flex flex-col p-4`}
+              initial={{ opacity: 0, rotateY: -90 }}
+              animate={{ opacity: 1, rotateY: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                boxShadow: isGlowing ? colors.glow : isAnswered && isCorrect ? '0 0 20px rgba(52,211,153,0.3)' : 'none',
+              }}
+            >
+              <p className="text-white/90 text-sm font-medium mb-3 leading-relaxed">{card.back.text}</p>
 
-            <div className="flex flex-col gap-1.5">
-              {card.options.map((opt, oi) => {
-                const isSelected = selectedOptions[index] === opt.id;
-                const showResult = isAnswered;
-                const optCorrect = opt.isCorrect;
+              <div className="flex flex-col gap-1.5">
+                {card.options.map((opt, oi) => {
+                  const isSelected = selectedOptions[index] === opt.id;
+                  const showResult = isAnswered;
+                  const optCorrect = opt.isCorrect;
 
-                return (
-                  <motion.button
-                    key={opt.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * oi + 0.3 }}
-                    disabled={isAnswered}
-                    onClick={(e) => { e.stopPropagation(); selectOption(index, opt.id); }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 border ${
-                      showResult && optCorrect
-                        ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300'
-                        : showResult && isSelected && !optCorrect
-                          ? 'bg-red-500/20 border-red-400/60 text-red-300'
-                          : isSelected
-                            ? 'bg-white/15 border-cyan-400/50 text-white'
-                            : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <span className="line-clamp-2">{opt.text}</span>
-                  </motion.button>
-                );
-              })}
-            </div>
+                  return (
+                    <motion.button
+                      key={opt.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.08 * oi + 0.2 }}
+                      disabled={isAnswered}
+                      onClick={(e) => { e.stopPropagation(); selectOption(index, opt.id); }}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 border ${
+                        showResult && optCorrect
+                          ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300'
+                          : showResult && isSelected && !optCorrect
+                            ? 'bg-red-500/20 border-red-400/60 text-red-300'
+                            : isSelected
+                              ? 'bg-white/15 border-cyan-400/50 text-white'
+                              : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20'
+                      }`}
+                    >
+                      <span className="line-clamp-2">{opt.text}</span>
+                    </motion.button>
+                  );
+                })}
+              </div>
 
-            {/* Confirm button */}
-            {isFlipped && !isAnswered && selectedOptions[index] && position === 'center' && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                onClick={(e) => { e.stopPropagation(); confirmAnswer(index); }}
-                className="mt-3 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-bold text-sm shadow-lg hover:shadow-cyan-500/25 transition-shadow"
-              >
-                Confirmar
-              </motion.button>
-            )}
+              {/* Confirm button */}
+              {!isAnswered && selectedOptions[index] && position === 'center' && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={(e) => { e.stopPropagation(); confirmAnswer(index); }}
+                  className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-bold text-sm shadow-lg hover:shadow-cyan-500/25 transition-shadow"
+                >
+                  Confirmar
+                </motion.button>
+              )}
 
-            {/* Explanation after answer */}
-            {isAnswered && card.explanation && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="mt-3 text-xs text-white/50 italic leading-relaxed"
-              >
-                {card.explanation}
-              </motion.p>
-            )}
-          </motion.div>
+              {/* Explanation after answer */}
+              {isAnswered && card.explanation && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-2 text-xs text-white/50 italic leading-relaxed"
+                >
+                  {card.explanation}
+                </motion.p>
+              )}
+            </motion.div>
+          )}
         </div>
       </motion.div>
     );
@@ -302,7 +302,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
       </div>
 
       {/* Cards area */}
-      <div className="flex items-center justify-center gap-4 min-h-[400px]">
+      <div className="flex items-start justify-center gap-4">
         {isMobile ? (
           /* Mobile: single card */
           <div className="w-full max-w-[320px]">
