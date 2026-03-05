@@ -118,19 +118,22 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
       if (newCompleted === totalCards) {
         const totalCorrect = correctCards.size + 1;
         const score = (totalCorrect / totalCards) * 100;
+        setFinalScore(score);
         if (score === 100) {
-          // Vitória perfeita
           playSound('level-up');
           setTimeout(() => playSound('completion'), 200);
           setTimeout(() => confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } }), 300);
-        } else if (score >= 60) {
-          // Bom resultado
-          playSound('level-up');
-          setTimeout(() => confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } }), 300);
+          setTimeout(() => onComplete(score), 2000);
         } else {
-          playSound('streak-bonus');
+          // Mixed results — show retry/continue
+          if (score >= 60) {
+            playSound('level-up');
+            setTimeout(() => confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } }), 300);
+          } else {
+            playSound('streak-bonus');
+          }
+          setTimeout(() => setShowWrongFeedback(true), 1500);
         }
-        setTimeout(() => onComplete(score), 2000);
       } else {
         // Auto-advance after delay
         setTimeout(() => {
@@ -142,12 +145,20 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
       setShakeCard(cardIndex);
       setTimeout(() => setShakeCard(null), 500);
 
-      // Show wrong feedback with retry/continue buttons
       const newCompleted = answeredCards.size + 1;
       const totalCorrect = correctCards.size;
       const score = (totalCorrect / totalCards) * 100;
       setFinalScore(score);
-      setShowWrongFeedback(true);
+
+      if (newCompleted === totalCards) {
+        // Last card — show retry/continue buttons
+        setShowWrongFeedback(true);
+      } else {
+        // Not last card — auto-advance
+        setTimeout(() => {
+          if (cardIndex < totalCards - 1) setActiveIndex(cardIndex + 1);
+        }, 1500);
+      }
     }
   }, [cards, selectedOptions, answeredCards, correctCards, totalCards, playSound, onComplete]);
 
