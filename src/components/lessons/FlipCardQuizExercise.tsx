@@ -78,7 +78,6 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
   }, []);
 
   const handleContinue = useCallback(() => {
-    setShowResult(false);
     onContinue?.();
   }, [onContinue]);
 

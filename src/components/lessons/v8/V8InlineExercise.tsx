@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { PASS_SCORE } from "@/constants/v8Rules";
-import { ArrowRight, RotateCcw } from "lucide-react";
+import { ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
 import { V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
 import { TrueFalseExercise } from "@/components/lessons/TrueFalseExercise";
 import { FillInBlanksExercise } from "@/components/lessons/FillInBlanksExercise";
@@ -189,6 +189,19 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
         {renderExercise()}
       </div>
 
+      {/* Persistent completion badge (read-only for past items) */}
+      {completed && !onContinue && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50"
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <span className="text-sm font-semibold text-emerald-700">Exercício concluído ✓</span>
+        </motion.div>
+      )}
+
+      {/* Active CTA buttons */}
       {completed && onContinue && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
