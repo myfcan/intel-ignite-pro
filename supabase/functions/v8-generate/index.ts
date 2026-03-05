@@ -359,6 +359,7 @@ async function generateTTS(
     text,
     model_id: MODEL_ID,
     voice_settings: VOICE_SETTINGS,
+    language_code: "pt",
   };
 
   // Request stitching — supported by eleven_multilingual_v2
