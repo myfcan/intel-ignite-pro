@@ -124,8 +124,7 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
             title={title}
             instruction={instruction}
             data={data as any}
-            onComplete={(score: number) => onScore?.(score)}
-            onContinue={onContinue}
+            onComplete={handleComplete}
           />
         );
 

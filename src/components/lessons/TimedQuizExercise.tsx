@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, CheckCircle2, XCircle, Timer, Trophy } from 'lucide-react';
 import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
@@ -19,7 +18,6 @@ const MAX_QUESTIONS = 2;
 
 export function TimedQuizExercise({ title, instruction, data, onComplete }: TimedQuizExerciseProps) {
   const { timePerQuestion, bonusPerSecondLeft, timeoutPenalty, feedback } = data;
-  // Enforce max 2 questions
   const questions = (data.questions || []).slice(0, MAX_QUESTIONS);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -168,7 +166,8 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
       } else if (finalPercent >= 60) {
         playSound('streak-bonus');
       }
-      // Don't auto-advance — let user choose retry or continue
+      // Report immediately — parent owns navigation buttons
+      onComplete(finalPercent);
     }
   }, [currentQuestionIndex, questions.length, playSound, onComplete]);
 
@@ -201,23 +200,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
     answered: isCorrect ? 'border-emerald-400/50' : 'border-red-400/40',
   }[timerState];
 
-  const handleRetry = useCallback(() => {
-    setCurrentQuestionIndex(0);
-    setTimeLeft(timePerQuestion);
-    setTimerState('waiting');
-    setSelectedOptionId(null);
-    setIsCorrect(null);
-    isCorrectRef.current = null;
-    setTotalPoints(0);
-    setTotalBonus(0);
-    setShowExplanation(false);
-    setShowTimeoutFlash(false);
-    setResults([]);
-    resultsRef.current = [];
-    setIsFinished(false);
-    lastTickRef.current = 0;
-  }, [timePerQuestion]);
-
+  // Result screen — feedback only, NO navigation buttons
   if (isFinished) {
     const correctCount = results.filter(r => r.correct).length;
     const finalPercent = Math.round((correctCount / questions.length) * 100);
@@ -245,14 +228,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
               </div>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            <Button variant="outline" onClick={handleRetry} className="text-sm">
-              Tentar Novamente
-            </Button>
-            <Button onClick={() => onComplete(finalPercent)} className="text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white">
-              Continuar Aula
-            </Button>
-          </div>
+          {/* NO internal buttons — parent V8InlineExercise owns navigation */}
         </div>
       </motion.div>
     );
@@ -260,7 +236,6 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
 
   return (
     <div className="max-w-lg mx-auto space-y-3 relative">
-      {/* Timeout flash */}
       <AnimatePresence>
         {showTimeoutFlash && (
           <motion.div
@@ -273,7 +248,6 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
         )}
       </AnimatePresence>
 
-      {/* Timer row: compact single line */}
       <div className="flex items-center gap-3">
         <motion.span
           className={`text-2xl font-mono font-bold tabular-nums ${timerColor} min-w-[48px] text-center`}
@@ -294,7 +268,6 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
         </span>
       </div>
 
-      {/* Question card */}
       <motion.div
         key={currentQuestionIndex}
         initial={{ opacity: 0, y: 12 }}
@@ -313,7 +286,6 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
           {currentQuestion.question}
         </p>
 
-        {/* Options — single column, compact */}
         <div className="space-y-2">
           {currentQuestion.options.map((option) => {
             const isSelected = selectedOptionId === option.id;
@@ -347,7 +319,6 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
           })}
         </div>
 
-        {/* Explanation */}
         <AnimatePresence>
           {showExplanation && currentQuestion.explanation && (
             <motion.div
@@ -361,7 +332,6 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
           )}
         </AnimatePresence>
 
-        {/* Bonus badge */}
         <AnimatePresence>
           {timerState === 'answered' && isCorrect && Math.ceil(timeLeft) > 0 && (
             <motion.div
@@ -378,7 +348,6 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
           )}
         </AnimatePresence>
 
-        {/* Timeout */}
         <AnimatePresence>
           {timerState === 'timeout' && (
             <motion.div

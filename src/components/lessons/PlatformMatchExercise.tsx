@@ -105,7 +105,7 @@ export function PlatformMatchExercise({
         } else if (score >= 50) {
           playSound('completion');
         }
-        setTimeout(() => onComplete(score), 1000);
+        onComplete(score);
       }
     }, 1500);
   };

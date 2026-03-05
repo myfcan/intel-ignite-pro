@@ -378,21 +378,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
             </span>
           </div>
 
-          {/* Flow A (passed) → [Continuar Aula] / Flow B (failed) → [Tentar Novamente] + [Continuar Aula] */}
-          <div className={`grid gap-2 ${finalScore < 100 ? "grid-cols-1 sm:grid-cols-2" : ""}`}>
-            {finalScore < 100 && (
-              <Button onClick={handleTryAgain} variant="outline" className="w-full gap-2">
-                <RotateCcw className="w-4 h-4" />
-                Tentar Novamente
-              </Button>
-            )}
-            {onContinue && (
-              <Button onClick={handleContinue} className="w-full gap-2">
-                Continuar Aula
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+          {/* NO internal buttons — parent V8InlineExercise owns navigation */}
         </motion.div>
       )}
     </div>

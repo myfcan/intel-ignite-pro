@@ -88,7 +88,7 @@ export function CompleteSentenceExercise({
     } else {
       playSound('error');
     }
-    setTimeout(() => onComplete(score), 2000);
+    onComplete(score);
   };
 
   const allAnswered = sentences.every(s => answers[s.id]?.trim());

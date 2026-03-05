@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, X, ArrowRight } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
 import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
@@ -33,11 +33,9 @@ export function TrueFalseExercise({
   feedback,
   onComplete
 }: TrueFalseExerciseProps) {
-  // Use only the FIRST statement — no carousel
   const statement = statements?.[0];
   const [answered, setAnswered] = useState(false);
   const [userAnswer, setUserAnswer] = useState<boolean | null>(null);
-  const [completed, setCompleted] = useState(false);
   const { playSound } = useV7SoundEffects(0.6, true);
 
   if (!statement) {
@@ -50,7 +48,6 @@ export function TrueFalseExercise({
     );
   }
 
-  // Normalize correct value from JSON (could be string "true"/"false" or boolean)
   const normalizedCorrect = typeof statement.correct === 'string' 
     ? statement.correct === 'true' 
     : Boolean(statement.correct);
@@ -65,26 +62,12 @@ export function TrueFalseExercise({
     if (correct) {
       playSound('quiz-correct');
       confetti({ particleCount: 60, spread: 50, origin: { y: 0.5 } });
-      setTimeout(() => {
-        setCompleted(true);
-        onComplete(100);
-      }, 2500);
     } else {
       playSound('quiz-wrong');
     }
+    // Report immediately — parent owns navigation buttons
+    onComplete(correct ? 100 : 0);
   };
-
-  const handleTryAgain = () => {
-    setAnswered(false);
-    setUserAnswer(null);
-  };
-
-  const handleContinue = () => {
-    setCompleted(true);
-    onComplete(0);
-  };
-
-  if (completed) return null;
 
   return (
     <motion.div 
@@ -185,17 +168,7 @@ export function TrueFalseExercise({
             )}
           </AnimatePresence>
 
-          {answered && !isCorrect && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-              <Button onClick={handleTryAgain} variant="outline" className="w-full">
-                Tentar Novamente
-              </Button>
-              <Button onClick={handleContinue} className="w-full gap-2">
-                Continuar Aula
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+          {/* NO internal buttons — parent V8InlineExercise owns navigation */}
         </div>
       </Card>
     </motion.div>
