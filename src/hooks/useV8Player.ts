@@ -80,15 +80,12 @@ export const useV8Player = (lessonData: V8LessonData) => {
         }
       }
 
-      const hasQuizAtSection = quizMap.has(i);
+      const hasExerciseAtSection = inlineExerciseMap.has(i);
 
-      // Only add inline exercises if there's no quiz at the same section (avoids duplication)
-      if (!hasQuizAtSection) {
-        const inlineExercises = inlineExerciseMap.get(i);
-        if (inlineExercises) {
-          for (const ex of inlineExercises) {
-            items.push({ type: "inline-exercise", exercise: ex });
-          }
+      const inlineExercises = inlineExerciseMap.get(i);
+      if (inlineExercises) {
+        for (const ex of inlineExercises) {
+          items.push({ type: "inline-exercise", exercise: ex });
         }
       }
 
@@ -106,10 +103,13 @@ export const useV8Player = (lessonData: V8LessonData) => {
         }
       }
 
-      const quizzes = quizMap.get(i);
-      if (quizzes) {
-        for (const quiz of quizzes) {
-          items.push({ type: "quiz", quiz });
+      // Only add quizzes if there's no inline exercise at the same section (exercise has priority per V8-C01)
+      if (!hasExerciseAtSection) {
+        const quizzes = quizMap.get(i);
+        if (quizzes) {
+          for (const quiz of quizzes) {
+            items.push({ type: "quiz", quiz });
+          }
         }
       }
     }
