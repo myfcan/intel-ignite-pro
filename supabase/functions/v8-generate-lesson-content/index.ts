@@ -362,7 +362,7 @@ TIPOS DISPONÍVEIS E SCHEMAS:
 - timed-quiz: { timePerQuestion: 15, bonusPerSecondLeft: 2, timeoutPenalty: "skip", visualTheme: "cyber", questions: [{ id: "tq-1", question: "pergunta", options: [{ id: "tqo-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
 
 Gere IDs únicos para todos os elementos.
-Gere 2-4 statements/sentences/cards/questions por exercício.`;
+Gere 2 statements/sentences/cards/questions por exercício (máximo 2 para timed-quiz).`;
 
 // ─── Coursiv Prompt Builder: tool schema + system prompt ───
 const COURSIV_BUILDER_TOOLS = [
@@ -672,7 +672,7 @@ serve(async (req) => {
               'scenario-selection': { key: 'scenarios', minFields: 3, requiredFields: ['situation', 'options', 'correctAnswer'] },
               'platform-match': { key: 'scenarios', minFields: 2, requiredFields: ['text', 'correctPlatform'] },
               'flipcard-quiz': { key: 'cards', minFields: 3, requiredFields: ['front', 'back', 'options'] },
-              'timed-quiz': { key: 'questions', minFields: 3, requiredFields: ['question', 'options'] },
+              'timed-quiz': { key: 'questions', minFields: 2, requiredFields: ['question', 'options'] },
             };
             const depthRule = CONTENT_DEPTH_RULES[ex.type];
             if (depthRule) {
