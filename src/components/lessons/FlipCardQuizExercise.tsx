@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useV7SoundEffects } from '@/components/lessons/v7/cinematic/useV7SoundEffects';
 import { FlipCardQuizExerciseData } from '@/types/exerciseSchemas';
@@ -53,10 +55,28 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
   const [correctCards, setCorrectCards] = useState<Set<number>>(new Set());
   const [showGlow, setShowGlow] = useState<number | null>(null);
   const [shakeCard, setShakeCard] = useState<number | null>(null);
+  const [showWrongFeedback, setShowWrongFeedback] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
 
   const cards = data.cards;
   const totalCards = cards.length;
   const completedCount = answeredCards.size;
+
+  const handleTryAgain = useCallback(() => {
+    setActiveIndex(0);
+    setFlippedCards(new Set());
+    setSelectedOptions({});
+    setAnsweredCards(new Set());
+    setCorrectCards(new Set());
+    setShowGlow(null);
+    setShakeCard(null);
+    setShowWrongFeedback(false);
+    setFinalScore(0);
+  }, []);
+
+  const handleContinueAfterWrong = useCallback(() => {
+    onComplete(finalScore);
+  }, [onComplete, finalScore]);
 
   const flipCard = useCallback((index: number) => {
     if (flippedCards.has(index)) return;
@@ -122,24 +142,12 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
       setShakeCard(cardIndex);
       setTimeout(() => setShakeCard(null), 500);
 
-      // Still count as answered for last card check
+      // Show wrong feedback with retry/continue buttons
       const newCompleted = answeredCards.size + 1;
-      if (newCompleted === totalCards) {
-        const totalCorrect = correctCards.size;
-        const score = (totalCorrect / totalCards) * 100;
-        if (score === 0) {
-          // Derrota total — som dramático
-          playSound('error');
-          setTimeout(() => playSound('timer-buzzer'), 300);
-        } else {
-          playSound('streak-bonus');
-        }
-        setTimeout(() => onComplete(score), 2000);
-      } else {
-        setTimeout(() => {
-          if (cardIndex < totalCards - 1) setActiveIndex(cardIndex + 1);
-        }, 1500);
-      }
+      const totalCorrect = correctCards.size;
+      const score = (totalCorrect / totalCards) * 100;
+      setFinalScore(score);
+      setShowWrongFeedback(true);
     }
   }, [cards, selectedOptions, answeredCards, correctCards, totalCards, playSound, onComplete]);
 
@@ -334,7 +342,22 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
         )}
       </div>
 
-      {/* Navigation dots only (no arrows, progress bar already shows count) */}
+      {/* Wrong feedback: Retry + Continue */}
+      {showWrongFeedback && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-4"
+        >
+          <Button onClick={handleTryAgain} variant="outline" className="w-full">
+            Tentar Novamente
+          </Button>
+          <Button onClick={handleContinueAfterWrong} className="w-full gap-2">
+            Continuar Aula
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </motion.div>
+      )}
     </div>
   );
 }
