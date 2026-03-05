@@ -179,6 +179,11 @@ export const V8LessonPlayer = ({
   }, [state.currentIndex, state.phase]);
 
   const showFixedBar = state.phase === "content" && currentItem?.type === "section";
+  const contentContainerPadding = state.phase === "content"
+    ? showFixedBar
+      ? "pb-32"
+      : "pb-72"
+    : "";
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -194,7 +199,7 @@ export const V8LessonPlayer = ({
       )}
 
       <div className={state.phase !== "mode-select" ? "pt-16" : ""}>
-        <div className={`max-w-2xl mx-auto px-4 py-6 ${showFixedBar ? "pb-32" : ""}`}>
+        <div className={`max-w-2xl mx-auto px-4 py-6 ${contentContainerPadding}`}>
           {state.phase === "mode-select" && (
             <V8ModeSelector
               key="mode-select"
