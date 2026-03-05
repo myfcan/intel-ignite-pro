@@ -37,7 +37,11 @@ export const useV8Player = (lessonData: V8LessonData) => {
     const completeSentenceMap = new Map<number, V8InlineCompleteSentence[]>();
     const inlineExerciseMap = new Map<number, V8InlineExercise[]>();
 
+    // V8-C01 update: Section 6 (index 5) must not render exercises/quizzes
+    const DISABLED_EXERCISE_SECTION_INDEXES = new Set([5]);
+
     for (const quiz of lessonData.inlineQuizzes) {
+      if (DISABLED_EXERCISE_SECTION_INDEXES.has(quiz.afterSectionIndex)) continue;
       const existing = quizMap.get(quiz.afterSectionIndex) || [];
       existing.push(quiz);
       quizMap.set(quiz.afterSectionIndex, existing);
@@ -56,12 +60,14 @@ export const useV8Player = (lessonData: V8LessonData) => {
     }
 
     for (const cs of (lessonData.inlineCompleteSentences || [])) {
+      if (DISABLED_EXERCISE_SECTION_INDEXES.has(cs.afterSectionIndex)) continue;
       const existing = completeSentenceMap.get(cs.afterSectionIndex) || [];
       existing.push(cs);
       completeSentenceMap.set(cs.afterSectionIndex, existing);
     }
 
     for (const ex of (lessonData.inlineExercises || [])) {
+      if (DISABLED_EXERCISE_SECTION_INDEXES.has(ex.afterSectionIndex)) continue;
       const existing = inlineExerciseMap.get(ex.afterSectionIndex) || [];
       existing.push(ex);
       inlineExerciseMap.set(ex.afterSectionIndex, existing);
