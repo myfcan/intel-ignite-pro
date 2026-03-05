@@ -77,6 +77,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
   }, []);
 
   const handleContinueAfterWrong = useCallback(() => {
+    setShowWrongFeedback(false);
     onComplete(finalScore);
   }, [onComplete, finalScore]);
 
