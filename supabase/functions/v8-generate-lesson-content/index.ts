@@ -344,7 +344,7 @@ const COURSIV_BUILDER_TOOLS = [
                 id: { type: "string" },
                 text: { type: "string", description: "Sentence with _______ as placeholder. Must be about prompt construction (audience, context, format, tone, etc.)" },
                 correctAnswers: { type: "array", items: { type: "string" }, description: "Correct answer(s) for the blank" },
-                options: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 5, description: "Chip options: correct answer + plausible distractors" },
+                options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4, description: "Exactly 4 chip options: 1 correct answer + 3 plausible distractors from the SAME domain (copywriting, IA, SEO, marketing). NEVER use absurd options like food, sports, weather, animals." },
               },
               required: ["id", "text", "correctAnswers", "options"],
             },
@@ -363,17 +363,27 @@ Sua tarefa é gerar um exercício do tipo "complete a frase" (Coursiv) onde o al
 REGRAS:
 1. Gere 4-6 frases que representem a ESTRUTURA de um prompt profissional relacionado ao tema da aula. Cada frase tem UMA lacuna.
 2. Cada frase deve ter exatamente UMA lacuna (_______ como placeholder).
-3. A lacuna deve representar um componente-chave do prompt: público-alvo, contexto, formato de saída, tom, objetivo, restrição, etc.
-4. Os chips (options) devem ter 3-5 opções: a correta + distratoras plausíveis mas claramente erradas no contexto.
+3. A lacuna deve representar um componente-chave do prompt: público-alvo, contexto, formato de saída, tom, objetivo, restrição, CTA, etc.
+4. Os chips (options) devem ter EXATAMENTE 4 opções: 1 correta + 3 distratoras plausíveis.
 5. Use Português Brasileiro (pt-BR).
 6. O exercício deve testar a habilidade de MONTAR prompts, não conhecimento teórico.
 7. NUNCA gere subtítulos meta como "Segmento vida real" ou "Atividade prática:".
 8. As frases devem parecer prompts reais que o aluno usaria em uma ferramenta de IA.
 
-EXEMPLO de frase válida:
-"Crie uma lista de _______ para um freelancer de design que quer prospectar clientes no LinkedIn."
-Opções: ["estratégias de prospecção", "receitas de bolo", "exercícios físicos", "planetas do sistema solar"]
-Resposta correta: ["estratégias de prospecção"]`;
+REGRA CRÍTICA — DISTRATORES PLAUSÍVEIS:
+- Distratores DEVEM ser do MESMO DOMÍNIO temático da aula (copywriting, IA, SEO, comunicação, empreendedorismo, marketing digital).
+- Distratores são opções que "parecem corretas" mas prejudicam o resultado (ex.: objetivo vago demais, tom inadequado para o público, CTA fraca, persona errada para o contexto).
+- PROIBIDO distratores absurdos ou fora do domínio.
+
+LISTA DE PROIBIÇÕES ABSOLUTAS para opções (NUNCA usar estas palavras/conceitos):
+café, bolo, receita, árvores, carros, poeta, clima, fonte tipográfica, imagens decorativas, planetas, exercícios físicos, filmes, música, esportes, animais, comida, viagem, moda.
+
+EXEMPLO CORRETO:
+Frase: "O post deve ter um _______ para engajar o leitor desde o início."
+Opções: ["tom otimista e inspirador, com linguagem simples", "tom acadêmico, denso e cheio de termos técnicos", "tom agressivo e urgente, com pressão e medo", "tom neutro demais, sem exemplos e sem posição"]
+Resposta correta: ["tom otimista e inspirador, com linguagem simples"]
+
+Cada lacuna deve cobrir um COMPONENTE ESTRUTURAL do prompt: objetivo, tom de voz, CTA, persona/público-alvo, critério de revisão, contexto, restrição ou formato de saída.`;
 
 async function callAI(
   apiKey: string,
@@ -562,7 +572,7 @@ serve(async (req) => {
           'multiple-choice': ['statements'],
           'flipcard-quiz': ['cards'],
           'scenario-selection': ['scenarios'],
-          'platform-match': ['scenarios'],
+          'platform-match': ['scenarios', 'platforms'],
           'timed-quiz': ['questions'],
         };
 
@@ -580,7 +590,7 @@ serve(async (req) => {
               return false;
             }
             const dataKeys = Object.keys(ex.data || {});
-            const hasRequired = requiredKeys.some((k: string) => dataKeys.includes(k));
+            const hasRequired = requiredKeys.every((k: string) => dataKeys.includes(k));
             if (!hasRequired) {
               console.error(`[v8-generate] REJECTED inline exercise ${ex.id} (${ex.type}): missing required keys [${requiredKeys.join(', ')}]`);
               return false;
@@ -588,9 +598,60 @@ serve(async (req) => {
             return true;
           });
 
+        // ── V8-C01 COUNTS: Detailed rejection logging ──
+        const aiReturnedCount = (exResult.exercises || []).length;
+        const acceptedCount = generatedInlineExercises.length;
+        const rejectedCount = aiReturnedCount - acceptedCount;
+        
+        const rejectionReasons: Record<string, number> = {};
+        (exResult.exercises || []).forEach((ex: any) => {
+          const requiredKeys = INLINE_REQUIRED_DATA_KEYS[ex.type];
+          if (!requiredKeys) {
+            rejectionReasons[`unknown_type:${ex.type}`] = (rejectionReasons[`unknown_type:${ex.type}`] || 0) + 1;
+          } else {
+            const dataKeys = Object.keys(ex.data || {});
+            const hasAll = requiredKeys.every((k: string) => dataKeys.includes(k));
+            if (!hasAll) {
+              const missing = requiredKeys.filter((k: string) => !dataKeys.includes(k));
+              rejectionReasons[`missing_keys:${ex.type}(need:${missing.join('+')})`] = 
+                (rejectionReasons[`missing_keys:${ex.type}(need:${missing.join('+')})`] || 0) + 1;
+            }
+          }
+        });
+        
+        console.log(`[v8-generate] V8-C01 COUNTS: aiReturned=${aiReturnedCount}, accepted=${acceptedCount}, rejected=${rejectedCount}`);
+        if (rejectedCount > 0) {
+          console.error(`[v8-generate] V8-C01 REJECTION DETAILS: ${JSON.stringify(rejectionReasons)}`);
+        }
+        
+        // ── V8-C01 GATE: Missing sections = HARD FAIL ──
+        const coveredSections = new Set(generatedInlineExercises.map((e: any) => e.afterSectionIndex));
+        const missingSections = interactionAssignments.filter(a => !coveredSections.has(a.sectionIndex));
+        
+        if (missingSections.length > 0) {
+          const missingDesc = missingSections.map(m => `S${m.sectionIndex}(${m.type})`).join(', ');
+          throw new Error(`V8-C01 HARD FAIL: Missing exercises for sections: ${missingDesc}. AI returned ${aiReturnedCount}, accepted ${acceptedCount}, rejected ${rejectedCount}. Details: ${JSON.stringify(rejectionReasons)}`);
+        }
+
+        // ── V8-C01 DUPLICATE GATE: Exactly 1 exercise per section ──
+        const perSectionCounts: Record<number, number> = {};
+        for (const ex of generatedInlineExercises) {
+          perSectionCounts[ex.afterSectionIndex] = (perSectionCounts[ex.afterSectionIndex] || 0) + 1;
+        }
+        const dupSections = interactionAssignments
+          .filter(a => (perSectionCounts[a.sectionIndex] || 0) !== 1)
+          .map(a => `S${a.sectionIndex}(count=${perSectionCounts[a.sectionIndex] || 0})`);
+        if (dupSections.length > 0) {
+          throw new Error(`V8-C01 HARD FAIL: Expected exactly 1 inline exercise per section. Offenders: ${dupSections.join(', ')}`);
+        }
+        
         progress.push(`${generatedInlineExercises.length} exercícios inline gerados (V8-C01: ${generatedInlineExercises.map((e: any) => e.type).join(', ')})`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Inline exercise generation failed";
+        // V8-C01 HARD FAIL deve propagar (não capturar)
+        if (msg.includes('V8-C01 HARD FAIL')) {
+          throw err;
+        }
         errors.push(`Inline exercises: ${msg}`);
         console.error("[v8-generate-lesson-content] Inline exercise generation error:", msg);
       }
@@ -624,11 +685,49 @@ serve(async (req) => {
               options: (s.options || []).map((o: string) => sanitizeV8Text(o)),
             })),
           };
+
+          // ── COURSIV QUALITY GATE (HARD FAIL) ──
+          const COURSIV_BANNED_WORDS = ['café', 'bolo', 'receita', 'árvore', 'carro', 'poeta', 'clima', 'fonte tipográfica', 'imagens decorativas', 'planeta', 'exercício físico', 'filme', 'música', 'esporte', 'animal', 'comida', 'viagem', 'moda'];
+          const coursivErrors: string[] = [];
+
+          if (coursivExercise.sentences.length < 4) {
+            coursivErrors.push(`Only ${coursivExercise.sentences.length} sentences (min 4)`);
+          }
+
+          for (const sent of coursivExercise.sentences) {
+            if ((sent.options || []).length !== 4) {
+              coursivErrors.push(`Sentence "${sent.id || sent.text?.slice(0, 30)}" has ${(sent.options || []).length} options (must be exactly 4)`);
+            }
+            for (const opt of (sent.options || [])) {
+              const optLower = opt.toLowerCase();
+              for (const banned of COURSIV_BANNED_WORDS) {
+                if (optLower.includes(banned)) {
+                  coursivErrors.push(`Option "${opt}" contains banned word "${banned}"`);
+                }
+              }
+            }
+          }
+
+          if (coursivErrors.length > 0) {
+            const errorMsg = `COURSIV QUALITY GATE HARD FAIL: ${coursivErrors.join('; ')}`;
+            console.error(`[v8-generate] ${errorMsg}`);
+            throw new Error(errorMsg);
+          }
+
           generatedCoursivSentences.push(coursivExercise);
-          progress.push(`1 exercício Coursiv gerado (afterSection: ${coursivTargetIdx})`);
+          progress.push(`1 exercício Coursiv gerado (afterSection: ${coursivTargetIdx}, ${coursivExercise.sentences.length} lacunas, quality: PASSED)`);
+        } else {
+          // Coursiv é OBRIGATÓRIO no V8-C01
+          const errorMsg = `COURSIV HARD FAIL: AI returned empty or null coursiv result for section ${coursivTargetIdx}`;
+          console.error(`[v8-generate] ${errorMsg}`);
+          throw new Error(errorMsg);
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Coursiv generation failed";
+        // HARD FAIL deve propagar
+        if (msg.includes('HARD FAIL')) {
+          throw err;
+        }
         errors.push(`Coursiv: ${msg}`);
         console.error("[v8-generate-lesson-content] Coursiv generation error:", msg);
       }
