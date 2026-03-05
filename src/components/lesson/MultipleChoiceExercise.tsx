@@ -29,11 +29,11 @@ export const MultipleChoiceExercise = ({
   const { playSound } = useV7SoundEffects(0.6, true);
   const feedbackRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to feedback area after submit
+  // Scroll to make the global "Continuar Aula" button visible after submit
   useEffect(() => {
     if (isSubmitted && feedbackRef.current) {
       const timer = setTimeout(() => {
-        ensureElementVisible(feedbackRef.current);
+        ensureElementVisible(feedbackRef.current, { safeBottom: 160 });
       }, 200);
       return () => clearTimeout(timer);
     }
@@ -191,12 +191,6 @@ export const MultipleChoiceExercise = ({
             >
               Tentar Novamente
             </Button>
-            <button
-              onClick={handleContinue}
-              className="w-full text-center text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
-            >
-              Pular e continuar →
-            </button>
           </div>
         )}
       </div>
