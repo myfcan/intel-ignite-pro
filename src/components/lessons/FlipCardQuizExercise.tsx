@@ -211,23 +211,23 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
           {/* FRONT — only visible when not flipped */}
           {!isFlipped && (
             <motion.div
-              className={`rounded-2xl bg-gradient-to-br ${colors.gradient} border border-white/10 shadow-2xl flex flex-col items-center justify-center gap-4 p-6 min-h-[200px]`}
+              className={`rounded-2xl bg-gradient-to-br ${colors.gradient} border border-white/10 shadow-2xl flex flex-col items-center justify-center gap-5 p-8 min-h-[340px]`}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               onClick={() => position === 'center' && flipCard(index)}
             >
-              <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                <IconComp className="w-7 h-7 text-white/90" />
+              <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                <IconComp className="w-8 h-8 text-white/90" />
               </div>
-              <span className="text-white/90 text-lg font-semibold tracking-wide">{card.front.label}</span>
-              <span className="text-white/50 text-xs">Toque para revelar</span>
+              <span className="text-white/90 text-xl font-semibold tracking-wide">{card.front.label}</span>
+              <span className="text-white/50 text-sm">Toque para revelar</span>
             </motion.div>
           )}
 
           {/* BACK — only visible when flipped */}
           {isFlipped && (
             <motion.div
-              className={`rounded-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/95 border ${isAnswered ? (isCorrect ? 'border-emerald-400/50' : 'border-red-400/50') : isGlowing ? colors.border : 'border-white/15'} shadow-2xl flex flex-col p-4`}
+              className={`rounded-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/95 border ${isAnswered ? (isCorrect ? 'border-emerald-400/50' : 'border-red-400/50') : isGlowing ? colors.border : 'border-white/15'} shadow-2xl flex flex-col justify-between p-5 min-h-[340px]`}
               initial={{ opacity: 0, rotateY: -90 }}
               animate={{ opacity: 1, rotateY: 0 }}
               transition={{ duration: 0.4 }}
@@ -235,9 +235,9 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
                 boxShadow: isGlowing ? colors.glow : isAnswered && isCorrect ? '0 0 20px rgba(52,211,153,0.3)' : 'none',
               }}
             >
-              <p className="text-white/90 text-sm font-medium mb-3 leading-relaxed">{card.back.text}</p>
+              <p className="text-white/90 text-base font-medium mb-4 leading-relaxed">{card.back.text}</p>
 
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2.5">
                 {card.options.map((opt, oi) => {
                   const isSelected = selectedOptions[index] === opt.id;
                   const showResult = isAnswered;
@@ -251,7 +251,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
                       transition={{ delay: 0.08 * oi + 0.2 }}
                       disabled={isAnswered}
                       onClick={(e) => { e.stopPropagation(); selectOption(index, opt.id); }}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 border ${
+                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 border ${
                         showResult && optCorrect
                           ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300'
                           : showResult && isSelected && !optCorrect
