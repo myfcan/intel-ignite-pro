@@ -683,12 +683,22 @@ export default function AdminV8Create() {
         inlineQuizzes: result.inlineQuizzes || parsed.inlineQuizzes,
         inlinePlaygrounds: result.inlinePlaygrounds || parsed.inlinePlaygrounds || [],
         inlineInsights: result.inlineInsights || [],
+        inlineExercises: result.inlineExercises || [],
+        inlineCompleteSentences: result.inlineCompleteSentences || [],
         exercises: result.exercises || [],
       };
 
+      const totalInteractions = (finalData.inlineExercises?.length || 0) 
+        + (finalData.inlineCompleteSentences?.length || 0) 
+        + finalData.inlineQuizzes.length;
+
+      if (totalInteractions < 2 && finalData.sections.length >= 5) {
+        addLog('error', `V8-C01 VIOLATION: apenas ${totalInteractions} interações para ${finalData.sections.length} seções`);
+      }
+
       setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'completed' as const, message: `${finalData.sections.length} seções` } : s));
       setPipelineProgress(45);
-      addLog('success', `JSON montado: ${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${finalData.exercises.length} exercícios`);
+      addLog('success', `JSON montado: ${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${finalData.inlineExercises?.length || 0} inlineEx, ${finalData.inlineCompleteSentences?.length || 0} completeSent, ${finalData.exercises.length} exercícios`);
 
       // Step 4: Create draft in database
       setPipelineSteps(prev => prev.map(s => s.id === 'create-draft' ? { ...s, status: 'running' as const } : s));
