@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AvatarStateProvider } from "@/contexts/AvatarStateContext";
 import { Background3DProvider } from "@/contexts/Background3DContext";
 import { URLFixer } from "@/components/URLFixer";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import { AdminOnlyRoute } from "./components/AdminOnlyRoute";
@@ -172,6 +173,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <URLFixer />
+            <ScrollToTop />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
