@@ -370,7 +370,7 @@ const COURSIV_BUILDER_TOOLS = [
     type: "function",
     function: {
       name: "generate_coursiv_exercise",
-      description: "Generate ONE Coursiv exercise: a SINGLE sentence/prompt with 4-6 inline blanks, plus a word bank with correct answers and distractors.",
+      description: "Generate ONE Coursiv exercise: a SINGLE sentence/prompt with EXACTLY 4 inline blanks (max 14 words). Chips = only the 4 correct answers (NO distractors).",
       parameters: {
         type: "object",
         properties: {
@@ -380,28 +380,21 @@ const COURSIV_BUILDER_TOOLS = [
             type: "array",
             minItems: 1,
             maxItems: 1,
-            description: "EXACTLY 1 sentence object. The text contains MULTIPLE _______ placeholders (4-6 blanks).",
+            description: "EXACTLY 1 sentence object with EXACTLY 4 blanks and max 14 words total.",
             items: {
               type: "object",
               properties: {
                 id: { type: "string" },
-                text: { type: "string", description: "ONE long prompt sentence with 4-6 _______ placeholders inline. Example: 'Crie um _______ para _______ no formato de _______ com tom _______'" },
+                text: { type: "string", description: "ONE prompt sentence with EXACTLY 4 _______ placeholders and NO MORE than 14 words total (each _______ counts as 1 word). Example: 'Crie um _______ para _______ no formato _______ com tom _______'" },
                 correctAnswers: {
                   type: "array",
                   minItems: 4,
-                  maxItems: 6,
+                  maxItems: 4,
                   items: { type: "string" },
-                  description: "Ordered correct words/phrases for each blank, matching the order they appear in the text. Example: ['roteiro', 'YouTube', 'lista', 'casual']"
-                },
-                options: {
-                  type: "array",
-                  minItems: 6,
-                  maxItems: 10,
-                  items: { type: "string" },
-                  description: "Word bank: all correct answers PLUS 2-4 plausible distractors from the same domain. These are shuffled and shown to the user."
+                  description: "EXACTLY 4 ordered correct words/phrases for each blank. Example: ['roteiro', 'empresas', 'lista', 'persuasivo']"
                 },
               },
-              required: ["id", "text", "correctAnswers", "options"],
+              required: ["id", "text", "correctAnswers"],
             },
           },
         },
@@ -416,27 +409,26 @@ const COURSIV_SYSTEM_PROMPT = `Você é um designer instrucional especializado e
 Sua tarefa é gerar UM único exercício Coursiv para a sessão 8.
 
 FORMATO OBRIGATÓRIO:
-- Gere EXATAMENTE 1 frase longa (um prompt completo) com 4 a 6 lacunas (_______) embutidas inline.
+- Gere EXATAMENTE 1 frase (um prompt completo) com EXATAMENTE 4 lacunas (_______) embutidas inline.
+- A frase deve ter NO MÁXIMO 14 palavras no total (cada _______ conta como 1 palavra).
 - A frase deve parecer um prompt real que o aluno usaria com ChatGPT, Gemini ou outra IA.
 - Cada lacuna representa um componente estrutural: objetivo, público-alvo, contexto, formato, tom, restrição, etc.
 
 EXEMPLO DE FORMATO:
-text: "Crie um _______ de _______ para _______ no formato de _______ com tom _______"
-correctAnswers: ["roteiro", "vendas", "pequenas empresas", "lista de tópicos", "persuasivo"]
-options: ["roteiro", "vendas", "pequenas empresas", "lista de tópicos", "persuasivo", "acadêmico", "relatório", "estudantes"]
+text: "Crie um _______ para _______ no formato _______ com tom _______"
+correctAnswers: ["roteiro", "empresas", "lista", "persuasivo"]
 
 REGRAS:
 1. sentences deve ter EXATAMENTE 1 item.
-2. O campo text deve conter entre 4 e 6 placeholders _______ (use exatamente 7 underscores).
-3. correctAnswers: array ordenado com a palavra/frase correta para cada lacuna, na mesma ordem que aparecem no texto.
-4. options: inclua TODAS as respostas corretas + 2-4 distratores plausíveis do mesmo domínio.
-5. As respostas corretas devem ser curtas (1-3 palavras cada).
-6. A quantidade de correctAnswers DEVE ser igual à quantidade de _______ no texto.
+2. O campo text deve conter EXATAMENTE 4 placeholders _______ (use exatamente 7 underscores). NÃO gere 3, 5 ou 6 lacunas.
+3. A frase deve ter NO MÁXIMO 14 palavras (incluindo os placeholders como palavras). Conte: "Crie um _______ para _______ no formato _______ com tom _______" = 10 palavras. OK.
+4. correctAnswers: array com EXATAMENTE 4 palavras/frases corretas, na mesma ordem das lacunas no texto.
+5. NÃO gere o campo options. Os chips exibidos serão APENAS as 4 respostas corretas em ordem embaralhada.
+6. As respostas corretas devem ser curtas (1-2 palavras cada).
 7. Use Português Brasileiro (pt-BR).
 
-REGRA CRÍTICA — DISTRATORES ABSURDOS PROIBIDOS:
-- PROIBIDO usar conceitos fora de domínio como: café, bolo, receita, árvores, carros, poeta, clima, fonte tipográfica, imagens decorativas, planetas, exercícios físicos, filmes, música, esportes, animais, comida, viagem, moda.
-- Distratores devem ser do MESMO DOMÍNIO que as respostas corretas (ex: se a resposta é "formal", distratores podem ser "técnico", "casual", "persuasivo").`;
+REGRA CRÍTICA — PALAVRAS PROIBIDAS:
+- PROIBIDO usar conceitos fora de domínio como: café, bolo, receita, árvores, carros, poeta, clima, fonte tipográfica, imagens decorativas, planetas, exercícios físicos, filmes, música, esportes, animais, comida, viagem, moda.`;
 
 async function callAI(
   apiKey: string,
@@ -810,31 +802,29 @@ serve(async (req) => {
             const blankCount = (sentence.text?.match(/_______/g) || []).length;
             const answerCount = (sentence.correctAnswers || []).length;
 
-            if (blankCount < 4 || blankCount > 6) {
-              coursivErrors.push(`Text must contain 4-6 blanks, found ${blankCount}`);
+            if (blankCount !== 4) {
+              coursivErrors.push(`Text must contain EXACTLY 4 blanks, found ${blankCount}`);
             }
 
-            if (answerCount !== blankCount) {
-              coursivErrors.push(`correctAnswers count (${answerCount}) must match blank count (${blankCount})`);
+            // V8-C01: max 14 words per sentence
+            const wordCount = sentence.text.trim().split(/\s+/).length;
+            if (wordCount > 14) {
+              coursivErrors.push(`Text must have max 14 words, found ${wordCount}`);
             }
 
-            if (!Array.isArray(sentence.options) || sentence.options.length < answerCount) {
-              coursivErrors.push(`options must include at least all correct answers (${answerCount}), got ${sentence.options?.length || 0}`);
+            if (answerCount !== 4) {
+              coursivErrors.push(`correctAnswers must have EXACTLY 4 items, got ${answerCount}`);
             }
 
-            // Ensure all correct answers are in the options
+            // V8-C01: Force options = correctAnswers only (no distractors)
+            sentence.options = [...(sentence.correctAnswers || [])];
+
+            // Check banned words in correct answers
             for (const ans of (sentence.correctAnswers || [])) {
-              if (!sentence.options?.some((o: string) => o.toLowerCase().trim() === ans.toLowerCase().trim())) {
-                coursivErrors.push(`Correct answer "${ans}" missing from options`);
-              }
-            }
-
-            // Check banned words
-            for (const opt of (sentence.options || [])) {
-              const optLower = String(opt).toLowerCase();
+              const ansLower = String(ans).toLowerCase();
               for (const banned of COURSIV_BANNED_WORDS) {
-                if (optLower.includes(banned)) {
-                  coursivErrors.push(`Option "${opt}" contains banned word "${banned}"`);
+                if (ansLower.includes(banned)) {
+                  coursivErrors.push(`Answer "${ans}" contains banned word "${banned}"`);
                 }
               }
             }

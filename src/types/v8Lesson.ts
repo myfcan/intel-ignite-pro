@@ -107,6 +107,7 @@ export interface V8InsightBlock {
 /**
  * V8InlineCompleteSentence — Complete-sentence exercise inserido ENTRE seções (Phase 8, Gap 4)
  * Estilo Coursiv: chips arrastáveis para preencher lacunas
+ * V8-C01: exatamente 4 lacunas, máx 14 palavras, chips = correctAnswers only (sem distratores)
  */
 export interface V8InlineCompleteSentence {
   id: string;
