@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { PASS_SCORE } from "@/constants/v8Rules";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, RotateCcw } from "lucide-react";
 import { V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
 import { TrueFalseExercise } from "@/components/lessons/TrueFalseExercise";
 import { FillInBlanksExercise } from "@/components/lessons/FillInBlanksExercise";
@@ -26,17 +26,22 @@ interface V8InlineExerciseProps {
 
 export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = true, isActiveAudio = false }: V8InlineExerciseProps) => {
   const [completed, setCompleted] = useState(false);
+  const [passed, setPassed] = useState(false);
+  const [exerciseKey, setExerciseKey] = useState(0);
   const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
   const ctaRef = useRef<HTMLButtonElement>(null);
 
   const handleComplete = useCallback((score: number) => {
     setCompleted(true);
+    setPassed(score >= PASS_SCORE);
     onScore?.(score);
-    // Auto-advance on passing score
-    if (score >= PASS_SCORE && onContinue) {
-      setTimeout(() => onContinue(), 1200);
-    }
-  }, [onScore, onContinue]);
+  }, [onScore]);
+
+  const handleRetry = useCallback(() => {
+    setCompleted(false);
+    setPassed(false);
+    setExerciseKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (!isActive || !completed || !onContinue) return;
@@ -150,10 +155,7 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
             title={title}
             instruction={instruction}
             data={data as any}
-            onComplete={(score: number) => {
-              onScore?.(score);
-              onContinue?.();
-            }}
+            onComplete={handleComplete}
           />
         );
 
@@ -182,22 +184,35 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
       {audioLocked && !completed && <V8AudioLockOverlay />}
 
       {/* Exercise content */}
-      <div className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}>
+      <div key={exerciseKey} className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}>
         {renderExercise()}
       </div>
 
       {completed && onContinue && (
-        <motion.button
-          ref={ctaRef}
+        <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          onClick={onContinue}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
+          className={`grid gap-2 ${!passed ? "grid-cols-2" : ""}`}
         >
-          Continuar Aula
-          <ArrowRight className="w-4 h-4" />
-        </motion.button>
+          {!passed && (
+            <button
+              onClick={handleRetry}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Tentar Novamente
+            </button>
+          )}
+          <button
+            ref={ctaRef}
+            onClick={onContinue}
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
+          >
+            Continuar Aula
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </motion.div>
       )}
     </motion.div>
   );

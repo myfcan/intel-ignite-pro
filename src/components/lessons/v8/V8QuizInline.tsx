@@ -47,10 +47,6 @@ export const V8QuizInline = ({
       setState("correct");
       onAnswer(true);
       playSound("quiz-correct");
-      // Auto-advance on correct after delay (same pattern as V8InlineExercise)
-      if (onContinue) {
-        setTimeout(() => onContinue(), 1200);
-      }
     } else {
       setState("wrong");
       playSound("quiz-wrong");
@@ -62,13 +58,16 @@ export const V8QuizInline = ({
     setState("answering");
   }, []);
 
-  const handleContinueAfterWrong = useCallback(() => {
-    // Record wrong score, then advance in next tick to avoid state conflicts
-    onAnswer(false);
+  const handleContinue = useCallback(() => {
     if (onContinue) {
       setTimeout(() => onContinue(), 50);
     }
-  }, [onAnswer, onContinue]);
+  }, [onContinue]);
+
+  const handleContinueAfterWrong = useCallback(() => {
+    onAnswer(false);
+    handleContinue();
+  }, [onAnswer, handleContinue]);
 
   const handleShowReinforcement = () => setState("reinforcement");
   const isAnswered = state !== "answering";
@@ -182,6 +181,16 @@ export const V8QuizInline = ({
             <p className="text-sm text-slate-700 leading-relaxed">{quiz.explanation}</p>
             {quiz.explanationAudioUrl && isActiveAudio && (
               <V8AudioPlayer audioUrl={quiz.explanationAudioUrl} autoPlay />
+            )}
+            {onContinue && (
+              <button
+                ref={ctaRef}
+                onClick={handleContinue}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
+              >
+                Continuar Aula
+                <ArrowRight className="w-4 h-4" />
+              </button>
             )}
           </motion.div>
         )}

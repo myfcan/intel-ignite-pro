@@ -182,10 +182,7 @@ export const V8CompleteSentenceInline = ({
     else playSound("error");
     onScore?.(score);
 
-    if (score >= PASS_SCORE && onContinue) {
-      setTimeout(() => onContinue(), 1200);
-    }
-  }, [fills, correctAnswers, blankCount, onScore, playSound, onContinue]);
+  }, [fills, correctAnswers, blankCount, onScore, playSound]);
 
   const handleRetry = useCallback(() => {
     setFills(Array(blankCount).fill(null));
@@ -333,15 +330,17 @@ export const V8CompleteSentenceInline = ({
             </span>
           </div>
 
-          {correctCount < blankCount && onContinue && (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={handleRetry}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Tentar Novamente
-              </button>
+          {onContinue && (
+            <div className={`grid gap-2 ${correctCount < blankCount ? "grid-cols-2" : ""}`}>
+              {correctCount < blankCount && (
+                <button
+                  onClick={handleRetry}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Tentar Novamente
+                </button>
+              )}
               <button
                 ref={ctaRef}
                 onClick={onContinue}
