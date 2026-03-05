@@ -1,44 +1,79 @@
 
 
-# Plano: Loading Indicator no Audio + Efeito de Unlock nos Exercicios
+# Diagnóstico Forense Real + Plano de Correção
 
-## 1. Loading indicator no audio (spinner/pulse quando preload nao completou)
+## O que realmente aconteceu (dados, não hipóteses)
 
-**Onde:** `V8AudioPlayer.tsx`
+### Fato 1: ZERO aulas V8 JAMAIS tiveram inlineExercises ou inlineCompleteSentences
 
-O componente ja tem estado `isLoaded` que fica `false` ate o `canplaythrough` ou `durationchange` disparar. Basta:
+```text
+Aula                     | Seções | Quizzes | InlineEx | CompleteSent | PGs | FinalEx
+eec10a74 (hoje)          |   9    |    1    |    0     |      0       |  1  |    0
+942223bd (28/fev)        |   4    |    2    |    0     |      0       |  1  |    0
+0dfe00ac (27/fev)        |   3    |    1    |    0     |      0       |  0  |    2
+```
 
-- Quando `autoPlay === true` e `isLoaded === false`: mostrar um indicador de loading (pulse no botao play ou skeleton na barra)
-- Quando `isLoaded === true`: transicao suave para o player normal
+**Nenhuma aula V8 existente possui `inlineExercises` ou `inlineCompleteSentences` diferentes de zero.** O fluxo de geração nunca conseguiu entregar esses campos ao banco de dados.
 
-Implementacao: substituir o botao play por um spinner animado (Loader2 com `animate-spin`) enquanto `!isLoaded && autoPlay`. O resto do player (barra, tempo) mostra skeleton pulse.
+### Fato 2: O edge function `v8-generate-lesson-content` GERA esses campos corretamente no response
 
-## 2. Efeito de "unlock" quando o exercicio libera apos narracao
+A edge function retorna o response com (linha 887):
+```
+inlineExercises: generatedInlineExercises,
+inlineCompleteSentences: generatedCoursivSentences,
+```
 
-**Onde:** Todos os wrappers de opcoes nos 5 componentes que usam `audioLocked`
+### Fato 3: O `AdminV8Create.tsx` DESCARTA esses campos
 
-Quando `audioLocked` transiciona de `true` para `false`, as opcoes precisam de um efeito visual que chame a atencao do usuario — indicando "agora voce pode interagir".
+Confirmado nas linhas 672-687 — o `finalData` NÃO inclui `result.inlineExercises` nem `result.inlineCompleteSentences`. Campos retornados pela edge function são descartados silenciosamente antes de salvar no banco.
 
-**Implementacao:**
+### Fato 4: O áudio PT-PT é causado por falta de `language_code` na chamada ElevenLabs
 
-- No `useAudioFirstLock.ts`: adicionar estado `justUnlocked` que fica `true` por ~1.5s apos o unlock
-- Quando `justUnlocked === true`: aplicar animacao de pulse + glow nas opcoes (ring de indigo com pulse, scale sutil)
-- Apos 1.5s: `justUnlocked` volta a `false` e as opcoes ficam no estado normal
+Confirmado nas linhas 358-362 de `v8-generate/index.ts` — o body do `generateTTS` não inclui `language_code`. O modelo `eleven_multilingual_v2` infere o idioma, oscilando entre PT-BR e PT-PT.
 
-**Efeito visual:** As opcoes entram com `scale(0.95) → scale(1)` + um ring pulsante `ring-2 ring-indigo-400 animate-pulse` que desaparece apos 1.5s. Isso cria a sensacao clara de "ativou, pode interagir agora".
+## Plano de Correção (3 edições)
+
+### Edição 1: `AdminV8Create.tsx` linha 686 — Incluir campos descartados no finalData
+
+Adicionar antes do fechamento do objeto `finalData`:
+```typescript
+inlineExercises: result.inlineExercises || [],
+inlineCompleteSentences: result.inlineCompleteSentences || [],
+```
+
+### Edição 2: `AdminV8Create.tsx` linha 691 — Gate V8-C01 + log melhorado
+
+Substituir o log de sucesso por:
+```typescript
+const totalInteractions = (finalData.inlineExercises?.length || 0) 
+  + (finalData.inlineCompleteSentences?.length || 0) 
+  + finalData.inlineQuizzes.length;
+
+if (totalInteractions < 2 && finalData.sections.length >= 5) {
+  addLog('error', `V8-C01 VIOLATION: apenas ${totalInteractions} interações para ${finalData.sections.length} seções`);
+}
+
+addLog('success', `JSON montado: ${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${finalData.inlineExercises?.length || 0} inlineEx, ${finalData.inlineCompleteSentences?.length || 0} completeSent, ${finalData.exercises.length} exercícios`);
+```
+
+### Edição 3: `v8-generate/index.ts` linha 362 — Forçar `language_code: "pt"` no ElevenLabs
+
+Adicionar ao body do `generateTTS`:
+```typescript
+const body: Record<string, unknown> = {
+  text,
+  model_id: MODEL_ID,
+  voice_settings: VOICE_SETTINGS,
+  language_code: "pt",
+};
+```
+
+### Após as edições: Reprocessar aula `eec10a74`
+
+A aula precisa ser reprocessada via AdminV8Create (Converter e Gerar Tudo) para que os exercícios sejam gerados E salvos corretamente.
 
 ## Arquivos editados
 
-1. `V8AudioPlayer.tsx` — loading state visual (spinner no botao, skeleton na barra)
-2. `useAudioFirstLock.ts` — adicionar `justUnlocked` com timer de 1.5s
-3. `V8QuizInline.tsx` — aplicar classe de unlock effect
-4. `V8QuizTrueFalse.tsx` — aplicar classe de unlock effect
-5. `V8QuizFillBlank.tsx` — aplicar classe de unlock effect
-6. `V8CompleteSentenceInline.tsx` — aplicar classe de unlock effect
-7. `V8InlineExercise.tsx` — aplicar classe de unlock effect
-
-## Zero risco
-
-- Loading indicator: so aparece quando `autoPlay && !isLoaded` (nao afeta modo read)
-- Unlock effect: so dispara quando `audioLocked` transiciona de true→false (nunca no modo read)
+1. `src/pages/AdminV8Create.tsx` — 2 edições (finalData + gate V8-C01)
+2. `supabase/functions/v8-generate/index.ts` — 1 edição (language_code)
 
