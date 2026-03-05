@@ -68,6 +68,8 @@ export const useV8Player = (lessonData: V8LessonData) => {
     }
 
     // Order: Section[i] → CompleteSentence(s)[i] → InlineExercise(s)[i] → Playground(s)[i] → Insight(s)[i] → Quiz(zes)[i]
+    // DEDUP: If a quiz already exists at a given sectionIndex, skip inline exercises at that same index
+    // to avoid redundant interactions on the same topic.
     for (let i = 0; i < lessonData.sections.length; i++) {
       items.push({ type: "section", index: i });
 
@@ -78,10 +80,15 @@ export const useV8Player = (lessonData: V8LessonData) => {
         }
       }
 
-      const inlineExercises = inlineExerciseMap.get(i);
-      if (inlineExercises) {
-        for (const ex of inlineExercises) {
-          items.push({ type: "inline-exercise", exercise: ex });
+      const hasQuizAtSection = quizMap.has(i);
+
+      // Only add inline exercises if there's no quiz at the same section (avoids duplication)
+      if (!hasQuizAtSection) {
+        const inlineExercises = inlineExerciseMap.get(i);
+        if (inlineExercises) {
+          for (const ex of inlineExercises) {
+            items.push({ type: "inline-exercise", exercise: ex });
+          }
         }
       }
 
