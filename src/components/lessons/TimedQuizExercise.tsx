@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, CheckCircle2, XCircle, Timer, Trophy } from 'lucide-react';
 import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
@@ -167,8 +168,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
       } else if (finalPercent >= 60) {
         playSound('streak-bonus');
       }
-
-      setTimeout(() => onComplete(finalPercent), 2500);
+      // Don't auto-advance — let user choose retry or continue
     }
   }, [currentQuestionIndex, questions.length, playSound, onComplete]);
 
@@ -201,6 +201,23 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
     answered: isCorrect ? 'border-emerald-400/50' : 'border-red-400/40',
   }[timerState];
 
+  const handleRetry = useCallback(() => {
+    setCurrentQuestionIndex(0);
+    setTimeLeft(timePerQuestion);
+    setTimerState('waiting');
+    setSelectedOptionId(null);
+    setIsCorrect(null);
+    isCorrectRef.current = null;
+    setTotalPoints(0);
+    setTotalBonus(0);
+    setShowExplanation(false);
+    setShowTimeoutFlash(false);
+    setResults([]);
+    resultsRef.current = [];
+    setIsFinished(false);
+    lastTickRef.current = 0;
+  }, [timePerQuestion]);
+
   if (isFinished) {
     const correctCount = results.filter(r => r.correct).length;
     const finalPercent = Math.round((correctCount / questions.length) * 100);
@@ -227,6 +244,14 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
                 <p className="text-xs text-muted-foreground">Bônus</p>
               </div>
             )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <Button variant="outline" onClick={handleRetry} className="text-sm">
+              Tentar Novamente
+            </Button>
+            <Button onClick={() => onComplete(finalPercent)} className="text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white">
+              Continuar Aula
+            </Button>
           </div>
         </div>
       </motion.div>
