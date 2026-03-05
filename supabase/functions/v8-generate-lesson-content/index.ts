@@ -568,7 +568,7 @@ serve(async (req) => {
       2: ['multiple-choice', 'flipcard-quiz'],
       3: ['complete-sentence', 'scenario-selection'],
       4: ['true-false'],
-      5: ['platform-match'],
+      // Section 5 (Sessão 6): no exercise — removed per V8-C01 update
       6: ['timed-quiz', 'fill-in-blanks'],
     };
 
