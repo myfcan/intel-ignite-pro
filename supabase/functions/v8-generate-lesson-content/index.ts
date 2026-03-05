@@ -378,8 +378,8 @@ const COURSIV_BUILDER_TOOLS = [
           instruction: { type: "string", description: "Instruction like 'Complete as frases abaixo escolhendo os chips corretos para montar um prompt eficiente.'" },
           sentences: {
             type: "array",
-            minItems: 4,
-            maxItems: 6,
+            minItems: 3,
+            maxItems: 4,
             items: {
               type: "object",
               properties: {
@@ -403,7 +403,7 @@ const COURSIV_SYSTEM_PROMPT = `Você é um designer instrucional especializado e
 Sua tarefa é gerar um exercício do tipo "complete a frase" (Coursiv) onde o aluno monta partes de um prompt profissional preenchendo lacunas com chips.
 
 REGRAS:
-1. Gere 4-6 frases que representem a ESTRUTURA de um prompt profissional relacionado ao tema da aula. Cada frase tem UMA lacuna.
+1. Gere 3 ou 4 frases que representem a ESTRUTURA de um prompt profissional relacionado ao tema da aula. Cada frase tem UMA lacuna.
 2. Cada frase deve ter exatamente UMA lacuna (_______ como placeholder).
 3. A lacuna deve representar um componente-chave do prompt: público-alvo, contexto, formato de saída, tom, objetivo, restrição, CTA, etc.
 4. Os chips (options) devem ter EXATAMENTE 4 opções: 1 correta + 3 distratoras plausíveis.
@@ -789,8 +789,8 @@ serve(async (req) => {
           const COURSIV_BANNED_WORDS = ['café', 'bolo', 'receita', 'árvore', 'carro', 'poeta', 'clima', 'fonte tipográfica', 'imagens decorativas', 'planeta', 'exercício físico', 'filme', 'música', 'esporte', 'animal', 'comida', 'viagem', 'moda'];
           const coursivErrors: string[] = [];
 
-          if (coursivExercise.sentences.length < 4) {
-            coursivErrors.push(`Only ${coursivExercise.sentences.length} sentences (min 4)`);
+          if (coursivExercise.sentences.length < 3) {
+            coursivErrors.push(`Only ${coursivExercise.sentences.length} sentences (min 3)`);
           }
 
           for (const sent of coursivExercise.sentences) {
