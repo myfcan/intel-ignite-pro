@@ -5,6 +5,7 @@ import { V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
 import { TrueFalseExercise } from "@/components/lessons/TrueFalseExercise";
 import { FillInBlanksExercise } from "@/components/lessons/FillInBlanksExercise";
 import { CompleteSentenceExercise } from "@/components/lessons/CompleteSentenceExercise";
+import { MultipleChoiceExercise } from "@/components/lesson/MultipleChoiceExercise";
 import { FlipCardQuizExercise } from "@/components/lessons/FlipCardQuizExercise";
 import { ScenarioSelectionExercise } from "@/components/lessons/ScenarioSelectionExercise";
 import { PlatformMatchExercise } from "@/components/lessons/PlatformMatchExercise";
@@ -67,6 +68,20 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
         );
 
       case "multiple-choice":
+        // Format with question + options array [{id, text, isCorrect}]
+        if (data.question && Array.isArray(data.options) && data.options.length > 0 && typeof data.options[0] === 'object' && 'text' in data.options[0]) {
+          const correctOpt = data.options.find((o: any) => o.isCorrect);
+          return (
+            <MultipleChoiceExercise
+              question={data.question}
+              options={data.options.map((o: any) => o.text)}
+              correctAnswer={correctOpt?.text || data.options[0].text}
+              explanation={data.explanation || ""}
+              onComplete={(isCorrect: boolean) => handleComplete(isCorrect ? 100 : 0)}
+            />
+          );
+        }
+        // Format with statements (legacy/TrueFalse adapter)
         if (data.statements) {
           return (
             <TrueFalseExercise
@@ -79,7 +94,7 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
           );
         }
         return (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">
+          <div className="rounded-xl border border-border bg-muted p-4 text-center text-sm text-muted-foreground">
             Exercício não renderizável (formato incompatível)
           </div>
         );
