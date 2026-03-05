@@ -272,6 +272,7 @@ export const V8LessonPlayer = ({
                           onContinue={isLast ? advance : undefined}
                           onScore={(s) => addPlaygroundScore(item.playground.id, s)}
                           isActive={isLast}
+                          isActiveAudio={state.mode === "listen" && isLast}
                         />
                       )}
 

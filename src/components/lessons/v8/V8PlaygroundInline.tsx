@@ -13,6 +13,7 @@ interface V8PlaygroundInlineProps {
   onContinue?: () => void;
   onScore?: (score: number) => void;
   isActive?: boolean;
+  isActiveAudio?: boolean;
 }
 
 type Phase = "intro" | "amateur" | "professional" | "compare" | "challenge" | "done";
@@ -20,7 +21,7 @@ type Phase = "intro" | "amateur" | "professional" | "compare" | "challenge" | "d
 const PHASE_ORDER: Phase[] = ["intro", "amateur", "professional", "compare", "challenge", "done"];
 const phaseToIndex = (p: Phase) => PHASE_ORDER.indexOf(p);
 
-export const V8PlaygroundInline = ({ playground, lessonId, onContinue, onScore, isActive = true }: V8PlaygroundInlineProps) => {
+export const V8PlaygroundInline = ({ playground, lessonId, onContinue, onScore, isActive = true, isActiveAudio = false }: V8PlaygroundInlineProps) => {
   const { playSound } = useV7SoundEffects(0.6, true);
   const [phase, setPhase] = useState<Phase>("intro");
   const [amateurResult, setAmateurResult] = useState(playground.amateurResult || "");
@@ -544,11 +545,11 @@ export const V8PlaygroundInline = ({ playground, lessonId, onContinue, onScore, 
             <p className={`text-sm font-semibold mb-3 ${challengeScore !== null && challengeScore >= PASS_SCORE ? "text-emerald-600" : "text-slate-600"}`}>
             {challengeScore !== null && challengeScore >= PASS_SCORE ? playground.successMessage : "Você concluiu o playground. Continue a aula para aprender mais!"}
             </p>
-            {/* Play success or tryAgain audio */}
-            {challengeScore !== null && challengeScore >= PASS_SCORE && playground.successAudioUrl && (
+            {/* Play success or tryAgain audio — only in Listen mode */}
+            {isActiveAudio && challengeScore !== null && challengeScore >= PASS_SCORE && playground.successAudioUrl && (
               <V8AudioPlayer audioUrl={playground.successAudioUrl} autoPlay />
             )}
-            {(challengeScore === null || challengeScore < PASS_SCORE) && playground.tryAgainAudioUrl && (
+            {isActiveAudio && (challengeScore === null || challengeScore < PASS_SCORE) && playground.tryAgainAudioUrl && (
               <V8AudioPlayer audioUrl={playground.tryAgainAudioUrl} autoPlay />
             )}
             {onContinue && (
