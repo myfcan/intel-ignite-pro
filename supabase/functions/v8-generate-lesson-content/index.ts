@@ -370,7 +370,7 @@ const COURSIV_BUILDER_TOOLS = [
     type: "function",
     function: {
       name: "generate_coursiv_exercise",
-      description: "Generate a Coursiv-style complete-sentence exercise focused on professional prompt construction. The student fills blanks in prompt sentences using chip options.",
+      description: "Generate ONE Coursiv exercise with EXACTLY 4 blanks for professional prompt construction.",
       parameters: {
         type: "object",
         properties: {
@@ -378,17 +378,27 @@ const COURSIV_BUILDER_TOOLS = [
           instruction: { type: "string", description: "Instruction like 'Complete as frases abaixo escolhendo os chips corretos para montar um prompt eficiente.'" },
           sentences: {
             type: "array",
-            minItems: 3,
+            minItems: 4,
             maxItems: 4,
             items: {
               type: "object",
               properties: {
                 id: { type: "string" },
-                text: { type: "string", description: "Sentence with _______ as placeholder. Must be about prompt construction (audience, context, format, tone, etc.)" },
-                correctAnswers: { type: "array", items: { type: "string" }, description: "Correct answer(s) for the blank" },
-                options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4, description: "Exactly 4 chip options: 1 correct answer + 3 plausible distractors from the SAME domain (copywriting, IA, SEO, marketing). NEVER use absurd options like food, sports, weather, animals." },
+                text: { type: "string", description: "Sentence with EXACTLY one _______ placeholder, focused on prompt construction (audience, context, output format, tone, objective)." },
+                correctAnswers: {
+                  type: "array",
+                  minItems: 1,
+                  maxItems: 1,
+                  items: { type: "string" },
+                  description: "Exactly one correct phrase for this blank."
+                },
+                options: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Legacy optional field. Can be empty; UI now uses a global shuffled chip bank across all blanks."
+                },
               },
-              required: ["id", "text", "correctAnswers", "options"],
+              required: ["id", "text", "correctAnswers"],
             },
           },
         },
@@ -400,32 +410,22 @@ const COURSIV_BUILDER_TOOLS = [
 
 const COURSIV_SYSTEM_PROMPT = `Você é um designer instrucional especializado em construção de prompts de IA.
 
-Sua tarefa é gerar um exercício do tipo "complete a frase" (Coursiv) onde o aluno monta partes de um prompt profissional preenchendo lacunas com chips.
+Sua tarefa é gerar UM único exercício Coursiv para a sessão 8, com EXATAMENTE 4 lacunas.
 
-REGRAS:
-1. Gere 3 ou 4 frases que representem a ESTRUTURA de um prompt profissional relacionado ao tema da aula. Cada frase tem UMA lacuna.
-2. Cada frase deve ter exatamente UMA lacuna (_______ como placeholder).
-3. A lacuna deve representar um componente-chave do prompt: público-alvo, contexto, formato de saída, tom, objetivo, restrição, CTA, etc.
-4. Os chips (options) devem ter EXATAMENTE 4 opções: 1 correta + 3 distratoras plausíveis.
-5. Use Português Brasileiro (pt-BR).
-6. O exercício deve testar a habilidade de MONTAR prompts, não conhecimento teórico.
+REGRAS OBRIGATÓRIAS:
+1. Gere EXATAMENTE 4 frases, cada uma com UMA lacuna (_______).
+2. Cada lacuna deve representar um componente estrutural de prompt: objetivo, público-alvo, contexto, formato de saída, tom, restrição, CTA, etc.
+3. Para cada frase, retorne correctAnswers com EXATAMENTE 1 resposta correta (frase curta).
+4. As 4 respostas corretas devem ser diferentes entre si.
+5. NÃO gere múltiplos exercícios e NÃO gere opções por frase como elemento principal. O foco é 1 exercício com 4 lacunas.
+6. Use Português Brasileiro (pt-BR).
 7. NUNCA gere subtítulos meta como "Segmento vida real" ou "Atividade prática:".
 8. As frases devem parecer prompts reais que o aluno usaria em uma ferramenta de IA.
 
-REGRA CRÍTICA — DISTRATORES PLAUSÍVEIS:
-- Distratores DEVEM ser do MESMO DOMÍNIO temático da aula (copywriting, IA, SEO, comunicação, empreendedorismo, marketing digital).
-- Distratores são opções que "parecem corretas" mas prejudicam o resultado (ex.: objetivo vago demais, tom inadequado para o público, CTA fraca, persona errada para o contexto).
-- PROIBIDO distratores absurdos ou fora do domínio.
+REGRA CRÍTICA — DISTRATORES ABSURDOS PROIBIDOS:
+- PROIBIDO usar conceitos fora de domínio como: café, bolo, receita, árvores, carros, poeta, clima, fonte tipográfica, imagens decorativas, planetas, exercícios físicos, filmes, música, esportes, animais, comida, viagem, moda.
 
-LISTA DE PROIBIÇÕES ABSOLUTAS para opções (NUNCA usar estas palavras/conceitos):
-café, bolo, receita, árvores, carros, poeta, clima, fonte tipográfica, imagens decorativas, planetas, exercícios físicos, filmes, música, esportes, animais, comida, viagem, moda.
-
-EXEMPLO CORRETO:
-Frase: "O post deve ter um _______ para engajar o leitor desde o início."
-Opções: ["tom otimista e inspirador, com linguagem simples", "tom acadêmico, denso e cheio de termos técnicos", "tom agressivo e urgente, com pressão e medo", "tom neutro demais, sem exemplos e sem posição"]
-Resposta correta: ["tom otimista e inspirador, com linguagem simples"]
-
-Cada lacuna deve cobrir um COMPONENTE ESTRUTURAL do prompt: objetivo, tom de voz, CTA, persona/público-alvo, critério de revisão, contexto, restrição ou formato de saída.`;
+O resultado precisa ficar no formato de 1 exercício Coursiv com 4 lacunas que o aluno monta usando chips embaralhados.`;
 
 async function callAI(
   apiKey: string,
@@ -789,16 +789,30 @@ serve(async (req) => {
           const COURSIV_BANNED_WORDS = ['café', 'bolo', 'receita', 'árvore', 'carro', 'poeta', 'clima', 'fonte tipográfica', 'imagens decorativas', 'planeta', 'exercício físico', 'filme', 'música', 'esporte', 'animal', 'comida', 'viagem', 'moda'];
           const coursivErrors: string[] = [];
 
-          if (coursivExercise.sentences.length < 3) {
-            coursivErrors.push(`Only ${coursivExercise.sentences.length} sentences (min 3)`);
+          if (coursivExercise.sentences.length !== 4) {
+            coursivErrors.push(`Expected exactly 4 sentences, got ${coursivExercise.sentences.length}`);
+          }
+
+          const normalizedAnswers = coursivExercise.sentences
+            .map((sent: any) => (sent.correctAnswers?.[0] || '').toLowerCase().trim())
+            .filter(Boolean);
+
+          if (new Set(normalizedAnswers).size !== normalizedAnswers.length) {
+            coursivErrors.push('Correct answers must be unique across the 4 blanks');
           }
 
           for (const sent of coursivExercise.sentences) {
-            if ((sent.options || []).length !== 4) {
-              coursivErrors.push(`Sentence "${sent.id || sent.text?.slice(0, 30)}" has ${(sent.options || []).length} options (must be exactly 4)`);
+            const placeholderCount = (sent.text?.match(/_______/g) || []).length;
+            if (placeholderCount !== 1) {
+              coursivErrors.push(`Sentence "${sent.id || sent.text?.slice(0, 30)}" must contain exactly 1 blank placeholder`);
             }
+
+            if (!Array.isArray(sent.correctAnswers) || sent.correctAnswers.length !== 1) {
+              coursivErrors.push(`Sentence "${sent.id || sent.text?.slice(0, 30)}" must have exactly 1 correct answer`);
+            }
+
             for (const opt of (sent.options || [])) {
-              const optLower = opt.toLowerCase();
+              const optLower = String(opt).toLowerCase();
               for (const banned of COURSIV_BANNED_WORDS) {
                 if (optLower.includes(banned)) {
                   coursivErrors.push(`Option "${opt}" contains banned word "${banned}"`);
