@@ -42,9 +42,10 @@ interface FlipCardQuizExerciseProps {
   instruction: string;
   data: FlipCardQuizExerciseData;
   onComplete: (score: number) => void;
+  onContinue?: () => void;
 }
 
-export function FlipCardQuizExercise({ title, instruction, data, onComplete }: FlipCardQuizExerciseProps) {
+export function FlipCardQuizExercise({ title, instruction, data, onComplete, onContinue }: FlipCardQuizExerciseProps) {
   const isMobile = useIsMobile();
   const { playSound } = useV7SoundEffects(0.6, true);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -78,8 +79,8 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
 
   const handleContinue = useCallback(() => {
     setShowResult(false);
-    onComplete(finalScore);
-  }, [onComplete, finalScore]);
+    onContinue?.();
+  }, [onContinue]);
 
   useEffect(() => {
     if (!showResult) return;
@@ -127,6 +128,8 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
         const totalCorrect = correctCards.size + 1;
         const score = Math.round((totalCorrect / totalCards) * 100);
         setFinalScore(score);
+        onComplete(score);
+
         if (score === 100) {
           playSound('level-up');
           setTimeout(() => playSound('completion'), 200);
@@ -153,8 +156,8 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
       const totalCorrect = correctCards.size;
       const score = Math.round((totalCorrect / totalCards) * 100);
       setFinalScore(score);
-
       if (newCompleted === totalCards) {
+        onComplete(score);
         setTimeout(() => setShowResult(true), 1500);
       } else {
         // Not last card — auto-advance
@@ -384,10 +387,12 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
                 Tentar Novamente
               </Button>
             )}
-            <Button onClick={handleContinue} className="w-full gap-2">
-              Continuar Aula
-              <ArrowRight className="w-4 h-4" />
-            </Button>
+            {onContinue && (
+              <Button onClick={handleContinue} className="w-full gap-2">
+                Continuar Aula
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </motion.div>
       )}
