@@ -178,8 +178,8 @@ const INLINE_EXERCISE_TOOLS = [
                     },
                     scenarios: {
                       type: "array",
-                      description: "For scenario-selection: [{ id, situation, options: [], correctAnswer, explanation }]. For platform-match: [{ id, text, correctPlatform, emoji }]",
-                      items: { type: "object", additionalProperties: true, properties: { id: { type: "string" } }, required: ["id"] }
+                      description: "For scenario-selection: MUST include situation, options (3-4 strings), correctAnswer, explanation. For platform-match: MUST include text, correctPlatform, emoji. Items with ONLY an id are INVALID.",
+                      items: { type: "object", additionalProperties: true, properties: { id: { type: "string" }, situation: { type: "string" }, options: { type: "array", items: { type: "string" } }, correctAnswer: { type: "string" }, explanation: { type: "string" }, text: { type: "string" }, correctPlatform: { type: "string" }, emoji: { type: "string" } }, required: ["id"] }
                     },
                     platforms: {
                       type: "array",
@@ -666,6 +666,33 @@ serve(async (req) => {
             if (!hasRequired) {
               console.error(`[v8-generate] REJECTED inline exercise ${ex.id} (${ex.type}): missing required keys [${requiredKeys.join(', ')}]`);
               return false;
+            }
+            // ── CONTENT DEPTH VALIDATION: Reject arrays of empty/id-only objects ──
+            const CONTENT_DEPTH_RULES: Record<string, { key: string; minFields: number; requiredFields?: string[] }> = {
+              'scenario-selection': { key: 'scenarios', minFields: 3, requiredFields: ['situation', 'options', 'correctAnswer'] },
+              'platform-match': { key: 'scenarios', minFields: 2, requiredFields: ['text', 'correctPlatform'] },
+              'flipcard-quiz': { key: 'cards', minFields: 3, requiredFields: ['front', 'back', 'options'] },
+              'timed-quiz': { key: 'questions', minFields: 3, requiredFields: ['question', 'options'] },
+            };
+            const depthRule = CONTENT_DEPTH_RULES[ex.type];
+            if (depthRule) {
+              const items = ex.data[depthRule.key];
+              if (Array.isArray(items)) {
+                for (const item of items) {
+                  const itemKeys = Object.keys(item || {});
+                  if (itemKeys.length < depthRule.minFields) {
+                    console.error(`[v8-generate] REJECTED ${ex.id} (${ex.type}): item has only ${itemKeys.length} fields (min ${depthRule.minFields}): ${JSON.stringify(item).slice(0, 100)}`);
+                    return false;
+                  }
+                  if (depthRule.requiredFields) {
+                    const missing = depthRule.requiredFields.filter(f => !(f in item));
+                    if (missing.length > 0) {
+                      console.error(`[v8-generate] REJECTED ${ex.id} (${ex.type}): item missing fields [${missing.join(', ')}]: ${JSON.stringify(item).slice(0, 100)}`);
+                      return false;
+                    }
+                  }
+                }
+              }
             }
             return true;
           });
