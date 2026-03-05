@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { PASS_SCORE } from "@/constants/v8Rules";
 import { ArrowRight } from "lucide-react";
 import { V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
 import { TrueFalseExercise } from "@/components/lessons/TrueFalseExercise";
@@ -31,7 +32,11 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
   const handleComplete = useCallback((score: number) => {
     setCompleted(true);
     onScore?.(score);
-  }, [onScore]);
+    // Auto-advance on passing score
+    if (score >= PASS_SCORE && onContinue) {
+      setTimeout(() => onContinue(), 1200);
+    }
+  }, [onScore, onContinue]);
 
   useEffect(() => {
     if (!isActive || !completed || !onContinue) return;
