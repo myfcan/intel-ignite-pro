@@ -54,16 +54,13 @@ export const V8CompleteSentenceInline = ({
     const sentences = completeSentence.sentences;
 
     if (sentences.length === 1) {
-      // New format: 1 sentence, multiple blanks
+      // V8-C01: 1 sentence, exactly 4 blanks, chips = correctAnswers only (shuffled)
       const parts = sentences[0].text.split("_______");
       const correct = sentences[0].correctAnswers || [];
-      const allChips = sentences[0].options?.length
-        ? [...sentences[0].options]
-        : [...correct];
       return {
         promptParts: parts,
         correctAnswers: correct.map((a) => a.trim().toLowerCase()),
-        wordBank: shuffle(Array.from(new Set(allChips))),
+        wordBank: shuffle([...correct]),
       };
     }
 
