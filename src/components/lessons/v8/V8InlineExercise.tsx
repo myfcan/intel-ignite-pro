@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
@@ -13,6 +13,7 @@ import { TimedQuizExercise } from "@/components/lessons/TimedQuizExercise";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { useAudioFirstLock } from "./useAudioFirstLock";
 import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
+import { scheduleCTAScroll } from "./v8ScrollUtils";
 
 interface V8InlineExerciseProps {
   exercise: V8InlineExerciseType;
@@ -25,11 +26,17 @@ interface V8InlineExerciseProps {
 export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = true, isActiveAudio = false }: V8InlineExerciseProps) => {
   const [completed, setCompleted] = useState(false);
   const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
+  const ctaRef = useRef<HTMLButtonElement>(null);
 
   const handleComplete = useCallback((score: number) => {
     setCompleted(true);
     onScore?.(score);
   }, [onScore]);
+
+  useEffect(() => {
+    if (!isActive || !completed || !onContinue) return;
+    return scheduleCTAScroll(() => ctaRef.current);
+  }, [completed, isActive, onContinue]);
 
   const renderExercise = () => {
     const { type, data, title, instruction } = exercise;
@@ -171,6 +178,7 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
 
       {completed && onContinue && (
         <motion.button
+          ref={ctaRef}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
