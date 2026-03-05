@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { useV7SoundEffects } from '@/components/lessons/v7/cinematic/useV7SoundE
 import { FlipCardQuizExerciseData } from '@/types/exerciseSchemas';
 import { Brain, Zap, Target, Lightbulb, Sparkles, RotateCcw } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { scheduleCTAScroll } from './v8/v8ScrollUtils';
 import confetti from 'canvas-confetti';
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
@@ -47,6 +48,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
   const isMobile = useIsMobile();
   const { playSound } = useV7SoundEffects(0.6, true);
   const cardRef = useRef<HTMLDivElement>(null);
+  const feedbackActionsRef = useRef<HTMLDivElement>(null);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
@@ -77,6 +79,11 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
   const handleContinueAfterWrong = useCallback(() => {
     onComplete(finalScore);
   }, [onComplete, finalScore]);
+
+  useEffect(() => {
+    if (!showWrongFeedback) return;
+    return scheduleCTAScroll(() => feedbackActionsRef.current);
+  }, [showWrongFeedback]);
 
   const flipCard = useCallback((index: number) => {
     if (flippedCards.has(index)) return;
@@ -356,8 +363,8 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
       {/* Wrong feedback: Retry + Continue */}
       {showWrongFeedback && (
         <motion.div
+          ref={feedbackActionsRef}
           initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
           className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-4"
         >
           <Button onClick={handleTryAgain} variant="outline" className="w-full">
