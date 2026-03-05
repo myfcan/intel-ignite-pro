@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, ArrowRight, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { V8InlineQuiz } from "@/types/v8Lesson";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
@@ -48,10 +49,19 @@ export const V8QuizInline = ({
       playSound("quiz-correct");
     } else {
       setState("wrong");
-      onAnswer(false);
       playSound("quiz-wrong");
     }
   }, [selected, quiz.options, onAnswer, playSound]);
+
+  const handleTryAgain = useCallback(() => {
+    setSelected(null);
+    setState("answering");
+  }, []);
+
+  const handleContinueAfterWrong = useCallback(() => {
+    onAnswer(false);
+    onContinue?.();
+  }, [onAnswer, onContinue]);
 
   const handleShowReinforcement = () => setState("reinforcement");
   const isAnswered = state !== "answering";
@@ -195,23 +205,23 @@ export const V8QuizInline = ({
             {quiz.explanationAudioUrl && isActiveAudio && (
               <V8AudioPlayer audioUrl={quiz.explanationAudioUrl} autoPlay />
             )}
-            <div className="flex items-center gap-4">
-              {quiz.reinforcement && (
-                <button
-                  onClick={handleShowReinforcement}
-                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
-                >
-                  Aprender mais
-                </button>
-              )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+              <Button
+                onClick={handleTryAgain}
+                variant="outline"
+                className="w-full"
+              >
+                Tentar Novamente
+              </Button>
               {onContinue && (
-                <button
+                <Button
                   ref={ctaRef}
-                  onClick={onContinue}
-                  className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+                  onClick={handleContinueAfterWrong}
+                  className="w-full gap-2"
                 >
-                  Continuar <ArrowRight className="w-4 h-4" />
-                </button>
+                  Continuar Aula
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
               )}
             </div>
           </motion.div>
@@ -236,7 +246,7 @@ export const V8QuizInline = ({
             {onContinue && (
               <button
                 ref={ctaRef}
-                onClick={onContinue}
+                onClick={handleContinueAfterWrong}
                 className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
               >
                 Continuar <ArrowRight className="w-4 h-4" />

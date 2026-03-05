@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, X } from 'lucide-react';
+import { Check, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
 import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
@@ -61,14 +61,23 @@ export function TrueFalseExercise({
     if (correct) {
       playSound('quiz-correct');
       confetti({ particleCount: 60, spread: 50, origin: { y: 0.5 } });
+      setTimeout(() => {
+        setCompleted(true);
+        onComplete(100);
+      }, 2500);
     } else {
       playSound('quiz-wrong');
     }
+  };
 
-    setTimeout(() => {
-      setCompleted(true);
-      onComplete(correct ? 100 : 0);
-    }, 2500);
+  const handleTryAgain = () => {
+    setAnswered(false);
+    setUserAnswer(null);
+  };
+
+  const handleContinue = () => {
+    setCompleted(true);
+    onComplete(0);
   };
 
   if (completed) return null;
@@ -171,6 +180,18 @@ export function TrueFalseExercise({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {answered && !isCorrect && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+              <Button onClick={handleTryAgain} variant="outline" className="w-full">
+                Tentar Novamente
+              </Button>
+              <Button onClick={handleContinue} className="w-full gap-2">
+                Continuar Aula
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
     </motion.div>
