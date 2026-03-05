@@ -1,39 +1,50 @@
 
 
-## Plano: Padronizar regra de saída de exercícios (Fluxo A / Fluxo B)
+## Plano: Preservar estado visual de exercícios completados no rolo
 
-### Regra Universal
+### Problema
 
-- **Fluxo A (Acertou):** Mostra apenas `[Continuar Aula]`. Avança somente no clique. Sem auto-advance.
-- **Fluxo B (Errou):** Mostra `[Tentar Novamente]` + `[Continuar Aula]`. Reset no retry, avança no continuar.
+Quando o usuário avança para o próximo item (clicando "Continuar Aula"), os exercícios anteriores perdem o feedback visual (score, resultado) porque:
 
-### Arquivos e mudanças
+1. **FlipCardQuizExercise**: `handleContinue` chama `setShowResult(false)` — esconde o resumo de resultado
+2. **V8InlineExercise**: Os botões CTA (Continuar/Tentar) somem porque `onContinue` vira `undefined` quando `isLast=false` — aceitável para botões, mas o score/badge também some
+3. **V8QuizInline**: Feedback de "Correto"/"Errado" fica visível (OK), mas botões CTA somem — sem problema
+4. **V8CompleteSentenceInline**: Mesma lógica — botões somem mas estado visual some junto
 
-**1. `V8InlineExercise.tsx`** (8 tipos de exercício)
-- Remover `setTimeout(() => onContinue(), 1200)` do `handleComplete`
-- O botão "Continuar Aula" já existe (linha 189-201) e aparece quando `completed === true` — manter
-- Adicionar estado `passed` (score >= PASS_SCORE) para decidir se mostra só "Continuar" ou "Tentar Novamente" + "Continuar"
-- Adicionar botão "Tentar Novamente" quando `completed && !passed`, resetando `completed` para re-renderizar o exercício
-- O `timed-quiz` (linha 147-158) chama `onContinue?.()` direto — mudar para usar `handleComplete` como os demais
+### Regra UX
 
-**2. `V8QuizInline.tsx`** (quiz de múltipla escolha inline)
-- Remover `setTimeout(() => onContinue(), 1200)` do `handleConfirm` (acerto)
-- No estado `correct`: adicionar botão `[Continuar Aula]` (hoje não tem nenhum, só auto-avança)
-- No estado `wrong`: já tem `[Tentar Novamente]` + `[Continuar Aula]` — manter como está
-- Ajustar `handleContinueAfterWrong` para ser reutilizado no fluxo de acerto também (renomear para `handleContinue`)
+Tudo permanece no rolo. O usuário pode rolar para cima e ver toda a jornada: seções lidas, exercícios completados com seus resultados. Somente os botões de ação (Continuar/Tentar) devem sumir quando o item não é mais o ativo.
 
-**3. `V8CompleteSentenceInline.tsx`** (Coursiv / Monte o Prompt)
-- Remover `setTimeout(() => onContinue(), 1200)` do `handleSubmit`
-- Quando acertou tudo (`correctCount === blankCount`): adicionar botão `[Continuar Aula]` (hoje falta)
-- Quando errou: já tem `[Tentar Novamente]` + `[Continuar Aula]` — manter
+### Mudanças
+
+**1. `FlipCardQuizExercise.tsx`**
+- Remover `setShowResult(false)` do `handleContinue` — o resumo de resultado deve permanecer visível
+- Os botões CTA internos já são guardados por `{onContinue && ...}`, então somem naturalmente quando o item deixa de ser ativo
+
+**2. `V8InlineExercise.tsx`**
+- Separar o badge de resultado dos botões CTA
+- Quando `completed=true` e `onContinue=undefined` (item passado): mostrar um badge read-only com o score (ex: "Exercício concluído ✓") sem botões de ação
+- Quando `completed=true` e `onContinue` existe (item ativo): mostrar Fluxo A/B com botões como hoje
+
+**3. `V8QuizInline.tsx`**
+- Já funciona bem — feedback de "Correto" e "Errado" persiste mesmo sem `onContinue`
+- Apenas garantir que o bloco de feedback não depende de `onContinue` para renderizar (já é o caso — os botões dentro do feedback é que dependem, correto)
+
+**4. `V8CompleteSentenceInline.tsx`**
+- Mesmo padrão do V8InlineExercise: separar badge de resultado dos botões
+- Manter o estado visual de blanks preenchidos (corretos em verde, errados em vermelho) visível após completar
 
 ### Resumo visual
 
 ```text
-Exercício finalizado
-  ├─ Acertou → [Continuar Aula]
-  └─ Errou   → [Tentar Novamente] [Continuar Aula]
-```
+Item completado (não-ativo):
+  ├─ Exercício visível (read-only, sem interação)
+  ├─ Score badge: "✓ Exercício concluído" ou "X/Y acertos"
+  └─ SEM botões de ação
 
-Nenhum `setTimeout` de auto-advance. Tudo manual por clique/toque.
+Item ativo:
+  ├─ Exercício interativo
+  ├─ Score badge após completar
+  └─ Botões Fluxo A/B
+```
 
