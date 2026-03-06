@@ -189,7 +189,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
         )}
 
         {/* 3. Markdown body */}
-        <div className="v8-markdown text-[17px] leading-[1.75] text-slate-700 mt-[7px] [&>*:last-child]:mb-0">
+        <div className="v8-markdown text-[16.5px] leading-[1.85] tracking-[-0.01em] text-slate-700 mt-[7px] [&>*:last-child]:mb-0">
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
@@ -207,25 +207,28 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
                   {children}
                 </h3>
               ),
-              p: ({ children }) => <p className="mb-[7px]">{children}</p>,
+              p: ({ children }) => <p className="mb-[12px]">{children}</p>,
               ul: ({ children }) => (
-                <ul className="list-disc list-inside mb-4 space-y-1.5 ml-1">
+                <ul className="mb-4 space-y-2.5 ml-1">
                   {children}
                 </ul>
               ),
               ol: ({ children }) => (
-                <ol className="list-decimal list-inside mb-4 space-y-1.5 ml-1">
+                <ol className="list-decimal list-inside mb-4 space-y-2.5 ml-1">
                   {children}
                 </ol>
               ),
               li: ({ children }) => (
-                <li className="text-slate-700">{children}</li>
+                <li className="text-slate-700 flex items-start gap-2 pl-1">
+                  <span className="mt-[10px] block h-1.5 w-1.5 rounded-full bg-indigo-400 shrink-0" />
+                  <span className="flex-1">{children}</span>
+                </li>
               ),
               strong: ({ children }) => (
-                <strong className="text-slate-900 font-semibold">{children}</strong>
+                <strong className="font-bold text-slate-900 bg-indigo-50/60 px-1 py-0.5 rounded">{children}</strong>
               ),
               em: ({ children }) => (
-                <em className="text-indigo-600">{children}</em>
+                <em className="text-indigo-500/80 italic">{children}</em>
               ),
               code: ({ children, className }) => {
                 const isInline = !className;
@@ -240,9 +243,12 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
                 );
               },
               blockquote: ({ children }) => (
-                <blockquote className="border-l-2 border-indigo-500/50 pl-4 py-1 mb-4 text-slate-500 italic">
+                <blockquote className="border-l-4 border-indigo-400 bg-indigo-50/40 rounded-r-xl pl-5 py-3 my-5 text-slate-600 italic [&>p]:mb-0">
                   {children}
                 </blockquote>
+              ),
+              hr: () => (
+                <hr className="border-slate-200/60 my-6" />
               ),
             }}
           >
