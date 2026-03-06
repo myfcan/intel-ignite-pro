@@ -307,6 +307,8 @@ export const V8LessonPlayer = ({
                       {item.type === "inline-exercise" && (
                         <V8InlineExercise
                           exercise={item.exercise}
+                          exerciseIndex={idx}
+                          lessonId={lessonId}
                           onContinue={isLast ? advance : undefined}
                           onScore={(s) => addScore(s)}
                           isActive={isLast}

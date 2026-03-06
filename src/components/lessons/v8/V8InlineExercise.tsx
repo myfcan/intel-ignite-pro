@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { PASS_SCORE } from "@/constants/v8Rules";
-import { ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
+import { ArrowRight, CheckCircle2, RotateCcw, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { registerGamificationEvent } from "@/services/gamification";
 import { V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
 import { TrueFalseExercise } from "@/components/lessons/TrueFalseExercise";
 import { FillInBlanksExercise } from "@/components/lessons/FillInBlanksExercise";
@@ -19,24 +20,42 @@ import { scheduleCTAScroll } from "./v8ScrollUtils";
 
 interface V8InlineExerciseProps {
   exercise: V8InlineExerciseType;
+  exerciseIndex?: number;
+  lessonId?: string;
   onContinue?: () => void;
   onScore?: (score: number) => void;
   isActive?: boolean;
   isActiveAudio?: boolean;
 }
 
-export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = true, isActiveAudio = false }: V8InlineExerciseProps) => {
+export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue, onScore, isActive = true, isActiveAudio = false }: V8InlineExerciseProps) => {
   const [completed, setCompleted] = useState(false);
   const [passed, setPassed] = useState(false);
   const [exerciseKey, setExerciseKey] = useState(0);
+  const [xpAwarded, setXpAwarded] = useState(false);
   const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
   const ctaRef = useRef<HTMLButtonElement>(null);
+  const hasRegisteredXp = useRef(false);
 
   const handleComplete = useCallback((score: number) => {
     setCompleted(true);
-    setPassed(score >= PASS_SCORE);
+    const didPass = score >= PASS_SCORE;
+    setPassed(didPass);
     onScore?.(score);
-  }, [onScore]);
+
+    // Award XP for correct exercise (idempotent via lessonId + exerciseIndex in payload)
+    if (didPass && lessonId && exerciseIndex !== undefined && !hasRegisteredXp.current) {
+      hasRegisteredXp.current = true;
+      registerGamificationEvent("exercise_correct", lessonId, { exercise_index: exerciseIndex })
+        .then((result) => {
+          if (result && result.xp_delta > 0) {
+            setXpAwarded(true);
+            setTimeout(() => setXpAwarded(false), 2500);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [onScore, lessonId, exerciseIndex]);
 
   const handleRetry = useCallback(() => {
     setCompleted(false);
@@ -185,8 +204,23 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
       {audioLocked && !completed && <V8AudioLockOverlay />}
 
       {/* Exercise content */}
-      <div key={exerciseKey} className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}>
+      <div key={exerciseKey} className={`relative transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}>
         {renderExercise()}
+        {/* XP micro-feedback */}
+        <AnimatePresence>
+          {xpAwarded && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.8 }}
+              animate={{ opacity: 1, y: -8, scale: 1 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="absolute -top-2 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-500/30 z-10"
+            >
+              <Zap className="w-3 h-3" />
+              +5 XP
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Unified premium feedback */}
