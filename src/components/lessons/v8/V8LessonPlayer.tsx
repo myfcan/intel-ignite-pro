@@ -292,16 +292,12 @@ export const V8LessonPlayer = ({
                           playgroundId={getPrecedingPlaygroundId(idx) ?? undefined}
                           onRetryPlayground={() => {
                             const pgIdx = findPrecedingPlaygroundIndex(idx);
-                            if (pgIdx !== null) {
-                              // Reset the playground's internal state via ref
-                              const pgHandle = playgroundRefs.current.get(pgIdx);
-                              if (pgHandle) {
-                                goToIndex(pgIdx);
-                                setTimeout(() => pgHandle.resetPlayground(), 50);
-                              } else {
-                                goToIndex(pgIdx);
-                              }
-                            }
+                            if (pgIdx === null) return;
+
+                            goToIndex(pgIdx);
+                            requestAnimationFrame(() => {
+                              playgroundRefs.current.get(pgIdx)?.resetPlayground();
+                            });
                           }}
                         />
                       )}
