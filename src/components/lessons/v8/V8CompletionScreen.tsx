@@ -66,10 +66,10 @@ export const V8CompletionScreen = ({
 
     register();
 
-    // Play success sound
-    playSound("success");
+    // Play success sound & confetti only when there's a meaningful score
+    if (avgScore > 0) {
+      playSound("success");
 
-    if (avgScore >= PASS_SCORE) {
       // First confetti burst
       setTimeout(() => {
         confetti({
