@@ -152,17 +152,10 @@ export function TrueFalseExercise({
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className={`p-4 rounded-xl border-2 ${
-                  isCorrect
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-blue-50 border-blue-200'
-                }`}
+                className="pt-2"
               >
-                <p className="text-xs sm:text-sm leading-relaxed">
-                  <span className={`font-bold ${isCorrect ? 'text-green-700' : 'text-blue-700'}`}>
-                    {isCorrect ? '✓ Correto!' : 'ℹ️ Resposta:'}
-                  </span>{' '}
-                  <span className="text-foreground">{statement.explanation}</span>
+                <p className="text-xs text-muted-foreground leading-relaxed italic">
+                  {statement.explanation}
                 </p>
               </motion.div>
             )}

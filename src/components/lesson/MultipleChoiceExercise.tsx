@@ -133,7 +133,7 @@ export const MultipleChoiceExercise = ({
       </RadioGroup>
 
       <div ref={feedbackRef}>
-        {!isSubmitted ? (
+        {!isSubmitted && (
           <Button
             onClick={handleSubmit}
             disabled={!selectedAnswer}
@@ -142,36 +142,6 @@ export const MultipleChoiceExercise = ({
           >
             Confirmar Resposta
           </Button>
-        ) : isCorrect ? (
-          <div
-            className="p-3 sm:p-4 rounded-lg border-2 animate-fade-in bg-success/5 border-success/20"
-          >
-            <div className="flex items-start gap-2 sm:gap-3">
-              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-success flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold mb-1 text-sm sm:text-base">Correto! 🎉</p>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
-                  {explanation}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2 sm:space-y-3">
-            <div
-              className="p-3 sm:p-4 rounded-lg border-2 animate-fade-in bg-destructive/5 border-destructive/20"
-            >
-              <div className="flex items-start gap-2 sm:gap-3">
-                <Info className="w-5 h-5 sm:w-6 sm:h-6 text-destructive flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold mb-1 text-sm sm:text-base">Não foi dessa vez</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
-                    {explanation}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </Card>
