@@ -593,7 +593,7 @@ export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8Playgro
               <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 <button
                   onClick={() => {
-                    setPhase("intro");
+                    setPhase(playground.userChallenge ? "challenge" : "intro");
                     setAttempts(0);
                     setChallengeScore(null);
                     setFeedback(null);
@@ -603,8 +603,10 @@ export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8Playgro
                     setJustReset(true);
                     setTimeout(() => setJustReset(false), 1500);
                     setTimeout(() => {
-                      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }, 100);
+                      const target = textareaRef.current ?? rootRef.current;
+                      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      textareaRef.current?.focus();
+                    }, 120);
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-slate-300 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
                 >
