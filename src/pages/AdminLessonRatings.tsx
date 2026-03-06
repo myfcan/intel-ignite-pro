@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Star, MessageSquare, TrendingUp, BarChart3 } from "lucide-react";
+import { ArrowLeft, Star, MessageSquare, TrendingUp, BarChart3, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface RatingRow {
   id: string;
@@ -12,6 +13,7 @@ interface RatingRow {
   lesson_id: string;
   rating: number;
   comment: string | null;
+  is_approved: boolean;
   created_at: string;
   user_name?: string;
   lesson_title?: string;
@@ -65,6 +67,21 @@ export default function AdminLessonRatings() {
     };
     fetch();
   }, [filterRating]);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta avaliação permanentemente?")) return;
+    const { error } = await supabase.from("lesson_ratings").delete().eq("id", id);
+    if (error) { toast.error("Erro ao excluir"); return; }
+    setRatings(prev => prev.filter(r => r.id !== id));
+    toast.success("Avaliação excluída");
+  };
+
+  const handleToggleApproved = async (id: string, current: boolean) => {
+    const { error } = await supabase.from("lesson_ratings").update({ is_approved: !current } as any).eq("id", id);
+    if (error) { toast.error("Erro ao atualizar"); return; }
+    setRatings(prev => prev.map(r => r.id === id ? { ...r, is_approved: !current } : r));
+    toast.success(!current ? "Avaliação ativada" : "Avaliação desativada");
+  };
 
   // KPIs
   const total = ratings.length;
@@ -164,6 +181,8 @@ export default function AdminLessonRatings() {
                     <TableHead>Rating</TableHead>
                     <TableHead>Comentário</TableHead>
                     <TableHead>Data</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -188,6 +207,37 @@ export default function AdminLessonRatings() {
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                      <TableCell>
+                        {r.is_approved ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                            <CheckCircle className="w-3.5 h-3.5" /> Ativo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <XCircle className="w-3.5 h-3.5" /> Inativo
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-1.5 justify-end">
+                          <Button
+                            size="sm"
+                            variant={r.is_approved ? "outline" : "default"}
+                            className="h-7 text-xs"
+                            onClick={() => handleToggleApproved(r.id, r.is_approved)}
+                          >
+                            {r.is_approved ? "Desativar" : "Ativar"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-7 text-xs"
+                            onClick={() => handleDelete(r.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

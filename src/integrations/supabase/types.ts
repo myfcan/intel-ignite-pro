@@ -546,6 +546,7 @@ export type Database = {
           comment: string | null
           created_at: string
           id: string
+          is_approved: boolean
           lesson_id: string
           rating: number
           user_id: string
@@ -554,6 +555,7 @@ export type Database = {
           comment?: string | null
           created_at?: string
           id?: string
+          is_approved?: boolean
           lesson_id: string
           rating: number
           user_id: string
@@ -562,6 +564,7 @@ export type Database = {
           comment?: string | null
           created_at?: string
           id?: string
+          is_approved?: boolean
           lesson_id?: string
           rating?: number
           user_id?: string

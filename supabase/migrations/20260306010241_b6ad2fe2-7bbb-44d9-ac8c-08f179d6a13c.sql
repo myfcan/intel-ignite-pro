@@ -1,0 +1,1 @@
+ALTER TABLE public.lesson_ratings ADD COLUMN is_approved boolean NOT NULL DEFAULT false;
