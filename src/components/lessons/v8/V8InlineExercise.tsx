@@ -43,10 +43,10 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
     setPassed(didPass);
     onScore?.(score);
 
-    // Award XP for correct exercise (idempotent via composite reference ID)
+    // Award XP for correct exercise (idempotent via lessonId + exerciseIndex in payload)
     if (didPass && lessonId && exerciseIndex !== undefined && !hasRegisteredXp.current) {
       hasRegisteredXp.current = true;
-      registerGamificationEvent("exercise_correct", `${lessonId}_ex${exerciseIndex}`)
+      registerGamificationEvent("exercise_correct", lessonId, { exercise_index: exerciseIndex })
         .then((result) => {
           if (result && result.xp_delta > 0) {
             setXpAwarded(true);
