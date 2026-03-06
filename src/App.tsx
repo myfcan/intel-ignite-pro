@@ -121,6 +121,7 @@ const C10Report = lazyRetry(() => import("./pages/admin/C10Report"));
 const AdminUserManagement = lazyRetry(() => import("./pages/AdminUserManagement"));
 const AdminImageLab = lazyRetry(() => import("./pages/AdminImageLab"));
 const AdminAudioPreview = lazyRetry(() => import("./pages/AdminAudioPreview"));
+const AdminLessonRatings = lazyRetry(() => import("./pages/AdminLessonRatings"));
 
 const queryClient = new QueryClient();
 
@@ -262,6 +263,7 @@ const App = () => (
                 <Route path="/admin/image-lab" element={<AdminRoute><AdminImageLab /></AdminRoute>} />
                 <Route path="/admin/micro-visual" element={<AdminRoute><AdminMicroVisualSandbox /></AdminRoute>} />
                 <Route path="/admin/audio-preview" element={<AdminRoute><AdminAudioPreview /></AdminRoute>} />
+                <Route path="/admin/ratings" element={<AdminRoute><AdminLessonRatings /></AdminRoute>} />
                 {/* NEW FEATURES ROUTES */}
                 <Route path="/guides" element={<Guides />} />
                 <Route path="/guides/:guideId" element={<GuideDetail />} />
