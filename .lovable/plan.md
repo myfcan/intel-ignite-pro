@@ -1,54 +1,71 @@
 
 
-## Revisao do Plano: Problemas Identificados
+## Plano: Tipografia Premium para Conteudo V8
 
-O plano atual tem a direcao correta mas precisa de ajustes:
+### Diagnostico
 
-### O que esta certo
-- Identificacao correta da duplicidade: `MultipleChoiceExercise` renderiza feedback interno (linhas 145-175) E `V8InlineExercise` renderiza feedback externo (linhas 192-211)
-- `TrueFalseExercise` tambem tem feedback interno via `AnimatePresence` (linhas 149-169)
-- Principio correto: centralizar feedback no wrapper
+O conteudo atual no `V8ContentSection.tsx` usa estilos basicos: `text-[17px] leading-[1.75] text-slate-700`. O resultado e funcional mas parece um blog generico, nao um curso premium. Os problemas:
 
-### O que precisa melhorar no plano
+1. **Paragrafos sem hierarquia** — todos iguais, sem destaque visual
+2. **Bold (`strong`)** — apenas `font-semibold text-slate-900`, pouco impacto
+3. **Italico (`em`)** — `text-indigo-600` puro, sem refinamento
+4. **Listas** — bullets padrao `list-disc`, sem personalidade
+5. **Sem separacao visual** entre blocos de ideias
+6. **Blockquote** — borda fina, pouco destaque
 
-**1. MultipleChoiceExercise — o feedback interno NAO deve ser totalmente removido**
+### Mudancas no `V8ContentSection.tsx`
 
-O plano diz "remover bloco de feedback". Mas o componente tem uma logica importante: apos submit, ele esconde o botao "Confirmar Resposta". Se removermos todo o bloco `feedbackRef`, o botao fica visivel apos responder. A solucao correta e:
-- Manter o estado `isSubmitted` controlando a visibilidade do botao
-- Apos submit: renderizar **nada** (ou apenas um espacador) no lugar do feedback — nao o bloco verde/vermelho
-- Os icones check/x nas opcoes ja existem e devem permanecer
+**Container do markdown:**
+- Aumentar `leading-[1.85]` para mais respiro
+- `text-[16.5px]` levemente menor mas mais elegante
+- `tracking-[-0.01em]` para tipografia mais apertada e pro
 
-**2. TrueFalseExercise — a explicacao por statement e util**
+**Paragrafos (`p`):**
+- `mb-[12px]` mais espaco entre paragrafos (atual: 7px)
+- Primeiro paragrafo de cada secao com `text-[17.5px]` e `text-slate-800` (lead paragraph)
 
-Diferente do MultipleChoice (que tem UMA explicacao global), o TrueFalse mostra explicacao **por statement individual**. Isso e pedagogicamente valioso e nao duplica com o wrapper (que mostra `successMessage`/`tryAgainMessage` generico). Considerar **manter** o feedback por statement mas com visual mais discreto.
+**Bold (`strong`):**
+- `font-bold text-slate-900` (trocar semibold por bold)
+- Adicionar sutil `bg-indigo-50/60 px-1 py-0.5 rounded` para dar destaque tipo "marcador"
 
-**3. V8InlineExercise — o redesign premium esta vago**
+**Italico (`em`):**
+- `text-slate-500 italic` (remover indigo, mais sutil e elegante)
+- Ou manter indigo mas com `text-indigo-500/80` mais suave
 
-O plano menciona "borda esquerda colorida" mas nao especifica o que acontece quando `successMessage`/`tryAgainMessage` estao ausentes no banco. Precisa de fallback claro.
+**Listas (`ul/ol`):**
+- Trocar `list-disc` por custom bullets via CSS pseudo-element
+- `space-y-2.5` mais espaco entre itens
+- Items com `pl-2` e indicador visual indigo
 
-### Plano Revisado
+**Blockquote:**
+- `border-l-3 border-indigo-400 bg-indigo-50/40 rounded-r-xl pl-5 py-3`
+- Mais presenca visual como "callout"
+
+**Separador horizontal (`hr`):**
+- Adicionar componente `hr` no ReactMarkdown
+- Linha sutil `border-slate-200/60 my-6`
+
+### Arquivo Afetado
 
 | Arquivo | Acao |
 |---------|------|
-| `MultipleChoiceExercise.tsx` | Substituir feedback pos-submit por div vazio (manter logica de esconder botao) |
-| `TrueFalseExercise.tsx` | Manter explicacao por statement, reduzir visual para texto discreto sem caixa colorida |
-| `V8InlineExercise.tsx` | Redesign premium: card com borda-l-4 colorida, fallback "Muito bem!" / "Tente novamente" quando mensagens ausentes, remover badge "Exercicio concluido" redundante |
+| `V8ContentSection.tsx` | Refinar todos os componentes do ReactMarkdown |
 
-### Design Premium do Feedback (V8InlineExercise)
+### Resultado Visual
 
 ```text
-┌─────────────────────────────────────┐
-│ ▌ ✓ Muito bem!                      │  <- borda esquerda verde 4px
-│ ▌   [successMessage ou fallback]    │  <- bg-emerald-50/80
-│ ▌                                   │
-└─────────────────────────────────────┘
-
-┌─────────────────────────────────────┐
-│ ▌ ↻ Quase la!                       │  <- borda esquerda amber 4px
-│ ▌   [tryAgainMessage ou fallback]   │  <- bg-amber-50/80
-│ ▌                                   │
-└─────────────────────────────────────┘
+Antes:                          Depois:
+─────────────────               ─────────────────
+Texto plano 17px                Texto elegante 16.5px
+texto texto texto               com tracking tight
+                                
+**bold** simples                **bold** com highlight sutil
+                                em fundo indigo-50
+                                
+• bullet padrao                 ◦ bullet custom indigo
+• sem espaco                      com espaco 2.5
+                                
+> quote fino                    ┃ quote callout
+                                ┃ com fundo suave
 ```
-
-Aprovar este plano revisado para implementacao?
 
