@@ -188,8 +188,31 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
         {renderExercise()}
       </div>
 
+      {/* Contextual feedback message */}
+      {completed && exercise.successMessage && passed && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-2.5 px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50"
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-emerald-700 leading-relaxed">{exercise.successMessage}</p>
+        </motion.div>
+      )}
+
+      {completed && exercise.tryAgainMessage && !passed && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-2.5 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50"
+        >
+          <RotateCcw className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-700 leading-relaxed">{exercise.tryAgainMessage}</p>
+        </motion.div>
+      )}
+
       {/* Persistent completion badge (read-only for past items) */}
-      {completed && !onContinue && (
+      {completed && !onContinue && !exercise.successMessage && !exercise.tryAgainMessage && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

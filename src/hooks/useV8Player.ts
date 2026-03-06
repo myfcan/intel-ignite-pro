@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground, V8InsightBlock, V8InlineCompleteSentence, V8InlineExercise } from "@/types/v8Lesson";
+import { V8LessonData, V8PlayerState, V8InlineQuiz, V8InlinePlayground, V8InsightBlock, V8InlineCompleteSentence, V8InlineExercise, V8LearnAndGrow } from "@/types/v8Lesson";
 import { PASS_SCORE } from "@/constants/v8Rules";
 
 /**
@@ -15,7 +15,8 @@ export type TimelineItem =
   | { type: "insight"; insight: V8InsightBlock }
   | { type: "quiz"; quiz: V8InlineQuiz }
   | { type: "complete-sentence"; completeSentence: V8InlineCompleteSentence }
-  | { type: "inline-exercise"; exercise: V8InlineExercise };
+  | { type: "inline-exercise"; exercise: V8InlineExercise }
+  | { type: "learn-and-grow"; learnAndGrow: V8LearnAndGrow };
 
 export const useV8Player = (lessonData: V8LessonData) => {
   const [state, setState] = useState<V8PlayerState>({
@@ -118,6 +119,11 @@ export const useV8Player = (lessonData: V8LessonData) => {
           }
         }
       }
+    }
+
+    // Append "Aprender e Crescer" block as the last timeline item (after all sections)
+    if (lessonData.learnAndGrow) {
+      items.push({ type: "learn-and-grow", learnAndGrow: lessonData.learnAndGrow });
     }
 
     return items;
