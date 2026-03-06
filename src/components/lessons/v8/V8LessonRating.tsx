@@ -100,6 +100,7 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
               className="relative z-10 flex flex-col items-center gap-4 p-8 rounded-2xl border border-emerald-200 bg-emerald-50/95 shadow-2xl max-w-sm w-full"
             >
               <CheckCircle className="w-10 h-10 text-emerald-500" />
@@ -121,6 +122,7 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
               className="relative z-10 flex flex-col items-center gap-5 p-7 rounded-2xl border border-slate-200 bg-white shadow-2xl max-w-sm w-full"
             >
               {/* Close button */}
