@@ -1,51 +1,67 @@
 
 
-## Plano: Corrigir Sessão 8 + Pipeline de Geração Completo
+## Plano: Sistema de Avaliações de Aulas
 
-### Diagnóstico
+### Visão Geral
 
-Analisei o banco de dados e o código. Os problemas são:
+Criar um sistema completo de ratings/avaliações ao final de cada aula V8, com armazenamento no banco, painel de gestão admin, e preparação para uso estratégico em funis de conversão.
 
-1. **Sessão 8 (Coursiv)**: A aula `0638b200` foi gerada com o formato antigo (4 sentenças com 1 lacuna cada). A regra V8-C01 (1 sentença, 4 lacunas, 14 palavras) já está no pipeline mas não foi aplicada retroativamente.
+### 1. Tabela `lesson_ratings` no banco
 
-2. **learnAndGrow**: O campo **não existe no banco** para esta aula (`has_learn_and_grow: false`). O pipeline (`v8-generate-lesson-content`) **nunca gera** esse campo — ele foi adicionado apenas ao tipo TypeScript e ao player, mas o pipeline não tem lógica de geração.
+```sql
+CREATE TABLE public.lesson_ratings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  lesson_id uuid NOT NULL,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(user_id, lesson_id)
+);
+ALTER TABLE public.lesson_ratings ENABLE ROW LEVEL SECURITY;
+```
 
-3. **successMessage / tryAgainMessage**: O pipeline **não gera** esses campos nos exercícios inline. Foram adicionados ao tipo mas não ao prompt de geração.
+RLS policies:
+- Users insert/view own ratings
+- Admins manage all
+- Public SELECT for ratings (para exibir em funis de conversão sem autenticação)
 
-### Mudanças Necessárias
+### 2. Componente `V8LessonRating.tsx`
 
-**1. Pipeline: Gerar `learnAndGrow` no edge function** (`supabase/functions/v8-generate-lesson-content/index.ts`)
-- Adicionar uma nova chamada AI após insights para gerar o bloco `learnAndGrow`
-- Tool schema com `whatChanged`, `beforeAfter`, `practicalExample`
-- Incluir no response final como `learnAndGrow`
+Design baseado no screenshot anexo, adaptado ao padrão V8 (sem emojis, Lucide icons):
+- Ícone hexagonal com estrela (Star icon do Lucide, estilizado como badge indigo)
+- Titulo: "Sua opinião importa!"
+- Subtitulo: "Como você avaliaria esta lição?"
+- 5 estrelas clicáveis (Star icon Lucide, preenchidas/vazias)
+- Labels: "Não é a minha praia" / "Adorei!"
+- **Campo de texto** (Textarea) para comentário opcional
+- Botão "Enviar feedback"
+- Renderizado **entre** o completion screen e os botões de ação (Próxima Aula / Voltar)
 
-**2. Pipeline: Gerar `successMessage` / `tryAgainMessage` nos exercícios inline**
-- Atualizar `INLINE_EXERCISE_TOOLS` schema para incluir esses campos
-- Atualizar `INLINE_EXERCISE_SYSTEM_PROMPT` para instruir a IA a gerar feedback contextual
-- Mapear os campos no post-processing dos exercícios
+### 3. Integração no fluxo V8
 
-**3. AdminV8Create: Persistir `learnAndGrow` no `finalData`**
-- Adicionar `learnAndGrow: result.learnAndGrow || undefined` ao objeto `finalData` em `AdminV8Create.tsx`
+No `V8CompletionScreen.tsx`:
+- Após as stats de gamificação (XP, Moedas, Dias)
+- Antes dos botões de ação
+- O rating é salvo no banco via upsert (user_id + lesson_id unique)
+- Após enviar, o card muda para estado "Obrigado" e revela os botões
 
-**4. Player: Fallback seguro para dados legados**
-- `V8CompleteSentenceInline.tsx`: Se `sentences.length > 1` e cada uma tem 1 blank, manter o comportamento "legacy join" que já existe — verificar que não quebra
-- `V8InlineExercise.tsx`: Já tem fallback para `!successMessage` (badge genérico) — OK
+### 4. Página Admin `AdminLessonRatings.tsx`
 
-**5. Corrigir esta aula específica** (via `patch-lesson-content` edge function)
-- Injetar `learnAndGrow` manualmente com conteúdo baseado no playground existente
-- Substituir `inlineCompleteSentences` pelo formato V8-C01 correto (1 sentença, 4 blanks)
+Card no painel principal (`Admin.tsx`) + página dedicada:
+- KPIs: total de avaliações, média geral, distribuição por estrelas
+- Lista de avaliações recentes com: aula, usuário, rating, comentário, data
+- Filtros: por aula, por rating, por data
+- Rota: `/admin/ratings`
 
-### Arquivos
+### 5. Arquivos afetados
 
-1. **`supabase/functions/v8-generate-lesson-content/index.ts`**
-   - Adicionar `LEARN_AND_GROW_TOOLS` + `LEARN_AND_GROW_SYSTEM_PROMPT`
-   - Adicionar step de geração após insights
-   - Adicionar `successMessage`/`tryAgainMessage` ao `INLINE_EXERCISE_TOOLS`
-   - Incluir `learnAndGrow` no response final
-
-2. **`src/pages/AdminV8Create.tsx`**
-   - Adicionar `learnAndGrow: result.learnAndGrow || undefined` ao `finalData`
-
-3. **`src/components/lessons/v8/V8CompleteSentenceInline.tsx`**
-   - Verificar e reforçar fallback para formato legado (já existe, validar)
+| Arquivo | Ação |
+|---------|------|
+| **Migration SQL** | Criar tabela `lesson_ratings` + RLS |
+| `src/components/lessons/v8/V8LessonRating.tsx` | Novo componente de rating |
+| `src/components/lessons/v8/V8CompletionScreen.tsx` | Integrar rating antes dos botões |
+| `src/pages/AdminLessonRatings.tsx` | Nova página admin |
+| `src/pages/Admin.tsx` | Adicionar card "Avaliações" |
+| `src/App.tsx` | Adicionar rota `/admin/ratings` |
 
