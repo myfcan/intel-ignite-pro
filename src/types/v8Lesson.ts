@@ -137,6 +137,20 @@ export interface V8InlineExercise {
   instruction: string;
   data: Record<string, any>;
   audioUrl?: string;
+  successMessage?: string;
+  tryAgainMessage?: string;
+}
+
+/**
+ * V8LearnAndGrow — Bloco de síntese pedagógica obrigatório pós-Playground
+ * 3 frases: "Percebeu a virada?", "Antes era X, agora é Y", "Aplica hoje em..."
+ */
+export interface V8LearnAndGrow {
+  id: string;
+  whatChanged: string;       // "Percebeu a virada?" — o que mudou
+  beforeAfter: string;       // "Antes era X, agora é Y"
+  practicalExample: string;  // "Aplica hoje em..." — 1 exemplo prático
+  audioUrl?: string;
 }
 
 /**
@@ -152,6 +166,7 @@ export interface V8LessonData {
   inlineInsights?: V8InsightBlock[];
   inlineCompleteSentences?: V8InlineCompleteSentence[];  // Phase 8 (Gap 4)
   inlineExercises?: V8InlineExercise[];  // Phase 9: Inline exercises (4 reliable types)
+  learnAndGrow?: V8LearnAndGrow;          // Bloco de síntese pedagógica pós-Playground
   exercises: ExerciseConfig[];
 }
 

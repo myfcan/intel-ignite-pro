@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { V8LessonData, V8InlineQuiz, V8InlinePlayground, V8InlineCompleteSentence, V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
+import { V8LessonData, V8InlineQuiz, V8InlinePlayground, V8InlineCompleteSentence, V8InlineExercise as V8InlineExerciseType, V8LearnAndGrow } from "@/types/v8Lesson";
 import { useV8Player } from "@/hooks/useV8Player";
 import { V8Header } from "./V8Header";
 import { V8ModeSelector } from "./V8ModeSelector";
@@ -12,6 +12,7 @@ import { V8PlaygroundInline } from "./V8PlaygroundInline";
 import { V8InsightReward } from "./V8InsightReward";
 import { V8CompleteSentenceInline } from "./V8CompleteSentenceInline";
 import { V8InlineExercise } from "./V8InlineExercise";
+import { V8LearnAndGrowBlock } from "./V8LearnAndGrowBlock";
 import { V8AudioPlayer } from "./V8AudioPlayer";
 import { ArrowRight } from "lucide-react";
 import { PASS_SCORE } from "@/constants/v8Rules";
@@ -101,6 +102,7 @@ export const V8LessonPlayer = ({
       case "complete-sentence": return nextItem.completeSentence.audioUrl ?? null;
       case "inline-exercise": return nextItem.exercise.audioUrl ?? null;
       case "insight": return nextItem.insight.audioUrl ?? null;
+      case "learn-and-grow": return nextItem.learnAndGrow.audioUrl ?? null;
       default: return null;
     }
   }, [state.phase, state.currentIndex, timeline, lessonData.sections]);
@@ -310,6 +312,10 @@ export const V8LessonPlayer = ({
                           isActive={isLast}
                           isActiveAudio={state.mode === "listen" && isLast}
                         />
+                      )}
+
+                      {item.type === "learn-and-grow" && (
+                        <V8LearnAndGrowBlock data={item.learnAndGrow} />
                       )}
                     </motion.div>
                   </div>
