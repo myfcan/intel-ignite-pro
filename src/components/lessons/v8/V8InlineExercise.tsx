@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { PASS_SCORE } from "@/constants/v8Rules";
 import { ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { V8InlineExercise as V8InlineExerciseType } from "@/types/v8Lesson";
 import { TrueFalseExercise } from "@/components/lessons/TrueFalseExercise";
 import { FillInBlanksExercise } from "@/components/lessons/FillInBlanksExercise";
@@ -188,38 +189,39 @@ export const V8InlineExercise = ({ exercise, onContinue, onScore, isActive = tru
         {renderExercise()}
       </div>
 
-      {/* Contextual feedback message */}
-      {completed && exercise.successMessage && passed && (
+      {/* Unified premium feedback */}
+      {completed && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-2.5 px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50"
+          className={cn(
+            "flex items-start gap-3 px-4 py-3.5 rounded-xl border-l-4",
+            passed
+              ? "border-l-emerald-500 bg-emerald-50/80"
+              : "border-l-amber-500 bg-amber-50/80"
+          )}
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-emerald-700 leading-relaxed">{exercise.successMessage}</p>
-        </motion.div>
-      )}
-
-      {completed && exercise.tryAgainMessage && !passed && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-2.5 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-700 leading-relaxed">{exercise.tryAgainMessage}</p>
-        </motion.div>
-      )}
-
-      {/* Persistent completion badge (read-only for past items) */}
-      {completed && !onContinue && !exercise.successMessage && !exercise.tryAgainMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50"
-        >
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          <span className="text-sm font-semibold text-emerald-700">Exercício concluído ✓</span>
+          {passed ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+          ) : (
+            <RotateCcw className="w-4.5 h-4.5 text-amber-600 flex-shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className={cn(
+              "text-sm font-bold leading-snug",
+              passed ? "text-emerald-800" : "text-amber-800"
+            )}>
+              {passed ? "Muito bem! 🎉" : "Quase lá!"}
+            </p>
+            <p className={cn(
+              "text-xs leading-relaxed mt-0.5",
+              passed ? "text-emerald-700/80" : "text-amber-700/80"
+            )}>
+              {passed
+                ? (exercise.successMessage || "Você acertou o exercício. Continue assim!")
+                : (exercise.tryAgainMessage || "Revise o conteúdo e tente novamente.")}
+            </p>
+          </div>
         </motion.div>
       )}
 
