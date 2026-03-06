@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, useMemo } from "react";
+import { useCallback, useRef, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { V8LessonData, V8InlineQuiz, V8InlinePlayground, V8InlineCompleteSentence, V8InlineExercise as V8InlineExerciseType, V8LearnAndGrow } from "@/types/v8Lesson";
 import { useV8Player } from "@/hooks/useV8Player";
@@ -8,7 +8,7 @@ import { V8ContentSection } from "./V8ContentSection";
 import { V8QuizInline } from "./V8QuizInline";
 import { V8QuizTrueFalse } from "./V8QuizTrueFalse";
 import { V8QuizFillBlank } from "./V8QuizFillBlank";
-import { V8PlaygroundInline } from "./V8PlaygroundInline";
+import { V8PlaygroundInline, V8PlaygroundInlineHandle } from "./V8PlaygroundInline";
 import { V8InsightReward } from "./V8InsightReward";
 import { V8CompleteSentenceInline } from "./V8CompleteSentenceInline";
 import { V8InlineExercise } from "./V8InlineExercise";
@@ -56,6 +56,7 @@ export const V8LessonPlayer = ({
 
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const anchorRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const playgroundRefs = useRef<Map<number, V8PlaygroundInlineHandle>>(new Map());
 
   const SECTION_TOP_OFFSET = 88;
 
@@ -269,6 +270,10 @@ export const V8LessonPlayer = ({
 
                       {item.type === "playground" && (
                         <V8PlaygroundInline
+                          ref={(handle) => {
+                            if (handle) playgroundRefs.current.set(idx, handle);
+                            else playgroundRefs.current.delete(idx);
+                          }}
                           playground={item.playground}
                           lessonId={lessonId}
                           onContinue={isLast ? advance : undefined}
@@ -288,7 +293,14 @@ export const V8LessonPlayer = ({
                           onRetryPlayground={() => {
                             const pgIdx = findPrecedingPlaygroundIndex(idx);
                             if (pgIdx !== null) {
-                              goToIndex(pgIdx);
+                              // Reset the playground's internal state via ref
+                              const pgHandle = playgroundRefs.current.get(pgIdx);
+                              if (pgHandle) {
+                                goToIndex(pgIdx);
+                                setTimeout(() => pgHandle.resetPlayground(), 50);
+                              } else {
+                                goToIndex(pgIdx);
+                              }
                             }
                           }}
                         />
