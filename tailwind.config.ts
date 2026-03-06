@@ -23,7 +23,6 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        reading: ['"Source Serif 4"', 'Georgia', 'Cambria', '"Times New Roman"', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
