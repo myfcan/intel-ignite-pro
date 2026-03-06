@@ -361,6 +361,7 @@ export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8Playgro
               <p className="text-sm text-slate-700 leading-relaxed mb-3">{playground.userChallenge.instruction}</p>
 
               <textarea
+                ref={textareaRef}
                 value={userPrompt}
                 onChange={(e) => setUserPrompt(e.target.value)}
                 placeholder="Digite seu prompt aqui..."
