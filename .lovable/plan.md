@@ -1,67 +1,49 @@
 
 
-## Plano: Sistema de Avaliações de Aulas
+## Plano: Separar Completion Screen e Rating Modal
 
-### Visão Geral
+### Problema Atual
+O rating (V8LessonRating) esta embutido inline na tela de conclusao. O usuario quer **dois momentos separados**:
 
-Criar um sistema completo de ratings/avaliações ao final de cada aula V8, com armazenamento no banco, painel de gestão admin, e preparação para uso estratégico em funis de conversão.
+1. **Tela de conclusao** - gamificacao + confetti + som de sucesso + botao "Proxima Aula"
+2. **Modal de avaliacao** - aparece APOS clicar "Proxima Aula", com estrelas + campo de texto + botao enviar
 
-### 1. Tabela `lesson_ratings` no banco
+### Mudancas
 
-```sql
-CREATE TABLE public.lesson_ratings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  lesson_id uuid NOT NULL,
-  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(user_id, lesson_id)
-);
-ALTER TABLE public.lesson_ratings ENABLE ROW LEVEL SECURITY;
+**`V8CompletionScreen.tsx`**:
+- Remover `<V8LessonRating />` do inline
+- Adicionar som de sucesso via `useV7SoundEffects` (`playSound('success')`) ao montar a tela
+- Adicionar mais confetti (segundo burst com delay)
+- Ao clicar "Proxima Aula": abrir o modal de rating ao inves de chamar `onContinue` diretamente
+- Gerenciar estado `showRatingModal` — apos submeter/pular rating, ai sim chamar `onContinue`
+
+**`V8LessonRating.tsx`**:
+- Converter para funcionar como **modal** (overlay fullscreen com backdrop)
+- Adicionar botao "Pular" para quem nao quer avaliar
+- Receber `onClose` callback que chama `onContinue` original
+- O campo de texto (Textarea) ja existe no componente atual, nao precisa alterar o banco
+
+**Banco de dados**: Nenhuma alteracao necessaria — a tabela `lesson_ratings` ja tem a coluna `comment text`.
+
+**Admin**: Nenhuma alteracao necessaria — `AdminLessonRatings.tsx` ja exibe o campo de comentario.
+
+### Fluxo Final
+
+```text
+[Aula termina]
+    ↓
+[Tela Conclusao: Trophy + Confetti + Som + XP/Moedas/Streak]
+    ↓
+[Botao "Proxima Aula"]
+    ↓
+[Modal Rating: Estrelas + Textarea + "Enviar" / "Pular"]
+    ↓
+[onContinue → proxima aula]
 ```
 
-RLS policies:
-- Users insert/view own ratings
-- Admins manage all
-- Public SELECT for ratings (para exibir em funis de conversão sem autenticação)
-
-### 2. Componente `V8LessonRating.tsx`
-
-Design baseado no screenshot anexo, adaptado ao padrão V8 (sem emojis, Lucide icons):
-- Ícone hexagonal com estrela (Star icon do Lucide, estilizado como badge indigo)
-- Titulo: "Sua opinião importa!"
-- Subtitulo: "Como você avaliaria esta lição?"
-- 5 estrelas clicáveis (Star icon Lucide, preenchidas/vazias)
-- Labels: "Não é a minha praia" / "Adorei!"
-- **Campo de texto** (Textarea) para comentário opcional
-- Botão "Enviar feedback"
-- Renderizado **entre** o completion screen e os botões de ação (Próxima Aula / Voltar)
-
-### 3. Integração no fluxo V8
-
-No `V8CompletionScreen.tsx`:
-- Após as stats de gamificação (XP, Moedas, Dias)
-- Antes dos botões de ação
-- O rating é salvo no banco via upsert (user_id + lesson_id unique)
-- Após enviar, o card muda para estado "Obrigado" e revela os botões
-
-### 4. Página Admin `AdminLessonRatings.tsx`
-
-Card no painel principal (`Admin.tsx`) + página dedicada:
-- KPIs: total de avaliações, média geral, distribuição por estrelas
-- Lista de avaliações recentes com: aula, usuário, rating, comentário, data
-- Filtros: por aula, por rating, por data
-- Rota: `/admin/ratings`
-
-### 5. Arquivos afetados
-
-| Arquivo | Ação |
+### Arquivos Afetados
+| Arquivo | Acao |
 |---------|------|
-| **Migration SQL** | Criar tabela `lesson_ratings` + RLS |
-| `src/components/lessons/v8/V8LessonRating.tsx` | Novo componente de rating |
-| `src/components/lessons/v8/V8CompletionScreen.tsx` | Integrar rating antes dos botões |
-| `src/pages/AdminLessonRatings.tsx` | Nova página admin |
-| `src/pages/Admin.tsx` | Adicionar card "Avaliações" |
-| `src/App.tsx` | Adicionar rota `/admin/ratings` |
+| `V8CompletionScreen.tsx` | Remover rating inline, add som, add estado modal |
+| `V8LessonRating.tsx` | Converter para modal com overlay + botao pular |
 
