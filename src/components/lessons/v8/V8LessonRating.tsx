@@ -18,7 +18,7 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Check for existing rating
+  // If already rated, skip modal entirely
   useEffect(() => {
     if (!open) return;
     const check = async () => {
@@ -26,14 +26,12 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
       if (!user) return;
       const { data } = await supabase
         .from("lesson_ratings")
-        .select("rating, comment")
+        .select("rating")
         .eq("user_id", user.id)
         .eq("lesson_id", lessonId)
         .maybeSingle();
       if (data) {
-        setRating(data.rating);
-        setComment(data.comment || "");
-        setSubmitted(true);
+        onClose();
       }
     };
     check();
