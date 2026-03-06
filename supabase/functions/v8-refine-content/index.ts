@@ -48,7 +48,13 @@ IMPORTANTE:
 - NUNCA use frases anti-pedagógicas como "Responda rapidamente" ou "Confie nos seus instintos".
 - Retorne EXATAMENTE o mesmo número de seções recebidas.
 - Cada seção deve manter o mesmo título (pode melhorar levemente se necessário).
-- O conteúdo deve estar em Português Brasileiro (pt-BR).`;
+- O conteúdo deve estar em Português Brasileiro (pt-BR).
+
+CONGRUÊNCIA GRAMATICAL OBRIGATÓRIA:
+- Todos os textos DEVEM ter concordância sujeito-verbo e gênero-número correta.
+- ERRO CLÁSSICO: "Sou um casal" → CORRETO: "Somos um casal". Sujeito coletivo/plural exige verbo concordante.
+- Outros erros proibidos: "Nós é" → "Nós somos", "A gente vamos" → "A gente vai", "Eu e minha esposa vai" → "Eu e minha esposa vamos".
+- Revise CADA frase para garantir concordância antes de retornar.`;
 
 const REFINE_TOOLS = [
   {
