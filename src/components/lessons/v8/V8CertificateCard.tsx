@@ -278,7 +278,7 @@ function CertProgress({ value, height = 4 }: { value: number; height?: number })
 /* ── Motivational text by state ── */
 function MotivationalText({ state, remaining }: { state: CertState; remaining: number }) {
   if (state === "completed") {
-    return <p className="text-xs text-amber-700 font-semibold">Parabéns! Trilha concluída. 🎉</p>;
+    return <p className="text-xs text-amber-700 font-semibold">Parabéns! Trilha concluída.</p>;
   }
 
   return (

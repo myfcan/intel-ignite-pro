@@ -114,7 +114,7 @@ export const V8InsightReward = ({ insight, onContinue, isActive = true, unlockab
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-700 text-sm font-bold"
           >
             <CheckCircle2 className="w-4 h-4" />
-            🎉 +{insight.creditsReward} XP Desbloqueado!
+            +{insight.creditsReward} XP Desbloqueado!
           </motion.div>
 
           {onContinue && (

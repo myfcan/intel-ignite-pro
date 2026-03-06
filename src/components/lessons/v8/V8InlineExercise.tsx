@@ -89,7 +89,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
             title={title}
             instruction={instruction}
             sentences={data.sentences || []}
-            feedback={data.feedback || { allCorrect: "Perfeito! 🎉", someCorrect: "Quase lá! 👏", needsReview: "Revise o conteúdo 📖" }}
+            feedback={data.feedback || { allCorrect: "Perfeito!", someCorrect: "Quase lá!", needsReview: "Revise o conteúdo" }}
             onComplete={handleComplete}
           />
         );
@@ -127,7 +127,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
               title={title}
               instruction={instruction}
               statements={data.statements}
-              feedback={data.feedback || { perfect: "Perfeito! 🎉", good: "Bom trabalho! 👏", needsReview: "Revise o conteúdo 📖" }}
+              feedback={data.feedback || { perfect: "Perfeito!", good: "Bom trabalho!", needsReview: "Revise o conteúdo" }}
               onComplete={handleComplete}
             />
           );
@@ -245,7 +245,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
               "text-sm font-bold leading-snug",
               passed ? "text-emerald-800" : "text-amber-800"
             )}>
-              {passed ? "Muito bem! 🎉" : "Quase lá!"}
+              {passed ? "Muito bem!" : "Quase lá!"}
             </p>
             <p className={cn(
               "text-xs leading-relaxed mt-0.5",
