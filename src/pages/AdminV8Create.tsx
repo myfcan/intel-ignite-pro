@@ -685,6 +685,7 @@ export default function AdminV8Create() {
         inlineInsights: result.inlineInsights || [],
         inlineExercises: result.inlineExercises || [],
         inlineCompleteSentences: result.inlineCompleteSentences || [],
+        learnAndGrow: result.learnAndGrow || undefined,
         exercises: result.exercises || [],
       };
 

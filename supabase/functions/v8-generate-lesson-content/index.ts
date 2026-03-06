@@ -144,7 +144,7 @@ const INLINE_EXERCISE_TOOLS = [
     type: "function",
     function: {
       name: "generate_inline_exercises",
-      description: "Generate inline exercises for sections between content sections. Choose from 8 types per V8-C01 contract.",
+      description: "Generate inline exercises for sections between content sections. Choose from 8 types per V8-C01 contract. MUST include successMessage and tryAgainMessage for each exercise.",
       parameters: {
         type: "object",
         properties: {
@@ -157,6 +157,8 @@ const INLINE_EXERCISE_TOOLS = [
                 type: { type: "string", enum: ["true-false", "multiple-choice", "complete-sentence", "fill-in-blanks", "flipcard-quiz", "scenario-selection", "platform-match", "timed-quiz"] },
                 title: { type: "string" },
                 instruction: { type: "string" },
+                successMessage: { type: "string", description: "Contextual congratulations shown when user passes (score >= 70). 1-2 sentences, encouraging, referencing what was learned." },
+                tryAgainMessage: { type: "string", description: "Contextual hint shown when user fails (score < 70). 1-2 sentences, encouraging retry with a specific tip." },
                 data: {
                   type: "object",
                   additionalProperties: true,
@@ -204,7 +206,7 @@ const INLINE_EXERCISE_TOOLS = [
                   description: "Exercise-specific data. MUST contain the required fields for the chosen type. true-false/multiple-choice → 'statements'. fill-in-blanks/complete-sentence → 'sentences'. flipcard-quiz → 'cards'. scenario-selection → 'scenarios'. platform-match → 'scenarios' AND 'platforms'. timed-quiz → 'questions'. An EMPTY data object {} is INVALID.",
                 },
               },
-              required: ["afterSectionIndex", "type", "title", "instruction", "data"],
+              required: ["afterSectionIndex", "type", "title", "instruction", "data", "successMessage", "tryAgainMessage"],
             },
           },
         },
@@ -362,7 +364,13 @@ TIPOS DISPONÍVEIS E SCHEMAS:
 - timed-quiz: { timePerQuestion: 15, bonusPerSecondLeft: 2, timeoutPenalty: "skip", visualTheme: "cyber", questions: [{ id: "tq-1", question: "pergunta", options: [{ id: "tqo-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
 
 Gere IDs únicos para todos os elementos.
-Gere 2 statements/sentences/cards/questions por exercício (máximo 2 para timed-quiz).`;
+Gere 2 statements/sentences/cards/questions por exercício (máximo 2 para timed-quiz).
+
+FEEDBACK OBRIGATÓRIO:
+- CADA exercício DEVE ter "successMessage" (parabéns contextual, 1-2 frases) e "tryAgainMessage" (dica para tentar novamente, 1-2 frases).
+- O successMessage deve referenciar o conceito testado. Ex: "Ótimo! Você dominou a diferença entre prompts vagos e específicos."
+- O tryAgainMessage deve dar uma dica concreta. Ex: "Quase lá! Releia a seção sobre estrutura de prompts e tente novamente."
+- NUNCA deixe esses campos vazios.`;
 
 // ─── Coursiv Prompt Builder: tool schema + system prompt ───
 const COURSIV_BUILDER_TOOLS = [
@@ -657,6 +665,8 @@ serve(async (req) => {
             id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
             title: sanitizeV8Text(ex.title || ''),
             instruction: sanitizeV8Text(ex.instruction || ''),
+            successMessage: sanitizeV8Text(ex.successMessage || ''),
+            tryAgainMessage: sanitizeV8Text(ex.tryAgainMessage || ''),
           }))
           .filter((ex: any) => {
             const requiredKeys = INLINE_REQUIRED_DATA_KEYS[ex.type];
@@ -1010,6 +1020,67 @@ O título deve ser curto e começar com 💡. creditsReward deve ser 10. Portugu
       }
     }
 
+    // ── 3.6 Generate learnAndGrow synthesis block ──
+    let generatedLearnAndGrow: any = undefined;
+    if (allPlaygroundsForInsights.length > 0) {
+      progress.push("Gerando bloco 'Aprender e Crescer'...");
+      try {
+        const LEARN_AND_GROW_TOOLS = [
+          {
+            type: "function",
+            function: {
+              name: "generate_learn_and_grow",
+              description: "Generate a pedagogical synthesis block with 3 sentences summarizing the lesson transformation.",
+              parameters: {
+                type: "object",
+                properties: {
+                  whatChanged: { type: "string", description: "1 sentence: what skill shift happened (the 'aha' moment)" },
+                  beforeAfter: { type: "string", description: "1 sentence: 'Antes era X, agora é Y' contrast" },
+                  practicalExample: { type: "string", description: "1 sentence: concrete practical application today" },
+                },
+                required: ["whatChanged", "beforeAfter", "practicalExample"],
+              },
+            },
+          },
+        ];
+
+        const LEARN_AND_GROW_SYSTEM_PROMPT = `Você é um designer instrucional. Gere um bloco de síntese pedagógica com EXATAMENTE 3 frases curtas (pt-BR):
+1. "Percebeu a virada?" — destaque a mudança de habilidade que aconteceu na aula
+2. "Antes era X, agora é Y" — contraste claro entre o antes e depois
+3. "Aplica hoje em..." — 1 exemplo prático concreto que o aluno pode fazer HOJE
+
+Cada frase deve ter no máximo 25 palavras. Seja direto e inspirador.`;
+
+        const playgroundContext = allPlaygroundsForInsights.map((p: any) =>
+          `Playground: ${p.title}\nInstrução: ${p.instruction?.slice(0, 200) || ""}`
+        ).join("\n\n");
+
+        const lagResult = await callAI(
+          LOVABLE_API_KEY,
+          LEARN_AND_GROW_SYSTEM_PROMPT,
+          `Gere o bloco "Aprender e Crescer" para esta aula "${lessonTitle}".\n\nResumo:\n${contentSummary.slice(0, 800)}\n\nPlayground:\n${playgroundContext}`,
+          LEARN_AND_GROW_TOOLS,
+          "generate_learn_and_grow",
+        );
+
+        if (lagResult && lagResult.whatChanged && lagResult.beforeAfter && lagResult.practicalExample) {
+          generatedLearnAndGrow = {
+            id: crypto.randomUUID(),
+            whatChanged: sanitizeV8Text(lagResult.whatChanged),
+            beforeAfter: sanitizeV8Text(lagResult.beforeAfter),
+            practicalExample: sanitizeV8Text(lagResult.practicalExample),
+          };
+          progress.push("Bloco 'Aprender e Crescer' gerado");
+        } else {
+          console.warn("[v8-generate] learnAndGrow: AI returned incomplete data, skipping");
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "LearnAndGrow generation failed";
+        errors.push(`LearnAndGrow: ${msg}`);
+        console.error("[v8-generate-lesson-content] LearnAndGrow generation error:", msg);
+      }
+    }
+
     // ── 4. Generate final exercises (2-4 from 10 types) ──
     let generatedExercises: any[] = [];
     if (manualExercises.length === 0) {
@@ -1107,6 +1178,7 @@ O título deve ser curto e começar com 💡. creditsReward deve ser 10. Portugu
       inlineInsights: generatedInsights,
       inlineCompleteSentences: generatedCoursivSentences,
       inlineExercises: generatedInlineExercises,
+      learnAndGrow: generatedLearnAndGrow || undefined,
       exercises: generatedExercises,
       progress,
       errors: errors.length > 0 ? errors : undefined,
