@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
 import { motion } from "framer-motion";
 import { V8InlinePlayground } from "@/types/v8Lesson";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +21,13 @@ type Phase = "intro" | "amateur" | "professional" | "compare" | "challenge" | "d
 const PHASE_ORDER: Phase[] = ["intro", "amateur", "professional", "compare", "challenge", "done"];
 const phaseToIndex = (p: Phase) => PHASE_ORDER.indexOf(p);
 
-export const V8PlaygroundInline = ({ playground, lessonId, onContinue, onScore, isActive = true, isActiveAudio = false }: V8PlaygroundInlineProps) => {
+export interface V8PlaygroundInlineHandle {
+  resetPlayground: () => void;
+}
+
+export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8PlaygroundInlineProps>(({ playground, lessonId, onContinue, onScore, isActive = true, isActiveAudio = false }, ref) => {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [justReset, setJustReset] = useState(false);
   const { playSound } = useV7SoundEffects(0.6, true);
   const [phase, setPhase] = useState<Phase>("intro");
   const [amateurResult, setAmateurResult] = useState(playground.amateurResult || "");
@@ -166,10 +172,12 @@ export const V8PlaygroundInline = ({ playground, lessonId, onContinue, onScore, 
 
   return (
     <motion.div
+      ref={rootRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="space-y-4"
+      className={`space-y-4 ${justReset ? "ring-2 ring-violet-400 ring-offset-2 rounded-2xl transition-all duration-700" : ""}`}
+      style={{ scrollMarginTop: "88px" }}
     >
       {/* Title */}
       <div className="text-center mb-6">
@@ -563,6 +571,11 @@ export const V8PlaygroundInline = ({ playground, lessonId, onContinue, onScore, 
                     setStructuredFeedback(null);
                     setUserPrompt("");
                     setShowHints(false);
+                    setJustReset(true);
+                    setTimeout(() => setJustReset(false), 1500);
+                    setTimeout(() => {
+                      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 100);
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-slate-300 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
                 >
@@ -587,4 +600,6 @@ export const V8PlaygroundInline = ({ playground, lessonId, onContinue, onScore, 
       <div ref={bottomRef} />
     </motion.div>
   );
-};
+});
+
+V8PlaygroundInline.displayName = "V8PlaygroundInline";
