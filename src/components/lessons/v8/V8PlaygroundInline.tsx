@@ -28,6 +28,25 @@ export interface V8PlaygroundInlineHandle {
 export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8PlaygroundInlineProps>(({ playground, lessonId, onContinue, onScore, isActive = true, isActiveAudio = false }, ref) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [justReset, setJustReset] = useState(false);
+
+  // Expose reset method for external callers (e.g. "Refazer Desafio" from InsightReward)
+  useImperativeHandle(ref, () => ({
+    resetPlayground: () => {
+      setPhase("intro");
+      setAttempts(0);
+      setChallengeScore(null);
+      setFeedback(null);
+      setStructuredFeedback(null);
+      setUserPrompt("");
+      setShowHints(false);
+      setJustReset(true);
+      setTimeout(() => setJustReset(false), 1500);
+      setTimeout(() => {
+        rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    },
+  }));
+
   const { playSound } = useV7SoundEffects(0.6, true);
   const [phase, setPhase] = useState<Phase>("intro");
   const [amateurResult, setAmateurResult] = useState(playground.amateurResult || "");
