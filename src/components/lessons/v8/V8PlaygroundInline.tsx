@@ -486,7 +486,7 @@ export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8Playgro
               {/* Buttons — only when challenge is the active phase */}
               {pi === 4 && (
                 <div className="mt-3 flex flex-col gap-2">
-                  {attempts === 0 && canRetry && (
+                  {canRetry && challengeScore === null && (
                     <button
                       ref={ctaRef}
                       onClick={handleEvaluate}
@@ -508,18 +508,24 @@ export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8Playgro
                     <div className="flex flex-col sm:flex-row gap-2">
                       <button
                         ref={ctaRef}
-                        onClick={handleEvaluate}
-                        disabled={isEvaluating || !userPrompt.trim()}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                        onClick={() => {
+                          setChallengeScore(null);
+                          setFeedback(null);
+                          setStructuredFeedback(null);
+                          setUserPrompt("");
+                          setShowHints(false);
+                          setJustReset(true);
+                          setTimeout(() => setJustReset(false), 1500);
+                          setTimeout(() => {
+                            const target = textareaRef.current ?? rootRef.current;
+                            target?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            textareaRef.current?.focus();
+                          }, 120);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
                       >
-                        {isEvaluating ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" /> Avaliando...</>
-                        ) : (
-                          <>
-                            <RotateCcw className="w-4 h-4" />
-                            Tentar Novamente ({maxAttempts - attempts})
-                          </>
-                        )}
+                        <RotateCcw className="w-4 h-4" />
+                        Tentar Novamente ({maxAttempts - attempts})
                       </button>
                       <button
                         onClick={() => setPhase("done")}
