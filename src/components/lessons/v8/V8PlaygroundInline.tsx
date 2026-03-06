@@ -27,12 +27,13 @@ export interface V8PlaygroundInlineHandle {
 
 export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8PlaygroundInlineProps>(({ playground, lessonId, onContinue, onScore, isActive = true, isActiveAudio = false }, ref) => {
   const rootRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [justReset, setJustReset] = useState(false);
 
   // Expose reset method for external callers (e.g. "Refazer Desafio" from InsightReward)
   useImperativeHandle(ref, () => ({
     resetPlayground: () => {
-      setPhase("intro");
+      setPhase(playground.userChallenge ? "challenge" : "intro");
       setAttempts(0);
       setChallengeScore(null);
       setFeedback(null);
@@ -42,8 +43,10 @@ export const V8PlaygroundInline = forwardRef<V8PlaygroundInlineHandle, V8Playgro
       setJustReset(true);
       setTimeout(() => setJustReset(false), 1500);
       setTimeout(() => {
-        rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
+        const target = textareaRef.current ?? rootRef.current;
+        target?.scrollIntoView({ behavior: "smooth", block: "center" });
+        textareaRef.current?.focus();
+      }, 120);
     },
   }));
 
