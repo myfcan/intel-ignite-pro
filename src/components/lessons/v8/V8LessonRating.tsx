@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Send, CheckCircle, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,24 +17,43 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // If already rated, skip modal entirely
+  // Keep modal open for user interaction; if already rated, prefill values instead of auto-close
   useEffect(() => {
     if (!open) return;
+
+    setSubmitted(false);
+    setHoveredStar(0);
+
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
       const { data } = await supabase
         .from("lesson_ratings")
-        .select("rating")
+        .select("rating, comment")
         .eq("user_id", user.id)
         .eq("lesson_id", lessonId)
         .maybeSingle();
+
       if (data) {
-        onClose();
+        setRating(data.rating ?? 0);
+        setComment(data.comment ?? "");
+      } else {
+        setRating(0);
+        setComment("");
       }
     };
+
     check();
+
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    };
   }, [lessonId, open]);
 
   const handleSubmit = async () => {
@@ -61,8 +80,7 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
 
       if (error) throw error;
       setSubmitted(true);
-      // Auto-close after brief delay
-      setTimeout(() => onClose(), 1200);
+      closeTimerRef.current = setTimeout(() => onClose(), 1200);
     } catch (err) {
       console.error("[V8LessonRating] Error:", err);
       toast.error("Erro ao enviar avaliação");
@@ -89,7 +107,6 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onMouseDown={() => onClose()}
         />
 
         {/* Modal content */}
