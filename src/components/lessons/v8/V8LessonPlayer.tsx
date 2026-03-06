@@ -314,7 +314,6 @@ export const V8LessonPlayer = ({
                           isActive={isLast}
                           isActiveAudio={state.mode === "listen" && isLast}
                         />
-                        />
                       )}
 
                       {item.type === "learn-and-grow" && (
