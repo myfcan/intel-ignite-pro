@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, XCircle, Info, ArrowRight } from "lucide-react";
+import { CheckCircle2, XCircle, Info, ArrowRight, Target } from "lucide-react";
 import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
 import { ensureElementVisible } from "@/components/lessons/v8/v8ScrollUtils";
 
@@ -72,7 +72,7 @@ export const MultipleChoiceExercise = ({
     }`}>
       <div className="flex items-start gap-2 sm:gap-3">
         <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-          <span className="text-lg sm:text-xl">🎯</span>
+          <Target className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2">Exercício</h3>

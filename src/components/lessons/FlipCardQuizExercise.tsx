@@ -243,15 +243,15 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
           {/* BACK — only visible when flipped */}
           {isFlipped && (
             <motion.div
-              className={`rounded-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/95 border ${isAnswered ? (isCorrect ? 'border-emerald-400/50' : 'border-red-400/50') : isGlowing ? colors.border : 'border-white/15'} shadow-2xl flex flex-col justify-between p-5 min-h-[340px]`}
+              className={`rounded-2xl bg-white border ${isAnswered ? (isCorrect ? 'border-emerald-300' : 'border-red-300') : isGlowing ? 'border-indigo-300' : 'border-slate-200'} shadow-lg flex flex-col justify-between p-5 min-h-[340px]`}
               initial={{ opacity: 0, rotateY: -90 }}
               animate={{ opacity: 1, rotateY: 0 }}
               transition={{ duration: 0.4 }}
               style={{
-                boxShadow: isGlowing ? colors.glow : isAnswered && isCorrect ? '0 0 20px rgba(52,211,153,0.3)' : 'none',
+                boxShadow: isGlowing ? '0 0 25px rgba(99,102,241,0.2)' : isAnswered && isCorrect ? '0 0 20px rgba(52,211,153,0.15)' : 'none',
               }}
             >
-              <p className="text-white/90 text-base font-medium mb-4 leading-relaxed">{card.back.text}</p>
+              <p className="text-slate-800 text-base font-medium mb-4 leading-relaxed">{card.back.text}</p>
 
               <div className="flex flex-col gap-2.5">
                 {card.options.map((opt, oi) => {
@@ -269,12 +269,12 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
                       onClick={(e) => { e.stopPropagation(); selectOption(index, opt.id); }}
                       className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 border ${
                         showResult && optCorrect
-                          ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300'
+                          ? 'bg-emerald-50 border-emerald-400 text-emerald-700'
                           : showResult && isSelected && !optCorrect
-                            ? 'bg-red-500/20 border-red-400/60 text-red-300'
+                            ? 'bg-red-50 border-red-400 text-red-700'
                             : isSelected
-                              ? 'bg-white/15 border-cyan-400/50 text-white'
-                              : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20'
+                              ? 'bg-indigo-50 border-indigo-400 text-indigo-700'
+                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
                       }`}
                     >
                       <span className="line-clamp-2">{opt.text}</span>
@@ -289,7 +289,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   onClick={(e) => { e.stopPropagation(); confirmAnswer(index); }}
-                  className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-bold text-sm shadow-lg hover:shadow-cyan-500/25 transition-shadow"
+                  className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold text-sm shadow-lg hover:shadow-indigo-500/25 transition-shadow"
                 >
                   Confirmar
                 </motion.button>
@@ -301,7 +301,7 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="mt-2 text-xs text-white/50 italic leading-relaxed"
+                  className="mt-2 text-xs text-slate-400 italic leading-relaxed"
                 >
                   {card.explanation}
                 </motion.p>

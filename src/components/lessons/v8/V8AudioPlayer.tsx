@@ -136,18 +136,18 @@ export const V8AudioPlayer = ({
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="w-full flex items-center gap-2.5 h-11 px-3 rounded-xl border border-slate-200 bg-slate-50">
+    <div className="w-full flex items-center gap-3 h-12 px-3.5 rounded-xl border border-slate-200 bg-slate-50">
       <audio ref={audioRef} src={audioUrl} preload="auto" />
 
       {/* Play / Pause / Loading */}
       {autoPlay && !isLoaded ? (
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
+          <Loader2 className="w-4 h-4 animate-spin" />
         </div>
       ) : (
         <button
           onClick={togglePlay}
-          className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0 shadow-sm"
+          className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0 shadow-sm active:scale-95 transition-transform"
           aria-label={isPlaying ? "Pausar" : "Reproduzir"}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -178,7 +178,7 @@ export const V8AudioPlayer = ({
 
       {/* Progress bar */}
       <div
-        className="relative flex-1 h-1 rounded-full bg-slate-200 cursor-pointer group"
+        className="relative flex-1 h-1.5 rounded-full bg-slate-200 cursor-pointer group"
         onClick={handleSeekBar}
       >
         {autoPlay && !isLoaded ? (
@@ -194,14 +194,14 @@ export const V8AudioPlayer = ({
       </div>
 
       {/* Time */}
-      <span className="text-[10px] font-mono text-slate-400 tabular-nums flex-shrink-0 min-w-[52px] text-center">
+      <span className="text-[11px] font-mono text-slate-500 tabular-nums flex-shrink-0 min-w-[52px] text-center">
         {autoPlay && !isLoaded ? "..." : `${formatTime(currentTime)}/${formatTime(duration)}`}
       </span>
 
       {/* Speed */}
       <button
         onClick={cycleSpeed}
-        className="text-[10px] font-semibold font-mono text-slate-400 hover:text-slate-700 transition-colors flex-shrink-0"
+        className="text-[11px] font-semibold font-mono text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0 min-w-[28px]"
       >
         {speed}x
       </button>

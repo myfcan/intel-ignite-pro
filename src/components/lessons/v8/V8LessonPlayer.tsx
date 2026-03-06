@@ -184,12 +184,12 @@ export const V8LessonPlayer = ({
   const showFixedBar = state.phase === "content" && (currentItem?.type === "section" || currentItem?.type === "learn-and-grow");
   const contentContainerPadding = state.phase === "content"
     ? showFixedBar
-      ? "pb-32"
-      : "pb-72"
+      ? "pb-36"
+      : "pb-36"
     : "";
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-white text-slate-900 hide-scrollbar">
       {state.phase !== "mode-select" && (
         <V8Header
           title={lessonData.title}
