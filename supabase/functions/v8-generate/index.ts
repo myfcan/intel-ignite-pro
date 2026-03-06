@@ -6,9 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// ─── ElevenLabs config (same as V7 pipeline) ───
+// ─── ElevenLabs config ───
+// CRITICAL: eleven_v3 prevents accent drift to PT-PT on sequential requests
+// See memory: elevenlabs-model-and-sanitization-standard-v2
 const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice Brasil
-const MODEL_ID = 'eleven_multilingual_v2';
+const MODEL_ID = 'eleven_v3';
 const VOICE_SETTINGS = {
   stability: 0.5,
   similarity_boost: 0.75,
@@ -362,7 +364,7 @@ async function generateTTS(
     language_code: "pt",
   };
 
-  // Request stitching — supported by eleven_multilingual_v2
+  // Request stitching — supported by eleven_v3
   if (previousText) body.previous_text = previousText;
   if (nextText) body.next_text = nextText;
 

@@ -3243,10 +3243,11 @@ async function generateAudio(
         body: JSON.stringify({
           text: sanitizeTextForV3(text),
           model_id: 'eleven_v3',
+          language_code: 'pt',
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
-            style: 0.3,              // eleven_v3 expressividade
+            style: 0.3,
             use_speaker_boost: true,
           },
         }),
