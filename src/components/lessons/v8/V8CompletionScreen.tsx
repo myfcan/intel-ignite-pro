@@ -230,11 +230,13 @@ export const V8CompletionScreen = ({
       </motion.div>
 
       {/* Rating Modal */}
-      <V8LessonRating
-        lessonId={lessonId}
-        open={showRatingModal}
-        onClose={handleRatingClose}
-      />
+      {showRatingModal && (
+        <V8LessonRating
+          lessonId={lessonId}
+          open={showRatingModal}
+          onClose={handleRatingClose}
+        />
+      )}
     </>
   );
 };
