@@ -7,6 +7,7 @@ import { V8LessonRating } from "./V8LessonRating";
 import { PASS_SCORE } from "@/constants/v8Rules";
 import { updateMissionProgress } from "@/lib/updateMissionProgress";
 import { supabase } from "@/integrations/supabase/client";
+import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
 
 interface V8CompletionScreenProps {
   scores: number[];
@@ -28,14 +29,16 @@ export const V8CompletionScreen = ({
     isNewPatent: boolean;
   } | null>(null);
   const [streakDays, setStreakDays] = useState(0);
+  const [showRatingModal, setShowRatingModal] = useState(false);
   const hasRegistered = useRef(false);
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   const avgScore =
     scores.length > 0
       ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
       : 100;
 
-  // Register gamification event + confetti
+  // Register gamification event + confetti + sound
   useEffect(() => {
     if (hasRegistered.current) return;
     hasRegistered.current = true;
@@ -63,7 +66,11 @@ export const V8CompletionScreen = ({
 
     register();
 
+    // Play success sound
+    playSound("success");
+
     if (avgScore >= PASS_SCORE) {
+      // First confetti burst
       setTimeout(() => {
         confetti({
           particleCount: 120,
@@ -72,6 +79,22 @@ export const V8CompletionScreen = ({
           colors: ["#6366f1", "#8b5cf6", "#10b981", "#fbbf24"],
         });
       }, 400);
+
+      // Second confetti burst for extra celebration
+      setTimeout(() => {
+        confetti({
+          particleCount: 80,
+          spread: 100,
+          origin: { y: 0.5, x: 0.3 },
+          colors: ["#f59e0b", "#ec4899", "#6366f1"],
+        });
+        confetti({
+          particleCount: 80,
+          spread: 100,
+          origin: { y: 0.5, x: 0.7 },
+          colors: ["#10b981", "#8b5cf6", "#fbbf24"],
+        });
+      }, 1200);
     }
   }, [lessonId, avgScore]);
 
@@ -93,116 +116,126 @@ export const V8CompletionScreen = ({
   const xp = gamificationResult?.xpDelta ?? 40;
   const coins = gamificationResult?.coinsDelta ?? 10;
 
+  const handleNextLesson = () => {
+    setShowRatingModal(true);
+  };
+
+  const handleRatingClose = () => {
+    setShowRatingModal(false);
+    onContinue();
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center min-h-[75vh] gap-8 text-center px-4"
-    >
-      {/* Trophy icon */}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-        className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-indigo-200 flex items-center justify-center"
-      >
-        <Trophy className="w-10 h-10 text-indigo-500" />
-      </motion.div>
-
-      {/* Title */}
-      <div className="space-y-2">
-        <motion.h2
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-3xl font-bold text-slate-900"
-        >
-          Aula Concluída!
-        </motion.h2>
-        {avgScore > 0 && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-slate-500 text-sm"
-          >
-            Score médio: {avgScore}%
-          </motion.p>
-        )}
-      </div>
-
-      {/* Stats grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="grid grid-cols-3 gap-3 w-full max-w-sm"
-      >
-        {/* XP */}
-        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
-          <Zap className="w-5 h-5 text-indigo-500" />
-          <CountUp value={xp} delay={600} />
-          <span className="text-[11px] text-slate-500 font-medium">XP</span>
-        </div>
-
-        {/* Coins */}
-        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
-          <Coins className="w-5 h-5 text-amber-500" />
-          <CountUp value={coins} delay={800} />
-          <span className="text-[11px] text-slate-500 font-medium">Moedas</span>
-        </div>
-
-        {/* Streak */}
-        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
-          <Flame className="w-5 h-5 text-emerald-500" />
-          <span className="text-xl font-bold text-slate-900 tabular-nums">
-            {streakDays}
-          </span>
-          <span className="text-[11px] text-slate-500 font-medium">Dias</span>
-        </div>
-      </motion.div>
-
-      {/* New patent badge */}
-      {gamificationResult?.isNewPatent && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.2, type: "spring" }}
-          className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-100 to-violet-100 border border-indigo-200"
-        >
-          <span className="text-sm font-semibold text-indigo-600">
-            🎖️ Nova patente: {gamificationResult.patentName}
-          </span>
-        </motion.div>
-      )}
-
-      {/* Lesson Rating */}
-      <V8LessonRating lessonId={lessonId} />
-
-      {/* Actions */}
+    <>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="flex flex-col gap-3 w-full max-w-xs"
+        className="flex flex-col items-center justify-center min-h-[75vh] gap-8 text-center px-4"
       >
-        <button
-          onClick={onContinue}
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-shadow"
+        {/* Trophy icon */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+          className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-indigo-200 flex items-center justify-center"
         >
-          Próxima Aula <ArrowRight className="w-4 h-4" />
-        </button>
+          <Trophy className="w-10 h-10 text-indigo-500" />
+        </motion.div>
 
-        {onBackToTrail && (
-          <button
-            onClick={onBackToTrail}
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-sm transition-colors"
+        {/* Title */}
+        <div className="space-y-2">
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-3xl font-bold text-slate-900"
           >
-            <RotateCcw className="w-4 h-4" /> Voltar à Trilha
-          </button>
+            Aula Concluída!
+          </motion.h2>
+          {avgScore > 0 && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-slate-500 text-sm"
+            >
+              Score médio: {avgScore}%
+            </motion.p>
+          )}
+        </div>
+
+        {/* Stats grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="grid grid-cols-3 gap-3 w-full max-w-sm"
+        >
+          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+            <Zap className="w-5 h-5 text-indigo-500" />
+            <CountUp value={xp} delay={600} />
+            <span className="text-[11px] text-slate-500 font-medium">XP</span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+            <Coins className="w-5 h-5 text-amber-500" />
+            <CountUp value={coins} delay={800} />
+            <span className="text-[11px] text-slate-500 font-medium">Moedas</span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+            <Flame className="w-5 h-5 text-emerald-500" />
+            <span className="text-xl font-bold text-slate-900 tabular-nums">
+              {streakDays}
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium">Dias</span>
+          </div>
+        </motion.div>
+
+        {/* New patent badge */}
+        {gamificationResult?.isNewPatent && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.2, type: "spring" }}
+            className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-100 to-violet-100 border border-indigo-200"
+          >
+            <span className="text-sm font-semibold text-indigo-600">
+              🎖️ Nova patente: {gamificationResult.patentName}
+            </span>
+          </motion.div>
         )}
+
+        {/* Actions */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="flex flex-col gap-3 w-full max-w-xs"
+        >
+          <button
+            onClick={handleNextLesson}
+            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-shadow"
+          >
+            Próxima Aula <ArrowRight className="w-4 h-4" />
+          </button>
+
+          {onBackToTrail && (
+            <button
+              onClick={onBackToTrail}
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-sm transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" /> Voltar à Trilha
+            </button>
+          )}
+        </motion.div>
       </motion.div>
-    </motion.div>
+
+      {/* Rating Modal */}
+      <V8LessonRating
+        lessonId={lessonId}
+        open={showRatingModal}
+        onClose={handleRatingClose}
+      />
+    </>
   );
 };
 
