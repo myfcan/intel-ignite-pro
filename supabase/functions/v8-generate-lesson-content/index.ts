@@ -336,6 +336,13 @@ PROIBIÇÕES:
 - NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo.
 - NUNCA use tom apressado no enunciado. Proibido: "Responda rapidamente", "confie no seu instinto", "você tem pouco tempo", "sem pensar muito", "responda agora". Essas frases são anti-pedagógicas.
 
+CONGRUÊNCIA GRAMATICAL OBRIGATÓRIA:
+- Todos os textos gerados (prompts, resultados, instruções) DEVEM ter concordância sujeito-verbo correta.
+- ERRO CLÁSSICO: "Sou um casal" → CORRETO: "Somos um casal". Se o sujeito é coletivo/plural, o verbo DEVE concordar.
+- Outros exemplos de erros proibidos: "Nós é" → "Nós somos", "A gente vamos" → "A gente vai", "Eu e minha esposa vai" → "Eu e minha esposa vamos".
+- Revise CADA frase gerada para garantir concordância nominal e verbal antes de retornar.
+- Essa regra se aplica a QUALQUER idioma mencionado nos exemplos (pt-BR, en, es, etc.).
+
 TOM OBRIGATÓRIO:
 - O enunciado deve guiar o aluno a PENSAR e ANALISAR antes de agir.
 - Use frases como: "Analise o cenário abaixo", "Observe como...", "Teste sua habilidade aplicando as técnicas desta aula", "Compare os dois prompts e identifique...".
@@ -352,6 +359,7 @@ REGRAS:
 
 PROIBIÇÕES:
 - NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo. Vá DIRETO ao exercício.
+- Todos os textos DEVEM ter concordância gramatical correta (sujeito-verbo, gênero-número). Ex: "Sou um casal" é ERRADO → "Somos um casal".
 
 TIPOS DISPONÍVEIS E SCHEMAS:
 - true-false: { statements: [{ id: "stmt-1", text: "afirmação", correct: true/false, explanation: "..." }], feedback: { perfect: "...", good: "...", needsReview: "..." } }

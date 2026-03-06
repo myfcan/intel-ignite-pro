@@ -1,0 +1,1 @@
+UPDATE public.lessons SET content = jsonb_set(content::jsonb, '{inlinePlaygrounds,0,professionalPrompt}', '"Somos um casal, vamos a Barcelona em abril por 2 dias. Gostamos de gastronomia e queremos gastar pouco. Monte um roteiro dividido em manhã/tarde/noite e inclua estimativa simples de custos."'::jsonb) WHERE id = '0638b200-0fd6-4534-8141-f4e3c5c08c2a';
