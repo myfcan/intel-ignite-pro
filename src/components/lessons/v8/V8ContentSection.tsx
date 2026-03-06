@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState, useRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { V8Section } from "@/types/v8Lesson";
 import { sanitizeV8PedagogicalText } from "@/lib/v8TextSanitizer";
@@ -165,10 +165,6 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
   ({ section, mode, sectionIndex }, ref) => {
     const cleanTitle = cleanSectionTitle(sanitizeV8PedagogicalText(section.title));
     const sanitizedContent = sanitizeV8PedagogicalText(section.content);
-    const paragraphCounter = useRef(0);
-
-    // Reset counter each render
-    paragraphCounter.current = 0;
 
     return (
       <div
@@ -192,59 +188,49 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
           </div>
         )}
 
-        {/* 3. Markdown body — premium reading typography */}
-        <div className="v8-markdown font-reading text-[17px] leading-[1.9] tracking-[-0.008em] text-muted-foreground mt-[7px] [&>*:last-child]:mb-0">
+        {/* 3. Markdown body */}
+        <div className="v8-markdown text-[16.5px] leading-[1.85] tracking-[-0.01em] text-muted-foreground mt-[7px] [&>*:last-child]:mb-0">
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
-                <h1 className="font-sans text-2xl font-bold text-foreground mt-6 mb-3">
+                <h1 className="text-2xl font-bold text-foreground mt-6 mb-3">
                   {children}
                 </h1>
               ),
               h2: ({ children }) => (
-                <h2 className="font-sans text-xl font-semibold text-foreground mt-5 mb-2">
+                <h2 className="text-xl font-semibold text-foreground mt-5 mb-2">
                   {children}
                 </h2>
               ),
               h3: ({ children }) => (
-                <h3 className="font-sans text-lg font-semibold text-foreground mt-4 mb-2">
+                <h3 className="text-lg font-semibold text-foreground mt-4 mb-2">
                   {children}
                 </h3>
               ),
-              p: ({ children }) => {
-                const isFirst = paragraphCounter.current === 0;
-                paragraphCounter.current += 1;
-                return (
-                  <p className={
-                    isFirst
-                      ? "mb-[14px] text-[17.5px] text-foreground/85 first-letter:text-[2.8em] first-letter:font-bold first-letter:text-primary first-letter:float-left first-letter:leading-[0.8] first-letter:mr-2 first-letter:mt-1"
-                      : "mb-[14px]"
-                  }>
-                    {children}
-                  </p>
-                );
-              },
+              p: ({ children }) => (
+                <p className="mb-[14px] text-foreground/80">{children}</p>
+              ),
               ul: ({ children }) => (
-                <ul className="mb-5 space-y-2.5 ml-1">
+                <ul className="mb-5 space-y-2 ml-0 bg-muted/50 rounded-xl px-4 py-3 border border-border/40">
                   {children}
                 </ul>
               ),
               ol: ({ children }) => (
-                <ol className="list-decimal list-inside mb-5 space-y-2.5 ml-1">
+                <ol className="list-decimal list-inside mb-5 space-y-2 ml-0 bg-muted/50 rounded-xl px-4 py-3 border border-border/40">
                   {children}
                 </ol>
               ),
               li: ({ children }) => (
-                <li className="flex items-start gap-2.5 pl-1">
-                  <span className="mt-[11px] block h-[5px] w-[5px] rounded-full bg-primary/50 shrink-0" />
+                <li className="flex items-start gap-2.5 text-foreground/80">
+                  <span className="mt-[10px] block h-[6px] w-[6px] rounded-full bg-primary/60 shrink-0" />
                   <span className="flex-1">{children}</span>
                 </li>
               ),
               strong: ({ children }) => (
-                <strong className="font-semibold text-foreground">{children}</strong>
+                <strong className="font-semibold text-primary">{children}</strong>
               ),
               em: ({ children }) => (
-                <em className="text-primary/70 italic">{children}</em>
+                <em className="not-italic font-medium text-foreground bg-primary/10 px-1.5 py-0.5 rounded-md">{children}</em>
               ),
               code: ({ children, className }) => {
                 const isInline = !className;
@@ -259,7 +245,7 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
                 );
               },
               blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-primary/30 bg-primary/5 rounded-r-xl pl-5 py-3 my-5 text-muted-foreground italic [&>p]:mb-0">
+                <blockquote className="border-l-4 border-primary/40 bg-primary/5 rounded-r-xl pl-5 py-3 my-5 text-foreground/70 italic [&>p]:mb-0">
                   {children}
                 </blockquote>
               ),
