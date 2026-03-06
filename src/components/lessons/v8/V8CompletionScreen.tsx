@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Trophy, Zap, Coins, Flame, ArrowRight, RotateCcw } from "lucide-react";
 import confetti from "canvas-confetti";
 import { registerGamificationEvent } from "@/services/gamification";
+import { V8LessonRating } from "./V8LessonRating";
 import { PASS_SCORE } from "@/constants/v8Rules";
 import { updateMissionProgress } from "@/lib/updateMissionProgress";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,6 +175,9 @@ export const V8CompletionScreen = ({
           </span>
         </motion.div>
       )}
+
+      {/* Lesson Rating */}
+      <V8LessonRating lessonId={lessonId} />
 
       {/* Actions */}
       <motion.div

@@ -16,6 +16,7 @@ import {
   FileJson,
   MessageSquare,
   Play,
+  Star,
   FlaskConical,
   FolderOpen,
   ClipboardCheck,
@@ -352,6 +353,32 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ========== AVALIAÇÕES ========== */}
+        <Card className="border-2 border-amber-500/50 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 shadow-lg shadow-amber-500/10 cursor-pointer" onClick={() => navigate('/admin/ratings')}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Star className="w-6 h-6 text-amber-500" />
+              Avaliações de Aulas
+            </CardTitle>
+            <CardDescription>
+              Feedback dos alunos ao final de cada lição V8
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              size="lg"
+              className="w-full bg-amber-600 hover:bg-amber-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate('/admin/ratings');
+              }}
+            >
+              <Star className="w-5 h-5 mr-2" />
+              Ver Avaliações
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* ========== ACESSO RÁPIDO ========== */}
         <div className="space-y-3">
