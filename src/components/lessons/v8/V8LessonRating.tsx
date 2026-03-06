@@ -19,34 +19,20 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
   const [loading, setLoading] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep modal open for user interaction; if already rated, prefill values instead of auto-close
+  // Always start rating modal clean on open (no prefilled previous feedback)
   useEffect(() => {
     if (!open) return;
 
     setSubmitted(false);
     setHoveredStar(0);
+    setRating(0);
+    setComment("");
+    setLoading(false);
 
-    const check = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data } = await supabase
-        .from("lesson_ratings")
-        .select("rating, comment")
-        .eq("user_id", user.id)
-        .eq("lesson_id", lessonId)
-        .maybeSingle();
-
-      if (data) {
-        setRating(data.rating ?? 0);
-        setComment(data.comment ?? "");
-      } else {
-        setRating(0);
-        setComment("");
-      }
-    };
-
-    check();
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
 
     return () => {
       if (closeTimerRef.current) {
