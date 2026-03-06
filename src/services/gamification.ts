@@ -4,7 +4,8 @@ export type GamificationEventType =
   | 'lesson_completed'
   | 'journey_completed'
   | 'quiz_answered'
-  | 'insight_claimed';
+  | 'insight_claimed'
+  | 'exercise_correct';
 
 export type GamificationResult = {
   xp_delta: number;

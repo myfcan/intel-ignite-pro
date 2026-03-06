@@ -45,7 +45,7 @@ export const V8CompletionScreen = ({
 
     const register = async () => {
       try {
-        const result = await registerGamificationEvent("lesson_completed", lessonId);
+        const result = await registerGamificationEvent("lesson_completed", lessonId, { avg_score: avgScore });
         if (result) {
           setGamificationResult({
             xpDelta: result.xp_delta ?? 0,
