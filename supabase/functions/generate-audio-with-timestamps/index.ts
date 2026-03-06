@@ -87,10 +87,11 @@ serve(async (req) => {
     const requestBody: Record<string, unknown> = {
       text: processedText,
       model_id: selectedModel,
+      language_code: "pt",
       voice_settings: {
         stability: 0.5,
         similarity_boost: 1.0,
-        style: useV3 ? 0.3 : 0.0, // eleven_v3 usa style para expressividade
+        style: 0.3,
         use_speaker_boost: true,
       },
     };

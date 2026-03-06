@@ -45,6 +45,7 @@ serve(async (req) => {
           body: JSON.stringify({
             text: text,
             model_id: 'eleven_v3',
+            language_code: 'pt',
             voice_settings: {
               stability: 0.5,
               similarity_boost: 1.0,
