@@ -56,8 +56,9 @@ serve(async (req) => {
     // eleven_v3   → suporta [audio tags], NÃO suporta SSML
     // eleven_multilingual_v2 → suporta SSML <break/>, ignora audio tags
     // ============================================================
-    const useV3 = use_emotion_tags === true || model_id === 'eleven_v3';
-    const selectedModel = useV3 ? 'eleven_v3' : (model_id || 'eleven_multilingual_v2');
+    // CRITICAL: Always use eleven_v3 to prevent accent drift to PT-PT
+    const useV3 = true;
+    const selectedModel = 'eleven_v3';
 
     // Preparar o texto:
     // - Se v3: manter audio tags como estão, remover SSML
