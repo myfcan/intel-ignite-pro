@@ -1,180 +1,184 @@
 
+# Espelho Completo V8 — 25 Categorias (~35 arquivos)
 
-# Auditoria Completa — Itens NÃO MAPEADOS no Espelho Anterior
-
-Após varredura exaustiva dos ~28 arquivos do sistema V8, identifiquei **7 categorias/itens** que estavam ausentes ou incompletos no espelho anterior. Abaixo, o delta — tudo que faltava.
-
----
-
-## NOVA CATEGORIA 19: REVIEW GATE (Social Proof Modal)
-
-**Arquivo:** `src/components/lessons/v8/V8LessonReviewGate.tsx`
-
-**NÃO MAPEADO.** Modal de "social proof" exibido antes de desbloquear uma aula. Funcionalidades:
-
-| Feature | Implementação |
-|---|---|
-| **Reviews determinísticos** | Hash do `lessonId` seleciona 4 de 5 reviews fixos (sem API) |
-| **Delay de CTA** | Botão "Continuar" desabilitado por 3s (`setTimeout`), label muda de "Leia os depoimentos..." → "Continuar" |
-| **Bloqueio de fuga** | `onPointerDownOutside` e `onEscapeKeyDown` bloqueados (`preventDefault`) |
-| **Upsell** | Botão "Quero desbloquear tudo" com ícone `Crown` navega para `/pricing` |
-| **Design** | Header gradiente `violet-600 → indigo-600`, avatares coloridos (`violet, pink, indigo, emerald, amber`), estrelas amarelas |
-| **Animação** | Cards entram com `opacity: 0, x: -20` escalonados em 150ms |
+## Auditoria Final: Todas as Melhorias Mapeadas
 
 ---
 
-## NOVA CATEGORIA 20: LIV TRAIL WELCOME (Onboarding Modal)
+## CAT 1: Renderização Markdown (V8ContentSection)
+- Bold: `font-semibold text-primary`
+- Itálico: highlight marker `bg-primary/10 px-1.5 py-0.5 rounded-md`
+- Listas: container `bg-muted/50 rounded-xl border-border/40`, bullets `bg-primary/60`
+- Blockquotes: callout `border-l-4 border-primary/40 bg-primary/5 rounded-r-xl`
+- Code inline: `bg-muted text-primary rounded-md font-mono`
+- Base: `text-[16.5px] leading-[1.85] tracking-[-0.01em]`
+- Sanitização: `v8TextSanitizer.ts` remove marcadores narração
+- Título: strip automático "Seção X —" via `cleanSectionTitle()`
 
-**Arquivo:** `src/components/lessons/v8/V8LivTrailWelcome.tsx`
+## CAT 2: Imagens — V8TrimmedImage
+- Trim automático via bounding box (alpha<10, dist<30)
+- Cache in-memory `trimmedImageCache` com `TRIM_VERSION=2`
+- Shimmer loading + fade-in 500ms + `img.decode()` assíncrono
+- Posição: antes do markdown, centralizada, `max-w-[300px] rounded-2xl`
 
-**NÃO MAPEADO.** Modal de boas-vindas da "Liv" exibido na primeira visita a uma trilha. Funcionalidades:
+## CAT 3: Scroll & Âncoras (v8ScrollUtils)
+- Âncora estática `scroll-margin-top: 88px` separada do motion.div
+- Drift correction 420ms pós-scroll (threshold 4px)
+- Double-rAF antes do scroll
+- CTA scroll: 300ms + 600ms safety-net
+- Safe zones: TOP=88px, BOTTOM=120px, DELTA=16px
 
-| Feature | Implementação |
-|---|---|
-| **One-time show** | `localStorage.getItem("liv-trail-welcome-{trailId}")` — exibe uma única vez |
-| **Delay de abertura** | Modal aparece após 600ms, botão CTA habilita após 2s |
-| **Design Dark** | Background `#1F2937 → #111827` com grid pattern SVG + glow violeta + 6 partículas flutuantes animadas |
-| **Avatar Liv** | `liv-avatar.png` com borda `purple-400/30`, glow radial pulsante (`blur-2xl`), Sparkles animado girando |
-| **CTA** | Gradiente `indigo → violet → pink`, shadow glow violeta, texto muda com estado |
-| **Bloqueio** | `onPointerDownOutside` e `onEscapeKeyDown` bloqueados |
+## CAT 4: Player UI (V8LessonPlayer)
+- Background: `bg-white text-slate-900` (Premium Light)
+- Hide scrollbar, padding unificado `pb-36`
+- Barra fixa bottom: `bg-white/95 backdrop-blur-sm`
+- Animação entrada: `opacity 0→1, y 14→0` condicional
+- Preload áudio do próximo item
+
+## CAT 5: Header & Progresso (V8Header)
+- Barra progresso: `h-1 bg-gradient-to-r from-indigo-500 to-violet-500`
+- Glassmorphism: `bg-white/90 backdrop-blur-lg`
+- Contador: `tabular-nums text-[11px]`
+- Report button + drawer de navegação por seções
+
+## CAT 6: Audio Player (V8AudioPlayer)
+- Play button: gradiente `indigo-500 → violet-500`, 36px
+- Progress bar clicável `h-1.5`
+- Velocidade: ciclo `1x → 1.25x → 1.5x → 2x`
+- Timer `font-mono tabular-nums`
+- Loading: spinner + animate-pulse
+
+## CAT 7: Audio-First Lock (useAudioFirstLock + V8AudioLockOverlay)
+- Lock: `opacity-40 pointer-events-none` durante narração
+- Overlay: `Headphones animate-pulse` + mensagem
+- Unlock visual: `ring-2 ring-indigo-400/60` por 1.5s
+- Escopo: V8InlineExercise, V8CompleteSentenceInline, V8QuizInline, V8QuizTrueFalse, V8QuizFillBlank (modo dual: texto + chips)
+
+## CAT 8: Exercícios Inline (8 tipos)
+1. **Multiple Choice** — botões com feedback verde/vermelho, ícone Target
+2. **FlipCard Quiz** — Light Theme, COLOR_MAP/ICON_MAP, confetti localizado, progress bar
+3. **True/False** — 4 afirmações com toggle
+4. **Platform Match** — match cenários↔plataformas, validação defensiva
+5. **Timed Quiz** — 4 timer states, bônus tempo, SFX, max 2 perguntas
+6. **Scenario Selection** — formato dual (simples + completo), scroll integrado
+7. **Fill-in-Blanks** — chips arrastáveis
+8. **Complete Sentence** — lacunas inline com chip bank
+
+## CAT 9: Coursiv Prompt Builder (V8CompleteSentenceInline)
+- Badge: `Puzzle` icon em `bg-cyan-50 border-cyan-200`
+- Blank states: active/filled/empty com cores distintas
+- Word bank: chips shuffled, tap-to-fill, auto-advance
+- Submit: só quando `allFilled`
+- Feedback: erros com `line-through` + correção verde
+- Retry: grid 2 colunas
+- Contrato V8-C01: 4 lacunas, 0 distratores
+
+## CAT 10: Playground Interativo (V8PlaygroundInline)
+- Fases: intro→amateur→professional→compare→challenge→done (acumulativas)
+- Badge: `Sparkles` em `bg-violet-50`
+- Comparação: grid 2 colunas ❌/✅
+- Challenge: avaliação IA via edge function `v8-evaluate-prompt`
+- Anti-copy context, feedback estruturado, max 3 tentativas
+- Reset externo via `useImperativeHandle`
+
+## CAT 11: Insight Reward (V8InsightReward)
+- Card `border-2 border-amber-300 bg-amber-50`
+- Claim idempotente (verifica events antes)
+- Confetti 100 partículas + SFX
+- Estado locked se playground score < 81
+
+## CAT 12: Learn & Grow (V8LearnAndGrowBlock)
+- Design: `border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50`
+- 3 linhas numeradas: whatChanged, beforeAfter, practicalExample
+- Último item do timeline
+
+## CAT 13: Tela de Conclusão (V8CompletionScreen)
+- Troféu com gradiente indigo-violet
+- Stats grid 3 colunas: XP, Moedas, Streak
+- CountUp 750ms com delay escalonado
+- Confetti condicional (só se avgScore > 0)
+- Patent badge com spring animation
+
+## CAT 14: Modal de Avaliação (V8LessonRating)
+- 5 estrelas Lucide com hover/active scale
+- Textarea 500 chars, upsert no banco
+- Thank you auto-close 1.2s
+
+## CAT 15: Mode Selector (V8ModeSelector)
+- 2 cards: Ler (BookOpen) / Ouvir (Headphones)
+- Hover spring animation
+- `unlockAudio()` no iOS
+
+## CAT 16: Gamification & XP (distributed)
+- XP por exercício: `registerGamificationEvent` idempotente
+- Micro-feedback: badge flutuante `+5 XP` animado
+- XP por insight e conclusão
+- `playgroundScores` para conditional insight unlock
+
+## CAT 17: Timeline & Dedup (useV8Player)
+- Ordem: Section→CompleteSentence→InlineExercise→Playground→Insight→Quiz
+- Dedup: inlineExercise tem prioridade sobre quiz legado
+- Preload por tipo: 7 tipos de timeline item
+- Cleanup: `audio.src = ""` no unmount
+
+## CAT 18: Feedback Wrapper (V8InlineExercise)
+- Feedback card: `border-l-4` emerald/amber
+- Retry: `exerciseKey` incrementado para remount
+- Botões: grid 2 colunas (fail) ou full-width (pass)
+- CTA scroll integrado
+
+## CAT 19: Review Gate — Social Proof (V8LessonReviewGate)
+- Reviews determinísticos via hash do lessonId (4 de 5)
+- CTA delay 3s, label dinâmico
+- Bloqueio de fuga (pointerDown + escape)
+- Upsell: Crown → /pricing
+- Design: gradiente violet→indigo, avatares coloridos
+- Animação: cards escalonados 150ms
+
+## CAT 20: Liv Trail Welcome (V8LivTrailWelcome)
+- One-time show via localStorage
+- Delay abertura 600ms, CTA habilita 2s
+- Design Dark: #1F2937→#111827, grid SVG, glow violeta
+- 6 partículas flutuantes animadas
+- Avatar Liv: borda purple, glow radial pulsante, Sparkles girando
+- CTA: gradiente indigo→violet→pink
+
+## CAT 21: Skill Tree (V8SkillTree + V8SkillNode)
+- Layout zigzag: pattern [0,1,0,-1], offset 70px, ROW_HEIGHT=160px
+- Conectores SVG: Bézier quadrática, cor por estado
+- 4 estados visuais: completed, in_progress, available, locked
+- Ícones dinâmicos via getLessonIcon(title)
+- Spring stiffness 220, delay escalonado
+
+## CAT 22: Trail Card (V8TrailCard)
+- V8_ICONS por orderIndex (Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot)
+- 4 temas accent rotacionando
+- Progress bar animada com cor do tema
+
+## CAT 23: Lesson Icon Map (lessonIconMap.ts)
+- 27 keyword→ícone mappings
+- Fallback: BookOpen
+- Usado em: V8LessonCard, V8SkillNode, CourseDetail
+
+## CAT 24: Exercise Error Card (ExerciseErrorCard)
+- Card laranja com AlertTriangle
+- Detalhes técnicos font-mono
+- Link admin sync
+- Usado em 6 exercícios como validação defensiva
+
+## CAT 25: Content Parser (v8ContentParser.ts — 542 linhas)
+- parseFullContent(): extrai título, descrição, seções, playgrounds, quizzes
+- Section 0 auto-criada se conteúdo entre # e ##
+- Meta-filter: ignora parser/fix/TODO/FIXME
+- Sanitização pedagógica integrada
+- Output flags: hasManualExercises, hasManualQuizzes, etc.
 
 ---
 
-## NOVA CATEGORIA 21: SKILL TREE (Navegação Visual de Aulas)
-
-**Arquivos:** `V8SkillTree.tsx` + `V8SkillNode.tsx`
-
-**NÃO MAPEADO.** Árvore de habilidades visual tipo "Duolingo" para navegação entre aulas.
-
-| Feature | Implementação |
-|---|---|
-| **Layout zigzag** | Pattern `[0, 1, 0, -1]` com offset X de 70px, `ROW_HEIGHT = 160px` |
-| **Conectores SVG** | Curvas Bézier entre nós, cor gradiente (violeta para completados, cinza para locked) |
-| **Nós (V8SkillNode)** | Botões circulares com 4 estados visuais (`completed, in_progress, available, locked`), cada um com gradiente/shadow distintos |
-| **Ícones dinâmicos** | `getLessonIcon(title)` baseado em keywords do título (27 mapeamentos em `lessonIconMap.ts`) |
-| **Animação** | Spring stiffness 220 com delay escalonado (`index * 0.06`), `whileHover: scale 1.08`, `whileTap: scale 0.94` |
-| **Tooltip** | Título da aula em `text-[10px]` abaixo do nó, max 80px |
-
----
-
-## NOVA CATEGORIA 22: TRAIL CARD (Card de Trilha)
-
-**Arquivo:** `src/components/lessons/v8/V8TrailCard.tsx`
-
-**NÃO MAPEADO.** Card de trilha na tela principal com temas visuais.
-
-| Feature | Implementação |
-|---|---|
-| **Ícones por trilha** | `V8_ICONS` mapeados por `orderIndex` (Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot) |
-| **Temas** | 4 variações de accent (`#6366F1, #7C3AED, #4F46E5, #8B5CF6`) rotacionando por `orderIndex` |
-| **Progress bar** | `bg-gradient-to-r` com cor do tema, animada via framer-motion |
-| **Badge** | "Read & Listen" label em cada tema |
-
----
-
-## NOVA CATEGORIA 23: LESSON ICON MAP (Ícones Inteligentes)
-
-**Arquivo:** `src/utils/lessonIconMap.ts`
-
-**NÃO MAPEADO.** Sistema de mapeamento automático de ícones Lucide por keywords do título da aula.
-
-| Feature | Implementação |
-|---|---|
-| **27 keywords** | prompt→MessageSquare, ia→Bot, cérebro→Brain, vídeo→Video, renda→DollarSign, etc. |
-| **Fallback** | `BookOpen` quando nenhum keyword matched |
-| **Uso** | `V8LessonCard`, `V8SkillNode`, `CourseDetail` |
-
----
-
-## NOVA CATEGORIA 24: EXERCISE ERROR CARD (Fallback de Erro)
-
-**Arquivo:** `src/components/lessons/ExerciseErrorCard.tsx`
-
-**NÃO MAPEADO.** Componente de fallback exibido quando exercícios têm dados inválidos.
-
-| Feature | Implementação |
-|---|---|
-| **Design** | Card laranja `bg-orange-50 border-orange-500 border-2` com `AlertTriangle` |
-| **Detalhes** | Box `font-mono` para exibir detalhes técnicos do erro |
-| **Admin link** | Botão "Ir para Sincronizar Aulas" navegando para `/admin/sync-lessons` |
-| **Uso** | Validação defensiva em 6 exercícios: PlatformMatch, ScenarioSelection, TrueFalse, FillInBlanks, CompleteSentence, DataCollection |
-
----
-
-## NOVA CATEGORIA 25: V8 CONTENT PARSER (Parser de Conteúdo)
-
-**Arquivo:** `src/lib/v8ContentParser.ts` (542 linhas)
-
-**NÃO MAPEADO.** Parser master que converte texto markdown bruto em `V8LessonData` estruturado.
-
-| Feature | Implementação |
-|---|---|
-| **parseFullContent()** | Extrai título, descrição, seções (##), playgrounds (`[PLAYGROUND]`), quizzes (`[QUIZ]`) |
-| **Section 0 auto** | Se há conteúdo entre `#` e primeiro `##`, cria seção de "Abertura" automática |
-| **Meta-filter** | Ignora linhas com keywords de instruções (`parser, fix, TODO, FIXME`) |
-| **Sanitização** | Aplica `sanitizeV8PedagogicalText()` em todo conteúdo extraído |
-| **Output flags** | `hasManualExercises`, `hasManualQuizzes`, `hasManualPlaygrounds`, `manualExerciseTypes` |
-
----
-
-## ITENS INCOMPLETOS NO ESPELHO ANTERIOR (agora corrigidos)
-
-### CATEGORIA 7 (Audio-First Lock) — Escopo ampliado
-
-O espelho anterior listava o escopo como "V8InlineExercise, V8CompleteSentenceInline, V8QuizInline, V8QuizTrueFalse, V8QuizFillBlank", mas faltou mencionar que:
-- `V8QuizFillBlank` suporta **modo dual**: input de texto livre OU chips (`chipOptions`) — o `useAudioFirstLock` bloqueia ambos os modos
-
-### CATEGORIA 8.6 (Scenario Selection) — Detalhe não mapeado
-
-- **Formato dual**: aceita tanto formato simples (`{ scenario, isCorrect }`) quanto formato completo (`{ scenario, options, correctAnswer }`)
-- **Scroll integrado**: usa `ensureElementVisible` do `v8ScrollUtils` para garantir visibilidade do feedback
-
-### CATEGORIA 17 (Dedup & Timeline) — Lógica de preload
-
-O espelho mencionou preload mas não detalhou:
-- **Preload por tipo**: resolve audioUrl de todos os 7 tipos de timeline item (section, quiz, playground, complete-sentence, inline-exercise, insight, learn-and-grow)
-- **Cleanup**: `audio.src = ""` no unmount para liberar recurso
-
----
-
-## MAPA FINAL ATUALIZADO — 25 CATEGORIAS
-
-```text
- #  │ Categoria                   │ Arquivos
-────┼─────────────────────────────┼──────────────────────────
- 1  │ Renderização Markdown       │ V8ContentSection
- 2  │ Imagens (Trim)              │ V8ContentSection (inline)
- 3  │ Scroll & Âncoras            │ V8LessonPlayer + v8ScrollUtils
- 4  │ Player UI                   │ V8LessonPlayer
- 5  │ Header & Progresso          │ V8Header
- 6  │ Audio Player                │ V8AudioPlayer
- 7  │ Audio-First Lock            │ useAudioFirstLock + V8AudioLockOverlay
- 8  │ Exercícios (8 tipos)        │ 8 componentes filhos
- 9  │ Coursiv Prompt Builder      │ V8CompleteSentenceInline
-10  │ Playground Interativo       │ V8PlaygroundInline
-11  │ Insight Reward              │ V8InsightReward
-12  │ Learn & Grow                │ V8LearnAndGrowBlock
-13  │ Tela de Conclusão           │ V8CompletionScreen
-14  │ Modal de Avaliação          │ V8LessonRating
-15  │ Mode Selector               │ V8ModeSelector
-16  │ Gamification & XP           │ distributed (3 componentes)
-17  │ Timeline & Dedup            │ useV8Player
-18  │ Feedback Wrapper            │ V8InlineExercise
-19  │ Review Gate (Social Proof)  │ V8LessonReviewGate          ← NOVO
-20  │ Liv Trail Welcome           │ V8LivTrailWelcome            ← NOVO
-21  │ Skill Tree                  │ V8SkillTree + V8SkillNode    ← NOVO
-22  │ Trail Card                  │ V8TrailCard                  ← NOVO
-23  │ Lesson Icon Map             │ lessonIconMap.ts             ← NOVO
-24  │ Exercise Error Card         │ ExerciseErrorCard            ← NOVO
-25  │ Content Parser              │ v8ContentParser.ts           ← NOVO
-────┼─────────────────────────────┼──────────────────────────
-    │ Sanitização (v8TextSanitizer) │ lib/v8TextSanitizer.ts
-    │ Scroll Utils                  │ v8ScrollUtils.ts
-    │ CSS (hide-scrollbar)          │ src/index.css
-    │ Constants (PASS_SCORE)        │ src/constants/v8Rules.ts
-```
+## Utilitários Transversais
+- `v8TextSanitizer.ts` — sanitização de narração
+- `v8ScrollUtils.ts` — scroll helpers
+- `src/index.css` — hide-scrollbar
+- `src/constants/v8Rules.ts` — PASS_SCORE
 
 **Total: 25 categorias, ~35 arquivos.**
-
-As 7 novas categorias (19-25) cobrem: navegação de trilhas (SkillTree, TrailCard), onboarding (LivWelcome), social proof (ReviewGate), error handling (ExerciseErrorCard), content parsing (v8ContentParser), e ícones inteligentes (lessonIconMap). Tudo já implementado e funcional no sistema.
-
