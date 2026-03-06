@@ -1,71 +1,50 @@
 
 
-## Plano: Tipografia Premium para Conteudo V8
+## Problemas Identificados e Plano de Correção
 
-### Diagnostico
+### Problema 1: "Repetir tarefa" no Playground não funciona visualmente
 
-O conteudo atual no `V8ContentSection.tsx` usa estilos basicos: `text-[17px] leading-[1.75] text-slate-700`. O resultado e funcional mas parece um blog generico, nao um curso premium. Os problemas:
+**Causa raiz**: O botão "Repetir tarefa" (linha 558-566 de `V8PlaygroundInline.tsx`) reseta corretamente o estado interno (`setPhase("intro")`, limpa score, feedback, etc.), MAS:
+- O playground está renderizado na posição do timeline onde `isActive={isLast}` — quando o usuário já avançou para a fase "done" (index 5), o componente já está no final do scroll. O reset para "intro" acontece, mas **não há scroll de volta ao topo do componente**.
+- Não há efeito visual (fade/pulse) indicando que o campo foi reativado.
 
-1. **Paragrafos sem hierarquia** — todos iguais, sem destaque visual
-2. **Bold (`strong`)** — apenas `font-semibold text-slate-900`, pouco impacto
-3. **Italico (`em`)** — `text-indigo-600` puro, sem refinamento
-4. **Listas** — bullets padrao `list-disc`, sem personalidade
-5. **Sem separacao visual** entre blocos de ideias
-6. **Blockquote** — borda fina, pouco destaque
+**Correção**: Após o reset do estado, fazer scroll suave até o topo do componente playground + adicionar uma animação de "reativação" (pulse/ring) no card de intro.
 
-### Mudancas no `V8ContentSection.tsx`
+### Problema 2: "Refazer Desafio" no InsightReward não funciona
 
-**Container do markdown:**
-- Aumentar `leading-[1.85]` para mais respiro
-- `text-[16.5px]` levemente menor mas mais elegante
-- `tracking-[-0.01em]` para tipografia mais apertada e pro
+**Causa raiz**: O botão chama `onRetryPlayground` → `goToIndex(pgIdx)` no `V8LessonPlayer`. Isso muda o `currentIndex` no state do player, mas:
+- `goToIndex` apenas seta o index — **não reseta o estado interno do `V8PlaygroundInline`** (phase, attempts, score, feedback ficam no estado "done").
+- O playground é re-renderizado na mesma posição, mas com o estado interno stale (ainda mostra "Playground concluído").
 
-**Paragrafos (`p`):**
-- `mb-[12px]` mais espaco entre paragrafos (atual: 7px)
-- Primeiro paragrafo de cada secao com `text-[17.5px]` e `text-slate-800` (lead paragraph)
+**Correção**: Adicionar um mecanismo de reset externo ao playground (via key ou callback). Quando `goToIndex` é chamado para retornar ao playground, incrementar uma `resetKey` que força re-mount do componente, resetando todo o estado interno.
 
-**Bold (`strong`):**
-- `font-bold text-slate-900` (trocar semibold por bold)
-- Adicionar sutil `bg-indigo-50/60 px-1 py-0.5 rounded` para dar destaque tipo "marcador"
+### Problema 3: Remover o efeito de redução de 25% na re-conclusão
 
-**Italico (`em`):**
-- `text-slate-500 italic` (remover indigo, mais sutil e elegante)
-- Ou manter indigo mas com `text-indigo-500/80` mais suave
+**Causa raiz**: A migração anterior implementou 25% de XP em re-conclusões. O usuário quer remover isso — re-conclusões devem dar o XP proporcional completo (sem redução).
 
-**Listas (`ul/ol`):**
-- Trocar `list-disc` por custom bullets via CSS pseudo-element
-- `space-y-2.5` mais espaco entre itens
-- Items com `pl-2` e indicador visual indigo
+**Correção**: Atualizar a função `register_gamification_event` no banco para remover o multiplicador de 0.25 em re-conclusões de `lesson_completed`. Manter a lógica proporcional baseada em `avg_score`, mas sem penalidade por revisão.
 
-**Blockquote:**
-- `border-l-3 border-indigo-400 bg-indigo-50/40 rounded-r-xl pl-5 py-3`
-- Mais presenca visual como "callout"
+---
 
-**Separador horizontal (`hr`):**
-- Adicionar componente `hr` no ReactMarkdown
-- Linha sutil `border-slate-200/60 my-6`
+### Implementação
 
-### Arquivo Afetado
+#### 1. `V8PlaygroundInline.tsx` — Scroll + visual feedback no "Repetir tarefa"
+- Adicionar um `ref` no container raiz do componente
+- No handler do "Repetir tarefa", após resetar estado, chamar `scrollIntoView({ behavior: 'smooth' })` no ref raiz
+- Adicionar estado temporário `justReset` que ativa um efeito visual (ring/pulse) no card de challenge por 1.5s
 
-| Arquivo | Acao |
-|---------|------|
-| `V8ContentSection.tsx` | Refinar todos os componentes do ReactMarkdown |
+#### 2. `V8LessonPlayer.tsx` + `V8PlaygroundInline.tsx` — Reset externo via key
+- Manter um `Map<number, number>` de `playgroundResetKeys` no player
+- Quando `onRetryPlayground` é chamado e faz `goToIndex(pgIdx)`, incrementar a resetKey daquele index
+- Passar a key como prop `key={resetKey}` no `V8PlaygroundInline` para forçar re-mount (estado limpo)
+- Após `goToIndex`, fazer scroll suave até o elemento do playground
 
-### Resultado Visual
+#### 3. Migração SQL — Remover redução de 25%
+- Alterar a função `register_gamification_event`: quando `v_event_exists = true` e `p_event_type = 'lesson_completed'`, usar o XP proporcional completo (sem `* 0.25`).
+- Remover label "Revisão +25%" se existir no frontend.
 
-```text
-Antes:                          Depois:
-─────────────────               ─────────────────
-Texto plano 17px                Texto elegante 16.5px
-texto texto texto               com tracking tight
-                                
-**bold** simples                **bold** com highlight sutil
-                                em fundo indigo-50
-                                
-• bullet padrao                 ◦ bullet custom indigo
-• sem espaco                      com espaco 2.5
-                                
-> quote fino                    ┃ quote callout
-                                ┃ com fundo suave
-```
+### Arquivos afetados
+- `src/components/lessons/v8/V8PlaygroundInline.tsx` — scroll + visual reset
+- `src/components/lessons/v8/V8LessonPlayer.tsx` — resetKey mechanism
+- `supabase/migrations/` — remover redução 25%
 
