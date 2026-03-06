@@ -78,7 +78,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
             title={title}
             instruction={instruction}
             statements={data.statements || []}
-            feedback={data.feedback || { perfect: "Perfeito! 🎉", good: "Bom trabalho! 👏", needsReview: "Revise o conteúdo acima 📖" }}
+            feedback={data.feedback || { perfect: "Perfeito!", good: "Bom trabalho!", needsReview: "Revise o conteúdo acima" }}
             onComplete={handleComplete}
           />
         );
