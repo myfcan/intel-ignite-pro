@@ -764,7 +764,7 @@ const Dashboard = () => {
               {activeTrail && activeTrailProgress && (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Aprendendo</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Sua Lição</h2>
                     <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
                   </div>
                   <div
