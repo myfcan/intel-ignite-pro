@@ -43,8 +43,8 @@ export function OnboardingCTA({ activeTrail, hasProgress }: OnboardingCTAProps) 
       transition={{ duration: 0.4, delay: 0.2 }}
       className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl mb-3 text-left transition-all active:scale-[0.98]"
       style={{
-        background: 'linear-gradient(135deg, hsl(38 92% 50%), hsl(24 95% 53%), hsl(350 80% 55%))',
-        boxShadow: '0 4px 20px hsl(38 92% 50% / 0.4), 0 0 0 1px hsl(38 92% 50% / 0.1)',
+        background: 'linear-gradient(135deg, hsl(38 80% 55%), hsl(30 75% 52%))',
+        boxShadow: '0 2px 12px hsl(38 80% 55% / 0.25)',
       }}
     >
       {/* Pulsing icon */}
