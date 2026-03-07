@@ -10,6 +10,7 @@ interface MobileQuickStatsProps {
   isLoading?: boolean;
   missionsContent?: React.ReactNode;
   quickAccessContent?: React.ReactNode;
+  continueContent?: React.ReactNode;
   accessCount?: number;
   activeTrail?: { id: string; title: string } | null;
   hasProgress?: boolean;
@@ -29,7 +30,7 @@ const getMotivationalLine = (streak: number) => {
   return 'Comece sua sequência hoje!';
 };
 
-export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, quickAccessContent, accessCount = 99, activeTrail, hasProgress = false }: MobileQuickStatsProps) => {
+export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, quickAccessContent, continueContent, accessCount = 99, activeTrail, hasProgress = false }: MobileQuickStatsProps) => {
   const navigate = useNavigate();
   const [missionsOpen, setMissionsOpen] = useState(false);
   const streakPercent = Math.min((streakDays / 30) * 100, 100);
@@ -181,7 +182,6 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
 
       {/* ═══════════════════════════════════════════════
           COLLAPSIBLE DAILY MISSIONS
-          Compact strip that expands on tap
          ═══════════════════════════════════════════════ */}
       <motion.div
         id="tour-missions"
@@ -251,6 +251,11 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* ═══════════════════════════════════════════════
+          CONTINUE LEARNING (slot)
+         ═══════════════════════════════════════════════ */}
+      {continueContent}
     </div>
   );
 };
