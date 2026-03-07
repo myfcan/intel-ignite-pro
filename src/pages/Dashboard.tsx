@@ -573,9 +573,6 @@ const Dashboard = () => {
           
           {/* ===== MAIN COLUMN ===== */}
           <div>
-            {/* ===== MOBILE: Quick Access Shortcuts ===== */}
-            <MobileQuickAccess />
-
             {/* ===== MOBILE: Greeting Card + Quick Stats ===== */}
             <MobileQuickStats
               streakDays={gamificationStats?.streakDays ?? 0}
