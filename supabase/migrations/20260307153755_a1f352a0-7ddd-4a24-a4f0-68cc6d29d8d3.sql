@@ -1,0 +1,1 @@
+UPDATE users SET dashboard_access_count = 0;
