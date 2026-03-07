@@ -16,6 +16,7 @@ import { PointsCard } from "@/components/dashboard/PointsCard";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { MobileQuickStats } from "@/components/dashboard/MobileQuickStats";
 import { MobileQuickAccess } from "@/components/dashboard/MobileQuickAccess";
+import { DashboardTour } from "@/components/onboarding/DashboardTour";
 import { BuildBadge } from "@/components/BuildBadge";
 import { DASHBOARD_LAYOUT_ID, logRuntimeSignature } from "@/lib/runtimeSignature";
 
@@ -127,11 +128,9 @@ const Dashboard = () => {
   const [trails, setTrails] = useState<Trail[]>([]);
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  // Fase 1: Unified admin state (no separate useIsAdmin hook — fetched in checkAuth)
   const [isAdmin, setIsAdmin] = useState(false);
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(true);
-  // Fase 1: Unified gamification state (no separate useUserGamification hook — fetched in checkAuth)
   const [gamificationStats, setGamificationStats] = useState<{
     powerScore: number; coins: number; patentLevel: number; patentName: string;
     streakDays: number; lessonsCompleted: number;
@@ -139,6 +138,7 @@ const Dashboard = () => {
   const [gamificationLoading, setGamificationLoading] = useState(true);
   const [showPatentCelebration, setShowPatentCelebration] = useState(false);
   const prevPatentLevelRef = useRef<number | null>(null);
+  const [dashboardAccessCount, setDashboardAccessCount] = useState<number>(99);
   
   // V8 courses (jornadas dentro da trilha V8)
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
@@ -387,6 +387,13 @@ const Dashboard = () => {
       }
 
       setUser(finalUser);
+      
+      // Track dashboard access count for onboarding features
+      const currentCount = finalUser.dashboard_access_count ?? 0;
+      setDashboardAccessCount(currentCount);
+      if (currentCount < 5) {
+        supabase.from('users').update({ dashboard_access_count: currentCount + 1 }).eq('id', userId).then();
+      }
 
       // ══════ Fase 1: Extract gamification from same users query (no separate hook) ══════
       const patentLevel = finalUser.patent_level || 0;
@@ -539,10 +546,15 @@ const Dashboard = () => {
     ? trailsProgressWithStatus.find(p => p.trailId === activeTrail.id)
     : null;
 
+  const hasAnyProgress = (activeTrailProgress?.completedLessons ?? 0) > 0;
+
   return (
     <div className="min-h-screen relative" data-layout-id={DASHBOARD_LAYOUT_ID} style={{ background: 'linear-gradient(180deg, #F0F1F5 0%, #E8E9EF 50%, #F0F1F5 100%)' }}>
       <DashboardHeader user={user!} showPatentCelebration={showPatentCelebration} />
       <BuildBadge isAdmin={isAdmin} />
+      
+      {/* Dashboard Tour — triggered on first access */}
+      <DashboardTour enabled={dashboardAccessCount === 0} />
       
       {/* Gamification Header */}
       {!gamificationLoading && gamificationStats && (
@@ -579,10 +591,15 @@ const Dashboard = () => {
               userName={user?.name?.split(' ')[0] || 'Aluno'}
               isLoading={gamificationLoading}
               missionsContent={<MissoesDiarias compact />}
+              accessCount={dashboardAccessCount}
+              activeTrail={activeTrail ? { id: activeTrail.id, title: activeTrail.title } : null}
+              hasProgress={hasAnyProgress}
             />
 
             {/* ===== MOBILE: Quick Access Shortcuts ===== */}
-            <MobileQuickAccess />
+            <div id="tour-quick-access">
+              <MobileQuickAccess />
+            </div>
 
             {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
             <div className="lg:hidden">
@@ -612,7 +629,7 @@ const Dashboard = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'hsl(215 16% 47%)' }}>
-                        Continue aprendendo
+                        Continue sua lição
                       </p>
                       <h3 className="font-bold text-sm truncate" style={{ color: 'hsl(215 25% 9%)' }}>{activeTrail.title}</h3>
                       <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(220 14% 96%)' }}>
@@ -747,7 +764,7 @@ const Dashboard = () => {
               {activeTrail && activeTrailProgress && (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Aprendendo</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Sua Lição</h2>
                     <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
                   </div>
                   <div
@@ -787,7 +804,7 @@ const Dashboard = () => {
 
             {/* ===== SECTION TITLE: TRILHAS ===== */}
             {(v8Trails.length > 0 || v7Trails.length > 0) && (
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
+              <h2 id="tour-trilhas" className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
             )}
 
             {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}

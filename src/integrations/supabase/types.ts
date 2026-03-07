@@ -1547,6 +1547,7 @@ export type Database = {
           created_at: string | null
           daily_interaction_limit: number | null
           daily_time: Database["public"]["Enums"]["daily_time_type"] | null
+          dashboard_access_count: number
           email: string
           gamification_updated_at: string | null
           id: string
@@ -1579,6 +1580,7 @@ export type Database = {
           created_at?: string | null
           daily_interaction_limit?: number | null
           daily_time?: Database["public"]["Enums"]["daily_time_type"] | null
+          dashboard_access_count?: number
           email: string
           gamification_updated_at?: string | null
           id: string
@@ -1611,6 +1613,7 @@ export type Database = {
           created_at?: string | null
           daily_interaction_limit?: number | null
           daily_time?: Database["public"]["Enums"]["daily_time_type"] | null
+          dashboard_access_count?: number
           email?: string
           gamification_updated_at?: string | null
           id?: string
