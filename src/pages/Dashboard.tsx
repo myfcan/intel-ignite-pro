@@ -388,10 +388,14 @@ const Dashboard = () => {
 
       setUser(finalUser);
       
-      // Track dashboard access count for onboarding features
+      // Read access count (never increment here — increment only on real session)
       const currentCount = finalUser.dashboard_access_count ?? 0;
       setDashboardAccessCount(currentCount);
-      if (currentCount < 5) {
+
+      // Increment only once per browser session (sessionStorage clears on tab/browser close)
+      const sessionKey = 'ailiv_session_counted';
+      if (!sessionStorage.getItem(sessionKey) && currentCount < 5) {
+        sessionStorage.setItem(sessionKey, '1');
         supabase.from('users').update({ dashboard_access_count: currentCount + 1 }).eq('id', userId).then();
       }
 
