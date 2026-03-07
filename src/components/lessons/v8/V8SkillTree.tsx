@@ -27,6 +27,7 @@ const ROW_HEIGHT = 160;
 
 export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTreeProps) => {
   const totalHeight = lessons.length * ROW_HEIGHT + 40;
+  const isMobile = useIsMobile();
 
   // Find first available lesson index
   const firstAvailableIndex = lessons.findIndex(l => l.status === "available" || l.status === "in_progress");
