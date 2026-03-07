@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { V8SkillNode, type NodeStatus } from "./V8SkillNode";
 
 interface LessonItem {
