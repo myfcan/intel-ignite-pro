@@ -546,10 +546,15 @@ const Dashboard = () => {
     ? trailsProgressWithStatus.find(p => p.trailId === activeTrail.id)
     : null;
 
+  const hasAnyProgress = (activeTrailProgress?.completedLessons ?? 0) > 0;
+
   return (
     <div className="min-h-screen relative" data-layout-id={DASHBOARD_LAYOUT_ID} style={{ background: 'linear-gradient(180deg, #F0F1F5 0%, #E8E9EF 50%, #F0F1F5 100%)' }}>
       <DashboardHeader user={user!} showPatentCelebration={showPatentCelebration} />
       <BuildBadge isAdmin={isAdmin} />
+      
+      {/* Dashboard Tour — triggered on first access */}
+      <DashboardTour enabled={dashboardAccessCount === 0} />
       
       {/* Gamification Header */}
       {!gamificationLoading && gamificationStats && (
@@ -586,10 +591,15 @@ const Dashboard = () => {
               userName={user?.name?.split(' ')[0] || 'Aluno'}
               isLoading={gamificationLoading}
               missionsContent={<MissoesDiarias compact />}
+              accessCount={dashboardAccessCount}
+              activeTrail={activeTrail ? { id: activeTrail.id, title: activeTrail.title } : null}
+              hasProgress={hasAnyProgress}
             />
 
             {/* ===== MOBILE: Quick Access Shortcuts ===== */}
-            <MobileQuickAccess />
+            <div id="tour-quick-access">
+              <MobileQuickAccess />
+            </div>
 
             {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
             <div className="lg:hidden">
