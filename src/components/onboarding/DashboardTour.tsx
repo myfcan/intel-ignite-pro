@@ -182,15 +182,27 @@ export function DashboardTour({ enabled }: DashboardTourProps) {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9999]"
         >
-          {/* Overlay with spotlight cutout */}
+          {/* Overlay with spotlight cutout using box-shadow */}
+          <div
+            className="absolute pointer-events-none"
+            onClick={skipTour}
+            style={{
+              top: spotlightRect.top,
+              left: spotlightRect.left,
+              width: spotlightRect.width,
+              height: spotlightRect.height,
+              borderRadius: 16,
+              boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)',
+              pointerEvents: 'none',
+              transition: 'all 0.4s ease',
+              zIndex: 1,
+            }}
+          />
+          {/* Clickable overlay behind spotlight */}
           <div
             className="absolute inset-0"
             onClick={skipTour}
-            style={{
-              background: 'rgba(0,0,0,0.55)',
-              maskImage: `radial-gradient(ellipse ${spotlightRect.width}px ${spotlightRect.height}px at ${spotlightRect.left + spotlightRect.width / 2}px ${spotlightRect.top + spotlightRect.height / 2}px, transparent 45%, black 55%)`,
-              WebkitMaskImage: `radial-gradient(ellipse ${spotlightRect.width}px ${spotlightRect.height}px at ${spotlightRect.left + spotlightRect.width / 2}px ${spotlightRect.top + spotlightRect.height / 2}px, transparent 45%, black 55%)`,
-            }}
+            style={{ zIndex: 0 }}
           />
 
           {/* Spotlight ring */}
