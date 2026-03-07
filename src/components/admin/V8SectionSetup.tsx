@@ -211,7 +211,12 @@ export function V8SectionSetup({ sections, quizzes, playgrounds, onApply, onBack
 
       <div className="space-y-2">
         {sections.map((section, i) => {
-          const cfg = configs[i];
+          const cfg = configs[i] ?? {
+            hasImage: false, imageUrl: "", imageMode: "none" as const,
+            customPrompt: "", isGenerating: false, generatedPreview: "",
+            hasQuiz: quizzes.some((q) => q.afterSectionIndex === i),
+            hasPlayground: playgrounds.some((p) => p.afterSectionIndex === i),
+          };
           const isExpanded = expandedIndex === i;
           const badges = activeBadges(cfg);
           const quiz = quizMap.get(i);
