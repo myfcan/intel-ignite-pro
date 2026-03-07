@@ -804,7 +804,7 @@ const Dashboard = () => {
 
             {/* ===== SECTION TITLE: TRILHAS ===== */}
             {(v8Trails.length > 0 || v7Trails.length > 0) && (
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
+              <h2 id="tour-trilhas" className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
             )}
 
             {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
