@@ -118,6 +118,11 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
             </div>
           </div>
 
+          {/* Dynamic CTA for first 5 accesses */}
+          {accessCount < 5 && (
+            <OnboardingCTA activeTrail={activeTrail} hasProgress={hasProgress} />
+          )}
+
           {/* Quick action pills */}
           <div className="flex gap-2">
             <button
