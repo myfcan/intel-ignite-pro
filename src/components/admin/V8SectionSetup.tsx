@@ -43,6 +43,24 @@ export function V8SectionSetup({ sections, quizzes, playgrounds, onApply, onBack
     }))
   );
 
+  // Sync configs when sections change (e.g., parser adds Section 0)
+  useEffect(() => {
+    if (sections.length !== configs.length) {
+      setConfigs(
+        sections.map((s, i) => configs[i] ?? {
+          hasImage: !!s.imageUrl,
+          imageUrl: s.imageUrl || "",
+          imageMode: s.imageUrl ? "auto" as const : "none" as const,
+          customPrompt: "",
+          isGenerating: false,
+          generatedPreview: s.imageUrl || "",
+          hasQuiz: quizzes.some((q) => q.afterSectionIndex === i),
+          hasPlayground: playgrounds.some((p) => p.afterSectionIndex === i),
+        })
+      );
+    }
+  }, [sections.length]);
+
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [reprocessProgress, setReprocessProgress] = useState<string>("");
