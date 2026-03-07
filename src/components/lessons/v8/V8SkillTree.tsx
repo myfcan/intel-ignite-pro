@@ -196,20 +196,20 @@ function LessonLabel({ lesson, isFirst, align }: { lesson: LessonItem; isFirst: 
       initial={{ opacity: 0, x: align === "left" ? -8 : 8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
-      className={`relative z-20 px-3 py-1.5 rounded-xl bg-[#FAFBFC] w-[220px] sm:w-[280px] ${align === "right" ? "mr-0 text-right" : "ml-0 text-left"}`}
+      className={`relative z-20 px-3 py-1.5 rounded-xl border border-border/60 bg-card/95 shadow-sm w-[220px] sm:w-[280px] ${align === "right" ? "mr-0 text-right" : "ml-0 text-left"}`}
     >
       {isFirst && (
-        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-violet-100 text-violet-600 mb-1">
+        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary mb-1">
           Início
         </span>
       )}
       <p className={`text-sm font-semibold leading-tight line-clamp-2 ${
-        isLocked ? "text-gray-400" : "text-gray-800"
+        isLocked ? "text-muted-foreground/60" : "text-foreground"
       }`}>
         {lesson.title}
       </p>
       {lesson.estimatedTime && (
-        <p className={`text-sm mt-0.5 ${isLocked ? "text-gray-300" : "text-gray-400"}`}>
+        <p className={`text-sm mt-0.5 ${isLocked ? "text-muted-foreground/50" : "text-muted-foreground"}`}>
           {lesson.estimatedTime} min
         </p>
       )}
