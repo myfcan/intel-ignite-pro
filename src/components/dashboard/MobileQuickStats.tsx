@@ -123,51 +123,53 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
             <OnboardingCTA activeTrail={activeTrail} hasProgress={hasProgress} />
           )}
 
-          {/* Quick action pills */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate('/leaderboard')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all active:scale-[0.96]"
-              style={{
-                background: 'rgba(255, 255, 255, 0.12)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: 'rgba(255, 255, 255, 0.9)',
-              }}
-            >
-              <Crown className="w-3.5 h-3.5 text-amber-300" />
-              Ranking
-            </button>
-            <button
-              onClick={() => navigate('/achievements')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all active:scale-[0.96]"
-              style={{
-                background: 'rgba(255, 255, 255, 0.12)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: 'rgba(255, 255, 255, 0.9)',
-              }}
-            >
-              <Gem className="w-3.5 h-3.5 text-purple-200" />
-              Conquistas
-            </button>
-            <button
-              onClick={() => {
-                const trailsSection = document.getElementById('suas-trilhas');
-                trailsSection?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold ml-auto transition-all active:scale-[0.96]"
-              style={{
-                background: 'rgba(255, 255, 255, 0.25)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: 'white',
-              }}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              Estudar
-            </button>
-          </div>
+          {/* Quick action pills — hidden during first 5 accesses */}
+          {accessCount >= 5 && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate('/leaderboard')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all active:scale-[0.96]"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                }}
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-300" />
+                Ranking
+              </button>
+              <button
+                onClick={() => navigate('/achievements')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all active:scale-[0.96]"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                }}
+              >
+                <Gem className="w-3.5 h-3.5 text-purple-200" />
+                Conquistas
+              </button>
+              <button
+                onClick={() => {
+                  const trailsSection = document.getElementById('suas-trilhas');
+                  trailsSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold ml-auto transition-all active:scale-[0.96]"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.25)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                }}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                Estudar
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -205,7 +207,7 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
           </div>
           <div className="flex-1 text-left">
             <span className="text-[13px] font-bold block" style={{ color: 'hsl(215 25% 9%)' }}>
-              Missões Diárias
+              {accessCount < 5 ? 'Continue sua lição' : 'Missões Diárias'}
             </span>
           </div>
           <div
