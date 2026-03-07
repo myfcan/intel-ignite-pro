@@ -16,6 +16,7 @@ import { PointsCard } from "@/components/dashboard/PointsCard";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { MobileQuickStats } from "@/components/dashboard/MobileQuickStats";
 import { MobileQuickAccess } from "@/components/dashboard/MobileQuickAccess";
+import { DashboardTour } from "@/components/onboarding/DashboardTour";
 import { BuildBadge } from "@/components/BuildBadge";
 import { DASHBOARD_LAYOUT_ID, logRuntimeSignature } from "@/lib/runtimeSignature";
 
@@ -127,11 +128,9 @@ const Dashboard = () => {
   const [trails, setTrails] = useState<Trail[]>([]);
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  // Fase 1: Unified admin state (no separate useIsAdmin hook — fetched in checkAuth)
   const [isAdmin, setIsAdmin] = useState(false);
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(true);
-  // Fase 1: Unified gamification state (no separate useUserGamification hook — fetched in checkAuth)
   const [gamificationStats, setGamificationStats] = useState<{
     powerScore: number; coins: number; patentLevel: number; patentName: string;
     streakDays: number; lessonsCompleted: number;
@@ -139,6 +138,7 @@ const Dashboard = () => {
   const [gamificationLoading, setGamificationLoading] = useState(true);
   const [showPatentCelebration, setShowPatentCelebration] = useState(false);
   const prevPatentLevelRef = useRef<number | null>(null);
+  const [dashboardAccessCount, setDashboardAccessCount] = useState<number>(99);
   
   // V8 courses (jornadas dentro da trilha V8)
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
