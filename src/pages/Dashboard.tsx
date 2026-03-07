@@ -598,9 +598,9 @@ const Dashboard = () => {
             />
 
             {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
-            <div className="lg:hidden">
+            <div className="lg:hidden mt-4">
               {activeTrail && activeTrailProgress && (
-                <div className="mb-4">
+                <div>
                   <div
                     className="rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-shadow active:scale-[0.99]"
                     style={{
