@@ -27,7 +27,6 @@ export const GamificationHeader: React.FC<GamificationHeaderProps> = ({
   const [powerGlow, setPowerGlow] = useState(false);
   const [coinsGlow, setCoinsGlow] = useState(false);
 
-  // Detectar mudanças e ativar brilho
   useEffect(() => {
     if (powerScore > prevPowerScore) {
       setPowerGlow(true);
@@ -45,63 +44,50 @@ export const GamificationHeader: React.FC<GamificationHeaderProps> = ({
   }, [coins]);
 
   return (
-    <div 
-      className="relative overflow-hidden border-b transition-all duration-300"
+    <div
+      className="relative overflow-hidden rounded-b-2xl transition-all duration-300"
       style={{
         background: 'linear-gradient(135deg, #6C63FF 0%, #7C3AED 50%, #9333EA 100%)',
-        borderColor: 'rgba(139, 92, 246, 0.3)',
+        boxShadow: '0 8px 24px -8px rgba(124, 58, 237, 0.3)',
       }}
     >
-      {/* Textura de pontos sutil */}
-      <div 
-        className="absolute inset-0 opacity-20 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-        }}
-      />
-
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 py-2 xs:py-3 sm:py-4">
-        <div className="flex items-center justify-between gap-2 xs:gap-3 sm:gap-4">
-          {/* Lado esquerdo - Título */}
-          <div className="flex items-center gap-1.5 xs:gap-2 flex-shrink-0">
-            <div className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-              <Zap className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 text-white drop-shadow-lg" />
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          {/* Lado esquerdo */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
             </div>
-            <div className="hidden sm:block">
-              <p className="text-xs text-white font-semibold uppercase tracking-wide drop-shadow-md">Seu Progresso</p>
-            </div>
+            <p className="hidden sm:block text-xs text-white/90 font-semibold uppercase tracking-wide">
+              Seu Progresso
+            </p>
           </div>
 
-          {/* Lado direito - Stats */}
-          <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-6 overflow-x-auto flex-shrink">
+          {/* Stats */}
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-5">
             {/* Power Score */}
-            <div className={`flex items-center gap-1.5 xs:gap-2 bg-white/15 backdrop-blur-sm rounded-lg px-2 xs:px-2.5 sm:px-3 py-1 xs:py-1.5 border border-white/20 hover:bg-white/20 transition-all flex-shrink-0 ${powerGlow ? 'animate-pulse shadow-lg shadow-sky-400/50' : ''}`}>
-              <Zap className={`w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 text-white drop-shadow-lg transition-all flex-shrink-0 ${powerGlow ? 'scale-125 drop-shadow-2xl' : ''}`} />
-              <div className="flex flex-col items-start">
-                <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-white/90 uppercase tracking-wider font-semibold hidden sm:block drop-shadow">Power</span>
-                <span className={`text-sm xs:text-base sm:text-lg font-bold text-white leading-none drop-shadow-lg transition-all ${powerGlow ? 'scale-110' : ''}`}>{powerScore}</span>
+            <div className={`flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-xl px-2.5 sm:px-3 py-1.5 transition-all ${powerGlow ? 'animate-pulse shadow-lg shadow-sky-400/40' : ''}`}>
+              <Zap className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90 transition-transform ${powerGlow ? 'scale-125' : ''}`} />
+              <div className="flex flex-col">
+                <span className="hidden sm:block text-[9px] text-white/70 uppercase tracking-wider font-medium leading-none mb-0.5">Power</span>
+                <span className={`text-sm sm:text-base font-bold text-white leading-none transition-transform ${powerGlow ? 'scale-110' : ''}`}>{powerScore}</span>
               </div>
             </div>
 
             {/* Coins */}
-            <div className={`flex items-center gap-1.5 xs:gap-2 bg-white/15 backdrop-blur-sm rounded-lg px-2 xs:px-2.5 sm:px-3 py-1 xs:py-1.5 border border-white/20 hover:bg-white/20 transition-all flex-shrink-0 ${coinsGlow ? 'animate-pulse shadow-lg shadow-amber-400/50' : ''}`}>
-              <Coins className={`w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 text-white drop-shadow-lg transition-all flex-shrink-0 ${coinsGlow ? 'scale-125 drop-shadow-2xl' : ''}`} />
-              <div className="flex flex-col items-start">
-                <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-white/90 uppercase tracking-wider font-semibold hidden sm:block drop-shadow">Créditos</span>
-                <span className={`text-sm xs:text-base sm:text-lg font-bold text-white leading-none drop-shadow-lg transition-all ${coinsGlow ? 'scale-110' : ''}`}>{coins}</span>
+            <div className={`flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-xl px-2.5 sm:px-3 py-1.5 transition-all ${coinsGlow ? 'animate-pulse shadow-lg shadow-amber-400/40' : ''}`}>
+              <Coins className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90 transition-transform ${coinsGlow ? 'scale-125' : ''}`} />
+              <div className="flex flex-col">
+                <span className="hidden sm:block text-[9px] text-white/70 uppercase tracking-wider font-medium leading-none mb-0.5">Créditos</span>
+                <span className={`text-sm sm:text-base font-bold text-white leading-none transition-transform ${coinsGlow ? 'scale-110' : ''}`}>{coins}</span>
               </div>
             </div>
 
             {/* Patente */}
-            <div className={`flex items-center gap-1.5 xs:gap-2 rounded-lg px-2 xs:px-2.5 sm:px-3 py-1 xs:py-1.5 border ${patentColor} hover:scale-105 transition-transform flex-shrink-0`}>
-              <Award className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="hidden lg:inline text-[10px] xs:text-xs font-semibold whitespace-nowrap">
-                {patentName}
-              </span>
-              <span className="lg:hidden text-[10px] xs:text-xs font-semibold whitespace-nowrap">
-                Nv{patentLevel}
-              </span>
+            <div className={`flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 border ${patentColor} transition-transform hover:scale-105`}>
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="hidden lg:inline text-xs font-semibold whitespace-nowrap">{patentName}</span>
+              <span className="lg:hidden text-xs font-semibold whitespace-nowrap">Nv{patentLevel}</span>
             </div>
           </div>
         </div>
