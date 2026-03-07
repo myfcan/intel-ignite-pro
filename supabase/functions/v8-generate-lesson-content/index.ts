@@ -386,7 +386,7 @@ const COURSIV_BUILDER_TOOLS = [
     type: "function",
     function: {
       name: "generate_coursiv_exercise",
-      description: "Generate ONE Coursiv exercise: a SINGLE sentence/prompt with EXACTLY 4 inline blanks (max 14 words). Chips = only the 4 correct answers (NO distractors).",
+      description: "Generate ONE Coursiv exercise: a SINGLE sentence/prompt with EXACTLY 4 inline blanks (max 20 words). Chips = only the 4 correct answers (NO distractors).",
       parameters: {
         type: "object",
         properties: {
@@ -396,12 +396,12 @@ const COURSIV_BUILDER_TOOLS = [
             type: "array",
             minItems: 1,
             maxItems: 1,
-            description: "EXACTLY 1 sentence object with EXACTLY 4 blanks and max 14 words total.",
+            description: "EXACTLY 1 sentence object with EXACTLY 4 blanks and max 20 words total.",
             items: {
               type: "object",
               properties: {
                 id: { type: "string" },
-                text: { type: "string", description: "ONE prompt sentence with EXACTLY 4 _______ placeholders and NO MORE than 14 words total (each _______ counts as 1 word). Example: 'Crie um _______ para _______ no formato _______ com tom _______'" },
+                text: { type: "string", description: "ONE prompt sentence with EXACTLY 4 _______ placeholders and NO MORE than 20 words total (each _______ counts as 1 word). Example: 'Crie um _______ para um _______ que precisa de resultados no formato _______ com tom _______'" },
                 correctAnswers: {
                   type: "array",
                   minItems: 4,
@@ -426,18 +426,19 @@ Sua tarefa é gerar UM único exercício Coursiv para a sessão 8.
 
 FORMATO OBRIGATÓRIO:
 - Gere EXATAMENTE 1 frase (um prompt completo) com EXATAMENTE 4 lacunas (_______) embutidas inline.
-- A frase deve ter NO MÁXIMO 14 palavras no total (cada _______ conta como 1 palavra).
+- A frase deve ter NO MÁXIMO 20 palavras no total (cada _______ conta como 1 palavra).
 - A frase deve parecer um prompt real que o aluno usaria com ChatGPT, Gemini ou outra IA.
 - Cada lacuna representa um componente estrutural: objetivo, público-alvo, contexto, formato, tom, restrição, etc.
+- Use conectores e contexto entre as lacunas para criar uma frase rica e realista (preposições, orações relativas, etc.).
 
 EXEMPLO DE FORMATO:
-text: "Crie um _______ para _______ no formato _______ com tom _______"
-correctAnswers: ["roteiro", "empresas", "lista", "persuasivo"]
+text: "Crie um _______ para um _______ que precisa de resultados no formato _______ com tom _______"
+correctAnswers: ["roteiro", "empreendedor digital", "lista prática", "persuasivo"]
 
 REGRAS:
 1. sentences deve ter EXATAMENTE 1 item.
 2. O campo text deve conter EXATAMENTE 4 placeholders _______ (use exatamente 7 underscores). NÃO gere 3, 5 ou 6 lacunas.
-3. A frase deve ter NO MÁXIMO 14 palavras (incluindo os placeholders como palavras). Conte: "Crie um _______ para _______ no formato _______ com tom _______" = 10 palavras. OK.
+3. A frase deve ter NO MÁXIMO 20 palavras (incluindo os placeholders como palavras). Conte: "Crie um _______ para um _______ que precisa de resultados no formato _______ com tom _______" = 15 palavras. OK.
 4. correctAnswers: array com EXATAMENTE 4 palavras/frases corretas, na mesma ordem das lacunas no texto.
 5. NÃO gere o campo options. Os chips exibidos serão APENAS as 4 respostas corretas em ordem embaralhada.
 6. As respostas corretas devem ser curtas (1-2 palavras cada).
@@ -826,8 +827,8 @@ serve(async (req) => {
 
             // V8-C01: max 14 words per sentence
             const wordCount = sentence.text.trim().split(/\s+/).length;
-            if (wordCount > 14) {
-              coursivErrors.push(`Text must have max 14 words, found ${wordCount}`);
+            if (wordCount > 20) {
+              coursivErrors.push(`Text must have max 20 words, found ${wordCount}`);
             }
 
             if (answerCount !== 4) {
