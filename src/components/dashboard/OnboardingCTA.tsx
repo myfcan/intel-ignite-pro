@@ -43,8 +43,8 @@ export function OnboardingCTA({ activeTrail, hasProgress }: OnboardingCTAProps) 
       transition={{ duration: 0.4, delay: 0.2 }}
       className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl mb-3 text-left transition-all active:scale-[0.98]"
       style={{
-        background: 'linear-gradient(135deg, hsl(38 92% 50%), hsl(24 95% 53%), hsl(350 80% 55%))',
-        boxShadow: '0 4px 20px hsl(38 92% 50% / 0.4), 0 0 0 1px hsl(38 92% 50% / 0.1)',
+        background: 'linear-gradient(135deg, hsl(38 80% 55%), hsl(30 75% 52%))',
+        boxShadow: '0 2px 12px hsl(38 80% 55% / 0.25)',
       }}
     >
       {/* Pulsing icon */}
@@ -58,9 +58,9 @@ export function OnboardingCTA({ activeTrail, hasProgress }: OnboardingCTAProps) 
         {/* Pulse ring */}
         <motion.div
           className="absolute inset-0 rounded-lg"
-          style={{ border: '2px solid rgba(255,255,255,0.4)' }}
-          animate={{ scale: [1, 1.4, 1.4], opacity: [0.6, 0, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
+          style={{ border: '1.5px solid rgba(255,255,255,0.3)' }}
+          animate={{ scale: [1, 1.25, 1.25], opacity: [0.4, 0, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
         />
       </div>
 
