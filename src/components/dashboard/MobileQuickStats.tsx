@@ -9,6 +9,7 @@ interface MobileQuickStatsProps {
   userName: string;
   isLoading?: boolean;
   missionsContent?: React.ReactNode;
+  quickAccessContent?: React.ReactNode;
   accessCount?: number;
   activeTrail?: { id: string; title: string } | null;
   hasProgress?: boolean;
@@ -28,7 +29,7 @@ const getMotivationalLine = (streak: number) => {
   return 'Comece sua sequência hoje!';
 };
 
-export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, accessCount = 99, activeTrail, hasProgress = false }: MobileQuickStatsProps) => {
+export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, quickAccessContent, accessCount = 99, activeTrail, hasProgress = false }: MobileQuickStatsProps) => {
   const navigate = useNavigate();
   const [missionsOpen, setMissionsOpen] = useState(false);
   const streakPercent = Math.min((streakDays / 30) * 100, 100);
@@ -172,6 +173,11 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
           )}
         </div>
       </motion.div>
+
+      {/* ═══════════════════════════════════════════════
+          QUICK ACCESS (slot)
+         ═══════════════════════════════════════════════ */}
+      {quickAccessContent}
 
       {/* ═══════════════════════════════════════════════
           COLLAPSIBLE DAILY MISSIONS
