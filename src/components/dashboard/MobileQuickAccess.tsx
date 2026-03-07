@@ -7,22 +7,19 @@ const shortcuts = [
     label: 'Guia de bolso',
     icon: BookOpen,
     route: '/guides',
-    gradient: 'linear-gradient(135deg, #06B6D4, #0EA5E9)',
-    shadow: 'rgba(6, 182, 212, 0.25)',
+    iconBg: 'bg-accent shadow-[0_4px_12px_hsl(var(--accent)/0.3)]',
   },
   {
     label: 'Diretório de IA',
     icon: Bot,
     route: '/ai-directory',
-    gradient: 'linear-gradient(135deg, #6366F1, #818CF8)',
-    shadow: 'rgba(99, 102, 241, 0.25)',
+    iconBg: 'bg-primary shadow-[0_4px_12px_hsl(var(--primary)/0.3)]',
   },
   {
     label: 'Super Prompts',
     icon: MessageCircle,
     route: '/prompt-library',
-    gradient: 'linear-gradient(135deg, #A855F7, #C084FC)',
-    shadow: 'rgba(168, 85, 247, 0.25)',
+    iconBg: 'bg-secondary shadow-[0_4px_12px_hsl(var(--secondary)/0.3)]',
   },
 ] as const;
 
@@ -40,27 +37,16 @@ export function MobileQuickAccess() {
             transition={{ duration: 0.35, delay: i * 0.06 }}
             onClick={() => navigate(item.route)}
             className="flex flex-col items-center gap-2 py-3.5 px-2 rounded-2xl
-                       active:scale-[0.96] transition-transform duration-150"
-            style={{
-              background: 'rgba(255, 255, 255, 0.85)',
-              backdropFilter: 'blur(16px)',
-              border: '1px solid hsl(220 13% 91% / 0.8)',
-              boxShadow: '0 2px 12px -4px rgba(0,0,0,0.06)',
-            }}
+                       bg-card/85 backdrop-blur-xl border border-border/80
+                       shadow-sm hover:shadow-md
+                       active:scale-[0.96] transition-all duration-150"
           >
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{
-                background: item.gradient,
-                boxShadow: `0 4px 12px ${item.shadow}`,
-              }}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.iconBg}`}
             >
-              <item.icon className="w-5 h-5 text-white" strokeWidth={2} />
+              <item.icon className="w-5 h-5 text-primary-foreground" strokeWidth={2} />
             </div>
-            <span
-              className="text-[11px] font-semibold leading-tight text-center"
-              style={{ color: 'hsl(215 25% 27%)' }}
-            >
+            <span className="text-[11px] font-semibold leading-tight text-center text-foreground/75">
               {item.label}
             </span>
           </motion.button>
