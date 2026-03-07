@@ -573,9 +573,6 @@ const Dashboard = () => {
           
           {/* ===== MAIN COLUMN ===== */}
           <div>
-            {/* ===== MOBILE: Quick Access Shortcuts ===== */}
-            <MobileQuickAccess />
-
             {/* ===== MOBILE: Greeting Card + Quick Stats ===== */}
             <MobileQuickStats
               streakDays={gamificationStats?.streakDays ?? 0}
@@ -583,6 +580,9 @@ const Dashboard = () => {
               isLoading={gamificationLoading}
               missionsContent={<MissoesDiarias compact />}
             />
+
+            {/* ===== MOBILE: Quick Access Shortcuts ===== */}
+            <MobileQuickAccess />
 
             {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
             <div className="lg:hidden">
