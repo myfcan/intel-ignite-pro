@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { V8Section, V8InlineQuiz, V8InlinePlayground } from "@/types/v8Lesson";
 import { Image, Brain, Gamepad2, Check, ChevronDown, ChevronUp, Wand2, Pencil, Loader2, RefreshCw, X, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
