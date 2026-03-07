@@ -173,78 +173,124 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
         </div>
       </motion.div>
 
-      {/* ═══════════════════════════════════════════════
-          COLLAPSIBLE DAILY MISSIONS
-          Compact strip that expands on tap
-         ═══════════════════════════════════════════════ */}
-      <motion.div
-        id="tour-missions"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.15 }}
-        className="rounded-2xl overflow-hidden"
-        style={{
-          background: 'rgba(255, 255, 255, 0.85)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid hsl(220 13% 91% / 0.8)',
-          boxShadow: '0 2px 12px hsl(0 0% 0% / 0.04), 0 1px 3px hsl(0 0% 0% / 0.03)',
-        }}
-      >
-        {/* Collapsed header — always visible */}
-        <button
-          onClick={() => setMissionsOpen(prev => !prev)}
-          className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
-          style={{ background: missionsOpen ? 'hsl(239 84% 67% / 0.03)' : 'transparent' }}
+      {accessCount < 5 ? (
+        /* ═══════════════════════════════════════════════
+           CONTINUE SUA LIÇÃO — shown during first 5 accesses
+           Replaces daily missions entirely
+           ═══════════════════════════════════════════════ */
+        <motion.div
+          id="tour-missions"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+          style={{
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid hsl(220 13% 91% / 0.8)',
+            boxShadow: '0 2px 12px hsl(0 0% 0% / 0.04), 0 1px 3px hsl(0 0% 0% / 0.03)',
+          }}
+          onClick={() => {
+            if (activeTrail) {
+              navigate(`/trail/${activeTrail.id}`);
+            } else {
+              const trailsSection = document.getElementById('suas-trilhas');
+              trailsSection?.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
         >
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, hsl(239 84% 67%), hsl(258 90% 66%))',
-              boxShadow: '0 2px 8px hsl(239 84% 67% / 0.3)',
-            }}
-          >
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1 text-left">
-            <span className="text-[13px] font-bold block" style={{ color: 'hsl(215 25% 9%)' }}>
-              {accessCount < 5 ? 'Continue sua lição' : 'Missões Diárias'}
-            </span>
-          </div>
-          <div
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded-md mr-1"
-            style={{
-              background: 'hsl(158 64% 52% / 0.1)',
-              border: '1px solid hsl(158 64% 52% / 0.15)',
-            }}
-          >
-            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'hsl(158 64% 52%)' }} />
-            <span className="text-[9px] font-bold" style={{ color: 'hsl(158 64% 42%)' }}>HOJE</span>
-          </div>
-          <motion.div
-            animate={{ rotate: missionsOpen ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="w-4 h-4" style={{ color: 'hsl(215 16% 47%)' }} />
-          </motion.div>
-        </button>
-
-        {/* Expanded content */}
-        <AnimatePresence>
-          {missionsOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="overflow-hidden"
+          <div className="flex items-center gap-3 px-4 py-3.5">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, hsl(239 84% 67%), hsl(258 90% 66%))',
+                boxShadow: '0 4px 12px hsl(239 84% 67% / 0.3)',
+              }}
             >
-              <div className="px-4 pb-4 pt-1">
-                {missionsContent}
-              </div>
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'hsl(215 16% 47%)' }}>
+                {activeTrail ? activeTrail.title : 'Escolha uma trilha'}
+              </p>
+              <h3 className="font-bold text-[13px]" style={{ color: 'hsl(215 25% 9%)' }}>
+                Continue sua lição
+              </h3>
+            </div>
+            <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(215 16% 47%)' }} />
+          </div>
+        </motion.div>
+      ) : (
+        /* ═══════════════════════════════════════════════
+           COLLAPSIBLE DAILY MISSIONS — after 5 accesses
+           ═══════════════════════════════════════════════ */
+        <motion.div
+          id="tour-missions"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid hsl(220 13% 91% / 0.8)',
+            boxShadow: '0 2px 12px hsl(0 0% 0% / 0.04), 0 1px 3px hsl(0 0% 0% / 0.03)',
+          }}
+        >
+          <button
+            onClick={() => setMissionsOpen(prev => !prev)}
+            className="w-full flex items-center gap-3 px-4 py-3 transition-colors"
+            style={{ background: missionsOpen ? 'hsl(239 84% 67% / 0.03)' : 'transparent' }}
+          >
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, hsl(239 84% 67%), hsl(258 90% 66%))',
+                boxShadow: '0 2px 8px hsl(239 84% 67% / 0.3)',
+              }}
+            >
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="text-[13px] font-bold block" style={{ color: 'hsl(215 25% 9%)' }}>
+                Missões Diárias
+              </span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded-md mr-1"
+              style={{
+                background: 'hsl(158 64% 52% / 0.1)',
+                border: '1px solid hsl(158 64% 52% / 0.15)',
+              }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'hsl(158 64% 52%)' }} />
+              <span className="text-[9px] font-bold" style={{ color: 'hsl(158 64% 42%)' }}>HOJE</span>
+            </div>
+            <motion.div
+              animate={{ rotate: missionsOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="w-4 h-4" style={{ color: 'hsl(215 16% 47%)' }} />
             </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+          </button>
+
+          <AnimatePresence>
+            {missionsOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 pb-4 pt-1">
+                  {missionsContent}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
     </div>
   );
 };
