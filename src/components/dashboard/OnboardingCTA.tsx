@@ -10,20 +10,22 @@ interface OnboardingCTAProps {
   } | null;
   /** Whether user has started any lesson */
   hasProgress: boolean;
+  /** V8 trail ID — always the default destination */
+  v8TrailId?: string | null;
 }
 
-export function OnboardingCTA({ activeTrail, hasProgress }: OnboardingCTAProps) {
+export function OnboardingCTA({ activeTrail, hasProgress, v8TrailId }: OnboardingCTAProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (activeTrail) {
+    if (hasProgress && activeTrail) {
       navigate(`/trail/${activeTrail.id}`);
+    } else if (v8TrailId) {
+      navigate(`/v8-trail/${v8TrailId}`);
     } else {
-      // Scroll to trails section
-      const el = document.getElementById('suas-trilhas');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      }
+      // Fallback: scroll to trails
+      const el = document.getElementById('tour-trilhas');
+      el?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
