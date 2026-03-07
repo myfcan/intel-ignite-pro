@@ -592,51 +592,37 @@ const Dashboard = () => {
               isLoading={gamificationLoading}
               missionsContent={<MissoesDiarias compact />}
               quickAccessContent={<div id="tour-quick-access"><MobileQuickAccess /></div>}
+              continueContent={
+                activeTrail && activeTrailProgress ? (
+                  <div
+                    className="rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-shadow active:scale-[0.99] bg-card/85 backdrop-blur-xl border border-border/80 shadow-sm"
+                    onClick={() => navigate(`/trail/${activeTrail.id}`)}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary shadow-lg shadow-primary/25"
+                    >
+                      {(() => {
+                        const TrailIcon = TRAIL_ICONS[activeTrail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+                        return <TrailIcon className="w-5 h-5 text-primary-foreground" />;
+                      })()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5 text-muted-foreground">
+                        Continue sua lição
+                      </p>
+                      <h3 className="font-bold text-sm truncate text-foreground">{activeTrail.title}</h3>
+                      <div className="mt-1.5 h-1.5 rounded-full overflow-hidden bg-muted">
+                        <motion.div className="h-full rounded-full bg-primary" initial={{ width: 0 }} animate={{ width: `${activeTrailProgress.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} />
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                  </div>
+                ) : undefined
+              }
               accessCount={dashboardAccessCount}
               activeTrail={activeTrail ? { id: activeTrail.id, title: activeTrail.title } : null}
               hasProgress={hasAnyProgress}
             />
-
-            {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
-            <div className="lg:hidden mt-4">
-              {activeTrail && activeTrailProgress && (
-                <div>
-                  <div
-                    className="rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-shadow active:scale-[0.99]"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.85)',
-                      backdropFilter: 'blur(16px)',
-                      border: '1px solid hsl(220 13% 91% / 0.8)',
-                      boxShadow: '0 4px 16px -4px rgba(0,0,0,0.06)',
-                    }}
-                    onClick={() => navigate(`/trail/${activeTrail.id}`)}
-                  >
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #6366F1, #818CF8)',
-                        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
-                      }}
-                    >
-                      {(() => {
-                        const TrailIcon = TRAIL_ICONS[activeTrail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
-                        return <TrailIcon className="w-5 h-5 text-white" />;
-                      })()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'hsl(215 16% 47%)' }}>
-                        Continue sua lição
-                      </p>
-                      <h3 className="font-bold text-sm truncate" style={{ color: 'hsl(215 25% 9%)' }}>{activeTrail.title}</h3>
-                      <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(220 14% 96%)' }}>
-                        <motion.div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366F1, #818CF8)' }} initial={{ width: 0 }} animate={{ width: `${activeTrailProgress.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} />
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(215 16% 47%)' }} />
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* ===== PURPLE HERO BANNER - Hidden on mobile ===== */}
             <div
