@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Users, Shield, ShieldCheck, User, Loader2, Search, RefreshCw, Trash2, Ban, CheckCircle, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Users, Shield, ShieldCheck, User, Loader2, Search, RefreshCw, Trash2, Ban, CheckCircle, MoreHorizontal, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
@@ -52,7 +52,8 @@ type PendingAction =
   | { type: 'role'; userId: string; newRole: AppRole }
   | { type: 'suspend'; userId: string }
   | { type: 'reactivate'; userId: string }
-  | { type: 'delete'; userId: string };
+  | { type: 'delete'; userId: string }
+  | { type: 'reset_password'; userId: string };
 
 const ROLE_CONFIG: Record<AppRole, { label: string; color: string; icon: typeof Shield; description: string }> = {
   admin: {
@@ -84,6 +85,7 @@ export default function AdminUserManagement() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -175,6 +177,20 @@ export default function AdminUserManagement() {
 
         setUsers((prev) => prev.filter((u) => u.id !== userId));
         toast.success(`Usuário deletado permanentemente`);
+      } else if (pendingAction.type === 'reset_password') {
+        const { userId } = pendingAction;
+        if (!newPassword || newPassword.length < 6) {
+          toast.error('A senha deve ter no mínimo 6 caracteres');
+          setUpdating(false);
+          return;
+        }
+        const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+          body: { user_id: userId, new_password: newPassword },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        toast.success(`Senha de ${getUserName(userId)} alterada com sucesso`);
+        setNewPassword('');
       }
     } catch (err) {
       console.error('[UserManagement] Action error:', err);
@@ -209,6 +225,11 @@ export default function AdminUserManagement() {
         return {
           title: '🚨 Deletar usuário PERMANENTEMENTE',
           description: `ATENÇÃO: "${name}" será removido permanentemente do sistema, junto com todo o seu progresso, conquistas e dados. Esta ação NÃO pode ser desfeita.`,
+        };
+      case 'reset_password':
+        return {
+          title: '🔑 Alterar senha do usuário',
+          description: `Digite a nova senha para "${name}". A senha deve ter no mínimo 6 caracteres.`,
         };
     }
   };
@@ -448,6 +469,17 @@ export default function AdminUserManagement() {
                                   )}
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
+                                    onClick={() => {
+                                      setNewPassword('');
+                                      setPendingAction({ type: 'reset_password', userId: user.id });
+                                    }}
+                                    className="text-blue-400"
+                                  >
+                                    <KeyRound className="w-4 h-4 mr-2" />
+                                    Alterar senha
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
                                     onClick={() => setPendingAction({ type: 'delete', userId: user.id })}
                                     className="text-destructive"
                                   >
@@ -500,17 +532,31 @@ export default function AdminUserManagement() {
             <AlertDialogDescription className="whitespace-pre-line">
               {dialogContent.description}
             </AlertDialogDescription>
+            {pendingAction?.type === 'reset_password' && (
+              <div className="mt-3">
+                <Input
+                  type="password"
+                  placeholder="Nova senha (mín. 6 caracteres)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  minLength={6}
+                  autoFocus
+                />
+              </div>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={updating}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={updating} onClick={() => setNewPassword('')}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmAction}
-              disabled={updating}
+              disabled={updating || (pendingAction?.type === 'reset_password' && newPassword.length < 6)}
               className={
                 pendingAction?.type === 'delete'
                   ? 'bg-destructive hover:bg-destructive/90'
                   : pendingAction?.type === 'suspend'
                   ? 'bg-orange-500 hover:bg-orange-600'
+                  : pendingAction?.type === 'reset_password'
+                  ? 'bg-blue-500 hover:bg-blue-600'
                   : ''
               }
             >
@@ -519,6 +565,8 @@ export default function AdminUserManagement() {
                 ? 'Deletar permanentemente'
                 : pendingAction?.type === 'suspend'
                 ? 'Suspender'
+                : pendingAction?.type === 'reset_password'
+                ? 'Alterar senha'
                 : 'Confirmar'}
             </AlertDialogAction>
           </AlertDialogFooter>
