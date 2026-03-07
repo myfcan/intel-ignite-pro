@@ -58,9 +58,9 @@ export function OnboardingCTA({ activeTrail, hasProgress }: OnboardingCTAProps) 
         {/* Pulse ring */}
         <motion.div
           className="absolute inset-0 rounded-lg"
-          style={{ border: '2px solid rgba(255,255,255,0.4)' }}
-          animate={{ scale: [1, 1.4, 1.4], opacity: [0.6, 0, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
+          style={{ border: '1.5px solid rgba(255,255,255,0.3)' }}
+          animate={{ scale: [1, 1.25, 1.25], opacity: [0.4, 0, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
         />
       </div>
 
