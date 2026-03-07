@@ -207,7 +207,7 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
           </div>
           <div className="flex-1 text-left">
             <span className="text-[13px] font-bold block" style={{ color: 'hsl(215 25% 9%)' }}>
-              {accessCount < 5 ? 'Continue sua lição' : 'Missões Diárias'}
+              Missões Diárias
             </span>
           </div>
           <div
