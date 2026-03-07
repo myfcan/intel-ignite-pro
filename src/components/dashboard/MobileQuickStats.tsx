@@ -182,7 +182,6 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
 
       {/* ═══════════════════════════════════════════════
           COLLAPSIBLE DAILY MISSIONS
-          Compact strip that expands on tap
          ═══════════════════════════════════════════════ */}
       <motion.div
         id="tour-missions"
