@@ -622,6 +622,7 @@ const Dashboard = () => {
               accessCount={dashboardAccessCount}
               activeTrail={activeTrail ? { id: activeTrail.id, title: activeTrail.title } : null}
               hasProgress={hasAnyProgress}
+              v8TrailId={v8Trails.length > 0 ? v8Trails[0].id : null}
             />
 
             {/* ===== PURPLE HERO BANNER - Hidden on mobile ===== */}
