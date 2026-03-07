@@ -131,8 +131,8 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
                 const py = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2;
                 return (
                   <g key={`cp-${di}`}>
-                    <circle cx={px} cy={py} r={4.5} fill="white" />
-                    <circle cx={px} cy={py} r={3.5} fill="hsl(258, 70%, 58%)" opacity={0.9} />
+                    <circle cx={px} cy={py} r={isMobile ? 5.25 : 4.5} fill="hsl(var(--background))" />
+                    <circle cx={px} cy={py} r={isMobile ? 4.15 : 3.5} fill="hsl(var(--primary))" opacity={0.92} />
                   </g>
                 );
               })}
