@@ -581,6 +581,9 @@ const Dashboard = () => {
               missionsContent={<MissoesDiarias compact />}
             />
 
+            {/* ===== MOBILE: Quick Access Shortcuts ===== */}
+            <MobileQuickAccess />
+
             {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
             <div className="lg:hidden">
               {activeTrail && activeTrailProgress && (
