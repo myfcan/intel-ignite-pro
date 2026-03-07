@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Users, Shield, ShieldCheck, User, Loader2, Search, RefreshCw, Trash2, Ban, CheckCircle, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Users, Shield, ShieldCheck, User, Loader2, Search, RefreshCw, Trash2, Ban, CheckCircle, MoreHorizontal, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
@@ -52,7 +52,8 @@ type PendingAction =
   | { type: 'role'; userId: string; newRole: AppRole }
   | { type: 'suspend'; userId: string }
   | { type: 'reactivate'; userId: string }
-  | { type: 'delete'; userId: string };
+  | { type: 'delete'; userId: string }
+  | { type: 'reset_password'; userId: string };
 
 const ROLE_CONFIG: Record<AppRole, { label: string; color: string; icon: typeof Shield; description: string }> = {
   admin: {
