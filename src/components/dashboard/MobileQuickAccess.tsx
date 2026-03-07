@@ -27,8 +27,8 @@ export function MobileQuickAccess() {
   const navigate = useNavigate();
 
   return (
-    <div className="lg:hidden mb-4">
-      <div className="grid grid-cols-3 gap-2.5">
+    <div className="lg:hidden">
+      <div className="grid grid-cols-3 gap-3">
         {shortcuts.map((item, i) => (
           <motion.button
             key={item.route}
