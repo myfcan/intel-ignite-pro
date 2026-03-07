@@ -85,6 +85,7 @@ export default function AdminUserManagement() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -176,6 +177,20 @@ export default function AdminUserManagement() {
 
         setUsers((prev) => prev.filter((u) => u.id !== userId));
         toast.success(`Usuário deletado permanentemente`);
+      } else if (pendingAction.type === 'reset_password') {
+        const { userId } = pendingAction;
+        if (!newPassword || newPassword.length < 6) {
+          toast.error('A senha deve ter no mínimo 6 caracteres');
+          setUpdating(false);
+          return;
+        }
+        const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+          body: { user_id: userId, new_password: newPassword },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        toast.success(`Senha de ${getUserName(userId)} alterada com sucesso`);
+        setNewPassword('');
       }
     } catch (err) {
       console.error('[UserManagement] Action error:', err);
