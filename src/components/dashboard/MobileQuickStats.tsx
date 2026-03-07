@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Flame, Crown, Gem, ChevronRight, ChevronDown, Sparkles, Zap } from 'lucide-react';
+import { OnboardingCTA } from './OnboardingCTA';
 
 interface MobileQuickStatsProps {
   streakDays: number;
   userName: string;
   isLoading?: boolean;
   missionsContent?: React.ReactNode;
+  accessCount?: number;
+  activeTrail?: { id: string; title: string } | null;
+  hasProgress?: boolean;
 }
 
 const getGreeting = () => {
@@ -24,7 +28,7 @@ const getMotivationalLine = (streak: number) => {
   return 'Comece sua sequência hoje!';
 };
 
-export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent }: MobileQuickStatsProps) => {
+export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, accessCount = 99, activeTrail, hasProgress = false }: MobileQuickStatsProps) => {
   const navigate = useNavigate();
   const [missionsOpen, setMissionsOpen] = useState(false);
   const streakPercent = Math.min((streakDays / 30) * 100, 100);
