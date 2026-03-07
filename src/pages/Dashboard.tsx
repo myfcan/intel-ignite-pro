@@ -629,7 +629,7 @@ const Dashboard = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'hsl(215 16% 47%)' }}>
-                        Continue aprendendo
+                        Continue sua lição
                       </p>
                       <h3 className="font-bold text-sm truncate" style={{ color: 'hsl(215 25% 9%)' }}>{activeTrail.title}</h3>
                       <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(220 14% 96%)' }}>
