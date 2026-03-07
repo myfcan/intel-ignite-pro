@@ -15,6 +15,7 @@ import { CourseProgressCard } from "@/components/dashboard/CourseProgressCard";
 import { PointsCard } from "@/components/dashboard/PointsCard";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { MobileQuickStats } from "@/components/dashboard/MobileQuickStats";
+import { MobileQuickAccess } from "@/components/dashboard/MobileQuickAccess";
 import { BuildBadge } from "@/components/BuildBadge";
 import { DASHBOARD_LAYOUT_ID, logRuntimeSignature } from "@/lib/runtimeSignature";
 
@@ -572,6 +573,9 @@ const Dashboard = () => {
           
           {/* ===== MAIN COLUMN ===== */}
           <div>
+            {/* ===== MOBILE: Quick Access Shortcuts ===== */}
+            <MobileQuickAccess />
+
             {/* ===== MOBILE: Greeting Card + Quick Stats ===== */}
             <MobileQuickStats
               streakDays={gamificationStats?.streakDays ?? 0}
