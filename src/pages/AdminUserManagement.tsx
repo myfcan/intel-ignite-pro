@@ -532,17 +532,31 @@ export default function AdminUserManagement() {
             <AlertDialogDescription className="whitespace-pre-line">
               {dialogContent.description}
             </AlertDialogDescription>
+            {pendingAction?.type === 'reset_password' && (
+              <div className="mt-3">
+                <Input
+                  type="password"
+                  placeholder="Nova senha (mín. 6 caracteres)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  minLength={6}
+                  autoFocus
+                />
+              </div>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={updating}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={updating} onClick={() => setNewPassword('')}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmAction}
-              disabled={updating}
+              disabled={updating || (pendingAction?.type === 'reset_password' && newPassword.length < 6)}
               className={
                 pendingAction?.type === 'delete'
                   ? 'bg-destructive hover:bg-destructive/90'
                   : pendingAction?.type === 'suspend'
                   ? 'bg-orange-500 hover:bg-orange-600'
+                  : pendingAction?.type === 'reset_password'
+                  ? 'bg-blue-500 hover:bg-blue-600'
                   : ''
               }
             >
@@ -551,6 +565,8 @@ export default function AdminUserManagement() {
                 ? 'Deletar permanentemente'
                 : pendingAction?.type === 'suspend'
                 ? 'Suspender'
+                : pendingAction?.type === 'reset_password'
+                ? 'Alterar senha'
                 : 'Confirmar'}
             </AlertDialogAction>
           </AlertDialogFooter>
