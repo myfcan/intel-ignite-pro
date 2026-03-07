@@ -1,0 +1,1 @@
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS dashboard_access_count integer NOT NULL DEFAULT 0;
