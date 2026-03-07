@@ -387,6 +387,13 @@ const Dashboard = () => {
       }
 
       setUser(finalUser);
+      
+      // Track dashboard access count for onboarding features
+      const currentCount = finalUser.dashboard_access_count ?? 0;
+      setDashboardAccessCount(currentCount);
+      if (currentCount < 5) {
+        supabase.from('users').update({ dashboard_access_count: currentCount + 1 }).eq('id', userId).then();
+      }
 
       // ══════ Fase 1: Extract gamification from same users query (no separate hook) ══════
       const patentLevel = finalUser.patent_level || 0;
