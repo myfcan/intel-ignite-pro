@@ -36,7 +36,7 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
   const greeting = getGreeting();
 
   return (
-    <div className="lg:hidden flex flex-col gap-3 mb-5">
+    <div className="lg:hidden flex flex-col gap-4 mb-6">
 
       {/* ═══════════════════════════════════════════════
           GREETING CARD — Glassmorphism + Gradient
