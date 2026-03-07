@@ -10,6 +10,7 @@ interface MobileQuickStatsProps {
   isLoading?: boolean;
   missionsContent?: React.ReactNode;
   quickAccessContent?: React.ReactNode;
+  continueContent?: React.ReactNode;
   accessCount?: number;
   activeTrail?: { id: string; title: string } | null;
   hasProgress?: boolean;
