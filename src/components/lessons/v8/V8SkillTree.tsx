@@ -47,7 +47,9 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
           const y1 = 20 + i * ROW_HEIGHT + 34;
           const x2 = 200 + getXOffset(i + 1) * 70;
           const y2 = 20 + (i + 1) * ROW_HEIGHT;
-          const cx = (x1 + x2) / 2;
+          const cxBase = (x1 + x2) / 2;
+          const segmentBias = getXOffset(i) + getXOffset(i + 1);
+          const cx = cxBase - segmentBias * (isMobile ? 42 : 24);
           const cy = y1 + (y2 - y1) * 0.5;
 
           const isCompleted = lessons[i].status === "completed";
@@ -59,19 +61,44 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
             ((currentStatus === "completed" && nextStatus !== "completed") ||
               currentStatus === "available" ||
               currentStatus === "in_progress");
+          const isLockedSegment = !isCompleted && !nextAvailable;
 
           const pathD = `M ${x1},${y1} Q ${cx},${cy} ${x2},${y2}`;
 
           const strokeColor = isCompleted
-            ? "hsl(258, 70%, 58%)"
+            ? "hsl(var(--primary))"
             : nextAvailable
-              ? "hsl(258, 50%, 70%)"
-              : "hsl(220, 10%, 82%)";
-          const strokeWidth = isCompleted ? 3 : nextAvailable ? 2.5 : 2;
-          const strokeOpacity = isCompleted ? 0.9 : nextAvailable ? 0.8 : 0.5;
+              ? "hsl(var(--primary) / 0.62)"
+              : "hsl(var(--muted-foreground) / 0.42)";
+          const glowColor = isCompleted || nextAvailable
+            ? "hsl(var(--primary) / 0.24)"
+            : "hsl(var(--muted-foreground) / 0.18)";
+          const strokeWidth = isCompleted
+            ? isMobile
+              ? 4.25
+              : 3.1
+            : nextAvailable
+              ? isMobile
+                ? 3.35
+                : 2.6
+              : isMobile
+                ? 2.8
+                : 2.1;
+          const strokeOpacity = isCompleted ? 0.95 : nextAvailable ? 0.84 : isMobile ? 0.72 : 0.55;
+          const dashArray = isLockedSegment ? (isMobile ? "10 7" : "8 6") : undefined;
 
           return (
             <g key={`conn-${i}`}>
+              {/* Ambient glow */}
+              <path
+                d={pathD}
+                fill="none"
+                stroke={glowColor}
+                strokeWidth={strokeWidth + (isMobile ? 2.2 : 1.6)}
+                strokeLinecap="round"
+                opacity={isMobile ? 0.38 : 0.28}
+              />
+
               {/* Main path */}
               {isActiveSegment ? (
                 <motion.path
@@ -80,7 +107,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
                   stroke={strokeColor}
                   strokeWidth={strokeWidth}
                   strokeLinecap="round"
-                  strokeDasharray="12 8"
+                  strokeDasharray={isMobile ? "14 8" : "12 8"}
                   initial={{ strokeDashoffset: 0 }}
                   animate={{ strokeDashoffset: -40 }}
                   transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -94,7 +121,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
                   strokeWidth={strokeWidth}
                   strokeLinecap="round"
                   opacity={strokeOpacity}
-                  {...(!isCompleted && !nextAvailable ? { strokeDasharray: "8 6" } : {})}
+                  {...(dashArray ? { strokeDasharray: dashArray } : {})}
                 />
               )}
 
