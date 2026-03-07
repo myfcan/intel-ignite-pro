@@ -14,6 +14,7 @@ interface MobileQuickStatsProps {
   accessCount?: number;
   activeTrail?: { id: string; title: string } | null;
   hasProgress?: boolean;
+  v8TrailId?: string | null;
 }
 
 const getGreeting = () => {
@@ -30,7 +31,7 @@ const getMotivationalLine = (streak: number) => {
   return 'Comece sua sequência hoje!';
 };
 
-export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, quickAccessContent, continueContent, accessCount = 99, activeTrail, hasProgress = false }: MobileQuickStatsProps) => {
+export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, quickAccessContent, continueContent, accessCount = 99, activeTrail, hasProgress = false, v8TrailId }: MobileQuickStatsProps) => {
   const navigate = useNavigate();
   const [missionsOpen, setMissionsOpen] = useState(false);
   const streakPercent = Math.min((streakDays / 30) * 100, 100);
@@ -122,7 +123,7 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
 
           {/* Dynamic CTA for first 5 accesses */}
           {accessCount < 5 && (
-            <OnboardingCTA activeTrail={activeTrail} hasProgress={hasProgress} />
+            <OnboardingCTA activeTrail={activeTrail} hasProgress={hasProgress} v8TrailId={v8TrailId} />
           )}
 
           {/* Quick action pills — hidden during first 5 accesses */}
