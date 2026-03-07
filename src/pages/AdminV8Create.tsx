@@ -608,6 +608,13 @@ export default function AdminV8Create() {
       const draftId = `draft-${Date.now()}`;
       
       for (let i = 0; i < parsed.sections.length; i++) {
+        // Skip sections with empty content (e.g., exercise-only sections like "Teste rápido")
+        if (!parsed.sections[i].content || parsed.sections[i].content.trim().length === 0) {
+          addLog('info', `Imagem seção ${i + 1}/${parsed.sections.length}: "${parsed.sections[i].title}" — sem conteúdo, pulando`);
+          imageResults.push({ index: i, error: 'empty-content-skipped' });
+          continue;
+        }
+
         addLog('info', `Imagem seção ${i + 1}/${parsed.sections.length}: "${parsed.sections[i].title}"`);
         setPipelineSteps(prev => prev.map(s => 
           s.id === 'images' ? { ...s, message: `Seção ${i + 1}/${parsed.sections.length}` } : s
