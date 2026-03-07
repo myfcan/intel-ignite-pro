@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { V8Section, V8InlineQuiz, V8InlinePlayground } from "@/types/v8Lesson";
 import { Image, Brain, Gamepad2, Check, ChevronDown, ChevronUp, Wand2, Pencil, Loader2, RefreshCw, X, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +42,24 @@ export function V8SectionSetup({ sections, quizzes, playgrounds, onApply, onBack
       hasPlayground: playgrounds.some((p) => p.afterSectionIndex === i),
     }))
   );
+
+  // Sync configs when sections change (e.g., parser adds Section 0)
+  useEffect(() => {
+    if (sections.length !== configs.length) {
+      setConfigs(
+        sections.map((s, i) => configs[i] ?? {
+          hasImage: !!s.imageUrl,
+          imageUrl: s.imageUrl || "",
+          imageMode: s.imageUrl ? "auto" as const : "none" as const,
+          customPrompt: "",
+          isGenerating: false,
+          generatedPreview: s.imageUrl || "",
+          hasQuiz: quizzes.some((q) => q.afterSectionIndex === i),
+          hasPlayground: playgrounds.some((p) => p.afterSectionIndex === i),
+        })
+      );
+    }
+  }, [sections.length]);
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
   const [isReprocessing, setIsReprocessing] = useState(false);
@@ -211,7 +229,12 @@ export function V8SectionSetup({ sections, quizzes, playgrounds, onApply, onBack
 
       <div className="space-y-2">
         {sections.map((section, i) => {
-          const cfg = configs[i];
+          const cfg = configs[i] ?? {
+            hasImage: false, imageUrl: "", imageMode: "none" as const,
+            customPrompt: "", isGenerating: false, generatedPreview: "",
+            hasQuiz: quizzes.some((q) => q.afterSectionIndex === i),
+            hasPlayground: playgrounds.some((p) => p.afterSectionIndex === i),
+          };
           const isExpanded = expandedIndex === i;
           const badges = activeBadges(cfg);
           const quiz = quizMap.get(i);
