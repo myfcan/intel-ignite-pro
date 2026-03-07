@@ -112,10 +112,11 @@ const Auth = () => {
           description: "Bem-vindo de volta!",
         });
 
-        if (!userData?.onboarding_completed) {
+        if (userData && userData.onboarding_completed === false) {
           navigate('/onboarding');
         } else {
-          // Respect redirect param (validate it's a local path)
+          // If userData is null (user row not yet created) or onboarding is complete, go to dashboard
+          // Dashboard will handle user creation if needed
           const dest = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
           navigate(dest);
         }
