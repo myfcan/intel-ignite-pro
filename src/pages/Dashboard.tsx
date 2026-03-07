@@ -138,7 +138,7 @@ const Dashboard = () => {
   const [gamificationLoading, setGamificationLoading] = useState(true);
   const [showPatentCelebration, setShowPatentCelebration] = useState(false);
   const prevPatentLevelRef = useRef<number | null>(null);
-  const [dashboardAccessCount, setDashboardAccessCount] = useState<number>(99);
+  const [dashboardAccessCount, setDashboardAccessCount] = useState<number>(0);
   
   // V8 courses (jornadas dentro da trilha V8)
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
