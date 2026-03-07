@@ -251,6 +251,11 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* ═══════════════════════════════════════════════
+          CONTINUE LEARNING (slot)
+         ═══════════════════════════════════════════════ */}
+      {continueContent}
     </div>
   );
 };
