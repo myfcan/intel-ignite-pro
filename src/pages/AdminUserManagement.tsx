@@ -226,6 +226,11 @@ export default function AdminUserManagement() {
           title: '🚨 Deletar usuário PERMANENTEMENTE',
           description: `ATENÇÃO: "${name}" será removido permanentemente do sistema, junto com todo o seu progresso, conquistas e dados. Esta ação NÃO pode ser desfeita.`,
         };
+      case 'reset_password':
+        return {
+          title: '🔑 Alterar senha do usuário',
+          description: `Digite a nova senha para "${name}". A senha deve ter no mínimo 6 caracteres.`,
+        };
     }
   };
 
@@ -462,6 +467,17 @@ export default function AdminUserManagement() {
                                       Reativar
                                     </DropdownMenuItem>
                                   )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setNewPassword('');
+                                      setPendingAction({ type: 'reset_password', userId: user.id });
+                                    }}
+                                    className="text-blue-400"
+                                  >
+                                    <KeyRound className="w-4 h-4 mr-2" />
+                                    Alterar senha
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     onClick={() => setPendingAction({ type: 'delete', userId: user.id })}
