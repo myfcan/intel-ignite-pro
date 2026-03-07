@@ -591,15 +591,11 @@ const Dashboard = () => {
               userName={user?.name?.split(' ')[0] || 'Aluno'}
               isLoading={gamificationLoading}
               missionsContent={<MissoesDiarias compact />}
+              quickAccessContent={<div id="tour-quick-access"><MobileQuickAccess /></div>}
               accessCount={dashboardAccessCount}
               activeTrail={activeTrail ? { id: activeTrail.id, title: activeTrail.title } : null}
               hasProgress={hasAnyProgress}
             />
-
-            {/* ===== MOBILE: Quick Access Shortcuts ===== */}
-            <div id="tour-quick-access">
-              <MobileQuickAccess />
-            </div>
 
             {/* ===== MOBILE: Continue Learning (above the fold) ===== */}
             <div className="lg:hidden">
