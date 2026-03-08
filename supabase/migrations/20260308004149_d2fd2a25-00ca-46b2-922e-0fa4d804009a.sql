@@ -1,0 +1,1 @@
+UPDATE public.users SET dashboard_access_count = 0 WHERE id = '4c59eb45-5d48-4c17-a5f2-40d1b472c0dd';
