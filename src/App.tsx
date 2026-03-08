@@ -108,6 +108,7 @@ const V7LessonTest = lazyRetry(() => import("./pages/V7LessonTest"));
 const V8TrailDetail = lazyRetry(() => import("./pages/V8TrailDetail"));
 const V8Lesson = lazyRetry(() => import("./pages/V8Lesson"));
 const AdminV8Create = lazyRetry(() => import("./pages/AdminV8Create"));
+const AdminV8ReprocessAudio = lazyRetry(() => import("./pages/AdminV8ReprocessAudio"));
 const ChatDesignDemo = lazyRetry(() => import("./pages/ChatDesignDemo"));
 const V7Documentation = lazyRetry(() => import("./pages/V7Documentation"));
 const Admin3DDemos = lazyRetry(() => import("./pages/Admin3DDemos"));
