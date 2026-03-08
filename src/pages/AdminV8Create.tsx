@@ -826,6 +826,8 @@ export default function AdminV8Create() {
           exercises: (finalData.exercises || []) as unknown as Json,
           model: "v8",
           status: "rascunho",
+          fase_criacao: 'completo',
+          progresso_criacao: 100,
         })
         .eq("id", lessonId);
 
@@ -852,6 +854,16 @@ export default function AdminV8Create() {
       setPipelineSteps(prev => prev.map(s => s.status === 'running' ? { ...s, status: 'error' as const } : s));
       setPipelineError(msg);
       addLog('error', msg);
+
+      // ── CHECKPOINT: Save error state for recovery ──
+      if (savedLessonId) {
+        await supabase.from("lessons").update({
+          fase_criacao: 'erro_audio',
+          erro_criacao: msg,
+          progresso_criacao: pipelineProgress,
+        }).eq("id", savedLessonId);
+      }
+
       toast({ title: "❌ Erro na geração automática", description: msg, variant: "destructive" });
       setStep("edit");
     } finally {
