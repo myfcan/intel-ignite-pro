@@ -563,8 +563,14 @@ const Dashboard = () => {
       <DashboardHeader user={user!} showPatentCelebration={showPatentCelebration} />
       <BuildBadge isAdmin={isAdmin} />
       
-      {/* Dashboard Tour — triggered on first access */}
-      <DashboardTour enabled={dashboardAccessCount === 0} />
+      {/* Dashboard Tour — triggered on first access only (backend-driven) */}
+      <DashboardTour 
+        enabled={sessionStorage.getItem('ailiv_show_tour_now') === '1'} 
+        onTourSeen={() => {
+          sessionStorage.removeItem('ailiv_show_tour_now');
+          supabase.rpc('mark_dashboard_tour_seen').then();
+        }}
+      />
       
       {/* Gamification Header */}
       {!gamificationLoading && gamificationStats && (
