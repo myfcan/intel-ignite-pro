@@ -45,7 +45,10 @@ export function DashboardTour({ enabled }: DashboardTourProps) {
 
   useEffect(() => {
     if (!enabled) return;
-    if (localStorage.getItem(STORAGE_KEY)) return;
+
+    // Se backend marcou como primeiro acesso (count=0), forçamos replay do tour
+    // para evitar bloqueio por flag antiga no localStorage.
+    localStorage.removeItem(STORAGE_KEY);
 
     const timer = setTimeout(() => setPhase('prompt'), 2000);
     return () => clearTimeout(timer);
