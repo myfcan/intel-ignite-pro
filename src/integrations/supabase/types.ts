@@ -1548,6 +1548,7 @@ export type Database = {
           daily_interaction_limit: number | null
           daily_time: Database["public"]["Enums"]["daily_time_type"] | null
           dashboard_access_count: number
+          dashboard_tour_seen_at: string | null
           email: string
           gamification_updated_at: string | null
           id: string
@@ -1555,6 +1556,7 @@ export type Database = {
           is_active: boolean
           last_activity_date: string | null
           last_interaction_reset: string | null
+          last_login_counted_at: string | null
           learning_goal:
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
@@ -1581,6 +1583,7 @@ export type Database = {
           daily_interaction_limit?: number | null
           daily_time?: Database["public"]["Enums"]["daily_time_type"] | null
           dashboard_access_count?: number
+          dashboard_tour_seen_at?: string | null
           email: string
           gamification_updated_at?: string | null
           id: string
@@ -1588,6 +1591,7 @@ export type Database = {
           is_active?: boolean
           last_activity_date?: string | null
           last_interaction_reset?: string | null
+          last_login_counted_at?: string | null
           learning_goal?:
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
@@ -1614,6 +1618,7 @@ export type Database = {
           daily_interaction_limit?: number | null
           daily_time?: Database["public"]["Enums"]["daily_time_type"] | null
           dashboard_access_count?: number
+          dashboard_tour_seen_at?: string | null
           email?: string
           gamification_updated_at?: string | null
           id?: string
@@ -1621,6 +1626,7 @@ export type Database = {
           is_active?: boolean
           last_activity_date?: string | null
           last_interaction_reset?: string | null
+          last_login_counted_at?: string | null
           learning_goal?:
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
@@ -1912,6 +1918,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      mark_dashboard_tour_seen: { Args: never; Returns: undefined }
+      register_dashboard_login: {
+        Args: { p_last_sign_in_at: string }
+        Returns: {
+          access_count: number
+          is_first_access: boolean
+        }[]
       }
       register_gamification_event: {
         Args: {
