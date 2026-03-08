@@ -797,6 +797,7 @@ const Dashboard = () => {
             {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
             {v8Courses.length > 0 && (
             <motion.div
+              id="tour-trilhas"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
