@@ -114,7 +114,7 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    // ─── AUTH ───
+    // ─── AUTH (getClaims pattern) ───
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return jsonError('Unauthorized', 401);
@@ -130,23 +130,23 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}`, apikey: supabaseAnonKey },
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
     });
 
-    if (!userRes.ok) {
-      await userRes.text();
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return jsonError('Invalid token', 401);
     }
 
-    const userData = await userRes.json();
+    const userId = claimsData.claims.sub as string;
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey) as any;
 
     // Check admin role
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('user_id', userData.id)
+      .eq('user_id', userId)
       .eq('role', 'admin')
       .maybeSingle();
 
