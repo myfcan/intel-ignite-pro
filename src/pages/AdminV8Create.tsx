@@ -744,6 +744,12 @@ export default function AdminV8Create() {
       setPipelineProgress(55);
       addLog('success', `Rascunho salvo: ${lessonId}`);
 
+      // ── CHECKPOINT: Mark lesson as needing audio (recovery point) ──
+      await supabase.from("lessons").update({
+        fase_criacao: 'aguardando_audio',
+        progresso_criacao: 55,
+      }).eq("id", lessonId);
+
       // Step 5: Generate audio via ElevenLabs
       setPipelineSteps(prev => prev.map(s => s.id === 'generate-audio' ? { ...s, status: 'running' as const } : s));
       addLog('info', 'Gerando áudios via ElevenLabs...');
