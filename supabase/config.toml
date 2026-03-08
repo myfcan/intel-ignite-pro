@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.v8-refine-content]
 verify_jwt = false
+
+[functions.v8-reprocess-audio]
+verify_jwt = false
