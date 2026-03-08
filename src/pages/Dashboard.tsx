@@ -388,15 +388,21 @@ const Dashboard = () => {
 
       setUser(finalUser);
       
-      // Read access count (never increment here — increment only on real session)
-      const currentCount = finalUser.dashboard_access_count ?? 0;
-      setDashboardAccessCount(currentCount);
+      // Atomic backend login registration — no sessionStorage needed
+      const lastSignInAt = session.user.last_sign_in_at || new Date().toISOString();
+      const { data: loginResult, error: loginError } = await supabase
+        .rpc('register_dashboard_login', { p_last_sign_in_at: lastSignInAt });
 
-      // Increment only once per browser session (sessionStorage clears on tab/browser close)
-      const sessionKey = 'ailiv_session_counted';
-      if (!sessionStorage.getItem(sessionKey) && currentCount < 5) {
-        sessionStorage.setItem(sessionKey, '1');
-        supabase.from('users').update({ dashboard_access_count: currentCount + 1 }).eq('id', userId).then();
+      if (!loginError && loginResult && loginResult.length > 0) {
+        const { access_count, is_first_access } = loginResult[0];
+        setDashboardAccessCount(access_count);
+        // Store first-access flag for tour (will be read by DashboardTour)
+        if (is_first_access) {
+          sessionStorage.setItem('ailiv_show_tour_now', '1');
+        }
+      } else {
+        // Fallback: use DB value
+        setDashboardAccessCount(finalUser.dashboard_access_count ?? 0);
       }
 
       // ══════ Fase 1: Extract gamification from same users query (no separate hook) ══════
@@ -557,8 +563,14 @@ const Dashboard = () => {
       <DashboardHeader user={user!} showPatentCelebration={showPatentCelebration} />
       <BuildBadge isAdmin={isAdmin} />
       
-      {/* Dashboard Tour — triggered on first access */}
-      <DashboardTour enabled={dashboardAccessCount === 0} />
+      {/* Dashboard Tour — triggered on first access only (backend-driven) */}
+      <DashboardTour 
+        enabled={sessionStorage.getItem('ailiv_show_tour_now') === '1'} 
+        onTourSeen={() => {
+          sessionStorage.removeItem('ailiv_show_tour_now');
+          supabase.rpc('mark_dashboard_tour_seen').then();
+        }}
+      />
       
       {/* Gamification Header */}
       {!gamificationLoading && gamificationStats && (

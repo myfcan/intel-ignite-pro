@@ -30,29 +30,30 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
-const STORAGE_KEY = 'ailiv_dashboard_tour_done';
-
 interface DashboardTourProps {
   enabled: boolean;
+  onTourSeen?: () => void;
 }
 
-export function DashboardTour({ enabled }: DashboardTourProps) {
+export function DashboardTour({ enabled, onTourSeen }: DashboardTourProps) {
   const [phase, setPhase] = useState<'idle' | 'prompt' | 'touring' | 'done'>('idle');
   const [currentStep, setCurrentStep] = useState(0);
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0, width: 0 });
   const [spotlightRect, setSpotlightRect] = useState({ top: 0, left: 0, width: 0, height: 0 });
-  const rafRef = useRef<number>();
+  const tourSeenCalledRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
-
-    // Se backend marcou como primeiro acesso (count=0), forçamos replay do tour
-    // para evitar bloqueio por flag antiga no localStorage.
-    localStorage.removeItem(STORAGE_KEY);
-
     const timer = setTimeout(() => setPhase('prompt'), 2000);
     return () => clearTimeout(timer);
   }, [enabled]);
+
+  // Mark tour as seen in backend (once)
+  const markTourSeen = useCallback(() => {
+    if (tourSeenCalledRef.current) return;
+    tourSeenCalledRef.current = true;
+    onTourSeen?.();
+  }, [onTourSeen]);
 
   const updatePosition = useCallback(() => {
     if (phase !== 'touring') return;
@@ -95,16 +96,20 @@ export function DashboardTour({ enabled }: DashboardTourProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, [phase, currentStep, updatePosition]);
 
-  const startTour = () => setPhase('touring');
+  const startTour = () => {
+    setPhase('touring');
+    markTourSeen(); // Mark as seen when user starts
+  };
+
   const skipTour = () => {
-    localStorage.setItem(STORAGE_KEY, '1');
+    markTourSeen();
     setPhase('done');
   };
+
   const nextStep = () => {
     if (currentStep < TOUR_STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      localStorage.setItem(STORAGE_KEY, '1');
       setPhase('done');
     }
   };
@@ -185,10 +190,8 @@ export function DashboardTour({ enabled }: DashboardTourProps) {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9999]"
         >
-          {/* Overlay with spotlight cutout using box-shadow */}
           <div
             className="absolute pointer-events-none"
-            onClick={skipTour}
             style={{
               top: spotlightRect.top,
               left: spotlightRect.left,
@@ -201,14 +204,11 @@ export function DashboardTour({ enabled }: DashboardTourProps) {
               zIndex: 1,
             }}
           />
-          {/* Clickable overlay behind spotlight */}
           <div
             className="absolute inset-0"
             onClick={skipTour}
             style={{ zIndex: 0 }}
           />
-
-          {/* Spotlight ring */}
           <div
             className="absolute rounded-2xl pointer-events-none"
             style={{
@@ -222,7 +222,6 @@ export function DashboardTour({ enabled }: DashboardTourProps) {
             }}
           />
 
-          {/* Tooltip */}
           <motion.div
             key={currentStep}
             initial={{ opacity: 0, y: TOUR_STEPS[currentStep].position === 'bottom' ? -10 : 10 }}
