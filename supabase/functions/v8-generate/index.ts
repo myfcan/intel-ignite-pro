@@ -139,12 +139,8 @@ serve(async (req) => {
         continue;
       }
 
-      // Previous/next text for request stitching
-      const prevText = i > 0 ? stripMarkdownForTTS(sanitizeNarrationText(sections[i - 1].content || '')).slice(-200) : undefined;
-      const nextText = i < sections.length - 1 ? stripMarkdownForTTS(sanitizeNarrationText(sections[i + 1].content || '')).slice(0, 200) : undefined;
-
       try {
-        const audioBuffer = await generateTTS(elevenLabsKey, plainText, prevText, nextText);
+        const audioBuffer = await generateTTS(elevenLabsKey, plainText);
         const storagePath = `v8/${lessonId}/section-${i}.mp3`;
         const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
         const durationEstimate = estimateDuration(audioBuffer.byteLength);
