@@ -139,12 +139,8 @@ serve(async (req) => {
         continue;
       }
 
-      // Previous/next text for request stitching
-      const prevText = i > 0 ? stripMarkdownForTTS(sanitizeNarrationText(sections[i - 1].content || '')).slice(-200) : undefined;
-      const nextText = i < sections.length - 1 ? stripMarkdownForTTS(sanitizeNarrationText(sections[i + 1].content || '')).slice(0, 200) : undefined;
-
       try {
-        const audioBuffer = await generateTTS(elevenLabsKey, plainText, prevText, nextText);
+        const audioBuffer = await generateTTS(elevenLabsKey, plainText);
         const storagePath = `v8/${lessonId}/section-${i}.mp3`;
         const publicUrl = await uploadToStorage(supabaseAdmin, audioBuffer, storagePath);
         const durationEstimate = estimateDuration(audioBuffer.byteLength);
@@ -354,8 +350,6 @@ function jsonError(message: string, status: number) {
 async function generateTTS(
   apiKey: string,
   text: string,
-  previousText?: string,
-  nextText?: string,
 ): Promise<ArrayBuffer> {
   const body: Record<string, unknown> = {
     text,
@@ -363,10 +357,6 @@ async function generateTTS(
     voice_settings: VOICE_SETTINGS,
     language_code: "pt",
   };
-
-  // Request stitching — supported by eleven_v3
-  if (previousText) body.previous_text = previousText;
-  if (nextText) body.next_text = nextText;
 
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
