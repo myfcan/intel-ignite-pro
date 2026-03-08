@@ -108,6 +108,7 @@ const V7LessonTest = lazyRetry(() => import("./pages/V7LessonTest"));
 const V8TrailDetail = lazyRetry(() => import("./pages/V8TrailDetail"));
 const V8Lesson = lazyRetry(() => import("./pages/V8Lesson"));
 const AdminV8Create = lazyRetry(() => import("./pages/AdminV8Create"));
+const AdminV8ReprocessAudio = lazyRetry(() => import("./pages/AdminV8ReprocessAudio"));
 const ChatDesignDemo = lazyRetry(() => import("./pages/ChatDesignDemo"));
 const V7Documentation = lazyRetry(() => import("./pages/V7Documentation"));
 const Admin3DDemos = lazyRetry(() => import("./pages/Admin3DDemos"));
@@ -278,6 +279,7 @@ const App = () => (
                 <Route path="/v8-trail/:trailId" element={<ProtectedRoute><V8TrailDetail /></ProtectedRoute>} />
                 <Route path="/v8/:lessonId" element={<ProtectedRoute><V8Lesson /></ProtectedRoute>} />
                 <Route path="/admin/v8/create" element={<AdminRoute><AdminV8Create /></AdminRoute>} />
+                <Route path="/admin/v8/reprocess-audio" element={<AdminRoute><AdminV8ReprocessAudio /></AdminRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
