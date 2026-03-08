@@ -350,8 +350,6 @@ function jsonError(message: string, status: number) {
 async function generateTTS(
   apiKey: string,
   text: string,
-  previousText?: string,
-  nextText?: string,
 ): Promise<ArrayBuffer> {
   const body: Record<string, unknown> = {
     text,
@@ -359,10 +357,6 @@ async function generateTTS(
     voice_settings: VOICE_SETTINGS,
     language_code: "pt",
   };
-
-  // Request stitching — supported by eleven_v3
-  if (previousText) body.previous_text = previousText;
-  if (nextText) body.next_text = nextText;
 
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
