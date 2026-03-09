@@ -90,9 +90,8 @@ async function generateAudio(
   whisper?: boolean,
   apiKey?: string
 ): Promise<string> {
-  // ✅ V7-v3: Usar a MESMA voz da narração principal
-  // Alice (Xb7hH8MSUJpSbSDYk0k2) - voz feminina usada na narração principal
-  // Se voiceId for passado, usar ele; senão usar Alice
+  // Taciana (oqUwsXKac3MSo4E51ySV) - voz PT-BR nativa professional
+  // Se voiceId for passado, usar ele; senão usar Taciana
   const voice = voiceId || 'oqUwsXKac3MSo4E51ySV'; // Taciana - voz PT-BR nativa (professional)
   
   // Voice settings para efeito de sussurro (mesma voz, configurações diferentes)

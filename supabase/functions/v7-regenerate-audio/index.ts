@@ -187,7 +187,7 @@ async function generateAudioWithElevenLabs(
   // ✅ FIX: Clean text before sending to TTS
   const cleanedText = cleanTextForTTS(text);
   
-  const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - good for Portuguese
+  const voice = voiceId || 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR
   const modelId = 'eleven_v3';
   
   console.log('[V7RegenerateAudio:Audio] Generating audio...');

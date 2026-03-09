@@ -6870,7 +6870,7 @@ Deno.serve(async (req) => {
     // =========================================================================
     // PASSO 2: GERAR OU REUSAR ÁUDIO PRINCIPAL
     // =========================================================================
-    const voiceId = input.voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Usa voice_id do input!
+    const voiceId = input.voice_id || 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR
     const shouldGenerateAudio = input.generate_audio !== false && !input.reprocess;
     const isReprocess = input.reprocess === true;
 
