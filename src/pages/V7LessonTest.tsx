@@ -206,7 +206,7 @@ const V7LessonTest = () => {
       const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
         body: {
           text: narrationText,
-          voice_id: script?.voice_id || 'Xb7hH8MSUJpSbSDYk0k2', // Alice - mesma voz do V5
+          voice_id: script?.voice_id || 'oqUwsXKac3MSo4E51ySV', // Taciana PT-BR
         }
       });
 

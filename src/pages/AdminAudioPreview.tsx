@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // ─── Vozes disponíveis ─────────────────────────────────────────────────────────
 const VOICES = [
-  { id: 'Xb7hH8MSUJpSbSDYk0k2', name: 'Alice (BR Padrão)', flag: '🇧🇷' },
+  { id: 'oqUwsXKac3MSo4E51ySV', name: 'Taciana (BR Padrão)', flag: '🇧🇷' },
   { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', flag: '🇺🇸' },
   { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', flag: '🇬🇧' },
   { id: 'TX3LPaxmHKxFdv7VOQHJ', name: 'Liam', flag: '🇺🇸' },

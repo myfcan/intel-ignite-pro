@@ -144,7 +144,7 @@ export async function autoGenerateAudio(
       {
         body: {
           text: cleanAudioText, // ✅ Usando texto limpo sem emojis/formatação
-          voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice voice
+          voice_id: 'oqUwsXKac3MSo4E51ySV', // Taciana PT-BR
           model_id: 'eleven_multilingual_v2',
           section_markers: sectionMarkers
         }
