@@ -55,7 +55,7 @@ export async function runV7Pipeline(
     input,
     options: {
       failOnAudioError: options.failOnAudioError ?? input.fail_on_audio_error ?? true,
-      voiceId: options.voiceId ?? input.voice_id ?? 'Xb7hH8MSUJpSbSDYk0k2', // Alice Brasil
+      voiceId: options.voiceId ?? input.voice_id ?? 'oqUwsXKac3MSo4E51ySV', // Taciana PT-BR
       generateAudio: options.generateAudio ?? input.generate_audio ?? true,
     },
     executionId,

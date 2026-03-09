@@ -355,7 +355,7 @@ export default function AdminAudioBatch() {
       const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
         body: {
           text: lesson.content,
-          voice_id: 'Xb7hH8MSUJpSbSDYk0k2',
+          voice_id: 'oqUwsXKac3MSo4E51ySV',
           model_id: 'eleven_multilingual_v2',
           section_markers: sectionMarkers
         }

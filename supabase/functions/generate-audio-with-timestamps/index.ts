@@ -49,7 +49,7 @@ serve(async (req) => {
       );
     }
 
-    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice (Brasil)
+    const voiceId = voice_id || 'oqUwsXKac3MSo4E51ySV'; // Taciana - PT-BR nativa (professional)
 
     // ============================================================
     // SELEÇÃO DE MODELO

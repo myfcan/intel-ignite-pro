@@ -25,7 +25,7 @@ serve(async (req) => {
       throw new Error('ELEVENLABS_API_KEY não configurada');
     }
 
-    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2';
+    const voiceId = voice_id || 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR
     console.log(`🎵 Gerando ${texts.length} áudios...`);
 
     const results = [];

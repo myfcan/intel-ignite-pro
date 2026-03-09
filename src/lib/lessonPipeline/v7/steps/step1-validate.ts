@@ -91,7 +91,7 @@ export async function v7Step1Validate(
     ...input,
     trail_id: input.trail_id || undefined,
     order_index: input.order_index ?? 0,
-    voice_id: input.voice_id || 'Xb7hH8MSUJpSbSDYk0k2',
+    voice_id: input.voice_id || 'oqUwsXKac3MSo4E51ySV',
     generate_audio: input.generate_audio ?? true,
     fail_on_audio_error: input.fail_on_audio_error ?? true,
     scenes: input.scenes.map((scene, idx) => ({

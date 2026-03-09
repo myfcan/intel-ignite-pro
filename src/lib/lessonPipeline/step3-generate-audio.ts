@@ -47,7 +47,7 @@ async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
     const invokePromise = supabase.functions.invoke('generate-audio-with-timestamps', {
       body: {
         text: input.audioText,
-        voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
+        voice_id: 'oqUwsXKac3MSo4E51ySV', // Taciana PT-BR
         speed: 1.0 // Velocidade normal
       }
     });
@@ -260,7 +260,7 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     const invokePromise = supabase.functions.invoke('generate-audio-with-timestamps', {
       body: {
         text: input.audioText,
-        voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
+        voice_id: 'oqUwsXKac3MSo4E51ySV', // Taciana PT-BR
         speed: 1.0 // Velocidade normal
       }
     });
