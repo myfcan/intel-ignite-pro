@@ -87,13 +87,8 @@ async function generateAudio(
   lessonId: string,
   filePrefix: string,
 ): Promise<{ audioUrl: string; sizeKB: number; durationEstimate: number }> {
-  // Geração 1: descartada (warm-up do modelo)
-  await callElevenLabs(text, apiKey);
-  console.log(`[v8-reprocess-audio] 🔄 Gen1 descartada para ${filePrefix}`);
-
-  // Geração 2: usada (mais natural e estável)
+  // Single call — no dual generation waste
   const audioBuffer = await callElevenLabs(text, apiKey);
-  console.log(`[v8-reprocess-audio] ✅ Gen2 aceita para ${filePrefix}`);
 
   const sizeKB = Math.round(audioBuffer.byteLength / 1024);
   const durationEstimate = Math.round(text.split(/\s+/).length / 2.5);
