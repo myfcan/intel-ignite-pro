@@ -346,15 +346,16 @@ function jsonError(message: string, status: number) {
   );
 }
 
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
+
 
 async function generateTTS(
   apiKey: string,
   text: string,
 ): Promise<ArrayBuffer> {
   const body: Record<string, unknown> = {
-    text: `${AUDIO_PREFIX_TAG}${text}`,
+    text: text,
     model_id: MODEL_ID,
+    language_code: 'pt',
     voice_settings: VOICE_SETTINGS,
   };
 

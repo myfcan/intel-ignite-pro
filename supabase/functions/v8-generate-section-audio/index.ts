@@ -9,7 +9,7 @@ const corsHeaders = {
 const VOICE_ID = 'oqUwsXKac3MSo4E51ySV';
 const MODEL_ID = 'eleven_v3';
 const VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75 };
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
+
 
 // ElevenLabs v3 emotion tags preserved in TTS text
 const ELEVENLABS_EMOTION_TAGS = new Set([
@@ -104,8 +104,9 @@ serve(async (req) => {
         method: 'POST',
         headers: { 'xi-api-key': elevenLabsKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: `${AUDIO_PREFIX_TAG}${cleanText}`,
+          text: cleanText,
           model_id: MODEL_ID,
+          language_code: 'pt',
           voice_settings: VOICE_SETTINGS,
         }),
       }

@@ -53,7 +53,7 @@ function stripMarkdownForTTS(text: string): string {
     .trim();
 }
 
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
+
 
 async function callElevenLabs(text: string, apiKey: string): Promise<ArrayBuffer> {
   const response = await fetch(
@@ -65,8 +65,9 @@ async function callElevenLabs(text: string, apiKey: string): Promise<ArrayBuffer
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        text: `${AUDIO_PREFIX_TAG}${text}`,
+        text: text,
         model_id: MODEL_ID,
+        language_code: 'pt',
         voice_settings: VOICE_SETTINGS,
       }),
     },
