@@ -83,11 +83,28 @@ const REFINE_TOOLS = [
   },
 ];
 
+// ElevenLabs v3 emotion tags preserved in TTS text (English only — V3 API standard)
+const ELEVENLABS_EMOTION_TAGS = new Set([
+  'excited', 'calm', 'nervous', 'frustrated', 'serious', 'cheerful',
+  'empathetic', 'assertive', 'dramatic tone', 'reflective', 'hopeful',
+  'energetic', 'thoughtful', 'warm', 'encouraging', 'curious',
+  'sigh', 'laughs', 'whispers', 'gasps', 'clears throat',
+  'pause', 'rushed', 'slows down', 'hesitates', 'long pause',
+]);
+
 function sanitizePedagogicalText(text: string): string {
   return text
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
-    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '')
+    // Strip bracket tags EXCEPT ElevenLabs emotion tags and structural markers
+    .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
+      const normalized = inner.toLowerCase().trim();
+      // Preserve ElevenLabs emotion/prosody tags
+      if (ELEVENLABS_EMOTION_TAGS.has(normalized)) return match;
+      // Preserve structural markers (QUIZ, PLAYGROUND, EXERCISE:*)
+      if (/^(quiz|playground|exercise:[a-z_-]+)$/i.test(inner.trim())) return match;
+      return '';
+    })
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
