@@ -22,7 +22,7 @@ const corsHeaders = {
 
 const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice Brasil
 const MODEL_ID = 'eleven_v3';
-const VOICE_SETTINGS = { stability: 0.5, similarity_boost: 0.75 };
+const VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75 };
 
 function jsonError(msg: string, status = 400) {
   return new Response(JSON.stringify({ error: msg }), {
