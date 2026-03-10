@@ -922,7 +922,7 @@ export default function AdminV8Create() {
 
       setPipelineSteps(prev => prev.map(s => s.id === 'finalize' ? { ...s, status: 'completed' as const } : s));
       setPipelineProgress(100);
-      addLog('success', `Pipeline completo! Aula salva com ${audioResult.stats.totalAudios} áudios.`);
+      addLog('success', `Pipeline completo! Aula salva com ${audioResults.length} áudios.`);
 
       setStep(validationResult.valid ? "preview" : "edit");
 
