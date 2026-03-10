@@ -24,13 +24,25 @@ function sanitizeEncoding(text: string): string {
   return r;
 }
 
+// ElevenLabs v3 emotion tags that should be preserved
+const ELEVENLABS_EMOTION_TAGS = new Set([
+  'excited', 'calm', 'nervous', 'frustrated', 'serious', 'cheerful',
+  'empathetic', 'assertive', 'dramatic tone', 'reflective', 'hopeful',
+  'energetic', 'thoughtful', 'warm', 'encouraging', 'curious',
+  'sigh', 'laughs', 'whispers', 'gasps', 'clears throat',
+  'pause', 'rushed', 'slows down', 'hesitates', 'long pause',
+]);
+
 function sanitizePedagogicalText(text: string): string {
   if (!text || typeof text !== 'string') return text;
 
   return text
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
-    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '')
+    // Strip bracket tags EXCEPT ElevenLabs emotion tags
+    .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
+      return ELEVENLABS_EMOTION_TAGS.has(inner.toLowerCase().trim()) ? match : '';
+    })
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -306,6 +318,14 @@ Cada quiz deve:
 - NUNCA referencie números de seção na pergunta (ex: "De acordo com a Seção 0", "conforme a Seção 1", "na Seção 3"). A pergunta deve ser autocontida e compreensível sem contexto de numeração.
 - A pergunta NÃO deve mencionar "seção", "seções", "de acordo com", "conforme" seguido de referência numérica.
 
+TAGS EMOCIONAIS (OBRIGATÓRIO para narração TTS):
+- Inclua tags emocionais ElevenLabs nos campos "question", "explanation" e "reinforcement" para tornar a narração mais natural e engajante.
+- Tags disponíveis: [excited], [calm], [thoughtful], [encouraging], [curious], [cheerful], [serious], [reflective], [pause]
+- Exemplo: "[curious] Você sabe qual é a diferença entre um prompt genérico e um profissional? [pause] Pense bem antes de responder."
+- Exemplo de explanation: "[cheerful] Isso mesmo! [thoughtful] A especificidade é a chave para resultados melhores."
+- Exemplo de reinforcement: "[encouraging] Quase lá! [calm] Vamos revisar esse conceito juntos."
+- Use 1-2 tags por campo, no início ou entre frases. Não exagere.
+
 PROIBIÇÕES:
 - NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo. O quiz deve ir DIRETO ao conteúdo sem labels de categorização.
 
@@ -331,6 +351,14 @@ O playground deve:
 - Ter desafio para o usuário escrever seu próprio prompt
 - Estar em Português Brasileiro (pt-BR)
 - Ter hints e critérios de avaliação
+
+TAGS EMOCIONAIS (OBRIGATÓRIO para narração TTS):
+- Inclua tags emocionais ElevenLabs no campo "narration", "successMessage" e "tryAgainMessage" para tornar a narração TTS mais natural.
+- Tags disponíveis: [excited], [calm], [thoughtful], [encouraging], [curious], [cheerful], [serious], [pause]
+- Exemplo narration: "[excited] Agora é a sua vez de brilhar! [thoughtful] Vou te mostrar dois prompts e você vai entender a diferença na prática."
+- Exemplo successMessage: "[cheerful] Parabéns! [excited] Seu prompt ficou muito bom!"
+- Exemplo tryAgainMessage: "[encouraging] Quase lá! [calm] Tente ser mais específico no seu prompt."
+- Use 1-2 tags por campo, posicionadas naturalmente no início ou entre frases.
 
 PROIBIÇÕES:
 - NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo.

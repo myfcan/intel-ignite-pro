@@ -35,7 +35,6 @@ function sanitizeNarrationText(text: string): string {
   return text
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
-    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -54,7 +53,7 @@ function stripMarkdownForTTS(text: string): string {
     .trim();
 }
 
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] [warm, engaging tone] ';
+const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
 
 async function callElevenLabs(text: string, apiKey: string): Promise<ArrayBuffer> {
   const response = await fetch(
@@ -88,13 +87,8 @@ async function generateAudio(
   lessonId: string,
   filePrefix: string,
 ): Promise<{ audioUrl: string; sizeKB: number; durationEstimate: number }> {
-  // Geração 1: descartada (warm-up do modelo)
-  await callElevenLabs(text, apiKey);
-  console.log(`[v8-reprocess-audio] 🔄 Gen1 descartada para ${filePrefix}`);
-
-  // Geração 2: usada (mais natural e estável)
+  // Single call — no dual generation waste
   const audioBuffer = await callElevenLabs(text, apiKey);
-  console.log(`[v8-reprocess-audio] ✅ Gen2 aceita para ${filePrefix}`);
 
   const sizeKB = Math.round(audioBuffer.byteLength / 1024);
   const durationEstimate = Math.round(text.split(/\s+/).length / 2.5);

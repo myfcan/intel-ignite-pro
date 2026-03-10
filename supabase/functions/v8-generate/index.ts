@@ -57,7 +57,6 @@ function sanitizeNarrationText(text: string): string {
   return text
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
-    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -347,9 +346,9 @@ function jsonError(message: string, status: number) {
   );
 }
 
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] [warm, engaging tone] ';
+const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
 
-async function callElevenLabsOnce(
+async function generateTTS(
   apiKey: string,
   text: string,
 ): Promise<ArrayBuffer> {
@@ -379,20 +378,6 @@ async function callElevenLabsOnce(
   return await response.arrayBuffer();
 }
 
-async function generateTTS(
-  apiKey: string,
-  text: string,
-): Promise<ArrayBuffer> {
-  // Geração 1: descartada (warm-up do modelo)
-  await callElevenLabsOnce(apiKey, text);
-  console.log('[v8-generate] 🔄 Gen1 descartada');
-
-  // Geração 2: usada (mais natural e estável)
-  const buffer = await callElevenLabsOnce(apiKey, text);
-  console.log('[v8-generate] ✅ Gen2 aceita');
-  return buffer;
-}
-
 async function uploadToStorage(
   supabase: any,
   audioBuffer: ArrayBuffer,
@@ -418,6 +403,15 @@ async function uploadToStorage(
   return urlData.publicUrl;
 }
 
+// ElevenLabs v3 emotion tags that should be preserved in TTS text
+const ELEVENLABS_EMOTION_TAGS = new Set([
+  'excited', 'calm', 'nervous', 'frustrated', 'serious', 'cheerful',
+  'empathetic', 'assertive', 'dramatic tone', 'reflective', 'hopeful',
+  'energetic', 'thoughtful', 'warm', 'encouraging', 'curious',
+  'sigh', 'laughs', 'whispers', 'gasps', 'clears throat',
+  'pause', 'rushed', 'slows down', 'hesitates', 'long pause',
+]);
+
 function stripMarkdownForTTS(markdown: string): string {
   return markdown
     .replace(/#{1,6}\s*/g, '')           // headers
@@ -426,13 +420,16 @@ function stripMarkdownForTTS(markdown: string): string {
     .replace(/`([^`]+)`/g, '$1')         // inline code
     .replace(/```[\s\S]*?```/g, '')      // code blocks
     .replace(/!\[.*?\]\(.*?\)/g, '')     // images
-    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1') // links
+    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1') // links (keep text, remove url)
     .replace(/^\s*[-*+]\s+/gm, '')       // list markers
     .replace(/^\s*\d+\.\s+/gm, '')       // ordered list markers
     .replace(/^\s*>\s+/gm, '')           // blockquotes
     .replace(/---+/g, '')                // hr
     .replace(/\n{3,}/g, '\n\n')          // excessive newlines
-    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '') // generic emotion/direction tags
+    // Strip bracket tags EXCEPT ElevenLabs emotion tags
+    .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
+      return ELEVENLABS_EMOTION_TAGS.has(inner.toLowerCase().trim()) ? match : '';
+    })
     .trim();
 }
 
