@@ -56,9 +56,8 @@ serve(async (req) => {
         body: JSON.stringify({
           text: text,
           model_id: modelId,
-          language_code: 'pt',
           voice_settings: {
-            stability: 0.5,
+            stability: 0.75,
             similarity_boost: 0.75,
             style: 0.0,
             use_speaker_boost: true

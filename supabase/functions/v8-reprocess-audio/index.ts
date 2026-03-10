@@ -72,7 +72,6 @@ async function generateAudio(
       body: JSON.stringify({
         text,
         model_id: MODEL_ID,
-        language_code: 'pt',
         voice_settings: VOICE_SETTINGS,
       }),
     },

@@ -355,7 +355,6 @@ async function generateTTS(
     text,
     model_id: MODEL_ID,
     voice_settings: VOICE_SETTINGS,
-    language_code: "pt",
   };
 
   const response = await fetch(

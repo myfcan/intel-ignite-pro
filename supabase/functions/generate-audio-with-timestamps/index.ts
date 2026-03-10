@@ -84,13 +84,12 @@ serve(async (req) => {
     // ============================================================
     // CHAMAR ELEVENLABS API
     // ============================================================
-    const requestBody: Record<string, unknown> = {
+  const requestBody: Record<string, unknown> = {
       text: processedText,
       model_id: selectedModel,
-      language_code: "pt",
       voice_settings: {
-        stability: 0.5,
-        similarity_boost: 1.0,
+        stability: 0.75,
+        similarity_boost: 0.75,
         style: 0.3,
         use_speaker_boost: true,
       },

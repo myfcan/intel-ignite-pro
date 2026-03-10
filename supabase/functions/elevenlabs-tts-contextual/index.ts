@@ -121,7 +121,6 @@ async function generateAudio(
       body: JSON.stringify({
         text,
         model_id: 'eleven_v3',
-        language_code: 'pt',
         output_format: 'mp3_44100_128',
         voice_settings: voiceSettings,
       }),
