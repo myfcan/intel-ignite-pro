@@ -347,9 +347,9 @@ function jsonError(message: string, status: number) {
   );
 }
 
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] [warm, engaging tone] ';
+const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
 
-async function callElevenLabsOnce(
+async function generateTTS(
   apiKey: string,
   text: string,
 ): Promise<ArrayBuffer> {
@@ -377,20 +377,6 @@ async function callElevenLabsOnce(
   }
 
   return await response.arrayBuffer();
-}
-
-async function generateTTS(
-  apiKey: string,
-  text: string,
-): Promise<ArrayBuffer> {
-  // Geração 1: descartada (warm-up do modelo)
-  await callElevenLabsOnce(apiKey, text);
-  console.log('[v8-generate] 🔄 Gen1 descartada');
-
-  // Geração 2: usada (mais natural e estável)
-  const buffer = await callElevenLabsOnce(apiKey, text);
-  console.log('[v8-generate] ✅ Gen2 aceita');
-  return buffer;
 }
 
 async function uploadToStorage(
