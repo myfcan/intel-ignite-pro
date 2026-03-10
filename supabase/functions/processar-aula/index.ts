@@ -198,7 +198,7 @@ function calcularTimestamps(sessoes: Sessao[], duracaoTotal: number): Sessao[] {
   }));
 }
 
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
+
 
 async function chamarElevenLabs(texto: string): Promise<Response> {
   return fetch(
