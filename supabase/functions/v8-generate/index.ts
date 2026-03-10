@@ -346,7 +346,7 @@ function jsonError(message: string, status: number) {
   );
 }
 
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
+
 
 async function generateTTS(
   apiKey: string,
