@@ -20,7 +20,7 @@ const corsHeaders = {
  * Output: { success, totalAudios, totalErrors, results[], updatedSections }
  */
 
-const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice Brasil
+const VOICE_ID = 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR nativa
 const MODEL_ID = 'eleven_v3';
 const VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75 };
 
