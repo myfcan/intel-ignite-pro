@@ -233,7 +233,7 @@ async function gerarAudioComRetry(texto: string, supabase: any, tentativa = 1): 
       return gerarAudioComRetry(texto, supabase, tentativa + 1);
     }
 
-    const audioBuffer = await gen2.arrayBuffer();
+    const audioBuffer = await response.arrayBuffer();
     const fileName = `audio-${Date.now()}.mp3`;
     
     const { data: uploadData, error: uploadError } = await supabase.storage
