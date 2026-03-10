@@ -54,13 +54,9 @@ function stripMarkdownForTTS(text: string): string {
     .trim();
 }
 
-async function generateAudio(
-  text: string,
-  apiKey: string,
-  supabaseAdmin: any,
-  lessonId: string,
-  filePrefix: string,
-): Promise<{ audioUrl: string; sizeKB: number; durationEstimate: number }> {
+const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] [warm, engaging tone] ';
+
+async function callElevenLabs(text: string, apiKey: string): Promise<ArrayBuffer> {
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
     {
@@ -70,7 +66,7 @@ async function generateAudio(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        text: `[Brazilian Portuguese accent] ${text}`,
+        text: `${AUDIO_PREFIX_TAG}${text}`,
         model_id: MODEL_ID,
         voice_settings: VOICE_SETTINGS,
       }),
@@ -82,7 +78,24 @@ async function generateAudio(
     throw new Error(`ElevenLabs error ${response.status}: ${errText.slice(0, 200)}`);
   }
 
-  const audioBuffer = await response.arrayBuffer();
+  return response.arrayBuffer();
+}
+
+async function generateAudio(
+  text: string,
+  apiKey: string,
+  supabaseAdmin: any,
+  lessonId: string,
+  filePrefix: string,
+): Promise<{ audioUrl: string; sizeKB: number; durationEstimate: number }> {
+  // Geração 1: descartada (warm-up do modelo)
+  await callElevenLabs(text, apiKey);
+  console.log(`[v8-reprocess-audio] 🔄 Gen1 descartada para ${filePrefix}`);
+
+  // Geração 2: usada (mais natural e estável)
+  const audioBuffer = await callElevenLabs(text, apiKey);
+  console.log(`[v8-reprocess-audio] ✅ Gen2 aceita para ${filePrefix}`);
+
   const sizeKB = Math.round(audioBuffer.byteLength / 1024);
   const durationEstimate = Math.round(text.split(/\s+/).length / 2.5);
 
