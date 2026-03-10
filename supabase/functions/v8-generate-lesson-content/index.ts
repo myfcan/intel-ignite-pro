@@ -318,6 +318,14 @@ Cada quiz deve:
 - NUNCA referencie números de seção na pergunta (ex: "De acordo com a Seção 0", "conforme a Seção 1", "na Seção 3"). A pergunta deve ser autocontida e compreensível sem contexto de numeração.
 - A pergunta NÃO deve mencionar "seção", "seções", "de acordo com", "conforme" seguido de referência numérica.
 
+TAGS EMOCIONAIS (OBRIGATÓRIO para narração TTS):
+- Inclua tags emocionais ElevenLabs nos campos "question", "explanation" e "reinforcement" para tornar a narração mais natural e engajante.
+- Tags disponíveis: [excited], [calm], [thoughtful], [encouraging], [curious], [cheerful], [serious], [reflective], [pause]
+- Exemplo: "[curious] Você sabe qual é a diferença entre um prompt genérico e um profissional? [pause] Pense bem antes de responder."
+- Exemplo de explanation: "[cheerful] Isso mesmo! [thoughtful] A especificidade é a chave para resultados melhores."
+- Exemplo de reinforcement: "[encouraging] Quase lá! [calm] Vamos revisar esse conceito juntos."
+- Use 1-2 tags por campo, no início ou entre frases. Não exagere.
+
 PROIBIÇÕES:
 - NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo. O quiz deve ir DIRETO ao conteúdo sem labels de categorização.
 
