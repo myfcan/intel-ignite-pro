@@ -928,7 +928,7 @@ export default function AdminV8Create() {
 
       toast({
         title: "✅ Pipeline completo!",
-        description: `${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${audioResult.stats.totalAudios} áudios gerados e salvos.`,
+        description: `${finalData.sections.length} seções, ${finalData.inlineQuizzes.length} quizzes, ${audioResults.length} áudios gerados e salvos.`,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
