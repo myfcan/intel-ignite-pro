@@ -351,8 +351,11 @@ async function generateTTS(
   apiKey: string,
   text: string,
 ): Promise<ArrayBuffer> {
+  // CRITICAL: Prefix with [Brazilian Portuguese accent] audio tag to prevent
+  // eleven_v3 from drifting to PT-PT phonetics. This is a documented v3 feature.
+  const textWithAccent = `[Brazilian Portuguese accent] ${text}`;
   const body: Record<string, unknown> = {
-    text,
+    text: textWithAccent,
     model_id: MODEL_ID,
     voice_settings: VOICE_SETTINGS,
   };
