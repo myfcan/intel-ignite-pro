@@ -35,7 +35,6 @@ function sanitizeNarrationText(text: string): string {
   return text
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
-    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
