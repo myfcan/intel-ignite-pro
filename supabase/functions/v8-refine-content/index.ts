@@ -27,7 +27,7 @@ REGRAS OBRIGATÓRIAS:
 
 5. **Tom conversacional mas preciso**: Mantenha o tom amigável e acessível do original, mas sem sacrificar clareza.
 
-6. **Preservar estrutura**: NÃO altere marcadores como [QUIZ], [PLAYGROUND], [EXERCISE:tipo], tags de emoção como [confiante], [pausa curta], [animado], títulos ##, nem a organização das seções. Copie-os EXATAMENTE como estão.
+6. **Preservar estrutura**: NÃO altere marcadores como [QUIZ], [PLAYGROUND], [EXERCISE:tipo], tags de emoção/prosódia como [excited], [pause], [warm], [laughs], [whispers], [calm], [encouraging], [thoughtful], títulos ##, nem a organização das seções. Copie-os EXATAMENTE como estão.
 
 7. **Preservar intenção**: Melhore a FORMA, não mude o CONTEÚDO conceitual. Exemplos, metáforas e analogias devem ser mantidos ou melhorados, nunca removidos.
 
