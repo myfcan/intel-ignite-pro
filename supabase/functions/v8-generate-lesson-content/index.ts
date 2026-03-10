@@ -352,6 +352,14 @@ O playground deve:
 - Estar em Português Brasileiro (pt-BR)
 - Ter hints e critérios de avaliação
 
+TAGS EMOCIONAIS (OBRIGATÓRIO para narração TTS):
+- Inclua tags emocionais ElevenLabs no campo "narration", "successMessage" e "tryAgainMessage" para tornar a narração TTS mais natural.
+- Tags disponíveis: [excited], [calm], [thoughtful], [encouraging], [curious], [cheerful], [serious], [pause]
+- Exemplo narration: "[excited] Agora é a sua vez de brilhar! [thoughtful] Vou te mostrar dois prompts e você vai entender a diferença na prática."
+- Exemplo successMessage: "[cheerful] Parabéns! [excited] Seu prompt ficou muito bom!"
+- Exemplo tryAgainMessage: "[encouraging] Quase lá! [calm] Tente ser mais específico no seu prompt."
+- Use 1-2 tags por campo, posicionadas naturalmente no início ou entre frases.
+
 PROIBIÇÕES:
 - NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo.
 - NUNCA use tom apressado no enunciado. Proibido: "Responda rapidamente", "confie no seu instinto", "você tem pouco tempo", "sem pensar muito", "responda agora". Essas frases são anti-pedagógicas.
