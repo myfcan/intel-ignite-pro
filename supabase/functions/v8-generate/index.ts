@@ -404,6 +404,15 @@ async function uploadToStorage(
   return urlData.publicUrl;
 }
 
+// ElevenLabs v3 emotion tags that should be preserved in TTS text
+const ELEVENLABS_EMOTION_TAGS = new Set([
+  'excited', 'calm', 'nervous', 'frustrated', 'serious', 'cheerful',
+  'empathetic', 'assertive', 'dramatic tone', 'reflective', 'hopeful',
+  'energetic', 'thoughtful', 'warm', 'encouraging', 'curious',
+  'sigh', 'laughs', 'whispers', 'gasps', 'clears throat',
+  'pause', 'rushed', 'slows down', 'hesitates', 'long pause',
+]);
+
 function stripMarkdownForTTS(markdown: string): string {
   return markdown
     .replace(/#{1,6}\s*/g, '')           // headers
@@ -412,13 +421,16 @@ function stripMarkdownForTTS(markdown: string): string {
     .replace(/`([^`]+)`/g, '$1')         // inline code
     .replace(/```[\s\S]*?```/g, '')      // code blocks
     .replace(/!\[.*?\]\(.*?\)/g, '')     // images
-    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1') // links
+    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1') // links (keep text, remove url)
     .replace(/^\s*[-*+]\s+/gm, '')       // list markers
     .replace(/^\s*\d+\.\s+/gm, '')       // ordered list markers
     .replace(/^\s*>\s+/gm, '')           // blockquotes
     .replace(/---+/g, '')                // hr
     .replace(/\n{3,}/g, '\n\n')          // excessive newlines
-    .replace(/\[(?![^\]]*\]\()[^\]]{1,40}\]/gi, '') // generic emotion/direction tags
+    // Strip bracket tags EXCEPT ElevenLabs emotion tags
+    .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
+      return ELEVENLABS_EMOTION_TAGS.has(inner.toLowerCase().trim()) ? match : '';
+    })
     .trim();
 }
 
