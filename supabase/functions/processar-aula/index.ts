@@ -198,38 +198,49 @@ function calcularTimestamps(sessoes: Sessao[], duracaoTotal: number): Sessao[] {
   }));
 }
 
+const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] [warm, engaging tone] ';
+
+async function chamarElevenLabs(texto: string): Promise<Response> {
+  return fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${ALICE_VOICE_ID}?output_format=mp3_44100_128`,
+    {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVENLABS_API_KEY!,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: `${AUDIO_PREFIX_TAG}${texto}`,
+        model_id: 'eleven_v3',
+        voice_settings: {
+          stability: 0.75,
+          similarity_boost: 0.75,
+          speed: 1.1
+        }
+      })
+    }
+  );
+}
+
 async function gerarAudioComRetry(texto: string, supabase: any, tentativa = 1): Promise<string> {
   try {
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${ALICE_VOICE_ID}`,
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': ELEVENLABS_API_KEY!,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: `[Brazilian Portuguese accent] ${texto}`,
-          model_id: 'eleven_v3',
-          voice_settings: {
-            stability: 0.75,
-            similarity_boost: 0.75,
-            speed: 1.1
-          }
-        })
-      }
-    );
+    // Geração 1: descartada (warm-up)
+    const gen1 = await chamarElevenLabs(texto);
+    if (gen1.ok) await gen1.arrayBuffer(); // consumir body
+    console.log('[processar-aula] 🔄 Gen1 descartada');
 
-    if (!response.ok && tentativa < 3) {
-      await logarInfo(supabase, 'elevenlabs', `Tentativa ${tentativa} falhou, retentando...`);
+    // Geração 2: usada (mais natural)
+    const gen2 = await chamarElevenLabs(texto);
+
+    if (!gen2.ok && tentativa < 3) {
+      await logarInfo(supabase, 'elevenlabs', `Gen2 tentativa ${tentativa} falhou, retentando...`);
       await new Promise(r => setTimeout(r, 2000 * tentativa));
       return gerarAudioComRetry(texto, supabase, tentativa + 1);
     }
 
-    const audioBuffer = await response.arrayBuffer();
+    const audioBuffer = await gen2.arrayBuffer();
     const fileName = `audio-${Date.now()}.mp3`;
     
-    // Upload para Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('lesson-audios')
       .upload(fileName, audioBuffer, {

@@ -347,15 +347,14 @@ function jsonError(message: string, status: number) {
   );
 }
 
-async function generateTTS(
+const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] [warm, engaging tone] ';
+
+async function callElevenLabsOnce(
   apiKey: string,
   text: string,
 ): Promise<ArrayBuffer> {
-  // CRITICAL: Prefix with [Brazilian Portuguese accent] audio tag to prevent
-  // eleven_v3 from drifting to PT-PT phonetics. This is a documented v3 feature.
-  const textWithAccent = `[Brazilian Portuguese accent] ${text}`;
   const body: Record<string, unknown> = {
-    text: textWithAccent,
+    text: `${AUDIO_PREFIX_TAG}${text}`,
     model_id: MODEL_ID,
     voice_settings: VOICE_SETTINGS,
   };
@@ -378,6 +377,20 @@ async function generateTTS(
   }
 
   return await response.arrayBuffer();
+}
+
+async function generateTTS(
+  apiKey: string,
+  text: string,
+): Promise<ArrayBuffer> {
+  // Geração 1: descartada (warm-up do modelo)
+  await callElevenLabsOnce(apiKey, text);
+  console.log('[v8-generate] 🔄 Gen1 descartada');
+
+  // Geração 2: usada (mais natural e estável)
+  const buffer = await callElevenLabsOnce(apiKey, text);
+  console.log('[v8-generate] ✅ Gen2 aceita');
+  return buffer;
 }
 
 async function uploadToStorage(
