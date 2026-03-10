@@ -1,184 +1,106 @@
+## Plano: Corrigir drift PT-PT removendo prefixo de idioma misto  
+  
+  
+  
+Atue como um engenheiro sênior responsável pelo runtime de todo o sistema e banco de dados, atue com obrigação de precisão técnica absoluta.
 
-# Espelho Completo V8 — 25 Categorias (~35 arquivos)
+&nbsp;
 
-## Auditoria Final: Todas as Melhorias Mapeadas
+REGRA DESTE PROMPT:  
+  
+Execute todo o plano, mas caso não execute por alguma razão, você é obrigado é dizer:  
+Não implementei todo o plano ou não executei todas asa correções. 
 
----
+&nbsp;
 
-## CAT 1: Renderização Markdown (V8ContentSection)
-- Bold: `font-semibold text-primary`
-- Itálico: highlight marker `bg-primary/10 px-1.5 py-0.5 rounded-md`
-- Listas: container `bg-muted/50 rounded-xl border-border/40`, bullets `bg-primary/60`
-- Blockquotes: callout `border-l-4 border-primary/40 bg-primary/5 rounded-r-xl`
-- Code inline: `bg-muted text-primary rounded-md font-mono`
-- Base: `text-[16.5px] leading-[1.85] tracking-[-0.01em]`
-- Sanitização: `v8TextSanitizer.ts` remove marcadores narração
-- Título: strip automático "Seção X —" via `cleanSectionTitle()`
+Você NÃO pode mentir.
 
-## CAT 2: Imagens — V8TrimmedImage
-- Trim automático via bounding box (alpha<10, dist<30)
-- Cache in-memory `trimmedImageCache` com `TRIM_VERSION=2`
-- Shimmer loading + fade-in 500ms + `img.decode()` assíncrono
-- Posição: antes do markdown, centralizada, `max-w-[300px] rounded-2xl`
+Você NÃO pode supor.
 
-## CAT 3: Scroll & Âncoras (v8ScrollUtils)
-- Âncora estática `scroll-margin-top: 88px` separada do motion.div
-- Drift correction 420ms pós-scroll (threshold 4px)
-- Double-rAF antes do scroll
-- CTA scroll: 300ms + 600ms safety-net
-- Safe zones: TOP=88px, BOTTOM=120px, DELTA=16px
+Você NÃO pode responder com explicações genéricas.
 
-## CAT 4: Player UI (V8LessonPlayer)
-- Background: `bg-white text-slate-900` (Premium Light)
-- Hide scrollbar, padding unificado `pb-36`
-- Barra fixa bottom: `bg-white/95 backdrop-blur-sm`
-- Animação entrada: `opacity 0→1, y 14→0` condicional
-- Preload áudio do próximo item
+Você NÃO pode omitir dados.
 
-## CAT 5: Header & Progresso (V8Header)
-- Barra progresso: `h-1 bg-gradient-to-r from-indigo-500 to-violet-500`
-- Glassmorphism: `bg-white/90 backdrop-blur-lg`
-- Contador: `tabular-nums text-[11px]`
-- Report button + drawer de navegação por seções
+Você deve executar tudo com DADOS REAIS do código atual.
 
-## CAT 6: Audio Player (V8AudioPlayer)
-- Play button: gradiente `indigo-500 → violet-500`, 36px
-- Progress bar clicável `h-1.5`
-- Velocidade: ciclo `1x → 1.25x → 1.5x → 2x`
-- Timer `font-mono tabular-nums`
-- Loading: spinner + animate-pulse
+Você deve copiar e colar trechos REAIS do código.
 
-## CAT 7: Audio-First Lock (useAudioFirstLock + V8AudioLockOverlay)
-- Lock: `opacity-40 pointer-events-none` durante narração
-- Overlay: `Headphones animate-pulse` + mensagem
-- Unlock visual: `ring-2 ring-indigo-400/60` por 1.5s
-- Escopo: V8InlineExercise, V8CompleteSentenceInline, V8QuizInline, V8QuizTrueFalse, V8QuizFillBlank (modo dual: texto + chips)
+Você deve usar logs reais e timestamps reais.
 
-## CAT 8: Exercícios Inline (8 tipos)
-1. **Multiple Choice** — botões com feedback verde/vermelho, ícone Target
-2. **FlipCard Quiz** — Light Theme, COLOR_MAP/ICON_MAP, confetti localizado, progress bar
-3. **True/False** — 4 afirmações com toggle
-4. **Platform Match** — match cenários↔plataformas, validação defensiva
-5. **Timed Quiz** — 4 timer states, bônus tempo, SFX, max 2 perguntas
-6. **Scenario Selection** — formato dual (simples + completo), scroll integrado
-7. **Fill-in-Blanks** — chips arrastáveis
-8. **Complete Sentence** — lacunas inline com chip bank
+Se não souber algo, diga explicitamente: “NÃO LOCALIZADO NO CÓDIGO”.  
+  
+TUDO ISSO É MANDATÓRIO
 
-## CAT 9: Coursiv Prompt Builder (V8CompleteSentenceInline)
-- Badge: `Puzzle` icon em `bg-cyan-50 border-cyan-200`
-- Blank states: active/filled/empty com cores distintas
-- Word bank: chips shuffled, tap-to-fill, auto-advance
-- Submit: só quando `allFilled`
-- Feedback: erros com `line-through` + correção verde
-- Retry: grid 2 colunas
-- Contrato V8-C01: 4 lacunas, 0 distratores
+### Problema confirmado
 
-## CAT 10: Playground Interativo (V8PlaygroundInline)
-- Fases: intro→amateur→professional→compare→challenge→done (acumulativas)
-- Badge: `Sparkles` em `bg-violet-50`
-- Comparação: grid 2 colunas ❌/✅
-- Challenge: avaliação IA via edge function `v8-evaluate-prompt`
-- Anti-copy context, feedback estruturado, max 3 tentativas
-- Reset externo via `useImperativeHandle`
+O texto enviado ao ElevenLabs começa com uma frase em inglês (`[Brazilian Portuguese accent]`) seguida de conteúdo em português. A documentação oficial diz explicitamente para não misturar idiomas num mesmo prompt. A voz Taciana já é PT-BR nativa — o sotaque vem dela, não de uma tag.
 
-## CAT 11: Insight Reward (V8InsightReward)
-- Card `border-2 border-amber-300 bg-amber-50`
-- Claim idempotente (verifica events antes)
-- Confetti 100 partículas + SFX
-- Estado locked se playground score < 81
+### Evidências da documentação oficial
 
-## CAT 12: Learn & Grow (V8LearnAndGrowBlock)
-- Design: `border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50`
-- 3 linhas numeradas: whatChanged, beforeAfter, practicalExample
-- Último item do timeline
+1. **Help Center** ([https://help.elevenlabs.io/hc/en-us/articles/19581255545873](https://help.elevenlabs.io/hc/en-us/articles/19581255545873)):
+  - "The accent comes from the voice you're using"
+  - "avoid using multiple languages in a single prompt, as this can cause confusion"
+2. **Blog accent emulation** ([https://elevenlabs.io/blog/eleven-v3-audio-tags-emulating-accents-with-precision](https://elevenlabs.io/blog/eleven-v3-audio-tags-emulating-accents-with-precision)):
+  - Tags de sotaque são para MUDAR sotaque, não reforçar
+  - "Accent emulation is the ability to shift a voice's pronunciation"
+3. **API Reference** ([https://elevenlabs.io/docs/api-reference/text-to-speech/convert](https://elevenlabs.io/docs/api-reference/text-to-speech/convert)):
+  - `language_code` (ISO 639-1): "used to enforce a language for the model and text normalization"
 
-## CAT 13: Tela de Conclusão (V8CompletionScreen)
-- Troféu com gradiente indigo-violet
-- Stats grid 3 colunas: XP, Moedas, Streak
-- CountUp 750ms com delay escalonado
-- Confetti condicional (só se avgScore > 0)
-- Patent badge com spring animation
+### O que mudar
 
-## CAT 14: Modal de Avaliação (V8LessonRating)
-- 5 estrelas Lucide com hover/active scale
-- Textarea 500 chars, upsert no banco
-- Thank you auto-close 1.2s
+**Em todas as 11 edge functions:**
 
-## CAT 15: Mode Selector (V8ModeSelector)
-- 2 cards: Ler (BookOpen) / Ouvir (Headphones)
-- Hover spring animation
-- `unlockAudio()` no iOS
+1. **Remover** `AUDIO_PREFIX_TAG` / `[Brazilian Portuguese accent]` — elimina a mistura de idiomas
+2. **Adicionar** `language_code: "pt"` no body da request — força normalização em português (números, datas, abreviações) sem interferir no sotaque
 
-## CAT 16: Gamification & XP (distributed)
-- XP por exercício: `registerGamificationEvent` idempotente
-- Micro-feedback: badge flutuante `+5 XP` animado
-- XP por insight e conclusão
-- `playgroundScores` para conditional insight unlock
+### Arquivos afetados
 
-## CAT 17: Timeline & Dedup (useV8Player)
-- Ordem: Section→CompleteSentence→InlineExercise→Playground→Insight→Quiz
-- Dedup: inlineExercise tem prioridade sobre quiz legado
-- Preload por tipo: 7 tipos de timeline item
-- Cleanup: `audio.src = ""` no unmount
 
-## CAT 18: Feedback Wrapper (V8InlineExercise)
-- Feedback card: `border-l-4` emerald/amber
-- Retry: `exerciseKey` incrementado para remount
-- Botões: grid 2 colunas (fail) ou full-width (pass)
-- CTA scroll integrado
+| Função                                    | Mudança                                                                             |
+| ----------------------------------------- | ----------------------------------------------------------------------------------- |
+| `v8-generate-section-audio/index.ts`      | Remover linha 12 (`AUDIO_PREFIX_TAG`), ajustar linha 107, adicionar `language_code` |
+| `v8-generate/index.ts`                    | Remover linha 349, ajustar chamada TTS, adicionar `language_code`                   |
+| `v8-reprocess-audio/index.ts`             | Remover `AUDIO_PREFIX_TAG`, adicionar `language_code`                               |
+| `processar-aula/index.ts`                 | Remover linha 201, ajustar `chamarElevenLabs()`, adicionar `language_code`          |
+| `elevenlabs-tts-contextual/index.ts`      | Remover prefixo linha 122, adicionar `language_code`                                |
+| `generate-audio-with-timestamps/index.ts` | Remover linhas 87-88, adicionar `language_code`                                     |
+| `generate-audio-elevenlabs/index.ts`      | Remover prefixo linha 57, adicionar `language_code`                                 |
+| `generate-lesson-audio/index.ts`          | Remover prefixo linha 160, adicionar `language_code`                                |
+| `generate-multiple-audios/index.ts`       | Remover prefixo linha 46, adicionar `language_code`                                 |
+| `v7-vv/index.ts`                          | Remover prefixo linha 3244, adicionar `language_code`                               |
+| `v7-generate-secret-audio/index.ts`       | Remover prefixo linha 45, adicionar `language_code`                                 |
 
-## CAT 19: Review Gate — Social Proof (V8LessonReviewGate)
-- Reviews determinísticos via hash do lessonId (4 de 5)
-- CTA delay 3s, label dinâmico
-- Bloqueio de fuga (pointerDown + escape)
-- Upsell: Crown → /pricing
-- Design: gradiente violet→indigo, avatares coloridos
-- Animação: cards escalonados 150ms
 
-## CAT 20: Liv Trail Welcome (V8LivTrailWelcome)
-- One-time show via localStorage
-- Delay abertura 600ms, CTA habilita 2s
-- Design Dark: #1F2937→#111827, grid SVG, glow violeta
-- 6 partículas flutuantes animadas
-- Avatar Liv: borda purple, glow radial pulsante, Sparkles girando
-- CTA: gradiente indigo→violet→pink
+### Mudança técnica padrão (em cada função)
 
-## CAT 21: Skill Tree (V8SkillTree + V8SkillNode)
-- Layout zigzag: pattern [0,1,0,-1], offset 70px, ROW_HEIGHT=160px
-- Conectores SVG: Bézier quadrática, cor por estado
-- 4 estados visuais: completed, in_progress, available, locked
-- Ícones dinâmicos via getLessonIcon(title)
-- Spring stiffness 220, delay escalonado
+Antes:
 
-## CAT 22: Trail Card (V8TrailCard)
-- V8_ICONS por orderIndex (Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot)
-- 4 temas accent rotacionando
-- Progress bar animada com cor do tema
+```typescript
+const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
+// ...
+body: JSON.stringify({
+  text: `${AUDIO_PREFIX_TAG}${cleanText}`,
+  model_id: 'eleven_v3',
+  voice_settings: { ... },
+})
+```
 
-## CAT 23: Lesson Icon Map (lessonIconMap.ts)
-- 27 keyword→ícone mappings
-- Fallback: BookOpen
-- Usado em: V8LessonCard, V8SkillNode, CourseDetail
+Depois:
 
-## CAT 24: Exercise Error Card (ExerciseErrorCard)
-- Card laranja com AlertTriangle
-- Detalhes técnicos font-mono
-- Link admin sync
-- Usado em 6 exercícios como validação defensiva
+```typescript
+body: JSON.stringify({
+  text: cleanText,
+  model_id: 'eleven_v3',
+  language_code: 'pt',
+  voice_settings: { ... },
+})
+```
 
-## CAT 25: Content Parser (v8ContentParser.ts — 542 linhas)
-- parseFullContent(): extrai título, descrição, seções, playgrounds, quizzes
-- Section 0 auto-criada se conteúdo entre # e ##
-- Meta-filter: ignora parser/fix/TODO/FIXME
-- Sanitização pedagógica integrada
-- Output flags: hasManualExercises, hasManualQuizzes, etc.
+### Por que desta vez é diferente
 
----
+- Antes: a proposta foi feita mas **nunca executada** — o código atual ainda tem o prefixo em todas as 11 funções
+- Agora: baseado em 3 fontes oficiais da ElevenLabs que confirmam que misturar idiomas causa confusão e que o sotaque vem da voz
 
-## Utilitários Transversais
-- `v8TextSanitizer.ts` — sanitização de narração
-- `v8ScrollUtils.ts` — scroll helpers
-- `src/index.css` — hide-scrollbar
-- `src/constants/v8Rules.ts` — PASS_SCORE
+### Risco
 
-**Total: 25 categorias, ~35 arquivos.**
+O `language_code: "pt"` controla apenas normalização de texto (como pronunciar "R$1.500" ou "15/03"). ISO 639-1 não distingue PT-BR de PT-PT — essa distinção vem da voz Taciana. Se por algum motivo `language_code: "pt"` causar drift, basta removê-lo (a normalização auto-detect do ElevenLabs funciona bem com texto puramente em português).
