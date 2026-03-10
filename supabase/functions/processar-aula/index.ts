@@ -224,16 +224,11 @@ async function chamarElevenLabs(texto: string): Promise<Response> {
 
 async function gerarAudioComRetry(texto: string, supabase: any, tentativa = 1): Promise<string> {
   try {
-    // Geração 1: descartada (warm-up)
-    const gen1 = await chamarElevenLabs(texto);
-    if (gen1.ok) await gen1.arrayBuffer(); // consumir body
-    console.log('[processar-aula] 🔄 Gen1 descartada');
+    // Single call — no dual generation waste
+    const response = await chamarElevenLabs(texto);
 
-    // Geração 2: usada (mais natural)
-    const gen2 = await chamarElevenLabs(texto);
-
-    if (!gen2.ok && tentativa < 3) {
-      await logarInfo(supabase, 'elevenlabs', `Gen2 tentativa ${tentativa} falhou, retentando...`);
+    if (!response.ok && tentativa < 3) {
+      await logarInfo(supabase, 'elevenlabs', `Tentativa ${tentativa} falhou, retentando...`);
       await new Promise(r => setTimeout(r, 2000 * tentativa));
       return gerarAudioComRetry(texto, supabase, tentativa + 1);
     }
