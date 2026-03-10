@@ -9,7 +9,7 @@ const corsHeaders = {
 const VOICE_ID = 'oqUwsXKac3MSo4E51ySV';
 const MODEL_ID = 'eleven_v3';
 const VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75 };
-const AUDIO_PREFIX_TAG = '[Brazilian Portuguese accent] ';
+
 
 // ElevenLabs v3 emotion tags preserved in TTS text
 const ELEVENLABS_EMOTION_TAGS = new Set([
