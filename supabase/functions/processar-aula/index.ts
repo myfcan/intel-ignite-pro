@@ -210,8 +210,9 @@ async function chamarElevenLabs(texto: string): Promise<Response> {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        text: `${AUDIO_PREFIX_TAG}${texto}`,
+        text: texto,
         model_id: 'eleven_v3',
+        language_code: 'pt',
         voice_settings: {
           stability: 0.75,
           similarity_boost: 0.75,

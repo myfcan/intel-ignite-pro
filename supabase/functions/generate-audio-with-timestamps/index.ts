@@ -84,11 +84,10 @@ serve(async (req) => {
     // ============================================================
     // CHAMAR ELEVENLABS API
     // ============================================================
-  // CRITICAL: Prefix with accent tag to prevent PT-PT drift on eleven_v3
-  const accentText = `[Brazilian Portuguese accent] ${processedText}`;
   const requestBody: Record<string, unknown> = {
-      text: accentText,
+      text: processedText,
       model_id: selectedModel,
+      language_code: 'pt',
       voice_settings: {
         stability: 0.75,
         similarity_boost: 0.75,

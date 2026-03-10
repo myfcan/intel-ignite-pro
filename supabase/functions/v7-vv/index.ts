@@ -3241,8 +3241,9 @@ async function generateAudio(
           'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: JSON.stringify({
-          text: `[Brazilian Portuguese accent] ${sanitizeTextForV3(text)}`,
+          text: sanitizeTextForV3(text),
           model_id: 'eleven_v3',
+          language_code: 'pt',
           voice_settings: {
             stability: 0.75,
             similarity_boost: 0.75,

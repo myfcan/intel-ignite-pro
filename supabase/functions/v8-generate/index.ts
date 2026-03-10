@@ -353,8 +353,9 @@ async function generateTTS(
   text: string,
 ): Promise<ArrayBuffer> {
   const body: Record<string, unknown> = {
-    text: `${AUDIO_PREFIX_TAG}${text}`,
+    text: text,
     model_id: MODEL_ID,
+    language_code: 'pt',
     voice_settings: VOICE_SETTINGS,
   };
 

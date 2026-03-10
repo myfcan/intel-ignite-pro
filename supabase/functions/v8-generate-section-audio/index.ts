@@ -104,8 +104,9 @@ serve(async (req) => {
         method: 'POST',
         headers: { 'xi-api-key': elevenLabsKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: `${AUDIO_PREFIX_TAG}${cleanText}`,
+          text: cleanText,
           model_id: MODEL_ID,
+          language_code: 'pt',
           voice_settings: VOICE_SETTINGS,
         }),
       }
