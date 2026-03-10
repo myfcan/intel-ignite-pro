@@ -11,18 +11,13 @@ const MODEL_ID = 'eleven_v3';
 const VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75 };
 
 
-// ElevenLabs v3 emotion tags preserved in TTS text
+// ElevenLabs v3 emotion tags preserved in TTS text (English only — V3 API standard)
 const ELEVENLABS_EMOTION_TAGS = new Set([
   'excited', 'calm', 'nervous', 'frustrated', 'serious', 'cheerful',
   'empathetic', 'assertive', 'dramatic tone', 'reflective', 'hopeful',
   'energetic', 'thoughtful', 'warm', 'encouraging', 'curious',
   'sigh', 'laughs', 'whispers', 'gasps', 'clears throat',
   'pause', 'rushed', 'slows down', 'hesitates', 'long pause',
-  // PT-BR tags
-  'animado', 'calmo', 'nervoso', 'frustrado', 'sério', 'alegre',
-  'empático', 'assertivo', 'reflexivo', 'esperançoso',
-  'energético', 'pensativo', 'acolhedor', 'encorajador', 'curioso',
-  'suspiro', 'risos', 'sussurra', 'pausa', 'hesita', 'pausa longa',
 ]);
 
 interface RequestBody {
