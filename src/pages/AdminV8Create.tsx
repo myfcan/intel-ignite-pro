@@ -293,72 +293,120 @@ export default function AdminV8Create() {
       addLog('success', `Rascunho criado: ${lessonId}`);
       setPipelineProgress(25);
 
-      // Step 3: Call API
+      // Step 3: Generate audio per section
       updateStep('call-api', 'running');
-      addLog('info', 'Conectando com ElevenLabs...');
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            lessonId,
-            sections: parsed.sections,
-            quizzes: parsed.inlineQuizzes,
-            playgrounds: parsed.inlinePlaygrounds || [],
-          }),
-        }
-      );
+      addLog('info', 'Gerando áudios via ElevenLabs (por seção)...');
 
-      if (!response.ok) {
-        const errBody = await response.text();
-        throw new Error(`v8-generate failed: ${response.status} - ${errBody}`);
+      const audioResults: AudioResult[] = [];
+      const audioErrors: Array<{ index: number; type: string; error: string }> = [];
+      let totalSizeKB = 0;
+      const audioStartTime = Date.now();
+      const cacheBuster = `?t=${Date.now()}`;
+
+      const generateOneAudio = async (type: string, index: number, text: string): Promise<AudioResult | null> => {
+        if (!text?.trim()) return null;
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-section-audio`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ lessonId, type, index, text }),
+          }
+        );
+        if (!res.ok) {
+          const errBody = await res.text();
+          throw new Error(`${type} ${index}: ${res.status} - ${errBody.slice(0, 100)}`);
+        }
+        const data = await res.json();
+        if (data.skipped) return null;
+        return data as AudioResult;
+      };
+
+      const updatedData = { ...parsed };
+
+      for (let i = 0; i < updatedData.sections.length; i++) {
+        addLog('info', `Áudio seção ${i + 1}/${updatedData.sections.length}...`);
+        setPipelineProgress(25 + Math.round((i / updatedData.sections.length) * 50));
+        try {
+          const result = await generateOneAudio('section', i, updatedData.sections[i].content || '');
+          if (result) {
+            audioResults.push(result);
+            totalSizeKB += result.sizeKB;
+            updatedData.sections[i].audioUrl = result.audioUrl + cacheBuster;
+            updatedData.sections[i].audioDurationSeconds = result.durationEstimate;
+            addLog('success', `Seção ${i + 1} ✓ (${result.sizeKB}KB)`);
+          }
+        } catch (err) {
+          audioErrors.push({ index: i, type: 'section', error: err instanceof Error ? err.message : String(err) });
+          addLog('warning', `Seção ${i + 1} falhou: ${err instanceof Error ? err.message : String(err)}`);
+        }
       }
 
+      // Quizzes
+      for (let i = 0; i < (updatedData.inlineQuizzes || []).length; i++) {
+        const quiz = updatedData.inlineQuizzes[i];
+        try {
+          const qr = await generateOneAudio('quiz', i, quiz.question || '');
+          if (qr) { audioResults.push(qr); totalSizeKB += qr.sizeKB; updatedData.inlineQuizzes[i].audioUrl = qr.audioUrl + cacheBuster; }
+        } catch (err) { audioErrors.push({ index: i, type: 'quiz', error: err instanceof Error ? err.message : String(err) }); }
+        if (quiz.reinforcement?.trim()) {
+          try {
+            const rr = await generateOneAudio('quiz-reinforcement', i, quiz.reinforcement);
+            if (rr) { audioResults.push(rr); totalSizeKB += rr.sizeKB; updatedData.inlineQuizzes[i].reinforcementAudioUrl = rr.audioUrl + cacheBuster; }
+          } catch (err) { audioErrors.push({ index: i, type: 'quiz-reinforcement', error: err instanceof Error ? err.message : String(err) }); }
+        }
+        if (quiz.explanation?.trim()) {
+          try {
+            const er = await generateOneAudio('quiz-explanation', i, quiz.explanation);
+            if (er) { audioResults.push(er); totalSizeKB += er.sizeKB; updatedData.inlineQuizzes[i].explanationAudioUrl = er.audioUrl + cacheBuster; }
+          } catch (err) { audioErrors.push({ index: i, type: 'quiz-explanation', error: err instanceof Error ? err.message : String(err) }); }
+        }
+      }
+
+      // Playgrounds
+      for (let i = 0; i < (updatedData.inlinePlaygrounds || []).length; i++) {
+        const pg = updatedData.inlinePlaygrounds![i];
+        for (const pf of [
+          { type: 'playground', field: 'audioUrl', text: pg.narration },
+          { type: 'playground-success', field: 'successAudioUrl', text: pg.successMessage },
+          { type: 'playground-tryagain', field: 'tryAgainAudioUrl', text: pg.tryAgainMessage },
+        ] as const) {
+          if (pf.text?.trim()) {
+            try {
+              const pr = await generateOneAudio(pf.type, i, pf.text);
+              if (pr) { audioResults.push(pr); totalSizeKB += pr.sizeKB; (updatedData.inlinePlaygrounds![i] as any)[pf.field] = pr.audioUrl + cacheBuster; }
+            } catch (err) { audioErrors.push({ index: i, type: pf.type, error: err instanceof Error ? err.message : String(err) }); }
+          }
+        }
+      }
+
+      const audioElapsed = Date.now() - audioStartTime;
+
       updateStep('call-api', 'completed');
-      addLog('success', 'Conectado — resposta recebida');
-      setPipelineProgress(60);
+      setPipelineProgress(80);
 
       // Step 4: Process results
       updateStep('process-results', 'running');
-      addLog('info', 'Processando resultados...');
-      const result: GenerateResponse = await response.json();
-      setGenerateResult(result);
-      updateStep('process-results', 'completed', `${result.stats.totalAudios} áudios`);
-      addLog('success', `${result.stats.totalAudios} áudios gerados (${result.stats.totalSizeKB}KB)`);
-      if (result.errors && result.errors.length > 0) {
-        result.errors.forEach(e => addLog('warning', `Erro em ${e.type} ${e.index}: ${e.error}`));
+      const genResult: GenerateResponse = {
+        success: audioErrors.length === 0,
+        lessonId: lessonId!,
+        results: audioResults,
+        errors: audioErrors.length > 0 ? audioErrors : undefined,
+        stats: { totalAudios: audioResults.length, totalErrors: audioErrors.length, totalSizeKB: totalSizeKB, elapsedMs: audioElapsed },
+      };
+      setGenerateResult(genResult);
+      updateStep('process-results', 'completed', `${audioResults.length} áudios`);
+      addLog('success', `${audioResults.length} áudios gerados (${totalSizeKB}KB)`);
+      if (audioErrors.length > 0) {
+        audioErrors.forEach(e => addLog('warning', `Erro em ${e.type} ${e.index}: ${e.error}`));
       }
-      setPipelineProgress(80);
 
       // Step 5: Update content
       updateStep('update-content', 'running');
-      addLog('info', 'Atualizando JSON com URLs de áudio...');
-      const updatedData = { ...parsed };
-      const cacheBuster = `?t=${Date.now()}`;
-      for (const r of result.results) {
-        const urlWithCacheBuster = r.audioUrl + cacheBuster;
-        if (r.type === "section" && updatedData.sections[r.index]) {
-          updatedData.sections[r.index].audioUrl = urlWithCacheBuster;
-          updatedData.sections[r.index].audioDurationSeconds = r.durationEstimate;
-        } else if (r.type === "quiz" && updatedData.inlineQuizzes[r.index]) {
-          updatedData.inlineQuizzes[r.index].audioUrl = urlWithCacheBuster;
-        } else if (r.type === "quiz-reinforcement" && updatedData.inlineQuizzes[r.index]) {
-          updatedData.inlineQuizzes[r.index].reinforcementAudioUrl = urlWithCacheBuster;
-        } else if (r.type === "quiz-explanation" && updatedData.inlineQuizzes[r.index]) {
-          updatedData.inlineQuizzes[r.index].explanationAudioUrl = urlWithCacheBuster;
-        } else if (r.type === "playground" && updatedData.inlinePlaygrounds?.[r.index]) {
-          updatedData.inlinePlaygrounds[r.index].audioUrl = urlWithCacheBuster;
-        } else if (r.type === "playground-success" && updatedData.inlinePlaygrounds?.[r.index]) {
-          updatedData.inlinePlaygrounds[r.index].successAudioUrl = urlWithCacheBuster;
-        } else if (r.type === "playground-tryagain" && updatedData.inlinePlaygrounds?.[r.index]) {
-          updatedData.inlinePlaygrounds[r.index].tryAgainAudioUrl = urlWithCacheBuster;
-        }
-      }
       setJsonText(JSON.stringify(updatedData, null, 2));
       updateStep('update-content', 'completed');
       addLog('success', 'Conteúdo atualizado com URLs de áudio');
@@ -366,21 +414,19 @@ export default function AdminV8Create() {
 
       // Step 6: Finalize
       updateStep('finalize', 'running');
-      addLog('info', 'Finalizando...');
       setStep("preview");
       updateStep('finalize', 'completed');
-      addLog('success', `Pipeline concluído em ${(result.stats.elapsedMs / 1000).toFixed(1)}s`);
+      addLog('success', `Pipeline concluído em ${(audioElapsed / 1000).toFixed(1)}s`);
       setPipelineProgress(100);
 
       toast({
-        title: result.success ? "✅ Áudios gerados!" : "⚠️ Gerado com erros",
-        description: `${result.stats.totalAudios} áudios (${result.stats.totalSizeKB}KB) em ${(result.stats.elapsedMs / 1000).toFixed(1)}s`,
+        title: genResult.success ? "✅ Áudios gerados!" : "⚠️ Gerado com erros",
+        description: `${audioResults.length} áudios (${totalSizeKB}KB) em ${(audioElapsed / 1000).toFixed(1)}s`,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 
                   typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err);
       
-      // Mark current running step as error
       setPipelineSteps(prev => prev.map(s => s.status === 'running' ? { ...s, status: 'error' as const } : s));
       setPipelineError(msg);
       addLog('error', msg);
