@@ -209,7 +209,7 @@ async function gerarAudioComRetry(texto: string, supabase: any, tentativa = 1): 
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          text: texto,
+          text: `[Brazilian Portuguese accent] ${texto}`,
           model_id: 'eleven_v3',
           voice_settings: {
             stability: 0.75,
