@@ -133,12 +133,12 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
+    if (userError || !user) {
       return jsonError('Invalid token', 401);
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey) as any;
 
     // Check admin role
