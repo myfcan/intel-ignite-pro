@@ -43,7 +43,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            text: text,
+            text: `[Brazilian Portuguese accent] ${text}`,
             model_id: 'eleven_v3',
             voice_settings: {
               stability: 0.75,

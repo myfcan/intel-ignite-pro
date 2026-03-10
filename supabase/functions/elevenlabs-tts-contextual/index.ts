@@ -119,7 +119,7 @@ async function generateAudio(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        text,
+        text: `[Brazilian Portuguese accent] ${text}`,
         model_id: 'eleven_v3',
         output_format: 'mp3_44100_128',
         voice_settings: voiceSettings,

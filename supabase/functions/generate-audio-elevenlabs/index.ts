@@ -54,7 +54,7 @@ serve(async (req) => {
           'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: JSON.stringify({
-          text: text,
+          text: `[Brazilian Portuguese accent] ${text}`,
           model_id: modelId,
           voice_settings: {
             stability: 0.75,

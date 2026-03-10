@@ -70,7 +70,7 @@ async function generateAudio(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        text,
+        text: `[Brazilian Portuguese accent] ${text}`,
         model_id: MODEL_ID,
         voice_settings: VOICE_SETTINGS,
       }),
