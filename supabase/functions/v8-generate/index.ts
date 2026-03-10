@@ -12,7 +12,7 @@ const corsHeaders = {
 const VOICE_ID = 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR nativa (professional)
 const MODEL_ID = 'eleven_v3';
 const VOICE_SETTINGS = {
-  stability: 0.5,
+  stability: 0.75,
   similarity_boost: 0.75,
 };
 
