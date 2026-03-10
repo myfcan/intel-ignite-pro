@@ -39,17 +39,33 @@ function sanitizeNarrationText(text: string): string {
     .trim();
 }
 
+// ElevenLabs v3 emotion tags preserved in TTS text (English only — V3 API standard)
+const ELEVENLABS_EMOTION_TAGS = new Set([
+  'excited', 'calm', 'nervous', 'frustrated', 'serious', 'cheerful',
+  'empathetic', 'assertive', 'dramatic tone', 'reflective', 'hopeful',
+  'energetic', 'thoughtful', 'warm', 'encouraging', 'curious',
+  'sigh', 'laughs', 'whispers', 'gasps', 'clears throat',
+  'pause', 'rushed', 'slows down', 'hesitates', 'long pause',
+]);
+
 function stripMarkdownForTTS(text: string): string {
   return text
     .replace(/#{1,6}\s+/g, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/`([^`]+)`/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/^[-*+]\s+/gm, '')
-    .replace(/^\d+\.\s+/gm, '')
-    .replace(/>\s+/g, '')
+    .replace(/```[\s\S]*?```/g, '')        // code blocks
+    .replace(/!\[.*?\]\(.*?\)/g, '')       // images
+    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1') // links (keep text, remove url)
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/^\s*>\s+/gm, '')
+    .replace(/---+/g, '')
     .replace(/\n{3,}/g, '\n\n')
+    // Strip bracket tags EXCEPT ElevenLabs emotion tags
+    .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
+      return ELEVENLABS_EMOTION_TAGS.has(inner.toLowerCase().trim()) ? match : '';
+    })
     .trim();
 }
 

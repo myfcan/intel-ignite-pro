@@ -24,7 +24,7 @@ function sanitizeEncoding(text: string): string {
   return r;
 }
 
-// ElevenLabs v3 emotion tags that should be preserved
+// ElevenLabs v3 emotion tags preserved in TTS text (English only — V3 API standard)
 const ELEVENLABS_EMOTION_TAGS = new Set([
   'excited', 'calm', 'nervous', 'frustrated', 'serious', 'cheerful',
   'empathetic', 'assertive', 'dramatic tone', 'reflective', 'hopeful',
