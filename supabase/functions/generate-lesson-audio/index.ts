@@ -159,9 +159,8 @@ serve(async (req) => {
           body: JSON.stringify({
             text: textToSpeak,
             model_id: 'eleven_v3',
-            language_code: 'pt',
             voice_settings: {
-              stability: 0.5,
+              stability: 0.75,
               similarity_boost: 0.75,
             }
           }),

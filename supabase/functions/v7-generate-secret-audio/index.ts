@@ -44,10 +44,9 @@ serve(async (req) => {
         body: JSON.stringify({
           text: narrationText,
           model_id: "eleven_v3",
-          language_code: "pt",
           output_format: "mp3_44100_128",
           voice_settings: {
-            stability: 0.5,
+            stability: 0.75,
             similarity_boost: 0.75,
             style: 0.5,
             use_speaker_boost: true,
