@@ -1,184 +1,111 @@
 
-# Espelho Completo V8 — 25 Categorias (~35 arquivos)
 
-## Auditoria Final: Todas as Melhorias Mapeadas
+# Auditoria Sênior do Plano — Análise de Aderência e Riscos Sistêmicos
 
----
+## Dados Forenses Reais (query direta no banco)
 
-## CAT 1: Renderização Markdown (V8ContentSection)
-- Bold: `font-semibold text-primary`
-- Itálico: highlight marker `bg-primary/10 px-1.5 py-0.5 rounded-md`
-- Listas: container `bg-muted/50 rounded-xl border-border/40`, bullets `bg-primary/60`
-- Blockquotes: callout `border-l-4 border-primary/40 bg-primary/5 rounded-r-xl`
-- Code inline: `bg-muted text-primary rounded-md font-mono`
-- Base: `text-[16.5px] leading-[1.85] tracking-[-0.01em]`
-- Sanitização: `v8TextSanitizer.ts` remove marcadores narração
-- Título: strip automático "Seção X —" via `cleanSectionTitle()`
+Lesson `8b609064`, 9 seções. Busquei TODOS os caracteres não-ASCII:
 
-## CAT 2: Imagens — V8TrimmedImage
-- Trim automático via bounding box (alpha<10, dist<30)
-- Cache in-memory `trimmedImageCache` com `TRIM_VERSION=2`
-- Shimmer loading + fade-in 500ms + `img.decode()` assíncrono
-- Posição: antes do markdown, centralizada, `max-w-[300px] rounded-2xl`
+| Seção | Título | Caractere não-Latin | Tipo |
+|-------|--------|---------------------|------|
+| 0 | Abertura | `—` (U+2014) | Em dash — **LEGÍTIMO** |
+| 3 | Os 3 pilares... | `स्पष्ट` (Devanagari) | **CORRUPÇÃO GEMINI** |
+| 4 | Da teoria à prática | `…` (U+2026) | Ellipsis — **LEGÍTIMO** |
+| 5 | O poder do formato | `—` | **LEGÍTIMO** |
+| 6 | Prova relâmpago | `—` | **LEGÍTIMO** |
+| 7 | Checklist mental | `—` | **LEGÍTIMO** |
+| 8 | Desafio final | `—` | **LEGÍTIMO** |
 
-## CAT 3: Scroll & Âncoras (v8ScrollUtils)
-- Âncora estática `scroll-margin-top: 88px` separada do motion.div
-- Drift correction 420ms pós-scroll (threshold 4px)
-- Double-rAF antes do scroll
-- CTA scroll: 300ms + 600ms safety-net
-- Safe zones: TOP=88px, BOTTOM=120px, DELTA=16px
-
-## CAT 4: Player UI (V8LessonPlayer)
-- Background: `bg-white text-slate-900` (Premium Light)
-- Hide scrollbar, padding unificado `pb-36`
-- Barra fixa bottom: `bg-white/95 backdrop-blur-sm`
-- Animação entrada: `opacity 0→1, y 14→0` condicional
-- Preload áudio do próximo item
-
-## CAT 5: Header & Progresso (V8Header)
-- Barra progresso: `h-1 bg-gradient-to-r from-indigo-500 to-violet-500`
-- Glassmorphism: `bg-white/90 backdrop-blur-lg`
-- Contador: `tabular-nums text-[11px]`
-- Report button + drawer de navegação por seções
-
-## CAT 6: Audio Player (V8AudioPlayer)
-- Play button: gradiente `indigo-500 → violet-500`, 36px
-- Progress bar clicável `h-1.5`
-- Velocidade: ciclo `1x → 1.25x → 1.5x → 2x`
-- Timer `font-mono tabular-nums`
-- Loading: spinner + animate-pulse
-
-## CAT 7: Audio-First Lock (useAudioFirstLock + V8AudioLockOverlay)
-- Lock: `opacity-40 pointer-events-none` durante narração
-- Overlay: `Headphones animate-pulse` + mensagem
-- Unlock visual: `ring-2 ring-indigo-400/60` por 1.5s
-- Escopo: V8InlineExercise, V8CompleteSentenceInline, V8QuizInline, V8QuizTrueFalse, V8QuizFillBlank (modo dual: texto + chips)
-
-## CAT 8: Exercícios Inline (8 tipos)
-1. **Multiple Choice** — botões com feedback verde/vermelho, ícone Target
-2. **FlipCard Quiz** — Light Theme, COLOR_MAP/ICON_MAP, confetti localizado, progress bar
-3. **True/False** — 4 afirmações com toggle
-4. **Platform Match** — match cenários↔plataformas, validação defensiva
-5. **Timed Quiz** — 4 timer states, bônus tempo, SFX, max 2 perguntas
-6. **Scenario Selection** — formato dual (simples + completo), scroll integrado
-7. **Fill-in-Blanks** — chips arrastáveis
-8. **Complete Sentence** — lacunas inline com chip bank
-
-## CAT 9: Coursiv Prompt Builder (V8CompleteSentenceInline)
-- Badge: `Puzzle` icon em `bg-cyan-50 border-cyan-200`
-- Blank states: active/filled/empty com cores distintas
-- Word bank: chips shuffled, tap-to-fill, auto-advance
-- Submit: só quando `allFilled`
-- Feedback: erros com `line-through` + correção verde
-- Retry: grid 2 colunas
-- Contrato V8-C01: 4 lacunas, 0 distratores
-
-## CAT 10: Playground Interativo (V8PlaygroundInline)
-- Fases: intro→amateur→professional→compare→challenge→done (acumulativas)
-- Badge: `Sparkles` em `bg-violet-50`
-- Comparação: grid 2 colunas ❌/✅
-- Challenge: avaliação IA via edge function `v8-evaluate-prompt`
-- Anti-copy context, feedback estruturado, max 3 tentativas
-- Reset externo via `useImperativeHandle`
-
-## CAT 11: Insight Reward (V8InsightReward)
-- Card `border-2 border-amber-300 bg-amber-50`
-- Claim idempotente (verifica events antes)
-- Confetti 100 partículas + SFX
-- Estado locked se playground score < 81
-
-## CAT 12: Learn & Grow (V8LearnAndGrowBlock)
-- Design: `border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50`
-- 3 linhas numeradas: whatChanged, beforeAfter, practicalExample
-- Último item do timeline
-
-## CAT 13: Tela de Conclusão (V8CompletionScreen)
-- Troféu com gradiente indigo-violet
-- Stats grid 3 colunas: XP, Moedas, Streak
-- CountUp 750ms com delay escalonado
-- Confetti condicional (só se avgScore > 0)
-- Patent badge com spring animation
-
-## CAT 14: Modal de Avaliação (V8LessonRating)
-- 5 estrelas Lucide com hover/active scale
-- Textarea 500 chars, upsert no banco
-- Thank you auto-close 1.2s
-
-## CAT 15: Mode Selector (V8ModeSelector)
-- 2 cards: Ler (BookOpen) / Ouvir (Headphones)
-- Hover spring animation
-- `unlockAudio()` no iOS
-
-## CAT 16: Gamification & XP (distributed)
-- XP por exercício: `registerGamificationEvent` idempotente
-- Micro-feedback: badge flutuante `+5 XP` animado
-- XP por insight e conclusão
-- `playgroundScores` para conditional insight unlock
-
-## CAT 17: Timeline & Dedup (useV8Player)
-- Ordem: Section→CompleteSentence→InlineExercise→Playground→Insight→Quiz
-- Dedup: inlineExercise tem prioridade sobre quiz legado
-- Preload por tipo: 7 tipos de timeline item
-- Cleanup: `audio.src = ""` no unmount
-
-## CAT 18: Feedback Wrapper (V8InlineExercise)
-- Feedback card: `border-l-4` emerald/amber
-- Retry: `exerciseKey` incrementado para remount
-- Botões: grid 2 colunas (fail) ou full-width (pass)
-- CTA scroll integrado
-
-## CAT 19: Review Gate — Social Proof (V8LessonReviewGate)
-- Reviews determinísticos via hash do lessonId (4 de 5)
-- CTA delay 3s, label dinâmico
-- Bloqueio de fuga (pointerDown + escape)
-- Upsell: Crown → /pricing
-- Design: gradiente violet→indigo, avatares coloridos
-- Animação: cards escalonados 150ms
-
-## CAT 20: Liv Trail Welcome (V8LivTrailWelcome)
-- One-time show via localStorage
-- Delay abertura 600ms, CTA habilita 2s
-- Design Dark: #1F2937→#111827, grid SVG, glow violeta
-- 6 partículas flutuantes animadas
-- Avatar Liv: borda purple, glow radial pulsante, Sparkles girando
-- CTA: gradiente indigo→violet→pink
-
-## CAT 21: Skill Tree (V8SkillTree + V8SkillNode)
-- Layout zigzag: pattern [0,1,0,-1], offset 70px, ROW_HEIGHT=160px
-- Conectores SVG: Bézier quadrática, cor por estado
-- 4 estados visuais: completed, in_progress, available, locked
-- Ícones dinâmicos via getLessonIcon(title)
-- Spring stiffness 220, delay escalonado
-
-## CAT 22: Trail Card (V8TrailCard)
-- V8_ICONS por orderIndex (Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot)
-- 4 temas accent rotacionando
-- Progress bar animada com cor do tema
-
-## CAT 23: Lesson Icon Map (lessonIconMap.ts)
-- 27 keyword→ícone mappings
-- Fallback: BookOpen
-- Usado em: V8LessonCard, V8SkillNode, CourseDetail
-
-## CAT 24: Exercise Error Card (ExerciseErrorCard)
-- Card laranja com AlertTriangle
-- Detalhes técnicos font-mono
-- Link admin sync
-- Usado em 6 exercícios como validação defensiva
-
-## CAT 25: Content Parser (v8ContentParser.ts — 542 linhas)
-- parseFullContent(): extrai título, descrição, seções, playgrounds, quizzes
-- Section 0 auto-criada se conteúdo entre # e ##
-- Meta-filter: ignora parser/fix/TODO/FIXME
-- Sanitização pedagógica integrada
-- Output flags: hasManualExercises, hasManualQuizzes, etc.
+**Achado crítico**: Apenas a Seção 3 tem corrupção real (Hindi). As demais têm em dashes e ellipsis que são tipografia normal e NÃO causam accent drift.
 
 ---
 
-## Utilitários Transversais
-- `v8TextSanitizer.ts` — sanitização de narração
-- `v8ScrollUtils.ts` — scroll helpers
-- `src/index.css` — hide-scrollbar
-- `src/constants/v8Rules.ts` — PASS_SCORE
+## Avaliação das 3 Correções Propostas
 
-**Total: 25 categorias, ~35 arquivos.**
+### Correção A — Strip não-Latin no TTS: **CONTÉM BUG**
+
+A regex proposta no plano anterior:
+```
+[^\u0000-\u024F\u1E00-\u1EFF\u2000-\u206F...]
+```
+
+O range `\u2000-\u206F` inclui General Punctuation (onde vive `…` U+2026), e `\u2014` (em dash) está nesse range. Porém o range proposto **termina em \u23FF** e não é claro se cobre todos os caracteres tipográficos usados em português.
+
+**Risco real**: Se a regex for muito restritiva, pode cortar caracteres legítimos. Se for muito permissiva, não resolve o problema.
+
+**Correção proposta**: Em vez de uma whitelist de ranges Unicode complexa, usar uma **blacklist de scripts específicos** que sabemos serem corrupção:
+
+```typescript
+// Strip Devanagari, CJK, Arabic, Cyrillic, Thai, etc.
+.replace(/[\u0900-\u097F\u0980-\u09FF\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F\uAC00-\uD7AF]/g, '')
+```
+
+Isso é cirúrgico: remove apenas scripts que são comprovadamente corrupção da Gemini, preservando em dashes, ellipsis e toda a tipografia latina.
+
+### Correção B — Regra no prompt do refine: **VÁLIDA**
+
+Adicionar ao prompt a proibição de caracteres não-latinos. Baixo risco, alta eficácia preventiva.
+
+### Correção C — Request Stitching: **INVÁLIDA — PROIBIDA**
+
+A memória `v8/audio/elevenlabs-request-stitching-prohibition` documenta que o modelo `eleven_v3` **NÃO suporta** `previous_text` e `next_text`. Enviar esses parâmetros retorna erro 400 (`unsupported_model`).
+
+**Este ponto do plano é FALSO** — não pode ser implementado sem trocar o modelo TTS (e não queremos trocar, pois `eleven_v3` + Taciana é a configuração estabilizada).
+
+---
+
+## Causa Raiz Real do Accent Drift na Seção 3
+
+O accent drift PT-PT na Seção 3 tem UMA causa confirmada:
+- O texto contém `स्पष्टamente` — o motor ElevenLabs encontra caracteres Devanagari no meio do texto português e perde a âncora fonética.
+
+Sobre o "drift no início de cada seção" reportado pelo usuário: **não tenho evidência forense** de que isso aconteça nas seções 0, 1 e 2 (o usuário confirmou que funcionaram). Se acontece brevemente, é um comportamento intrínseco do `eleven_v3` ao inicializar cada segmento independente — e NÃO pode ser corrigido com request stitching (proibido no v3).
+
+---
+
+## Plano Revisado — 2 Correções Reais
+
+### Correção A — Sanitizar scripts não-latinos no TTS (blacklist cirúrgica)
+
+**Arquivo**: `supabase/functions/v8-generate-section-audio/index.ts`
+
+Na função `sanitizeNarrationText`, adicionar:
+```typescript
+// Strip non-Latin scripts (Devanagari, Arabic, Cyrillic, CJK, Thai, Korean)
+// Preserves em dashes (—), ellipsis (…), and all Latin Extended characters
+.replace(/[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F\uAC00-\uD7AF]/g, '')
+```
+
+Aplicar a mesma regex também em `v8-refine-content/index.ts` (na `sanitizePedagogicalText`) e `v8TextSanitizer.ts` (na `sanitizeV8PedagogicalText`) para proteger todas as camadas.
+
+### Correção B — Proibir caracteres não-latinos no prompt do refine
+
+**Arquivo**: `supabase/functions/v8-refine-content/index.ts`
+
+Adicionar ao `REFINE_SYSTEM_PROMPT`:
+```
+14. **Sem caracteres não-latinos**: NUNCA insira caracteres de outros alfabetos 
+(Devanagari, Cirílico, Árabe, CJK). Todo o texto deve usar exclusivamente 
+o alfabeto latino com acentos portugueses (á, é, í, ó, ú, ã, õ, ç, etc.).
+```
+
+### NÃO implementar: Request Stitching
+
+Motivo: `eleven_v3` retorna erro 400. Documentado na memória do projeto.
+
+---
+
+## Resumo da Auditoria
+
+| Item do Plano | Veredicto | Ação |
+|---------------|-----------|------|
+| Correção A (strip non-Latin) | **Bug na regex** — muito ampla, pode cortar `—` e `…` | Substituir por blacklist de scripts |
+| Correção B (prompt rule) | **Válida** | Implementar |
+| Correção C (request stitching) | **INVÁLIDA** — eleven_v3 não suporta | Remover do plano |
+| Accent drift genérico | **Sem evidência forense** — apenas Seção 3 confirmada | Não criar correção sem dados |
+
+### Arquivos impactados: 3
+1. `supabase/functions/v8-generate-section-audio/index.ts` — Correção A (sanitização)
+2. `supabase/functions/v8-refine-content/index.ts` — Correções A + B (sanitização + prompt)
+3. `src/lib/v8TextSanitizer.ts` — Correção A (sincronização da sanitização client-side)
+
