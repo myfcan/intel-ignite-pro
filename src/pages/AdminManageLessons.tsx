@@ -508,7 +508,7 @@ export default function AdminManageLessons() {
                         </Collapsible>
                       ))}
 
-                      {/* Orphaned lessons in this trail (V7 only) */}
+                      {/* Orphaned lessons in this trail */}
                       {trail.orphanedLessons.length > 0 && (
                         <div className="ml-4 mt-2">
                           <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-md mb-1">
@@ -519,8 +519,6 @@ export default function AdminManageLessons() {
                             {trail.orphanedLessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
                           </div>
                         </div>
-                      )}
-                      </>
                       )}
                     </CardContent>
                   </CollapsibleContent>
