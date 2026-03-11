@@ -448,15 +448,9 @@ export default function AdminManageLessons() {
                             {trail.trail_type === 'v8' && <Badge className="text-xs bg-indigo-500/20 text-indigo-400 border-indigo-500/30">V8</Badge>}
                           </CardTitle>
                           <CardDescription className="text-xs">
-                            {trail.trail_type === 'v8' ? (
-                              <>{trail.orphanedLessons.length + trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)</>
-                            ) : (
-                              <>
-                                {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)
-                                {trail.orphanedLessons.length > 0 && (
-                                  <span className="text-amber-500 ml-2">⚠️ {trail.orphanedLessons.length} aula(s) sem jornada</span>
-                                )}
-                              </>
+                            {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)
+                            {trail.orphanedLessons.length > 0 && (
+                              <span className="text-amber-500 ml-2">⚠️ {trail.orphanedLessons.length} aula(s) sem jornada</span>
                             )}
                           </CardDescription>
                         </div>
