@@ -78,10 +78,11 @@ const CourseDetail = () => {
       // Fetch trail type for back navigation
       const { data: trailData } = await supabase
         .from('trails')
-        .select('trail_type')
+        .select('trail_type, title')
         .eq('id', courseData.trail_id)
         .single();
       setTrailType(trailData?.trail_type ?? null);
+      setTrailTitle(trailData?.title ?? null);
 
       // Fetch lessons for this course
       const { data: lessonsData, error: lessonsError } = await supabase
