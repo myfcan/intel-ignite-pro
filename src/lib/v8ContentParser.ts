@@ -49,10 +49,14 @@ export function parseFullContent(rawText: string): ParseResult {
 
   // 3. Parse sections
   const parsedSections = parseSections(rawText);
+  console.log(`[v8Parser] ## sections found: ${parsedSections.length}`, parsedSections.map(s => s.title));
 
   // 3.1 If there's intro content between # and first ##, create a "Section 0"
   // Filter out meta-comments that are instructions, not real content
   const META_KEYWORDS = /\b(parser|fix|opcional|discutimos|TODO|FIXME|implementar|corrigir|descrição opcional)\b/i;
+  const descLen = description ? description.trim().length : 0;
+  const metaMatch = description ? META_KEYWORDS.test(description) : false;
+  console.log(`[v8Parser] Description length: ${descLen}, metaMatch: ${metaMatch}, first100: "${(description || '').slice(0, 100)}"`);
   if (description && description.trim().length > 20 && !META_KEYWORDS.test(description)) {
     const introSection: ParsedSection = {
       title: "Abertura",
@@ -60,6 +64,9 @@ export function parseFullContent(rawText: string): ParseResult {
       position: 0,
     };
     parsedSections.unshift(introSection);
+    console.log(`[v8Parser] Section 0 (Abertura) created, total now: ${parsedSections.length}`);
+  } else {
+    console.log(`[v8Parser] Section 0 SKIPPED`);
   }
 
   // 4. Parse playgrounds (existing)
@@ -110,35 +117,34 @@ export function parseFullContent(rawText: string): ParseResult {
     const hasQuiz = sectionHasQuiz.has(i);
     const hasPlayground = sectionHasPlayground.has(i);
 
+    console.log(`[v8Parser] Section ${i} "${parsedSections[i].title}": len=${contentTrimmed.length}, empty=${isEmpty}, shortResidual=${isShortResidual}, hasQuiz=${hasQuiz}, hasPG=${hasPlayground}`);
+
     if (isEmpty) {
+      console.log(`[v8Parser] → PRUNED (empty): "${parsedSections[i].title}"`);
       removedIndices.push(i);
     } else if (isShortResidual && (hasQuiz || hasPlayground)) {
       // P5: Merge short residual content into quiz or discard
       if (hasQuiz) {
-        // Find the quiz(zes) linked to this section
         for (const q of quizzesWithIndex) {
           if (q.afterSectionIndex === i) {
             if (!q.quiz.question || q.quiz.question.trim().length === 0) {
-              // Use residual as question
               q.quiz.question = contentTrimmed;
             } else {
-              // Check similarity (first 30 chars) — if similar, discard residual
               const residualPrefix = contentTrimmed.slice(0, 30).toLowerCase();
               const questionPrefix = q.quiz.question.slice(0, 30).toLowerCase();
-              // If not similar, we just discard the residual to avoid narration duplication
-              // (the quiz question already covers the content)
               void residualPrefix;
               void questionPrefix;
             }
           }
         }
       }
-      // Remove the section — quiz/playground will stand alone
+      console.log(`[v8Parser] → PRUNED (short+interaction): "${parsedSections[i].title}"`);
       removedIndices.push(i);
     } else {
       keptSections.push(parsedSections[i]);
     }
   }
+  console.log(`[v8Parser] Final sections after pruning: ${keptSections.length}, removed: [${removedIndices.join(', ')}]`);
 
   // 6.3. Build index remapping: old index -> new index
   const indexRemap = new Map<number, number>();
