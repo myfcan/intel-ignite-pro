@@ -411,7 +411,7 @@ TIPOS DISPONÍVEIS E SCHEMAS:
 - true-false: { statements: [{ id: "stmt-1", text: "afirmação", correct: true/false, explanation: "..." }], feedback: { perfect: "...", good: "...", needsReview: "..." } }
 - fill-in-blanks: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], hint: "dica" }], feedback: { allCorrect: "...", someCorrect: "...", needsReview: "..." } }
 - complete-sentence: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], options: ["opção1", "opção2", "opção3", "resposta"] }] }
-- multiple-choice: Use o formato true-false (statements) para compatibilidade do player. { statements: [{ id, text, correct, explanation }], feedback: { perfect, good, needsReview } }
+- multiple-choice: { question: "pergunta clara sobre o conceito", options: [{ id: "opt-1", text: "alternativa A", isCorrect: true }, { id: "opt-2", text: "alternativa B", isCorrect: false }, { id: "opt-3", text: "alternativa C", isCorrect: false }], explanation: "explicação da resposta correta", feedback: { perfect: "...", good: "...", needsReview: "..." } }
 - flipcard-quiz: { cards: [{ id: "card-1", front: { label: "Conceito X", color: "#6366f1" }, back: { text: "explicação" }, options: [{ id: "opt-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
 - scenario-selection: { scenarios: [{ id: "sc-1", situation: "descrição do cenário", options: ["opção A", "opção B", "opção C"], correctAnswer: "opção A", explanation: "..." }] }
 - platform-match: { scenarios: [{ id: "pm-1", text: "caso de uso", correctPlatform: "ChatGPT", emoji: "🤖" }], platforms: [{ id: "plat-1", name: "ChatGPT", icon: "🤖", color: "#10a37f" }, { id: "plat-2", name: "Midjourney", icon: "🎨", color: "#5865f2" }] }
@@ -634,16 +634,36 @@ serve(async (req) => {
       2: ['multiple-choice', 'flipcard-quiz'],
       3: ['complete-sentence', 'scenario-selection'],
       4: ['true-false'],
-      // Section 5 (Sessão 6): no exercise — removed per V8-C01 update
+      5: ['platform-match', 'scenario-selection'],
       6: ['timed-quiz', 'fill-in-blanks'],
     };
 
     // Build interaction assignments for this lesson
+    // Manual exercise markers override V8_C01_MAP pool when present
+    const manualExerciseMap = new Map<number, string>();
+    if (Array.isArray(manualExercises)) {
+      for (const me of manualExercises) {
+        if (me && typeof me.afterSectionIndex === 'number' && typeof me.type === 'string') {
+          manualExerciseMap.set(me.afterSectionIndex, me.type);
+        }
+      }
+    }
+    if (manualExerciseMap.size > 0) {
+      console.log(`[v8-generate] Manual exercise overrides: ${[...manualExerciseMap.entries()].map(([k, v]) => `S${k}→${v}`).join(', ')}`);
+    }
+
     const interactionAssignments: Array<{ sectionIndex: number; type: string }> = [];
     for (let i = 2; i < sections.length; i++) {
       // Skip if section has manual quiz/playground, or is reserved for Coursiv/Playground
       if (sectionsWithQuiz.has(i) || sectionsWithPlayground.has(i)) continue;
       if (i === coursivTargetIdx || i === lastIdx) continue;
+
+      // Priority: manual marker > V8_C01_MAP pool
+      const manualType = manualExerciseMap.get(i);
+      if (manualType) {
+        interactionAssignments.push({ sectionIndex: i, type: manualType });
+        continue;
+      }
 
       const pool = V8_C01_MAP[i];
       if (!pool) continue; // No mapping for this index (sections 7+ beyond coursiv/playground)
@@ -680,7 +700,7 @@ serve(async (req) => {
           'true-false': ['statements'],
           'fill-in-blanks': ['sentences'],
           'complete-sentence': ['sentences'],
-          'multiple-choice': ['statements'],
+          'multiple-choice': ['question', 'options'],
           'flipcard-quiz': ['cards'],
           'scenario-selection': ['scenarios'],
           'platform-match': ['scenarios', 'platforms'],
@@ -714,15 +734,41 @@ serve(async (req) => {
           return { ...ex, data: currentData };
         };
 
+        // ── MC RESCUE: Auto-convert statements→question+options for multiple-choice ──
+        const rescueMultipleChoice = (ex: any): any => {
+          if (ex.type !== 'multiple-choice') return ex;
+          const d = ex.data || {};
+          // Already has correct MC schema
+          if (d.question && Array.isArray(d.options)) return ex;
+          // Has true-false schema (statements) — convert to MC
+          if (Array.isArray(d.statements) && d.statements.length > 0) {
+            console.warn(`[v8-generate] MC RESCUE: Converting statements→question+options for ${ex.id}`);
+            const stmt = d.statements[0];
+            const rescuedData = {
+              ...d,
+              question: stmt.text || 'Questão',
+              options: d.statements.map((s: any, i: number) => ({
+                id: s.id || `opt-${i + 1}`,
+                text: s.text || `Opção ${i + 1}`,
+                isCorrect: !!s.correct,
+              })),
+              explanation: stmt.explanation || d.feedback?.perfect || '',
+            };
+            delete rescuedData.statements;
+            return { ...ex, data: rescuedData };
+          }
+          return ex;
+        };
+
         generatedInlineExercises = (exResult.exercises || [])
-          .map((ex: any, idx: number) => normalizeExerciseData({
+          .map((ex: any, idx: number) => rescueMultipleChoice(normalizeExerciseData({
             ...ex,
             id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
             title: sanitizeV8Text(ex.title || ''),
             instruction: sanitizeV8Text(ex.instruction || ''),
             successMessage: sanitizeV8Text(ex.successMessage || ''),
             tryAgainMessage: sanitizeV8Text(ex.tryAgainMessage || ''),
-          }))
+          })))
           .filter((ex: any) => {
             const requiredKeys = INLINE_REQUIRED_DATA_KEYS[ex.type];
             if (!requiredKeys) {

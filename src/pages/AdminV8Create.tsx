@@ -632,7 +632,7 @@ export default function AdminV8Create() {
             sections: parsed.sections.map(s => ({ title: s.title, content: s.content })),
             manualQuizzes: parsed.inlineQuizzes,
             manualPlaygrounds: parsed.inlinePlaygrounds || [],
-            manualExercises: parsed.hasManualExercises ? [] : [],
+            manualExercises: parsed.manualExerciseMarkers || [],
             generateImages: false,
             lessonTitle: parsed.title,
           }),

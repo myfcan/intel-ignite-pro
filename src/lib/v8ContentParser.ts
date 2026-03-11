@@ -23,11 +23,17 @@ interface ParsedQuiz {
 // parseFullContent — Master function
 // ═══════════════════════════════════════════════
 
+export interface ExerciseMarkerWithIndex {
+  afterSectionIndex: number;
+  type: string;
+}
+
 export interface ParseResult extends V8LessonData {
   hasManualExercises: boolean;
   hasManualQuizzes: boolean;
   hasManualPlaygrounds: boolean;
   manualExerciseTypes: string[];
+  manualExerciseMarkers: ExerciseMarkerWithIndex[];
 }
 
 export function parseFullContent(rawText: string): ParseResult {
@@ -188,8 +194,9 @@ export function parseFullContent(rawText: string): ParseResult {
       afterSectionIndex: indexRemap.get(q.afterSectionIndex)!,
     }));
 
-  // 10. Parse exercise markers [EXERCISE:tipo]
-  const exerciseMarkers = parseExerciseMarkers(rawText);
+  // 10. Parse exercise markers [EXERCISE:tipo] with section context
+  const exerciseMarkersWithIndex = parseExerciseMarkersWithSections(rawText, keptSections.map(s => s.content));
+  const exerciseMarkerTypes = exerciseMarkersWithIndex.map(m => m.type);
 
   return {
     contentVersion: "v8",
@@ -199,10 +206,11 @@ export function parseFullContent(rawText: string): ParseResult {
     inlineQuizzes,
     inlinePlaygrounds: inlinePlaygrounds.length > 0 ? inlinePlaygrounds : [],
     exercises: [],
-    hasManualExercises: exerciseMarkers.length > 0,
+    hasManualExercises: exerciseMarkersWithIndex.length > 0,
     hasManualQuizzes: parsedQuizzes.length > 0,
     hasManualPlaygrounds: parsedPlaygrounds.length > 0,
-    manualExerciseTypes: exerciseMarkers,
+    manualExerciseTypes: exerciseMarkerTypes,
+    manualExerciseMarkers: exerciseMarkersWithIndex,
   };
 }
 
@@ -531,6 +539,7 @@ const VALID_EXERCISE_TYPES = [
   "multiple-choice", "flipcard-quiz", "timed-quiz",
 ];
 
+/** @deprecated Use parseExerciseMarkersWithSections for section-aware parsing */
 export function parseExerciseMarkers(rawText: string): string[] {
   const markers: string[] = [];
   const regex = /\[EXERCISE:([a-z-]+)\]/gi;
@@ -542,4 +551,40 @@ export function parseExerciseMarkers(rawText: string): string[] {
     }
   }
   return markers;
+}
+
+/**
+ * parseExerciseMarkersWithSections — Extract [EXERCISE:tipo] markers with afterSectionIndex context.
+ * Searches within each section's content to map markers to their section index.
+ */
+export function parseExerciseMarkersWithSections(
+  rawText: string,
+  sectionContents: string[]
+): Array<{ afterSectionIndex: number; type: string }> {
+  const results: Array<{ afterSectionIndex: number; type: string }> = [];
+  const regex = /\[EXERCISE:([a-z-]+)\]/gi;
+
+  for (let i = 0; i < sectionContents.length; i++) {
+    const content = sectionContents[i];
+    let match: RegExpExecArray | null;
+    // Reset regex for each section
+    const sectionRegex = new RegExp(regex.source, regex.flags);
+    while ((match = sectionRegex.exec(content)) !== null) {
+      const type = match[1].toLowerCase();
+      if (VALID_EXERCISE_TYPES.includes(type)) {
+        results.push({ afterSectionIndex: i, type });
+      }
+    }
+  }
+
+  // Fallback: if no section-level matches found, try global parse and assign sequentially
+  if (results.length === 0) {
+    const globalMarkers = parseExerciseMarkers(rawText);
+    // Assign to sections 2+ (skipping intro sections 0-1)
+    globalMarkers.forEach((type, idx) => {
+      results.push({ afterSectionIndex: idx + 2, type });
+    });
+  }
+
+  return results;
 }

@@ -39,7 +39,7 @@ export const useV8Player = (lessonData: V8LessonData) => {
     const inlineExerciseMap = new Map<number, V8InlineExercise[]>();
 
     // V8-C01 update: Section 6 (index 5) must not render exercises/quizzes
-    const DISABLED_EXERCISE_SECTION_INDEXES = new Set([5]);
+    const DISABLED_EXERCISE_SECTION_INDEXES = new Set<number>([]);
 
     for (const quiz of lessonData.inlineQuizzes) {
       if (DISABLED_EXERCISE_SECTION_INDEXES.has(quiz.afterSectionIndex)) continue;
