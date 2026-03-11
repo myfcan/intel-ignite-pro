@@ -195,8 +195,17 @@ const INLINE_EXERCISE_TOOLS = [
                   properties: {
                     statements: {
                       type: "array",
-                      description: "For true-false and multiple-choice: [{ id, text, correct: boolean, explanation }]",
+                      description: "For true-false only: [{ id, text, correct: boolean, explanation }]",
                       items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" }, correct: { type: "boolean" }, explanation: { type: "string" } }, required: ["id", "text", "correct", "explanation"] }
+                    },
+                    question: {
+                      type: "string",
+                      description: "For multiple-choice: the main question text"
+                    },
+                    options: {
+                      type: "array",
+                      description: "For multiple-choice: [{ id, text, isCorrect }]",
+                      items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" }, isCorrect: { type: "boolean" } }, required: ["id", "text", "isCorrect"] }
                     },
                     sentences: {
                       type: "array",
@@ -233,7 +242,7 @@ const INLINE_EXERCISE_TOOLS = [
                     timeoutPenalty: { type: "string", description: "For timed-quiz: what happens on timeout (default 'skip')" },
                     visualTheme: { type: "string", description: "For timed-quiz: visual theme (default 'cyber')" }
                   },
-                  description: "Exercise-specific data. MUST contain the required fields for the chosen type. true-false/multiple-choice → 'statements'. fill-in-blanks/complete-sentence → 'sentences'. flipcard-quiz → 'cards'. scenario-selection → 'scenarios'. platform-match → 'scenarios' AND 'platforms'. timed-quiz → 'questions'. An EMPTY data object {} is INVALID.",
+                  description: "Exercise-specific data. MUST contain the required fields for the chosen type. true-false → 'statements'. multiple-choice → 'question' and 'options'. fill-in-blanks/complete-sentence → 'sentences'. flipcard-quiz → 'cards'. scenario-selection → 'scenarios'. platform-match → 'scenarios' AND 'platforms'. timed-quiz → 'questions'. An EMPTY data object {} is INVALID.",
                 },
               },
               required: ["afterSectionIndex", "type", "title", "instruction", "data", "successMessage", "tryAgainMessage"],
@@ -713,7 +722,7 @@ serve(async (req) => {
             'true-false': ['statements', 'feedback'],
             'fill-in-blanks': ['sentences', 'feedback'],
             'complete-sentence': ['sentences'],
-            'multiple-choice': ['statements', 'feedback', 'question', 'options', 'correctAnswer', 'explanation'],
+            'multiple-choice': ['statements', 'questions', 'feedback', 'question', 'options', 'correctAnswer', 'explanation'],
             'flipcard-quiz': ['cards'],
             'scenario-selection': ['scenarios'],
             'platform-match': ['scenarios', 'platforms'],
@@ -734,16 +743,18 @@ serve(async (req) => {
           return { ...ex, data: currentData };
         };
 
-        // ── MC RESCUE: Auto-convert statements→question+options for multiple-choice ──
+        // ── MC RESCUE: Auto-convert legacy formats to question+options for multiple-choice ──
         const rescueMultipleChoice = (ex: any): any => {
           if (ex.type !== 'multiple-choice') return ex;
           const d = ex.data || {};
+
           // Already has correct MC schema
-          if (d.question && Array.isArray(d.options)) return ex;
-          // Has true-false schema (statements) — convert to MC
+          if (typeof d.question === 'string' && Array.isArray(d.options) && d.options.length > 0) return ex;
+
+          // Legacy format 1: true-false-like statements[]
           if (Array.isArray(d.statements) && d.statements.length > 0) {
             console.warn(`[v8-generate] MC RESCUE: Converting statements→question+options for ${ex.id}`);
-            const stmt = d.statements[0];
+            const stmt = d.statements[0] || {};
             const rescuedData = {
               ...d,
               question: stmt.text || 'Questão',
@@ -752,11 +763,42 @@ serve(async (req) => {
                 text: s.text || `Opção ${i + 1}`,
                 isCorrect: !!s.correct,
               })),
-              explanation: stmt.explanation || d.feedback?.perfect || '',
+              explanation: stmt.explanation || d.explanation || d.feedback?.perfect || '',
             };
             delete rescuedData.statements;
             return { ...ex, data: rescuedData };
           }
+
+          // Legacy format 2: timed-like questions[] returned for multiple-choice
+          if (Array.isArray(d.questions) && d.questions.length > 0) {
+            console.warn(`[v8-generate] MC RESCUE: Converting questions[]→question+options for ${ex.id}`);
+            const q0 = d.questions[0] || {};
+            const rawOptions = Array.isArray(q0.options) ? q0.options : [];
+            const normalizedOptions = rawOptions.map((opt: any, i: number) => {
+              if (typeof opt === 'string') {
+                return { id: `opt-${i + 1}`, text: opt, isCorrect: i === 0 };
+              }
+              return {
+                id: opt?.id || `opt-${i + 1}`,
+                text: opt?.text || `Opção ${i + 1}`,
+                isCorrect: Boolean(opt?.isCorrect ?? opt?.correct),
+              };
+            });
+
+            if (normalizedOptions.length > 0 && !normalizedOptions.some((o: any) => o.isCorrect)) {
+              normalizedOptions[0].isCorrect = true;
+            }
+
+            const rescuedData = {
+              ...d,
+              question: q0.question || q0.text || d.question || 'Questão',
+              options: normalizedOptions,
+              explanation: q0.explanation || d.explanation || d.feedback?.perfect || '',
+            };
+            delete rescuedData.questions;
+            return { ...ex, data: rescuedData };
+          }
+
           return ex;
         };
 
