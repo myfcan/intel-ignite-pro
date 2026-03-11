@@ -95,9 +95,9 @@ export default function V8Lesson() {
       : 100;
     await saveProgress("completed", avg);
 
-    // Navigate to next lesson or back to trail
-    if (lesson?.trail_id) {
-      navigate(`/v8-trail/${lesson.trail_id}`);
+    // Navigate back to journey or dashboard
+    if (lesson?.course_id) {
+      navigate(`/course/${lesson.course_id}`);
     } else {
       navigate("/dashboard");
     }
