@@ -34,6 +34,7 @@ const CourseDetail = () => {
   const { toast } = useToast();
   const [course, setCourse] = useState<Course | null>(null);
   const [trailId, setTrailId] = useState<string | null>(null);
+  const [trailType, setTrailType] = useState<string | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
