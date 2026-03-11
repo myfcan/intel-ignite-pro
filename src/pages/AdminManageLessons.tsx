@@ -208,25 +208,19 @@ export default function AdminManageLessons() {
       return;
     }
 
-    // Check if target trail is V8 (no course needed)
-    const targetTrail = trails.find(t => t.id === targetTrailId);
-    const isV8Trail = targetTrail?.trail_type === 'v8';
+    // Both V7 and V8 require course (jornada)
+    if (coursesForSelectedTrail.length === 0) {
+      toast({
+        title: '⚠️ Trilha sem Jornada',
+        description: 'Esta trilha não possui jornadas (cursos). Crie uma jornada primeiro para poder mover aulas.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    if (!isV8Trail) {
-      // V7: requires course
-      if (coursesForSelectedTrail.length === 0) {
-        toast({
-          title: '⚠️ Trilha sem Jornada',
-          description: 'Esta trilha não possui jornadas (cursos). Crie uma jornada primeiro para poder mover aulas.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (!targetCourseId) {
-        toast({ title: 'Selecione uma jornada', variant: 'destructive' });
-        return;
-      }
+    if (!targetCourseId) {
+      toast({ title: 'Selecione uma jornada', variant: 'destructive' });
+      return;
     }
 
     setMoving(true);
