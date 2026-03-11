@@ -34,6 +34,7 @@ const CourseDetail = () => {
   const { toast } = useToast();
   const [course, setCourse] = useState<Course | null>(null);
   const [trailId, setTrailId] = useState<string | null>(null);
+  const [trailType, setTrailType] = useState<string | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
@@ -72,6 +73,14 @@ const CourseDetail = () => {
       if (courseError) throw courseError;
       setCourse(courseData);
       setTrailId(courseData.trail_id);
+
+      // Fetch trail type for back navigation
+      const { data: trailData } = await supabase
+        .from('trails')
+        .select('trail_type')
+        .eq('id', courseData.trail_id)
+        .single();
+      setTrailType(trailData?.trail_type ?? null);
 
       // Fetch lessons for this course
       const { data: lessonsData, error: lessonsError } = await supabase
@@ -112,6 +121,10 @@ const CourseDetail = () => {
   const handleLessonClick = (lesson: Lesson, status: string) => {
     if (status === 'locked') {
       toast({ title: "Aula bloqueada", description: "Complete a aula anterior para desbloquear.", variant: "destructive" });
+      return;
+    }
+    if (lesson.model === 'v8') {
+      navigate(`/v8/${lesson.id}`);
       return;
     }
     if (lesson.model === 'v7' || lesson.model === 'v7-cinematic' || lesson.lesson_type === 'v7-cinematic') {
@@ -155,7 +168,7 @@ const CourseDetail = () => {
         {/* Header */}
         <header className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           <button
-            onClick={() => trailId ? navigate(`/trail/${trailId}`) : navigate('/dashboard')}
+            onClick={() => trailId ? navigate(trailType === 'v8' ? `/v8-trail/${trailId}` : `/trail/${trailId}`) : navigate('/dashboard')}
             className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-primary transition-all mb-4 sm:mb-6 shadow-sm hover:shadow-md"
           >
             <ArrowLeft className="w-4 h-4 text-primary" />

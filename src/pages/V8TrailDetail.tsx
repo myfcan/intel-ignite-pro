@@ -2,16 +2,16 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Loader2, Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, type LucideIcon } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, ChevronRight, type LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { V8SkillTree } from "@/components/lessons/v8/V8SkillTree";
 import { V8CertificateCard } from "@/components/lessons/v8/V8CertificateCard";
 import { V8LivTrailWelcome } from "@/components/lessons/v8/V8LivTrailWelcome";
-import { V8LessonReviewGate } from "@/components/lessons/v8/V8LessonReviewGate";
 
 const TRAIL_ICONS: Record<string, LucideIcon> = {
   Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, BookOpen,
 };
+
+const JOURNEY_ICONS: LucideIcon[] = [Rocket, Brain, Zap, Target, Code, Crown, DollarSign];
 
 export default function V8TrailDetail() {
   const { trailId } = useParams<{ trailId: string }>();
@@ -31,54 +31,47 @@ export default function V8TrailDetail() {
     enabled: !!trailId,
   });
 
-  // First fetch courses for this trail, then fetch lessons via course_id
-  const { data: trailCourses } = useQuery({
-    queryKey: ["v8-trail-courses", trailId],
+  // Fetch courses (journeys) for this trail with lesson counts
+  const { data: journeys, isLoading: journeysLoading } = useQuery({
+    queryKey: ["v8-trail-journeys", trailId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id")
+        .select("id, title, description, icon, order_index, is_active")
         .eq("trail_id", trailId!)
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .order("order_index", { ascending: true });
       if (error) throw error;
       return data;
     },
     enabled: !!trailId,
   });
 
-  const { data: lessons, isLoading: lessonsLoading } = useQuery({
-    queryKey: ["v8-trail-lessons", trailId, trailCourses],
+  // Fetch all lessons for these courses to compute progress
+  const { data: allLessons } = useQuery({
+    queryKey: ["v8-trail-all-lessons", trailId, journeys],
     queryFn: async () => {
-      const courseIds = trailCourses?.map(c => c.id) ?? [];
-      // Fetch lessons that belong to any course in this trail, OR directly to trail_id (fallback for legacy)
-      let query = supabase
+      const courseIds = journeys?.map(j => j.id) ?? [];
+      if (courseIds.length === 0) return [];
+      const { data, error } = await supabase
         .from("lessons")
-        .select("id, title, description, order_index, estimated_time, is_active, model, image_url")
+        .select("id, course_id, is_active")
         .eq("is_active", true)
         .eq("model", "v8")
-        .order("order_index", { ascending: true });
-
-      if (courseIds.length > 0) {
-        // Get lessons in courses OR directly attached to trail
-        query = query.or(`course_id.in.(${courseIds.join(",")}),trail_id.eq.${trailId}`);
-      } else {
-        // Fallback: only direct trail_id
-        query = query.eq("trail_id", trailId!);
-      }
-
-      const { data, error } = await query;
+        .in("course_id", courseIds);
       if (error) throw error;
       return data;
     },
-    enabled: !!trailId && trailCourses !== undefined,
+    enabled: !!journeys && journeys.length > 0,
   });
 
+  // Fetch progress for all lessons
   const { data: progressData } = useQuery({
-    queryKey: ["v8-trail-progress", trailId],
+    queryKey: ["v8-trail-progress", trailId, allLessons],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const lessonIds = lessons?.map((l) => l.id) ?? [];
+      const lessonIds = allLessons?.map(l => l.id) ?? [];
       if (lessonIds.length === 0) return [];
       const { data, error } = await supabase
         .from("user_progress")
@@ -88,67 +81,30 @@ export default function V8TrailDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!lessons && lessons.length > 0,
-  });
-
-  const { data: isAdmin } = useQuery({
-    queryKey: ["v8-is-admin"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      return !!data;
-    },
-  });
-
-  const { data: userPlan } = useQuery({
-    queryKey: ["v8-user-plan"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return "basico" as const;
-      const { data } = await supabase
-        .from("users")
-        .select("plan")
-        .eq("id", user.id)
-        .single();
-      return data?.plan ?? "basico";
-    },
+    enabled: !!allLessons && allLessons.length > 0,
   });
 
   const [showLivWelcome, setShowLivWelcome] = useState(true);
-  const [reviewGateLesson, setReviewGateLesson] = useState<{ id: string; title: string } | null>(null);
 
-  const isLoading = trailLoading || lessonsLoading;
+  const isLoading = trailLoading || journeysLoading;
 
-  const progressMap = new Map(
-    (progressData ?? []).map((p) => [p.lesson_id, p.status])
+  // Progress calculations
+  const completedSet = new Set(
+    (progressData ?? []).filter(p => p.status === "completed").map(p => p.lesson_id)
   );
-
-  const getLessonStatus = (index: number, lessonId: string) => {
-    const status = progressMap.get(lessonId);
-    if (status === "completed") return "completed" as const;
-    if (status === "in_progress") return "in_progress" as const;
-    if (index === 0) return "in_progress" as const;
-    if (isAdmin) return "available" as const;
-    const prevLesson = lessons?.[index - 1];
-    if (prevLesson && progressMap.get(prevLesson.id) === "completed") {
-      return "available" as const;
-    }
-    return "locked" as const;
-  };
-
-  const completedCount = (progressData ?? []).filter(
-    (p) => p.status === "completed"
-  ).length;
-  const totalLessons = lessons?.length ?? 0;
-  const overallProgress =
-    totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+  const totalLessons = allLessons?.length ?? 0;
+  const completedCount = (allLessons ?? []).filter(l => completedSet.has(l.id)).length;
+  const overallProgress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
   const allCompleted = completedCount === totalLessons && totalLessons > 0;
+
+  // Per-journey stats
+  const getJourneyStats = (courseId: string) => {
+    const courseLessons = (allLessons ?? []).filter(l => l.course_id === courseId);
+    const total = courseLessons.length;
+    const completed = courseLessons.filter(l => completedSet.has(l.id)).length;
+    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, progress };
+  };
 
   if (isLoading) {
     return (
@@ -177,26 +133,6 @@ export default function V8TrailDetail() {
 
   const TrailIcon = TRAIL_ICONS[trail.icon || ''] || GraduationCap;
 
-  const isBasicUser = userPlan === 'basico' && !isAdmin;
-
-  const handleLessonClick = (lessonId: string) => {
-    if (isBasicUser) {
-      const lesson = lessons?.find(l => l.id === lessonId);
-      setReviewGateLesson({ id: lessonId, title: lesson?.title ?? 'Aula' });
-    } else {
-      navigate(`/v8/${lessonId}`);
-    }
-  };
-
-  const lessonItems = (lessons ?? []).map((lesson, index) => ({
-    id: lesson.id,
-    title: lesson.title,
-    description: lesson.description ?? undefined,
-    estimatedTime: lesson.estimated_time ?? undefined,
-    imageUrl: (lesson as any).image_url ?? undefined,
-    status: getLessonStatus(index, lesson.id),
-  }));
-
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
       {/* ── Compact App Header ── */}
@@ -218,24 +154,24 @@ export default function V8TrailDetail() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-8">
-        {/* ── Unit Card ── */}
+        {/* ── Trail Card ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
               <TrailIcon className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-violet-500 uppercase tracking-wider">Unidade 1</p>
+              <p className="text-[10px] font-bold text-violet-500 uppercase tracking-wider">Trilha Mestre</p>
               <p className="text-sm font-semibold text-gray-900 truncate">{trail.title}</p>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
               <BookOpen className="w-3.5 h-3.5" />
-              <span>{totalLessons}</span>
+              <span>{journeys?.length ?? 0} jornadas</span>
             </div>
           </div>
         </div>
 
-        {/* ── Premium Layout: Certificate Left + Skill Tree Right ── */}
+        {/* ── Layout: Certificate Left + Journeys Right ── */}
         <div className="flex flex-col lg:flex-row gap-5">
           {/* ── Certificate Card ── */}
           <V8CertificateCard
@@ -245,37 +181,74 @@ export default function V8TrailDetail() {
             trailTitle={trail.title}
           />
 
-          {/* ── Skill Tree (Right) ── */}
-          <div className="flex-1 min-w-0">
-            {totalLessons > 0 ? (
-              <V8SkillTree
-                lessons={lessonItems}
-                onLessonClick={handleLessonClick}
-                allCompleted={allCompleted}
-              />
+          {/* ── Journeys List ── */}
+          <div className="flex-1 min-w-0 space-y-3">
+            {(journeys ?? []).length > 0 ? (
+              (journeys ?? []).map((journey, index) => {
+                const stats = getJourneyStats(journey.id);
+                const JourneyIcon = TRAIL_ICONS[journey.icon || ''] || JOURNEY_ICONS[index % JOURNEY_ICONS.length];
+                
+                return (
+                  <motion.div
+                    key={journey.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.08, duration: 0.3 }}
+                    onClick={() => navigate(`/course/${journey.id}`)}
+                    className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:border-violet-200 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 flex items-center justify-center flex-shrink-0 group-hover:from-violet-100 group-hover:to-indigo-100 transition-colors">
+                        <JourneyIcon className="w-5 h-5 text-violet-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider">
+                          Jornada {index + 1}
+                        </p>
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {journey.title}
+                        </p>
+                        {journey.description && (
+                          <p className="text-xs text-gray-500 truncate mt-0.5">{journey.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="text-right">
+                          <p className="text-xs font-bold text-gray-700">{stats.progress}%</p>
+                          <p className="text-[10px] text-gray-400">{stats.completed}/{stats.total} aulas</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-violet-400 transition-colors" />
+                      </div>
+                    </div>
+                    {/* Progress bar */}
+                    {stats.total > 0 && (
+                      <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${stats.progress}%` }}
+                          transition={{ delay: index * 0.08 + 0.3, duration: 0.6, ease: "easeOut" }}
+                        />
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })
             ) : (
               <div className="text-center py-12 text-gray-500 text-sm">
-                Nenhuma aula disponível nesta trilha ainda.
+                Nenhuma jornada disponível nesta trilha ainda.
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Modais */}
+      {/* Modal Liv Welcome */}
       {showLivWelcome && trailId && trail && (
         <V8LivTrailWelcome
           trailId={trailId}
           trailTitle={trail.title}
           onContinue={() => setShowLivWelcome(false)}
-        />
-      )}
-
-      {reviewGateLesson && (
-        <V8LessonReviewGate
-          lessonId={reviewGateLesson.id}
-          lessonTitle={reviewGateLesson.title}
-          onClose={() => setReviewGateLesson(null)}
         />
       )}
     </div>
