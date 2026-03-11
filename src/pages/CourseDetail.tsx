@@ -114,6 +114,10 @@ const CourseDetail = () => {
       toast({ title: "Aula bloqueada", description: "Complete a aula anterior para desbloquear.", variant: "destructive" });
       return;
     }
+    if (lesson.model === 'v8') {
+      navigate(`/v8/${lesson.id}`);
+      return;
+    }
     if (lesson.model === 'v7' || lesson.model === 'v7-cinematic' || lesson.lesson_type === 'v7-cinematic') {
       navigate(`/v7/${lesson.id}`);
       return;
