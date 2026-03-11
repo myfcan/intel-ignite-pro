@@ -583,11 +583,19 @@ export default function AdminV8Create() {
         if (refineResponse.ok) {
           const refineResult = await refineResponse.json();
           if (refineResult.sections && Array.isArray(refineResult.sections)) {
-            // Replace section content with refined versions
-            for (let i = 0; i < parsed.sections.length && i < refineResult.sections.length; i++) {
-              parsed.sections[i].content = refineResult.sections[i].content;
-              if (refineResult.sections[i].title) {
-                parsed.sections[i].title = refineResult.sections[i].title;
+            // Replace section content with refined versions — protect Section 0 (Abertura)
+            const aberturaProtected = parsed.sections[0]?.title === "Abertura" 
+              && !refineResult.sections[0]?.title?.toLowerCase().includes("abertura");
+            const startIdx = aberturaProtected ? 1 : 0;
+            const offset = aberturaProtected ? 1 : 0;
+            if (aberturaProtected) {
+              addLog('info', 'Proteção V8-C01: Abertura preservada do merge de refinamento');
+            }
+            for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
+              const refIdx = i - offset;
+              parsed.sections[i].content = refineResult.sections[refIdx].content;
+              if (refineResult.sections[refIdx].title) {
+                parsed.sections[i].title = refineResult.sections[refIdx].title;
               }
             }
             addLog('success', `Conteúdo refinado: ${refineResult.sections.length} seções melhoradas`);
@@ -730,6 +738,17 @@ export default function AdminV8Create() {
       // Step 4: Build final JSON
       setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'running' as const } : s));
       addLog('info', 'Montando JSON final...');
+
+      // === Hard Gate V8-C01: Validação de integridade estrutural ===
+      const preFinalSections = result.sections || parsed.sections;
+      if (preFinalSections.length < 9) {
+        addLog('error', `V8-C01 VIOLATION: apenas ${preFinalSections.length} seções (esperado ≥ 9)`);
+        throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo 9)`);
+      }
+      if (preFinalSections[0]?.title !== "Abertura") {
+        addLog('error', `V8-C01 VIOLATION: Section 0 não é "Abertura" (é "${preFinalSections[0]?.title}")`);
+        throw new Error(`Pipeline abortado: Section 0 ausente ou renomeada`);
+      }
 
       const finalData: V8LessonData = {
         contentVersion: "v8",

@@ -146,7 +146,15 @@ serve(async (req) => {
       `### Seção ${i + 1}: ${s.title}\n${s.content}`
     ).join("\n\n---\n\n");
 
-    const userPrompt = `Refine as ${sections.length} seções abaixo. Retorne EXATAMENTE ${sections.length} seções refinadas:\n\n${sectionsText}`;
+    const userPrompt = `Refine as ${sections.length} seções abaixo. Retorne EXATAMENTE ${sections.length} seções refinadas.
+
+REGRAS ESTRITAS DE ORDENAÇÃO:
+- Retorne as seções NA MESMA ORDEM em que foram recebidas.
+- NÃO renomeie a primeira seção se ela se chamar "Abertura".
+- NÃO funda, elimine ou reordene seções.
+- A Seção 1 da entrada DEVE ser a Seção 1 da saída, e assim por diante.
+
+${sectionsText}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -198,12 +206,18 @@ serve(async (req) => {
     // Validate count matches
     if (refinedSections.length !== sections.length) {
       console.warn(`[v8-refine-content] Count mismatch: got ${refinedSections.length}, expected ${sections.length}. Padding/truncating.`);
-      // Pad with originals if AI returned fewer
       while (refinedSections.length < sections.length) {
         refinedSections.push(sections[refinedSections.length]);
       }
-      // Truncate if AI returned more
       refinedSections.length = sections.length;
+    }
+
+    // === Correção E: Validação de integridade — proteger Abertura ===
+    const originalIsAbertura = sections[0]?.title?.toLowerCase().includes("abertura");
+    const refinedIsAbertura = refinedSections[0]?.title?.toLowerCase().includes("abertura");
+    if (originalIsAbertura && !refinedIsAbertura) {
+      console.warn(`[v8-refine-content] AI displaced Abertura — restoring original Section 0`);
+      refinedSections[0] = sections[0];
     }
 
     const sanitizedSections = refinedSections.map((s: any, i: number) => ({

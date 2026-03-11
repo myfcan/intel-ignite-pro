@@ -52,12 +52,9 @@ export function parseFullContent(rawText: string): ParseResult {
   console.log(`[v8Parser] ## sections found: ${parsedSections.length}`, parsedSections.map(s => s.title));
 
   // 3.1 If there's intro content between # and first ##, create a "Section 0"
-  // Filter out meta-comments that are instructions, not real content
-  const META_KEYWORDS = /\b(parser|fix|opcional|discutimos|TODO|FIXME|implementar|corrigir|descrição opcional)\b/i;
   const descLen = description ? description.trim().length : 0;
-  const metaMatch = description ? META_KEYWORDS.test(description) : false;
-  console.log(`[v8Parser] Description length: ${descLen}, metaMatch: ${metaMatch}, first100: "${(description || '').slice(0, 100)}"`);
-  if (description && description.trim().length > 20 && !META_KEYWORDS.test(description)) {
+  console.log(`[v8Parser] Description length: ${descLen}, first100: "${(description || '').slice(0, 100)}"`);
+  if (description && descLen > 20) {
     const introSection: ParsedSection = {
       title: "Abertura",
       content: sanitizeV8PedagogicalText(description),
@@ -66,7 +63,7 @@ export function parseFullContent(rawText: string): ParseResult {
     parsedSections.unshift(introSection);
     console.log(`[v8Parser] Section 0 (Abertura) created, total now: ${parsedSections.length}`);
   } else {
-    console.log(`[v8Parser] Section 0 SKIPPED`);
+    console.log(`[v8Parser] Section 0 SKIPPED (descLen=${descLen})`);
   }
 
   // 4. Parse playgrounds (existing)
