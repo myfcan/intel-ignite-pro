@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { V8Section } from "@/types/v8Lesson";
-import { sanitizeV8PedagogicalText } from "@/lib/v8TextSanitizer";
+import { sanitizeV8PedagogicalText, stripProsodyTagsForDisplay } from "@/lib/v8TextSanitizer";
 
 interface V8ContentSectionProps {
   section: V8Section;
