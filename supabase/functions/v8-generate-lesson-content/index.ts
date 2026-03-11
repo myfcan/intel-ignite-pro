@@ -24,13 +24,31 @@ function sanitizeEncoding(text: string): string {
   return r;
 }
 
-// ElevenLabs v3 emotion tags preserved in TTS text (English only — V3 API standard)
+// ElevenLabs v3 — COMPLETE official audio tags whitelist (from docs + blog 2026-03-06)
+// Categories: Emotions/Directions, Non-verbal/Reactions, Delivery/Pacing
 const ELEVENLABS_EMOTION_TAGS = new Set([
-  'excited', 'calm', 'nervous', 'frustrated', 'serious', 'cheerful',
-  'empathetic', 'assertive', 'dramatic tone', 'reflective', 'hopeful',
-  'energetic', 'thoughtful', 'warm', 'encouraging', 'curious',
-  'sigh', 'laughs', 'whispers', 'gasps', 'clears throat',
-  'pause', 'rushed', 'slows down', 'hesitates', 'long pause',
+  // Emotions & Directions
+  'happy', 'sad', 'excited', 'angry', 'whisper', 'annoyed', 'appalled',
+  'thoughtful', 'surprised', 'sarcastic', 'curious', 'crying', 'mischievously',
+  'impressed', 'delighted', 'amazed', 'warmly', 'excitedly', 'curiously',
+  'dramatically', 'happily', 'sorrowful',
+  // Tone/Mood (from v3 docs examples & blog)
+  'calm', 'nervous', 'frustrated', 'serious', 'cheerful', 'empathetic',
+  'assertive', 'dramatic tone', 'reflective', 'hopeful', 'energetic',
+  'warm', 'encouraging',
+  // Non-verbal / Human reactions
+  'laughs', 'laughing', 'chuckles', 'sighs', 'sigh', 'clears throat',
+  'exhales', 'exhales sharply', 'inhales deeply', 'snorts', 'gulps',
+  'swallows', 'gasps', 'wheezing', 'giggles', 'giggling', 'muttering',
+  'stammers', 'whispers',
+  // Delivery & Pacing
+  'pause', 'short pause', 'long pause', 'rushed', 'slows down',
+  'hesitates', 'drawn out', 'deliberate', 'rapid-fire', 'timidly',
+  'emphasized', 'understated',
+  // Multi-speaker / Creative (from blog examples)
+  'interrupting', 'overlapping', 'singing', 'sings', 'woo',
+  'happy gasp', 'frustrated sigh', 'laughs softly', 'starts laughing',
+  'with genuine belly laugh',
 ]);
 
 function sanitizePedagogicalText(text: string): string {
