@@ -680,7 +680,7 @@ serve(async (req) => {
           'true-false': ['statements'],
           'fill-in-blanks': ['sentences'],
           'complete-sentence': ['sentences'],
-          'multiple-choice': ['statements'],
+          'multiple-choice': ['question', 'options'],
           'flipcard-quiz': ['cards'],
           'scenario-selection': ['scenarios'],
           'platform-match': ['scenarios', 'platforms'],
