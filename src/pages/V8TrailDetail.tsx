@@ -31,20 +31,46 @@ export default function V8TrailDetail() {
     enabled: !!trailId,
   });
 
-  const { data: lessons, isLoading: lessonsLoading } = useQuery({
-    queryKey: ["v8-trail-lessons", trailId],
+  // First fetch courses for this trail, then fetch lessons via course_id
+  const { data: trailCourses } = useQuery({
+    queryKey: ["v8-trail-courses", trailId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("lessons")
-        .select("id, title, description, order_index, estimated_time, is_active, model, image_url")
+        .from("courses")
+        .select("id")
         .eq("trail_id", trailId!)
-        .eq("is_active", true)
-        .eq("model", "v8")
-        .order("order_index", { ascending: true });
+        .eq("is_active", true);
       if (error) throw error;
       return data;
     },
     enabled: !!trailId,
+  });
+
+  const { data: lessons, isLoading: lessonsLoading } = useQuery({
+    queryKey: ["v8-trail-lessons", trailId, trailCourses],
+    queryFn: async () => {
+      const courseIds = trailCourses?.map(c => c.id) ?? [];
+      // Fetch lessons that belong to any course in this trail, OR directly to trail_id (fallback for legacy)
+      let query = supabase
+        .from("lessons")
+        .select("id, title, description, order_index, estimated_time, is_active, model, image_url")
+        .eq("is_active", true)
+        .eq("model", "v8")
+        .order("order_index", { ascending: true });
+
+      if (courseIds.length > 0) {
+        // Get lessons in courses OR directly attached to trail
+        query = query.or(`course_id.in.(${courseIds.join(",")}),trail_id.eq.${trailId}`);
+      } else {
+        // Fallback: only direct trail_id
+        query = query.eq("trail_id", trailId!);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!trailId && trailCourses !== undefined,
   });
 
   const { data: progressData } = useQuery({

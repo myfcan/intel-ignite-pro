@@ -208,25 +208,19 @@ export default function AdminManageLessons() {
       return;
     }
 
-    // Check if target trail is V8 (no course needed)
-    const targetTrail = trails.find(t => t.id === targetTrailId);
-    const isV8Trail = targetTrail?.trail_type === 'v8';
+    // Both V7 and V8 require course (jornada)
+    if (coursesForSelectedTrail.length === 0) {
+      toast({
+        title: '⚠️ Trilha sem Jornada',
+        description: 'Esta trilha não possui jornadas (cursos). Crie uma jornada primeiro para poder mover aulas.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    if (!isV8Trail) {
-      // V7: requires course
-      if (coursesForSelectedTrail.length === 0) {
-        toast({
-          title: '⚠️ Trilha sem Jornada',
-          description: 'Esta trilha não possui jornadas (cursos). Crie uma jornada primeiro para poder mover aulas.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (!targetCourseId) {
-        toast({ title: 'Selecione uma jornada', variant: 'destructive' });
-        return;
-      }
+    if (!targetCourseId) {
+      toast({ title: 'Selecione uma jornada', variant: 'destructive' });
+      return;
     }
 
     setMoving(true);
@@ -235,7 +229,7 @@ export default function AdminManageLessons() {
         .from('lessons')
         .update({
           trail_id: targetTrailId,
-          course_id: isV8Trail ? null : targetCourseId,
+          course_id: targetCourseId,
           order_index: targetOrderIndex,
         })
         .eq('id', lessonId);
@@ -298,9 +292,10 @@ export default function AdminManageLessons() {
         toast({ title: 'Trilha criada', description: `"${newTrailTitle.trim()}"` });
       }
 
-      // V8: only create trail, no course/jornada needed
-      if (effectiveIsV8) {
-        toast({ title: 'Trilha V8 pronta', description: 'Aulas podem ser adicionadas diretamente.' });
+      // Both V7 and V8: create course/jornada
+      if (effectiveIsV8 && !newCourseTitle.trim()) {
+        // V8 trail created without a course title — just create trail
+        toast({ title: 'Trilha V8 pronta', description: 'Crie jornadas para organizar as aulas.' });
       } else {
         const existingCourses = courses.filter(c => c.trail_id === trailId);
         const nextOrder = existingCourses.length > 0
@@ -454,19 +449,13 @@ export default function AdminManageLessons() {
                             {trail.trail_type === 'v8' && <Badge className="text-xs bg-indigo-500/20 text-indigo-400 border-indigo-500/30">V8</Badge>}
                           </CardTitle>
                           <CardDescription className="text-xs">
-                            {trail.trail_type === 'v8' ? (
-                              <>{trail.orphanedLessons.length + trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)</>
-                            ) : (
-                              <>
-                                {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)
-                                {trail.orphanedLessons.length > 0 && (
-                                  <span className="text-amber-500 ml-2">⚠️ {trail.orphanedLessons.length} aula(s) sem jornada</span>
-                                )}
-                              </>
+                            {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)
+                            {trail.orphanedLessons.length > 0 && (
+                              <span className="text-amber-500 ml-2">⚠️ {trail.orphanedLessons.length} aula(s) sem jornada</span>
                             )}
                           </CardDescription>
                         </div>
-                        {trail.trail_type !== 'v8' && trail.courses.length === 0 && (
+                        {trail.courses.length === 0 && (
                           <Badge variant="outline" className="border-amber-400 text-amber-600 text-xs">
                             Sem jornadas
                           </Badge>
@@ -477,18 +466,7 @@ export default function AdminManageLessons() {
 
                    <CollapsibleContent>
                     <CardContent className="pt-0 pb-3 px-4 space-y-3">
-                      {/* V8 trails: show lessons directly */}
-                      {trail.trail_type === 'v8' ? (
-                        <div className="space-y-1">
-                          {[...trail.orphanedLessons, ...trail.courses.flatMap(c => c.lessons)].sort((a, b) => a.order_index - b.order_index).length === 0 ? (
-                            <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma aula nesta trilha V8</p>
-                          ) : (
-                            [...trail.orphanedLessons, ...trail.courses.flatMap(c => c.lessons)].sort((a, b) => a.order_index - b.order_index).map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)
-                          )}
-                        </div>
-                      ) : (
-                      <>
-                      {/* V7: Courses inside trail */}
+                      {/* Courses (Jornadas) inside trail — same for V7 and V8 */}
                       {trail.courses.length === 0 && (
                         <div className="p-4 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-center">
                           <p className="text-sm text-amber-700 mb-2">
@@ -531,7 +509,7 @@ export default function AdminManageLessons() {
                         </Collapsible>
                       ))}
 
-                      {/* Orphaned lessons in this trail (V7 only) */}
+                      {/* Orphaned lessons in this trail */}
                       {trail.orphanedLessons.length > 0 && (
                         <div className="ml-4 mt-2">
                           <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-md mb-1">
@@ -542,8 +520,6 @@ export default function AdminManageLessons() {
                             {trail.orphanedLessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
                           </div>
                         </div>
-                      )}
-                      </>
                       )}
                     </CardContent>
                   </CollapsibleContent>
@@ -632,8 +608,8 @@ export default function AdminManageLessons() {
                 </Select>
               </div>
 
-              {/* Course (Jornada) - hidden for V8 trails */}
-              {targetTrailId && trails.find(t => t.id === targetTrailId)?.trail_type !== 'v8' && (
+              {/* Course (Jornada) - shown for all trail types */}
+              {targetTrailId && (
                 <div>
                   <label className="text-sm font-medium mb-2 block">Jornada</label>
                   {coursesForSelectedTrail.length === 0 ? (
@@ -661,11 +637,6 @@ export default function AdminManageLessons() {
                   )}
                 </div>
               )}
-              {targetTrailId && trails.find(t => t.id === targetTrailId)?.trail_type === 'v8' && (
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                  <p className="text-sm text-indigo-300">✅ Trilha V8 — aula será movida diretamente (sem jornada).</p>
-                </div>
-              )}
 
               {/* Order */}
               <div>
@@ -676,7 +647,7 @@ export default function AdminManageLessons() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowMoveModal(false)} disabled={moving}>Cancelar</Button>
-              <Button onClick={handleMoveLesson} disabled={moving || (!targetCourseId && trails.find(t => t.id === targetTrailId)?.trail_type !== 'v8')}>
+              <Button onClick={handleMoveLesson} disabled={moving || !targetCourseId}>
                 {moving ? 'Movendo...' : 'Confirmar'}
               </Button>
             </DialogFooter>
@@ -689,17 +660,9 @@ export default function AdminManageLessons() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="w-5 h-5 text-green-500" />
-                {(() => {
-                  const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
-                  return isV8Modal ? 'Criar Nova Trilha V8' : 'Criar Nova Jornada';
-                })()}
+                Criar Nova Jornada
               </DialogTitle>
-              <DialogDescription>
-                {(() => {
-                  const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
-                  return isV8Modal ? 'Trilha V8: aulas são adicionadas diretamente (sem jornada)' : 'Uma jornada agrupa aulas dentro de uma trilha';
-                })()}
-              </DialogDescription>
+              <DialogDescription>Uma jornada agrupa aulas dentro de uma trilha</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -745,7 +708,7 @@ export default function AdminManageLessons() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="v7">V7 (Trilha → Jornada → Aula)</SelectItem>
-                        <SelectItem value="v8">V8 (Trilha → Aula direta)</SelectItem>
+                        <SelectItem value="v8">V8 (Trilha → Jornada → Aula)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -756,34 +719,23 @@ export default function AdminManageLessons() {
                 </div>
               )}
 
-              {/* Journey fields — hidden for V8 */}
-              {!(createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8') && (
-                <>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Nome da Jornada</label>
-                    <Input value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} placeholder="Ex: Fundamentos da IA" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
-                    <Input value={newCourseIcon} onChange={(e) => setNewCourseIcon(e.target.value)} placeholder="Ex: Brain, Zap, Rocket..." />
-                    <p className="text-xs text-muted-foreground mt-1">Nome do ícone Lucide</p>
-                  </div>
-                </>
-              )}
+              {/* Journey fields — shown for all trail types */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Nome da Jornada</label>
+                <Input value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} placeholder="Ex: Aterrizando nas IAs" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
+                <Input value={newCourseIcon} onChange={(e) => setNewCourseIcon(e.target.value)} placeholder="Ex: Brain, Zap, Rocket..." />
+                <p className="text-xs text-muted-foreground mt-1">Nome do ícone Lucide</p>
+              </div>
             </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateCourseModal(false)} disabled={creatingCourse}>Cancelar</Button>
-              {(() => {
-                const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
-                const baseDisabled = creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim());
-                const needsCourseTitle = !isV8Modal && !newCourseTitle.trim();
-                return (
-                  <Button onClick={handleCreateCourse} disabled={baseDisabled || needsCourseTitle}>
-                    {creatingCourse ? 'Criando...' : isV8Modal ? 'Criar Trilha' : 'Criar Jornada'}
-                  </Button>
-                );
-              })()}
+              <Button onClick={handleCreateCourse} disabled={creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim())}>
+                {creatingCourse ? 'Criando...' : 'Criar Jornada'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

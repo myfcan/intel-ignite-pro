@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { Json } from "@/integrations/supabase/types";
 import { V7PipelineMonitor, PipelineStep, PipelineLog } from "@/components/admin/V7PipelineMonitor";
 import { parseFullContent, ParseResult } from "@/lib/v8ContentParser";
 import { V8SectionSetup } from "@/components/admin/V8SectionSetup";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ─── Types ───
 interface AudioResult {
@@ -186,6 +187,27 @@ const DEFAULT_V8_PIPELINE_STEPS: PipelineStep[] = [
 export default function AdminV8Create() {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Trail & Course selectors
+  interface TrailOption { id: string; title: string; trail_type: string | null }
+  interface CourseOption { id: string; trail_id: string; title: string }
+  const [trails, setTrails] = useState<TrailOption[]>([]);
+  const [allCourses, setAllCourses] = useState<CourseOption[]>([]);
+  const [selectedTrailId, setSelectedTrailId] = useState<string>('');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+
+  useEffect(() => {
+    (async () => {
+      const [t, c] = await Promise.all([
+        supabase.from('trails').select('id, title, trail_type').order('order_index'),
+        supabase.from('courses').select('id, trail_id, title').order('order_index'),
+      ]);
+      if (t.data) setTrails(t.data);
+      if (c.data) setAllCourses(c.data);
+    })();
+  }, []);
+
+  const coursesForTrail = useMemo(() => allCourses.filter(c => c.trail_id === selectedTrailId), [allCourses, selectedTrailId]);
 
   // State
   const [lessonTitle, setLessonTitle] = useState("Nova Aula V8");
@@ -446,21 +468,22 @@ export default function AdminV8Create() {
       const parsed: V8LessonData = JSON.parse(jsonText);
 
       if (savedLessonId) {
-        const { error } = await supabase
-          .from("lessons")
-          .update({
-            title: lessonTitle,
-            content: parsed as unknown as Json,
-            exercises: (parsed.exercises || []) as unknown as Json,
-            estimated_time: estimatedTime,
-            order_index: 0,
-            trail_id: null,
-            model: "v8",
-            lesson_type: "guided",
-            is_active: activate,
-            status: activate ? "publicado" : "rascunho",
-          })
-          .eq("id", savedLessonId);
+          const { error } = await supabase
+            .from("lessons")
+            .update({
+              title: lessonTitle,
+              content: parsed as unknown as Json,
+              exercises: (parsed.exercises || []) as unknown as Json,
+              estimated_time: estimatedTime,
+              order_index: 0,
+              trail_id: selectedTrailId || null,
+              course_id: selectedCourseId || null,
+              model: "v8",
+              lesson_type: "guided",
+              is_active: activate,
+              status: activate ? "publicado" : "rascunho",
+            })
+            .eq("id", savedLessonId);
         if (error) throw error;
       } else {
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
@@ -1118,8 +1141,34 @@ export default function AdminV8Create() {
                 min={1}
               />
             </div>
+            <div>
+              <label className="text-[11px] font-medium text-slate-500 mb-1 block">Trilha (N1)</label>
+              <Select value={selectedTrailId} onValueChange={(v) => { setSelectedTrailId(v); setSelectedCourseId(''); }}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 rounded-xl text-sm">
+                  <SelectValue placeholder="Selecione a trilha" />
+                </SelectTrigger>
+                <SelectContent>
+                  {trails.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-slate-500 mb-1 block">Jornada (N2)</label>
+              <Select value={selectedCourseId} onValueChange={setSelectedCourseId} disabled={!selectedTrailId || coursesForTrail.length === 0}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 rounded-xl text-sm">
+                  <SelectValue placeholder={!selectedTrailId ? "Selecione a trilha primeiro" : coursesForTrail.length === 0 ? "Nenhuma jornada" : "Selecione a jornada"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {coursesForTrail.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <p className="text-[10px] text-slate-500 mt-2">💡 Após criar, use o Gerenciador de Lições para mover a aula para uma trilha.</p>
+          <p className="text-[10px] text-slate-500 mt-2">💡 Selecione trilha e jornada para vincular a aula à hierarquia correta.</p>
         </motion.div>
 
         {/* ─── EDITOR (Content / JSON toggle) ─── */}
