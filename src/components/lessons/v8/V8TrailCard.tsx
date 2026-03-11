@@ -42,10 +42,12 @@ export const V8TrailCard = ({
   completedCount,
   estimatedHours = 0,
   orderIndex = 1,
+  navigateToId,
 }: V8TrailCardProps) => {
   const navigate = useNavigate();
   const progress = lessonCount > 0 ? Math.round((completedCount / lessonCount) * 100) : 0;
   const theme = V8_THEMES[(orderIndex - 1) % V8_THEMES.length];
+  const destination = navigateToId ? `/course/${navigateToId}` : `/v8-trail/${trailId}`;
 
   return (
     <motion.div
