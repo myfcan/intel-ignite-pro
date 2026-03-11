@@ -106,8 +106,6 @@ export default function V8Lesson() {
   const handleBack = () => {
     if (lesson?.course_id) {
       navigate(`/course/${lesson.course_id}`);
-    } else if (lesson?.trail_id) {
-      navigate(`/v8-trail/${lesson.trail_id}`);
     } else {
       navigate("/dashboard");
     }

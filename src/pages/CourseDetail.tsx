@@ -6,6 +6,7 @@ import { ArrowLeft, Lock, CheckCircle2, Clock, Play, Trophy } from 'lucide-react
 import { motion } from 'framer-motion';
 import { getLessonIcon } from '@/utils/lessonIconMap';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { V8CertificateCard } from '@/components/lessons/v8/V8CertificateCard';
 
 interface Lesson {
   id: string;
@@ -64,7 +65,6 @@ const CourseDetail = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate('/auth'); return; }
 
-      // Fetch course
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select('*')
@@ -75,7 +75,6 @@ const CourseDetail = () => {
       setCourse(courseData);
       setTrailId(courseData.trail_id);
 
-      // Fetch trail type for back navigation
       const { data: trailData } = await supabase
         .from('trails')
         .select('trail_type, title')
@@ -84,7 +83,6 @@ const CourseDetail = () => {
       setTrailType(trailData?.trail_type ?? null);
       setTrailTitle(trailData?.title ?? null);
 
-      // Fetch lessons for this course
       const { data: lessonsData, error: lessonsError } = await supabase
         .from('lessons')
         .select('*')
@@ -95,7 +93,6 @@ const CourseDetail = () => {
       if (lessonsError) throw lessonsError;
       setLessons(lessonsData || []);
 
-      // Fetch user progress
       const { data: progressData } = await supabase
         .from('user_progress')
         .select('lesson_id, status')
@@ -137,6 +134,16 @@ const CourseDetail = () => {
     navigate(hasInteractiveContent ? `/lessons-interactive/${lesson.id}` : `/lessons/${lesson.id}`);
   };
 
+  const handleBack = () => {
+    if (trailType === 'v8') {
+      navigate('/dashboard');
+    } else if (trailId) {
+      navigate(`/trail/${trailId}`);
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   if (loading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -161,32 +168,167 @@ const CourseDetail = () => {
     );
   }
 
-  const progress = lessons.length > 0 ? (completedLessons.filter(id => lessons.some(l => l.id === id)).length / lessons.length) * 100 : 0;
-  const completedCount = completedLessons.filter(id => lessons.some(l => l.id === id)).length;
+  const progress = lessons.length > 0 ? (completedLessons.filter(lid => lessons.some(l => l.id === lid)).length / lessons.length) * 100 : 0;
+  const completedCount = completedLessons.filter(lid => lessons.some(l => l.id === lid)).length;
+  const isV8 = trailType === 'v8';
+  const allCompleted = completedCount === lessons.length && lessons.length > 0;
 
+  /* ── V8 Layout: Certificate + Coursiv Lessons ── */
+  if (isV8) {
+    return (
+      <div className="min-h-screen bg-[#FAFBFC]">
+        {/* Compact App Header */}
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+          <div className="max-w-4xl mx-auto flex items-center justify-between px-4 h-14">
+            <button
+              onClick={handleBack}
+              className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            <h1 className="text-base font-bold text-gray-900 truncate max-w-[240px]">
+              {course.title}
+            </h1>
+            <div className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-bold">
+              {Math.round(progress)}%
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-4xl mx-auto px-4 pt-4 pb-8">
+          {/* Trail + Journey Context */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
+            <div className="flex flex-col gap-1">
+              {trailTitle && (
+                <p className="text-[10px] font-bold text-violet-500 uppercase tracking-wider">
+                  Trilha: {trailTitle}
+                </p>
+              )}
+              <p className="text-sm font-semibold text-gray-900">{course.title}</p>
+              {course.description && (
+                <p className="text-xs text-gray-500 mt-0.5">{course.description}</p>
+              )}
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-1">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{lessons.length} aulas</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Certificate + Lessons */}
+          <div className="flex flex-col lg:flex-row gap-5">
+            <V8CertificateCard
+              completedCount={completedCount}
+              totalLessons={lessons.length}
+              allCompleted={allCompleted}
+              trailTitle={trailTitle || course.title}
+            />
+
+            {/* Lessons List */}
+            <div className="flex-1 min-w-0 space-y-3">
+              {lessons.length > 0 ? (
+                lessons.map((lesson, index) => {
+                  const status = getLessonStatus(lesson, index);
+                  const isLocked = status === 'locked';
+                  const isCompleted = status === 'completed';
+
+                  return (
+                    <motion.div
+                      key={lesson.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.08, duration: 0.3 }}
+                      onClick={() => handleLessonClick(lesson, status)}
+                      className={`group bg-white rounded-2xl border border-gray-100 shadow-sm p-4 transition-all duration-200 ${
+                        isLocked
+                          ? 'opacity-60 cursor-not-allowed'
+                          : 'cursor-pointer hover:border-violet-200 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                            isCompleted
+                              ? 'bg-gradient-to-br from-amber-400 to-orange-500'
+                              : isLocked
+                                ? 'bg-gray-100'
+                                : 'bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 group-hover:from-violet-100 group-hover:to-indigo-100'
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <Trophy className="w-5 h-5 text-white" />
+                          ) : isLocked ? (
+                            <Lock className="w-5 h-5 text-gray-400" />
+                          ) : (
+                            (() => { const LIcon = getLessonIcon(lesson.title); return <LIcon className="w-5 h-5 text-violet-600" />; })()
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider">
+                            Aula {index + 1}
+                          </p>
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {lesson.title}
+                          </p>
+                          {lesson.description && (
+                            <p className="text-xs text-gray-500 truncate mt-0.5">{lesson.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {isCompleted && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-semibold rounded-full">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Concluída
+                            </span>
+                          )}
+                          <div className="flex items-center gap-1 text-xs text-gray-400">
+                            <Clock className="w-3 h-3" />
+                            <span>{lesson.estimated_time || 10}min</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      {!isLocked && (
+                        <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <motion.div
+                            className={`h-full rounded-full ${
+                              isCompleted
+                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                                : 'bg-gradient-to-r from-violet-500 to-indigo-500'
+                            }`}
+                            initial={{ width: 0 }}
+                            animate={{ width: isCompleted ? '100%' : '0%' }}
+                            transition={{ delay: index * 0.08 + 0.3, duration: 0.6, ease: "easeOut" }}
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-12 text-gray-500 text-sm">
+                  Nenhuma aula disponível nesta jornada ainda.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Default (non-V8) Layout ── */
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
       <div className="relative z-10">
-        {/* Header */}
         <header className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           <button
-            onClick={() => trailId ? navigate(trailType === 'v8' ? `/v8-trail/${trailId}` : `/trail/${trailId}`) : navigate('/dashboard')}
+            onClick={handleBack}
             className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-primary transition-all mb-4 sm:mb-6 shadow-sm hover:shadow-md"
           >
             <ArrowLeft className="w-4 h-4 text-primary" />
             <span className="font-medium text-sm sm:text-base text-gray-700">Voltar à Trilha</span>
           </button>
-
-          {/* V8 trail context breadcrumb */}
-          {trailType === 'v8' && trailTitle && (
-            <div className="mb-3 flex items-center gap-2 text-xs sm:text-sm text-gray-500">
-              <span className="font-semibold text-violet-600">Trilha:</span>
-              <span>{trailTitle}</span>
-              <span className="text-gray-300">›</span>
-              <span className="font-semibold text-violet-600">Jornada:</span>
-              <span>{course.title}</span>
-            </div>
-          )}
 
           <div
             className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
@@ -246,7 +388,6 @@ const CourseDetail = () => {
           </div>
         </header>
 
-        {/* Lessons List */}
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Aulas</h2>
           <div className="space-y-4">
