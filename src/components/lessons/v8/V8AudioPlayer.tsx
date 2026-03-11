@@ -77,16 +77,34 @@ export const V8AudioPlayer = ({
     if (audioRef.current) audioRef.current.playbackRate = speed;
   }, [speed]);
 
-  // Auto-play
+  // Auto-play — also handle cached audio where canplaythrough fires before effect
   useEffect(() => {
-    if (autoPlay && audioRef.current && isLoaded) {
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-        onPlay?.();
-      }).catch(() => {});
+    if (!autoPlay || !audioRef.current) return;
+    
+    const audio = audioRef.current;
+    
+    const tryPlay = () => {
+      if (audio.readyState >= 3) {
+        audio.play().then(() => {
+          setIsPlaying(true);
+          setIsLoaded(true);
+          onPlay?.();
+        }).catch(() => {});
+      }
+    };
+    
+    // If already loaded (cached), play immediately
+    if (audio.readyState >= 3) {
+      tryPlay();
+    } else if (isLoaded) {
+      tryPlay();
     }
+    
+    // Also listen for canplaythrough in case it fires after mount
+    audio.addEventListener("canplaythrough", tryPlay, { once: true });
+    return () => audio.removeEventListener("canplaythrough", tryPlay);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoPlay, isLoaded]);
+  }, [autoPlay, audioUrl]);
 
   // Reset on audioUrl change
   useEffect(() => {
