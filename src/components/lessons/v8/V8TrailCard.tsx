@@ -11,6 +11,8 @@ interface V8TrailCardProps {
   completedCount: number;
   estimatedHours?: number;
   orderIndex?: number;
+  /** When set, overrides default navigation to go to /course/:navigateToId */
+  navigateToId?: string;
 }
 
 const V8_THEMES = [
@@ -40,10 +42,12 @@ export const V8TrailCard = ({
   completedCount,
   estimatedHours = 0,
   orderIndex = 1,
+  navigateToId,
 }: V8TrailCardProps) => {
   const navigate = useNavigate();
   const progress = lessonCount > 0 ? Math.round((completedCount / lessonCount) * 100) : 0;
   const theme = V8_THEMES[(orderIndex - 1) % V8_THEMES.length];
+  const destination = navigateToId ? `/course/${navigateToId}` : `/v8-trail/${trailId}`;
 
   return (
     <motion.div
@@ -51,7 +55,7 @@ export const V8TrailCard = ({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.3 }}
-      onClick={() => navigate(`/v8-trail/${trailId}`)}
+      onClick={() => navigate(destination)}
       className="group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer w-full"
       style={{
         scrollSnapAlign: 'start',

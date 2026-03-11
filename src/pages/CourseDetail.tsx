@@ -35,6 +35,7 @@ const CourseDetail = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [trailId, setTrailId] = useState<string | null>(null);
   const [trailType, setTrailType] = useState<string | null>(null);
+  const [trailTitle, setTrailTitle] = useState<string | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
@@ -77,10 +78,11 @@ const CourseDetail = () => {
       // Fetch trail type for back navigation
       const { data: trailData } = await supabase
         .from('trails')
-        .select('trail_type')
+        .select('trail_type, title')
         .eq('id', courseData.trail_id)
         .single();
       setTrailType(trailData?.trail_type ?? null);
+      setTrailTitle(trailData?.title ?? null);
 
       // Fetch lessons for this course
       const { data: lessonsData, error: lessonsError } = await supabase
@@ -174,6 +176,17 @@ const CourseDetail = () => {
             <ArrowLeft className="w-4 h-4 text-primary" />
             <span className="font-medium text-sm sm:text-base text-gray-700">Voltar à Trilha</span>
           </button>
+
+          {/* V8 trail context breadcrumb */}
+          {trailType === 'v8' && trailTitle && (
+            <div className="mb-3 flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+              <span className="font-semibold text-violet-600">Trilha:</span>
+              <span>{trailTitle}</span>
+              <span className="text-gray-300">›</span>
+              <span className="font-semibold text-violet-600">Jornada:</span>
+              <span>{course.title}</span>
+            </div>
+          )}
 
           <div
             className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
