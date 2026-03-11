@@ -639,11 +639,31 @@ serve(async (req) => {
     };
 
     // Build interaction assignments for this lesson
+    // Manual exercise markers override V8_C01_MAP pool when present
+    const manualExerciseMap = new Map<number, string>();
+    if (Array.isArray(manualExercises)) {
+      for (const me of manualExercises) {
+        if (me && typeof me.afterSectionIndex === 'number' && typeof me.type === 'string') {
+          manualExerciseMap.set(me.afterSectionIndex, me.type);
+        }
+      }
+    }
+    if (manualExerciseMap.size > 0) {
+      console.log(`[v8-generate] Manual exercise overrides: ${[...manualExerciseMap.entries()].map(([k, v]) => `S${k}→${v}`).join(', ')}`);
+    }
+
     const interactionAssignments: Array<{ sectionIndex: number; type: string }> = [];
     for (let i = 2; i < sections.length; i++) {
       // Skip if section has manual quiz/playground, or is reserved for Coursiv/Playground
       if (sectionsWithQuiz.has(i) || sectionsWithPlayground.has(i)) continue;
       if (i === coursivTargetIdx || i === lastIdx) continue;
+
+      // Priority: manual marker > V8_C01_MAP pool
+      const manualType = manualExerciseMap.get(i);
+      if (manualType) {
+        interactionAssignments.push({ sectionIndex: i, type: manualType });
+        continue;
+      }
 
       const pool = V8_C01_MAP[i];
       if (!pool) continue; // No mapping for this index (sections 7+ beyond coursiv/playground)
