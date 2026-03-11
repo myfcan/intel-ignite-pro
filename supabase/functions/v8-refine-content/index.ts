@@ -54,7 +54,9 @@ CONGRUÊNCIA GRAMATICAL OBRIGATÓRIA:
 - Todos os textos DEVEM ter concordância sujeito-verbo e gênero-número correta.
 - ERRO CLÁSSICO: "Sou um casal" → CORRETO: "Somos um casal". Sujeito coletivo/plural exige verbo concordante.
 - Outros erros proibidos: "Nós é" → "Nós somos", "A gente vamos" → "A gente vai", "Eu e minha esposa vai" → "Eu e minha esposa vamos".
-- Revise CADA frase para garantir concordância antes de retornar.`;
+- Revise CADA frase para garantir concordância antes de retornar.
+
+14. **Sem caracteres não-latinos**: NUNCA insira caracteres de outros alfabetos (Devanagari, Cirílico, Árabe, CJK, Tailandês, Coreano). Todo o texto deve usar exclusivamente o alfabeto latino com acentos portugueses (á, é, í, ó, ú, ã, õ, ç, etc.). Se encontrar palavras em outros scripts no texto original, substitua pelo equivalente em português.`;
 
 const REFINE_TOOLS = [
   {
