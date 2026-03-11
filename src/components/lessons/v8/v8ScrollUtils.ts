@@ -5,7 +5,7 @@
 
 /** Safe margins (px) */
 export const V8_SAFE_TOP = 88;   // header (56) + breathing room (32)
-export const V8_SAFE_BOTTOM = 120; // fixed bottom bar area
+export const V8_SAFE_BOTTOM = 180; // fixed bottom bar + iOS URL bar safe area
 export const V8_DELTA_PADDING = 16; // extra breathing below CTA
 
 /**

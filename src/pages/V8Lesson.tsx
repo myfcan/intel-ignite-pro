@@ -38,11 +38,18 @@ export default function V8Lesson() {
   })();
 
   // Parse exercises from separate column (fallback to content.exercises)
+  // Bug 5 fix: filter out inline exercise stubs that have no `data` field
   const exercises = (() => {
-    if (lesson?.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0) {
-      return lesson.exercises;
-    }
-    return lessonData?.exercises ?? [];
+    const raw = (() => {
+      if (lesson?.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0) {
+        return lesson.exercises;
+      }
+      return lessonData?.exercises ?? [];
+    })();
+    // Only keep exercises that have a valid `data` object (not inline stubs)
+    return (raw as any[]).filter((ex: any) =>
+      ex && typeof ex === 'object' && ex.data && typeof ex.data === 'object' && Object.keys(ex.data).length > 0
+    );
   })();
 
   // Merge exercises into lessonData for the player
