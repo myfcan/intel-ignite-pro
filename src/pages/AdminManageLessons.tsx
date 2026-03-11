@@ -708,7 +708,7 @@ export default function AdminManageLessons() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="v7">V7 (Trilha → Jornada → Aula)</SelectItem>
-                        <SelectItem value="v8">V8 (Trilha → Aula direta)</SelectItem>
+                        <SelectItem value="v8">V8 (Trilha → Jornada → Aula)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
