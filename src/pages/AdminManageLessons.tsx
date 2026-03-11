@@ -229,7 +229,7 @@ export default function AdminManageLessons() {
         .from('lessons')
         .update({
           trail_id: targetTrailId,
-          course_id: isV8Trail ? null : targetCourseId,
+          course_id: targetCourseId,
           order_index: targetOrderIndex,
         })
         .eq('id', lessonId);
