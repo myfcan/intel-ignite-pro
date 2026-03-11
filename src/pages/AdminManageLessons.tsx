@@ -292,9 +292,10 @@ export default function AdminManageLessons() {
         toast({ title: 'Trilha criada', description: `"${newTrailTitle.trim()}"` });
       }
 
-      // V8: only create trail, no course/jornada needed
-      if (effectiveIsV8) {
-        toast({ title: 'Trilha V8 pronta', description: 'Aulas podem ser adicionadas diretamente.' });
+      // Both V7 and V8: create course/jornada
+      if (effectiveIsV8 && !newCourseTitle.trim()) {
+        // V8 trail created without a course title — just create trail
+        toast({ title: 'Trilha V8 pronta', description: 'Crie jornadas para organizar as aulas.' });
       } else {
         const existingCourses = courses.filter(c => c.trail_id === trailId);
         const nextOrder = existingCourses.length > 0
