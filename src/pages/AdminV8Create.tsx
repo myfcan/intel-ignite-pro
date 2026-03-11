@@ -468,21 +468,22 @@ export default function AdminV8Create() {
       const parsed: V8LessonData = JSON.parse(jsonText);
 
       if (savedLessonId) {
-        const { error } = await supabase
-          .from("lessons")
-          .update({
-            title: lessonTitle,
-            content: parsed as unknown as Json,
-            exercises: (parsed.exercises || []) as unknown as Json,
-            estimated_time: estimatedTime,
-            order_index: 0,
-            trail_id: null,
-            model: "v8",
-            lesson_type: "guided",
-            is_active: activate,
-            status: activate ? "publicado" : "rascunho",
-          })
-          .eq("id", savedLessonId);
+          const { error } = await supabase
+            .from("lessons")
+            .update({
+              title: lessonTitle,
+              content: parsed as unknown as Json,
+              exercises: (parsed.exercises || []) as unknown as Json,
+              estimated_time: estimatedTime,
+              order_index: 0,
+              trail_id: selectedTrailId || null,
+              course_id: selectedCourseId || null,
+              model: "v8",
+              lesson_type: "guided",
+              is_active: activate,
+              status: activate ? "publicado" : "rascunho",
+            })
+            .eq("id", savedLessonId);
         if (error) throw error;
       } else {
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
