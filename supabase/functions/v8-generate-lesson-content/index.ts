@@ -734,6 +734,32 @@ serve(async (req) => {
           return { ...ex, data: currentData };
         };
 
+        // ── MC RESCUE: Auto-convert statements→question+options for multiple-choice ──
+        const rescueMultipleChoice = (ex: any): any => {
+          if (ex.type !== 'multiple-choice') return ex;
+          const d = ex.data || {};
+          // Already has correct MC schema
+          if (d.question && Array.isArray(d.options)) return ex;
+          // Has true-false schema (statements) — convert to MC
+          if (Array.isArray(d.statements) && d.statements.length > 0) {
+            console.warn(`[v8-generate] MC RESCUE: Converting statements→question+options for ${ex.id}`);
+            const stmt = d.statements[0];
+            const rescuedData = {
+              ...d,
+              question: stmt.text || 'Questão',
+              options: d.statements.map((s: any, i: number) => ({
+                id: s.id || `opt-${i + 1}`,
+                text: s.text || `Opção ${i + 1}`,
+                isCorrect: !!s.correct,
+              })),
+              explanation: stmt.explanation || d.feedback?.perfect || '',
+            };
+            delete rescuedData.statements;
+            return { ...ex, data: rescuedData };
+          }
+          return ex;
+        };
+
         generatedInlineExercises = (exResult.exercises || [])
           .map((ex: any, idx: number) => normalizeExerciseData({
             ...ex,
