@@ -195,8 +195,17 @@ const INLINE_EXERCISE_TOOLS = [
                   properties: {
                     statements: {
                       type: "array",
-                      description: "For true-false and multiple-choice: [{ id, text, correct: boolean, explanation }]",
+                      description: "For true-false only: [{ id, text, correct: boolean, explanation }]",
                       items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" }, correct: { type: "boolean" }, explanation: { type: "string" } }, required: ["id", "text", "correct", "explanation"] }
+                    },
+                    question: {
+                      type: "string",
+                      description: "For multiple-choice: the main question text"
+                    },
+                    options: {
+                      type: "array",
+                      description: "For multiple-choice: [{ id, text, isCorrect }]",
+                      items: { type: "object", properties: { id: { type: "string" }, text: { type: "string" }, isCorrect: { type: "boolean" } }, required: ["id", "text", "isCorrect"] }
                     },
                     sentences: {
                       type: "array",
@@ -233,7 +242,7 @@ const INLINE_EXERCISE_TOOLS = [
                     timeoutPenalty: { type: "string", description: "For timed-quiz: what happens on timeout (default 'skip')" },
                     visualTheme: { type: "string", description: "For timed-quiz: visual theme (default 'cyber')" }
                   },
-                  description: "Exercise-specific data. MUST contain the required fields for the chosen type. true-false/multiple-choice → 'statements'. fill-in-blanks/complete-sentence → 'sentences'. flipcard-quiz → 'cards'. scenario-selection → 'scenarios'. platform-match → 'scenarios' AND 'platforms'. timed-quiz → 'questions'. An EMPTY data object {} is INVALID.",
+                  description: "Exercise-specific data. MUST contain the required fields for the chosen type. true-false → 'statements'. multiple-choice → 'question' and 'options'. fill-in-blanks/complete-sentence → 'sentences'. flipcard-quiz → 'cards'. scenario-selection → 'scenarios'. platform-match → 'scenarios' AND 'platforms'. timed-quiz → 'questions'. An EMPTY data object {} is INVALID.",
                 },
               },
               required: ["afterSectionIndex", "type", "title", "instruction", "data", "successMessage", "tryAgainMessage"],
