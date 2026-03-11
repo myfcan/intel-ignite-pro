@@ -665,12 +665,7 @@ export default function AdminManageLessons() {
                   return isV8Modal ? 'Criar Nova Trilha V8' : 'Criar Nova Jornada';
                 })()}
               </DialogTitle>
-              <DialogDescription>
-                {(() => {
-                  const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
-                  return isV8Modal ? 'Trilha V8: aulas são adicionadas diretamente (sem jornada)' : 'Uma jornada agrupa aulas dentro de uma trilha';
-                })()}
-              </DialogDescription>
+              <DialogDescription>Uma jornada agrupa aulas dentro de uma trilha</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
