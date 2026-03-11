@@ -332,7 +332,9 @@ export default function AdminV8Create() {
         addLog('info', `Áudio seção ${i + 1}/${updatedData.sections.length}...`);
         setPipelineProgress(25 + Math.round((i / updatedData.sections.length) * 50));
         try {
-          const result = await generateOneAudio('section', i, updatedData.sections[i].content || '');
+          const prevText = i > 0 ? updatedData.sections[i - 1].content : undefined;
+          const nextText = i < updatedData.sections.length - 1 ? updatedData.sections[i + 1].content : undefined;
+          const result = await generateOneAudio('section', i, updatedData.sections[i].content || '', prevText, nextText);
           if (result) {
             audioResults.push(result);
             totalSizeKB += result.sizeKB;
