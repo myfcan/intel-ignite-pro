@@ -38,6 +38,15 @@ export function sanitizeV8PedagogicalText(text: string): string {
     .replace(RUSH_LINE_REGEX, "$1")
     // Strip non-Latin scripts (Devanagari, Bengali, Gurmukhi, Arabic, Cyrillic, CJK, Japanese, Thai, Korean)
     .replace(/[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F\uAC00-\uD7AF]/g, '')
+    // Convert SSML <break> tags to natural punctuation (v2 doesn't support SSML)
+    .replace(/<break\s+time\s*=\s*["']?(\d*\.?\d+)s["']?\s*\/?>/gi, (_match, seconds) => {
+      const s = parseFloat(seconds);
+      if (s >= 0.8) return '...';
+      if (s >= 0.4) return ', ...';
+      return ', ';
+    })
+    // Strip any remaining SSML tags
+    .replace(/<[^>]+>/g, '')
     // Strip bracket tags EXCEPT ElevenLabs emotion tags, structural markers, and markdown links
     .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
       // Preserve markdown link text [text](url)

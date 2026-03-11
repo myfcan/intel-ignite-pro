@@ -172,6 +172,15 @@ function sanitizeNarrationText(text: string): string {
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
     .replace(/[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F\uAC00-\uD7AF]/g, '')
+    // Convert SSML <break> tags to natural punctuation (v2 doesn't support SSML)
+    .replace(/<break\s+time\s*=\s*["']?(\d*\.?\d+)s["']?\s*\/?>/gi, (_match, seconds) => {
+      const s = parseFloat(seconds);
+      if (s >= 0.8) return '...';   // long pause → ellipsis
+      if (s >= 0.4) return ', ...';  // medium pause → comma + ellipsis
+      return ', ';                    // short pause → comma
+    })
+    // Strip any remaining SSML tags
+    .replace(/<[^>]+>/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
