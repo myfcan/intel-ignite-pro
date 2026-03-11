@@ -607,8 +607,8 @@ export default function AdminManageLessons() {
                 </Select>
               </div>
 
-              {/* Course (Jornada) - hidden for V8 trails */}
-              {targetTrailId && trails.find(t => t.id === targetTrailId)?.trail_type !== 'v8' && (
+              {/* Course (Jornada) - shown for all trail types */}
+              {targetTrailId && (
                 <div>
                   <label className="text-sm font-medium mb-2 block">Jornada</label>
                   {coursesForSelectedTrail.length === 0 ? (
@@ -634,11 +634,6 @@ export default function AdminManageLessons() {
                       </SelectContent>
                     </Select>
                   )}
-                </div>
-              )}
-              {targetTrailId && trails.find(t => t.id === targetTrailId)?.trail_type === 'v8' && (
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                  <p className="text-sm text-indigo-300">✅ Trilha V8 — aula será movida diretamente (sem jornada).</p>
                 </div>
               )}
 
