@@ -761,7 +761,7 @@ serve(async (req) => {
         };
 
         generatedInlineExercises = (exResult.exercises || [])
-          .map((ex: any, idx: number) => normalizeExerciseData({
+          .map((ex: any, idx: number) => rescueMultipleChoice(normalizeExerciseData({
             ...ex,
             id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
             title: sanitizeV8Text(ex.title || ''),
