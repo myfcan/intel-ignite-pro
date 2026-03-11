@@ -183,9 +183,7 @@ export const V8LessonPlayer = ({
 
   const showFixedBar = state.phase === "content" && (currentItem?.type === "section" || currentItem?.type === "learn-and-grow");
   const contentContainerPadding = state.phase === "content"
-    ? showFixedBar
-      ? "pb-36"
-      : "pb-36"
+    ? "pb-44"
     : "";
 
   return (
@@ -369,7 +367,7 @@ export const V8LessonPlayer = ({
 
       {showFixedBar && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-slate-100 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
             {currentSectionAudioUrl && (
               <div className="flex-1 min-w-0">
                 <V8AudioPlayer

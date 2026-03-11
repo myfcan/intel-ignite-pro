@@ -17,6 +17,7 @@ import { V8AudioPlayer } from "./V8AudioPlayer";
 import { useAudioFirstLock } from "./useAudioFirstLock";
 import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
+import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
 
 interface V8InlineExerciseProps {
   exercise: V8InlineExerciseType;
@@ -34,6 +35,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
   const [exerciseKey, setExerciseKey] = useState(0);
   const [xpAwarded, setXpAwarded] = useState(false);
   const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
+  const { playSound } = useV7SoundEffects(0.6, true);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const hasRegisteredXp = useRef(false);
 
@@ -42,6 +44,9 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
     const didPass = score >= PASS_SCORE;
     setPassed(didPass);
     onScore?.(score);
+
+    // Bug 1 fix: Play sound effect based on result
+    playSound(didPass ? "quiz-correct" : "quiz-wrong");
 
     // Award XP for correct exercise (idempotent via lessonId + exerciseIndex in payload)
     if (didPass && lessonId && exerciseIndex !== undefined && !hasRegisteredXp.current) {
@@ -55,7 +60,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
         })
         .catch(() => {});
     }
-  }, [onScore, lessonId, exerciseIndex]);
+  }, [onScore, lessonId, exerciseIndex, playSound]);
 
   const handleRetry = useCallback(() => {
     setCompleted(false);
@@ -193,7 +198,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="space-y-3"
+      className="space-y-2"
     >
       {/* Audio player for narration — locks exercise until finished */}
       {exercise.audioUrl && isActiveAudio && !completed && (
@@ -203,7 +208,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
       {/* Audio lock hint */}
       {audioLocked && !completed && <V8AudioLockOverlay />}
 
-      {/* Exercise content */}
+      {/* Exercise content — compact mobile layout */}
       <div key={exerciseKey} className={`relative transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}>
         {renderExercise()}
         {/* XP micro-feedback */}
@@ -223,32 +228,32 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
         </AnimatePresence>
       </div>
 
-      {/* Unified premium feedback */}
+      {/* Unified premium feedback — compact on mobile */}
       {completed && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "flex items-start gap-3 px-4 py-3.5 rounded-xl border-l-4",
+            "flex items-start gap-2.5 px-3 py-2.5 sm:px-4 sm:py-3.5 rounded-xl border-l-4",
             passed
               ? "border-l-emerald-500 bg-emerald-50/80"
               : "border-l-amber-500 bg-amber-50/80"
           )}
         >
           {passed ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
           ) : (
-            <RotateCcw className="w-4.5 h-4.5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <RotateCcw className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           )}
           <div className="flex-1 min-w-0">
             <p className={cn(
-              "text-sm font-bold leading-snug",
+              "text-xs sm:text-sm font-bold leading-snug",
               passed ? "text-emerald-800" : "text-amber-800"
             )}>
               {passed ? "Muito bem!" : "Quase lá!"}
             </p>
             <p className={cn(
-              "text-xs leading-relaxed mt-0.5",
+              "text-[11px] sm:text-xs leading-relaxed mt-0.5",
               passed ? "text-emerald-700/80" : "text-amber-700/80"
             )}>
               {passed
@@ -259,7 +264,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
         </motion.div>
       )}
 
-      {/* Active CTA buttons */}
+      {/* Active CTA buttons — compact on mobile */}
       {completed && onContinue && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -270,19 +275,19 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
           {!passed && (
             <button
               onClick={handleRetry}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Tentar Novamente
             </button>
           )}
           <button
             ref={ctaRef}
             onClick={onContinue}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs sm:text-sm font-bold hover:opacity-90 transition-opacity"
           >
             Continuar Aula
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </motion.div>
       )}
