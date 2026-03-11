@@ -465,18 +465,7 @@ export default function AdminManageLessons() {
 
                    <CollapsibleContent>
                     <CardContent className="pt-0 pb-3 px-4 space-y-3">
-                      {/* V8 trails: show lessons directly */}
-                      {trail.trail_type === 'v8' ? (
-                        <div className="space-y-1">
-                          {[...trail.orphanedLessons, ...trail.courses.flatMap(c => c.lessons)].sort((a, b) => a.order_index - b.order_index).length === 0 ? (
-                            <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma aula nesta trilha V8</p>
-                          ) : (
-                            [...trail.orphanedLessons, ...trail.courses.flatMap(c => c.lessons)].sort((a, b) => a.order_index - b.order_index).map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)
-                          )}
-                        </div>
-                      ) : (
-                      <>
-                      {/* V7: Courses inside trail */}
+                      {/* Courses (Jornadas) inside trail — same for V7 and V8 */}
                       {trail.courses.length === 0 && (
                         <div className="p-4 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-center">
                           <p className="text-sm text-amber-700 mb-2">
