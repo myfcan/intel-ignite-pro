@@ -163,8 +163,8 @@ const V8TrimmedImage = ({ src, alt, className }: V8TrimmedImageProps) => {
 
 export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps>(
   ({ section, mode, sectionIndex }, ref) => {
-    const cleanTitle = cleanSectionTitle(sanitizeV8PedagogicalText(section.title));
-    const sanitizedContent = sanitizeV8PedagogicalText(section.content);
+    const cleanTitle = cleanSectionTitle(stripProsodyTagsForDisplay(sanitizeV8PedagogicalText(section.title)));
+    const sanitizedContent = stripProsodyTagsForDisplay(sanitizeV8PedagogicalText(section.content));
 
     return (
       <div

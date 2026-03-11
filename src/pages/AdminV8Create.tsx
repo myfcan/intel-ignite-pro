@@ -711,9 +711,18 @@ export default function AdminV8Create() {
       addLog('success', `${successImgs}/${parsed.sections.length} imagens geradas`);
 
       // Merge image URLs into result sections
-      const sectionsWithImages = (result.sections || parsed.sections).map((s: any, i: number) => {
+      // Always use parsed.sections as base to preserve Section 0 (Abertura)
+      // and merge AI-refined content + images on top
+      const aiSections = result.sections || [];
+      const sectionsWithImages = parsed.sections.map((ps: any, i: number) => {
+        const aiSection = aiSections[i] || {};
         const imgResult = imageResults.find(r => r.index === i);
-        return { ...s, ...(imgResult?.imageUrl ? { imageUrl: imgResult.imageUrl } : {}) };
+        return {
+          ...ps,
+          ...(aiSection.content ? { content: aiSection.content } : {}),
+          ...(aiSection.title ? { title: aiSection.title } : {}),
+          ...(imgResult?.imageUrl ? { imageUrl: imgResult.imageUrl } : {}),
+        };
       });
       result.sections = sectionsWithImages;
 
