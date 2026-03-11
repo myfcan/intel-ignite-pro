@@ -11,6 +11,8 @@ interface V8TrailCardProps {
   completedCount: number;
   estimatedHours?: number;
   orderIndex?: number;
+  /** When set, overrides default navigation to go to /course/:navigateToId */
+  navigateToId?: string;
 }
 
 const V8_THEMES = [
