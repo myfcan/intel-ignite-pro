@@ -177,6 +177,17 @@ const CourseDetail = () => {
             <span className="font-medium text-sm sm:text-base text-gray-700">Voltar à Trilha</span>
           </button>
 
+          {/* V8 trail context breadcrumb */}
+          {trailType === 'v8' && trailTitle && (
+            <div className="mb-3 flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+              <span className="font-semibold text-violet-600">Trilha:</span>
+              <span>{trailTitle}</span>
+              <span className="text-gray-300">›</span>
+              <span className="font-semibold text-violet-600">Jornada:</span>
+              <span>{course.title}</span>
+            </div>
+          )}
+
           <div
             className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
             style={{

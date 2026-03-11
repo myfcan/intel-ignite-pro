@@ -954,6 +954,7 @@ const Dashboard = () => {
                         lessonCount={course.totalLessons}
                         completedCount={course.completedLessons}
                         orderIndex={course.order_index}
+                        navigateToId={course.id}
                       />
                     </div>
                   ))}
