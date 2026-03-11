@@ -741,16 +741,9 @@ export default function AdminManageLessons() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateCourseModal(false)} disabled={creatingCourse}>Cancelar</Button>
-              {(() => {
-                const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
-                const baseDisabled = creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim());
-                const needsCourseTitle = !isV8Modal && !newCourseTitle.trim();
-                return (
-                  <Button onClick={handleCreateCourse} disabled={baseDisabled || needsCourseTitle}>
-                    {creatingCourse ? 'Criando...' : isV8Modal ? 'Criar Trilha' : 'Criar Jornada'}
-                  </Button>
-                );
-              })()}
+              <Button onClick={handleCreateCourse} disabled={creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim())}>
+                {creatingCourse ? 'Criando...' : 'Criar Jornada'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
