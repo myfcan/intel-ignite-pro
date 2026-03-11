@@ -188,8 +188,9 @@ export function parseFullContent(rawText: string): ParseResult {
       afterSectionIndex: indexRemap.get(q.afterSectionIndex)!,
     }));
 
-  // 10. Parse exercise markers [EXERCISE:tipo]
-  const exerciseMarkers = parseExerciseMarkers(rawText);
+  // 10. Parse exercise markers [EXERCISE:tipo] with section context
+  const exerciseMarkersWithIndex = parseExerciseMarkersWithSections(rawText, keptSections.map(s => s.content));
+  const exerciseMarkerTypes = exerciseMarkersWithIndex.map(m => m.type);
 
   return {
     contentVersion: "v8",
@@ -199,10 +200,11 @@ export function parseFullContent(rawText: string): ParseResult {
     inlineQuizzes,
     inlinePlaygrounds: inlinePlaygrounds.length > 0 ? inlinePlaygrounds : [],
     exercises: [],
-    hasManualExercises: exerciseMarkers.length > 0,
+    hasManualExercises: exerciseMarkersWithIndex.length > 0,
     hasManualQuizzes: parsedQuizzes.length > 0,
     hasManualPlaygrounds: parsedPlaygrounds.length > 0,
-    manualExerciseTypes: exerciseMarkers,
+    manualExerciseTypes: exerciseMarkerTypes,
+    manualExerciseMarkers: exerciseMarkersWithIndex,
   };
 }
 
