@@ -727,20 +727,16 @@ export default function AdminManageLessons() {
                 </div>
               )}
 
-              {/* Journey fields — hidden for V8 */}
-              {!(createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8') && (
-                <>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Nome da Jornada</label>
-                    <Input value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} placeholder="Ex: Fundamentos da IA" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
-                    <Input value={newCourseIcon} onChange={(e) => setNewCourseIcon(e.target.value)} placeholder="Ex: Brain, Zap, Rocket..." />
-                    <p className="text-xs text-muted-foreground mt-1">Nome do ícone Lucide</p>
-                  </div>
-                </>
-              )}
+              {/* Journey fields — shown for all trail types */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Nome da Jornada</label>
+                <Input value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} placeholder="Ex: Aterrizando nas IAs" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
+                <Input value={newCourseIcon} onChange={(e) => setNewCourseIcon(e.target.value)} placeholder="Ex: Brain, Zap, Rocket..." />
+                <p className="text-xs text-muted-foreground mt-1">Nome do ícone Lucide</p>
+              </div>
             </div>
 
             <DialogFooter>
