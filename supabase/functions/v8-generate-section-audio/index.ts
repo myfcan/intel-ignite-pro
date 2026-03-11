@@ -95,9 +95,12 @@ serve(async (req) => {
 
     // Clean text for TTS
     const cleanText = stripMarkdownForTTS(sanitizeNarrationText(text));
-    if (!cleanText.trim()) {
+    // Strip emotion/prosody tags to check if there's actual speakable content
+    const speakableText = cleanText.replace(/\[[^\]]{1,40}\]/g, '').replace(/\s+/g, ' ').trim();
+    if (!speakableText || speakableText.length < 10) {
+      console.log(`[v8-section-audio] ⏭️ Skipping ${type} ${index}: only ${speakableText.length} speakable chars ("${speakableText.slice(0, 50)}")`);
       return new Response(
-        JSON.stringify({ skipped: true, reason: 'empty text after sanitization' }),
+        JSON.stringify({ skipped: true, reason: `only ${speakableText.length} speakable chars after sanitization` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
