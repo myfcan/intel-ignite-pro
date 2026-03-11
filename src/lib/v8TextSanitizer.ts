@@ -1,6 +1,30 @@
 const META_LABEL_LINE_REGEX = /(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi;
 const RUSH_LINE_REGEX = /(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi;
-const GENERIC_TAG_REGEX = /\[(?![^\]]*\]\()[^\]]{1,40}\]/gi;
+
+// ElevenLabs v3 — COMPLETE official audio tags whitelist
+const ELEVENLABS_EMOTION_TAGS = new Set([
+  // Emotions / Directions
+  'happy', 'sad', 'excited', 'angry', 'whisper', 'annoyed', 'appalled',
+  'thoughtful', 'surprised', 'sarcastic', 'curious', 'crying', 'mischievously',
+  'impressed', 'delighted', 'amazed', 'warmly', 'excitedly', 'curiously',
+  'dramatically', 'happily', 'sorrowful',
+  'calm', 'nervous', 'frustrated', 'serious', 'cheerful', 'empathetic',
+  'assertive', 'dramatic tone', 'reflective', 'hopeful', 'energetic',
+  'warm', 'encouraging',
+  // Non-verbal / Human sounds
+  'laughs', 'laughing', 'chuckles', 'sighs', 'sigh', 'clears throat',
+  'exhales', 'exhales sharply', 'inhales deeply', 'snorts', 'gulps',
+  'swallows', 'gasps', 'wheezing', 'giggles', 'giggling', 'muttering',
+  'stammers', 'whispers',
+  // Pacing & Delivery
+  'pause', 'short pause', 'long pause', 'rushed', 'slows down',
+  'hesitates', 'drawn out', 'deliberate', 'rapid-fire', 'timidly',
+  'emphasized', 'understated',
+  // Creative / Complex
+  'interrupting', 'overlapping', 'singing', 'sings', 'woo',
+  'happy gasp', 'frustrated sigh', 'laughs softly', 'starts laughing',
+  'with genuine belly laugh',
+]);
 
 const META_LABEL_DETECT_REGEX = /\b(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:/i;
 const RUSH_DETECT_REGEX = /\b(?:Responda rapidamente|Confie nos seus instintos|Sem pensar muito|Responda agora)\b/i;
@@ -12,7 +36,17 @@ export function sanitizeV8PedagogicalText(text: string): string {
   return text
     .replace(META_LABEL_LINE_REGEX, "$1")
     .replace(RUSH_LINE_REGEX, "$1")
-    .replace(GENERIC_TAG_REGEX, "")
+    // Strip bracket tags EXCEPT ElevenLabs emotion tags, structural markers, and markdown links
+    .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
+      // Preserve markdown link text [text](url)
+      if (/\]\(/.test(text.slice(text.indexOf(match), text.indexOf(match) + match.length + 5))) return match;
+      const normalized = inner.toLowerCase().trim();
+      // Preserve ElevenLabs emotion/prosody tags
+      if (ELEVENLABS_EMOTION_TAGS.has(normalized)) return match;
+      // Preserve structural markers (QUIZ, PLAYGROUND, EXERCISE:*)
+      if (/^(quiz|playground|exercise:[a-z_-]+)$/i.test(inner.trim())) return match;
+      return '';
+    })
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
