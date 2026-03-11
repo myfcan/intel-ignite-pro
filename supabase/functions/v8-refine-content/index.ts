@@ -206,12 +206,18 @@ ${sectionsText}`;
     // Validate count matches
     if (refinedSections.length !== sections.length) {
       console.warn(`[v8-refine-content] Count mismatch: got ${refinedSections.length}, expected ${sections.length}. Padding/truncating.`);
-      // Pad with originals if AI returned fewer
       while (refinedSections.length < sections.length) {
         refinedSections.push(sections[refinedSections.length]);
       }
-      // Truncate if AI returned more
       refinedSections.length = sections.length;
+    }
+
+    // === Correção E: Validação de integridade — proteger Abertura ===
+    const originalIsAbertura = sections[0]?.title?.toLowerCase().includes("abertura");
+    const refinedIsAbertura = refinedSections[0]?.title?.toLowerCase().includes("abertura");
+    if (originalIsAbertura && !refinedIsAbertura) {
+      console.warn(`[v8-refine-content] AI displaced Abertura — restoring original Section 0`);
+      refinedSections[0] = sections[0];
     }
 
     const sanitizedSections = refinedSections.map((s: any, i: number) => ({

@@ -739,6 +739,17 @@ export default function AdminV8Create() {
       setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'running' as const } : s));
       addLog('info', 'Montando JSON final...');
 
+      // === Hard Gate V8-C01: Validação de integridade estrutural ===
+      const preFinalSections = result.sections || parsed.sections;
+      if (preFinalSections.length < 9) {
+        addLog('error', `V8-C01 VIOLATION: apenas ${preFinalSections.length} seções (esperado ≥ 9)`);
+        throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo 9)`);
+      }
+      if (preFinalSections[0]?.title !== "Abertura") {
+        addLog('error', `V8-C01 VIOLATION: Section 0 não é "Abertura" (é "${preFinalSections[0]?.title}")`);
+        throw new Error(`Pipeline abortado: Section 0 ausente ou renomeada`);
+      }
+
       const finalData: V8LessonData = {
         contentVersion: "v8",
         title: parsed.title,
