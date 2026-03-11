@@ -303,7 +303,7 @@ export default function AdminV8Create() {
       const audioStartTime = Date.now();
       const cacheBuster = `?t=${Date.now()}`;
 
-      const generateOneAudio = async (type: string, index: number, text: string): Promise<AudioResult | null> => {
+      const generateOneAudio = async (type: string, index: number, text: string, previousText?: string, nextText?: string): Promise<AudioResult | null> => {
         if (!text?.trim()) return null;
         const res = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-section-audio`,
@@ -314,7 +314,7 @@ export default function AdminV8Create() {
               Authorization: `Bearer ${session.access_token}`,
               apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             },
-            body: JSON.stringify({ lessonId, type, index, text }),
+            body: JSON.stringify({ lessonId, type, index, text, previousText, nextText }),
           }
         );
         if (!res.ok) {
@@ -332,7 +332,9 @@ export default function AdminV8Create() {
         addLog('info', `Áudio seção ${i + 1}/${updatedData.sections.length}...`);
         setPipelineProgress(25 + Math.round((i / updatedData.sections.length) * 50));
         try {
-          const result = await generateOneAudio('section', i, updatedData.sections[i].content || '');
+          const prevText = i > 0 ? updatedData.sections[i - 1].content : undefined;
+          const nextText = i < updatedData.sections.length - 1 ? updatedData.sections[i + 1].content : undefined;
+          const result = await generateOneAudio('section', i, updatedData.sections[i].content || '', prevText, nextText);
           if (result) {
             audioResults.push(result);
             totalSizeKB += result.sizeKB;
@@ -834,8 +836,8 @@ export default function AdminV8Create() {
       const audioStartTime = Date.now();
       const cacheBuster = `?t=${Date.now()}`;
 
-      // Helper to call per-section audio edge function
-      const generateOneAudio = async (type: string, index: number, text: string): Promise<AudioResult | null> => {
+      // Helper to call per-section audio edge function (with request stitching)
+      const generateOneAudio = async (type: string, index: number, text: string, previousText?: string, nextText?: string): Promise<AudioResult | null> => {
         if (!text?.trim()) return null;
         const res = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-section-audio`,
@@ -846,7 +848,7 @@ export default function AdminV8Create() {
               Authorization: `Bearer ${authSession.access_token}`,
               apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             },
-            body: JSON.stringify({ lessonId, type, index, text }),
+            body: JSON.stringify({ lessonId, type, index, text, previousText, nextText }),
           }
         );
         if (!res.ok) {
@@ -868,7 +870,9 @@ export default function AdminV8Create() {
         setPipelineProgress(55 + Math.round((i / finalData.sections.length) * 20));
 
         try {
-          const result = await generateOneAudio('section', i, section.content || '');
+          const prevText = i > 0 ? finalData.sections[i - 1].content : undefined;
+          const nxtText = i < finalData.sections.length - 1 ? finalData.sections[i + 1].content : undefined;
+          const result = await generateOneAudio('section', i, section.content || '', prevText, nxtText);
           if (result) {
             audioResults.push(result);
             totalSizeKB += result.sizeKB;

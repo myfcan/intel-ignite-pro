@@ -49,16 +49,15 @@ serve(async (req) => {
       );
     }
 
-    const voiceId = voice_id || 'oqUwsXKac3MSo4E51ySV'; // Taciana - PT-BR nativa (professional)
+    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice
 
     // ============================================================
     // SELEÇÃO DE MODELO
-    // eleven_v3   → suporta [audio tags], NÃO suporta SSML
-    // eleven_multilingual_v2 → suporta SSML <break/>, ignora audio tags
+    // eleven_multilingual_v2 → suporta request stitching, SSML, estável para long-form
+    // eleven_v3 → suporta audio tags, mas sem stitching (causa accent drift)
     // ============================================================
-    // CRITICAL: Always use eleven_v3 to prevent accent drift to PT-PT
-    const useV3 = true;
-    const selectedModel = 'eleven_v3';
+    const useV3 = false;
+    const selectedModel = 'eleven_multilingual_v2';
 
     // Preparar o texto:
     // - Se v3: manter audio tags como estão, remover SSML
