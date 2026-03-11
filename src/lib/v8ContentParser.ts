@@ -539,6 +539,7 @@ const VALID_EXERCISE_TYPES = [
   "multiple-choice", "flipcard-quiz", "timed-quiz",
 ];
 
+/** @deprecated Use parseExerciseMarkersWithSections for section-aware parsing */
 export function parseExerciseMarkers(rawText: string): string[] {
   const markers: string[] = [];
   const regex = /\[EXERCISE:([a-z-]+)\]/gi;
@@ -550,4 +551,40 @@ export function parseExerciseMarkers(rawText: string): string[] {
     }
   }
   return markers;
+}
+
+/**
+ * parseExerciseMarkersWithSections — Extract [EXERCISE:tipo] markers with afterSectionIndex context.
+ * Searches within each section's content to map markers to their section index.
+ */
+export function parseExerciseMarkersWithSections(
+  rawText: string,
+  sectionContents: string[]
+): Array<{ afterSectionIndex: number; type: string }> {
+  const results: Array<{ afterSectionIndex: number; type: string }> = [];
+  const regex = /\[EXERCISE:([a-z-]+)\]/gi;
+
+  for (let i = 0; i < sectionContents.length; i++) {
+    const content = sectionContents[i];
+    let match: RegExpExecArray | null;
+    // Reset regex for each section
+    const sectionRegex = new RegExp(regex.source, regex.flags);
+    while ((match = sectionRegex.exec(content)) !== null) {
+      const type = match[1].toLowerCase();
+      if (VALID_EXERCISE_TYPES.includes(type)) {
+        results.push({ afterSectionIndex: i, type });
+      }
+    }
+  }
+
+  // Fallback: if no section-level matches found, try global parse and assign sequentially
+  if (results.length === 0) {
+    const globalMarkers = parseExerciseMarkers(rawText);
+    // Assign to sections 2+ (skipping intro sections 0-1)
+    globalMarkers.forEach((type, idx) => {
+      results.push({ afterSectionIndex: idx + 2, type });
+    });
+  }
+
+  return results;
 }
