@@ -117,6 +117,19 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
   const currentExercise = exercises[currentExerciseIndex];
 
+  // Guard against undefined exercise or missing data
+  if (!currentExercise || !currentExercise.data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+        <div className="text-center space-y-3 p-6">
+          <p className="text-lg font-semibold text-destructive">Exercício não disponível</p>
+          <p className="text-sm text-muted-foreground">Dados do exercício {currentExerciseIndex + 1} estão incompletos.</p>
+          {onBack && <Button variant="outline" onClick={onBack}>Voltar</Button>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <AlertDialog open={showBackDialog} onOpenChange={setShowBackDialog}>
