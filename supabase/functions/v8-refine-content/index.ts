@@ -85,37 +85,14 @@ const REFINE_TOOLS = [
   },
 ];
 
-// ElevenLabs v3 — COMPLETE official audio tags whitelist (from docs + blog 2026-03-06)
-const ELEVENLABS_EMOTION_TAGS = new Set([
-  'happy', 'sad', 'excited', 'angry', 'whisper', 'annoyed', 'appalled',
-  'thoughtful', 'surprised', 'sarcastic', 'curious', 'crying', 'mischievously',
-  'impressed', 'delighted', 'amazed', 'warmly', 'excitedly', 'curiously',
-  'dramatically', 'happily', 'sorrowful',
-  'calm', 'nervous', 'frustrated', 'serious', 'cheerful', 'empathetic',
-  'assertive', 'dramatic tone', 'reflective', 'hopeful', 'energetic',
-  'warm', 'encouraging',
-  'laughs', 'laughing', 'chuckles', 'sighs', 'sigh', 'clears throat',
-  'exhales', 'exhales sharply', 'inhales deeply', 'snorts', 'gulps',
-  'swallows', 'gasps', 'wheezing', 'giggles', 'giggling', 'muttering',
-  'stammers', 'whispers',
-  'pause', 'short pause', 'long pause', 'rushed', 'slows down',
-  'hesitates', 'drawn out', 'deliberate', 'rapid-fire', 'timidly',
-  'emphasized', 'understated',
-  'interrupting', 'overlapping', 'singing', 'sings', 'woo',
-  'happy gasp', 'frustrated sigh', 'laughs softly', 'starts laughing',
-  'with genuine belly laugh',
-]);
-
 function sanitizePedagogicalText(text: string): string {
   return text
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
-    // Strip non-Latin scripts (Devanagari, Bengali, Gurmukhi, Arabic, Cyrillic, CJK, Japanese, Thai, Korean)
+    // Strip non-Latin scripts
     .replace(/[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F\uAC00-\uD7AF]/g, '')
-    // Strip bracket tags EXCEPT ElevenLabs emotion tags and structural markers
+    // Strip ALL bracket tags EXCEPT structural markers (v2 does not support audio/prosody tags)
     .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
-      const normalized = inner.toLowerCase().trim();
-      if (ELEVENLABS_EMOTION_TAGS.has(normalized)) return match;
       if (/^(quiz|playground|exercise:[a-z_-]+)$/i.test(inner.trim())) return match;
       return '';
     })
