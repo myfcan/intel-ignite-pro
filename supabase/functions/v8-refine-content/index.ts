@@ -146,7 +146,15 @@ serve(async (req) => {
       `### Seção ${i + 1}: ${s.title}\n${s.content}`
     ).join("\n\n---\n\n");
 
-    const userPrompt = `Refine as ${sections.length} seções abaixo. Retorne EXATAMENTE ${sections.length} seções refinadas:\n\n${sectionsText}`;
+    const userPrompt = `Refine as ${sections.length} seções abaixo. Retorne EXATAMENTE ${sections.length} seções refinadas.
+
+REGRAS ESTRITAS DE ORDENAÇÃO:
+- Retorne as seções NA MESMA ORDEM em que foram recebidas.
+- NÃO renomeie a primeira seção se ela se chamar "Abertura".
+- NÃO funda, elimine ou reordene seções.
+- A Seção 1 da entrada DEVE ser a Seção 1 da saída, e assim por diante.
+
+${sectionsText}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
