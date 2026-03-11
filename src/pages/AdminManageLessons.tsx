@@ -660,10 +660,7 @@ export default function AdminManageLessons() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="w-5 h-5 text-green-500" />
-                {(() => {
-                  const isV8Modal = createNewTrail ? newTrailType === 'v8' : trails.find(t => t.id === newCourseTrailId)?.trail_type === 'v8';
-                  return isV8Modal ? 'Criar Nova Trilha V8' : 'Criar Nova Jornada';
-                })()}
+                Criar Nova Jornada
               </DialogTitle>
               <DialogDescription>Uma jornada agrupa aulas dentro de uma trilha</DialogDescription>
             </DialogHeader>
