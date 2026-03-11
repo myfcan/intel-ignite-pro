@@ -188,6 +188,27 @@ export default function AdminV8Create() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Trail & Course selectors
+  interface TrailOption { id: string; title: string; trail_type: string | null }
+  interface CourseOption { id: string; trail_id: string; title: string }
+  const [trails, setTrails] = useState<TrailOption[]>([]);
+  const [allCourses, setAllCourses] = useState<CourseOption[]>([]);
+  const [selectedTrailId, setSelectedTrailId] = useState<string>('');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+
+  useEffect(() => {
+    (async () => {
+      const [t, c] = await Promise.all([
+        supabase.from('trails').select('id, title, trail_type').order('order_index'),
+        supabase.from('courses').select('id, trail_id, title').order('order_index'),
+      ]);
+      if (t.data) setTrails(t.data);
+      if (c.data) setAllCourses(c.data);
+    })();
+  }, []);
+
+  const coursesForTrail = useMemo(() => allCourses.filter(c => c.trail_id === selectedTrailId), [allCourses, selectedTrailId]);
+
   // State
   const [lessonTitle, setLessonTitle] = useState("Nova Aula V8");
   const [estimatedTime, setEstimatedTime] = useState(10);
