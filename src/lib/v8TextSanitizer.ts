@@ -51,6 +51,19 @@ export function sanitizeV8PedagogicalText(text: string): string {
     .trim();
 }
 
+/**
+ * Strip ALL bracket tags for display rendering.
+ * Emotion/prosody tags like [energetic], [short pause] etc are meant for TTS only.
+ */
+export function stripProsodyTagsForDisplay(text: string): string {
+  if (!text || typeof text !== "string") return text;
+  return text
+    .replace(/\[([^\]]{1,40})\]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^\s+/gm, '')
+    .trim();
+}
+
 export function hasV8ForbiddenNarrationMarkers(text: string): boolean {
   if (!text || typeof text !== "string") return false;
 
