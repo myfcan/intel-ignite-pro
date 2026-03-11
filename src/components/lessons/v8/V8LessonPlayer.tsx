@@ -183,9 +183,7 @@ export const V8LessonPlayer = ({
 
   const showFixedBar = state.phase === "content" && (currentItem?.type === "section" || currentItem?.type === "learn-and-grow");
   const contentContainerPadding = state.phase === "content"
-    ? showFixedBar
-      ? "pb-36"
-      : "pb-36"
+    ? "pb-44"
     : "";
 
   return (
