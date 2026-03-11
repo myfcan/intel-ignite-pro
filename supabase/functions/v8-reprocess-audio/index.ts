@@ -6,23 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-/**
- * v8-reprocess-audio
- * 
- * Reprocessa áudio para uma aula V8 existente no banco de dados.
- * Lê o content da lição, extrai sections/quizzes/playgrounds,
- * gera áudio via ElevenLabs, e atualiza o content com as URLs.
- * 
- * Resolve o problema de aulas que ficaram sem áudio por interrupção
- * do pipeline frontend.
- * 
- * Input: { lessonId: string }
- * Output: { success, totalAudios, totalErrors, results[], updatedSections }
- */
-
-const VOICE_ID = 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR nativa
-const MODEL_ID = 'eleven_v3';
-const VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75 };
+const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice
+const MODEL_ID = 'eleven_multilingual_v2';
+const VOICE_SETTINGS = { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true };
 
 function jsonError(msg: string, status = 400) {
   return new Response(JSON.stringify({ error: msg }), {
@@ -39,65 +25,67 @@ function sanitizeNarrationText(text: string): string {
     .trim();
 }
 
-// ElevenLabs v3 — COMPLETE official audio tags whitelist (from docs + blog 2026-03-06)
-const ELEVENLABS_EMOTION_TAGS = new Set([
-  'happy', 'sad', 'excited', 'angry', 'whisper', 'annoyed', 'appalled',
-  'thoughtful', 'surprised', 'sarcastic', 'curious', 'crying', 'mischievously',
-  'impressed', 'delighted', 'amazed', 'warmly', 'excitedly', 'curiously',
-  'dramatically', 'happily', 'sorrowful',
-  'calm', 'nervous', 'frustrated', 'serious', 'cheerful', 'empathetic',
-  'assertive', 'dramatic tone', 'reflective', 'hopeful', 'energetic',
-  'warm', 'encouraging',
-  'laughs', 'laughing', 'chuckles', 'sighs', 'sigh', 'clears throat',
-  'exhales', 'exhales sharply', 'inhales deeply', 'snorts', 'gulps',
-  'swallows', 'gasps', 'wheezing', 'giggles', 'giggling', 'muttering',
-  'stammers', 'whispers',
-  'pause', 'short pause', 'long pause', 'rushed', 'slows down',
-  'hesitates', 'drawn out', 'deliberate', 'rapid-fire', 'timidly',
-  'emphasized', 'understated',
-  'interrupting', 'overlapping', 'singing', 'sings', 'woo',
-  'happy gasp', 'frustrated sigh', 'laughs softly', 'starts laughing',
-  'with genuine belly laugh',
-]);
-
 function stripMarkdownForTTS(text: string): string {
   return text
     .replace(/#{1,6}\s+/g, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/`([^`]+)`/g, '$1')
-    .replace(/```[\s\S]*?```/g, '')        // code blocks
-    .replace(/!\[.*?\]\(.*?\)/g, '')       // images
-    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1') // links (keep text, remove url)
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
     .replace(/^\s*[-*+]\s+/gm, '')
     .replace(/^\s*\d+\.\s+/gm, '')
     .replace(/^\s*>\s+/gm, '')
     .replace(/---+/g, '')
     .replace(/\n{3,}/g, '\n\n')
-    // Strip bracket tags EXCEPT ElevenLabs emotion tags
-    .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
-      return ELEVENLABS_EMOTION_TAGS.has(inner.toLowerCase().trim()) ? match : '';
-    })
     .trim();
 }
 
+/** Strip ALL bracket tags — v2 does not support audio tags */
+function stripAllBracketTags(text: string): string {
+  return text
+    .replace(/\[([^\]]{1,40})\]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
 
+function cleanForTTS(text: string): string {
+  return stripAllBracketTags(stripMarkdownForTTS(sanitizeNarrationText(text)));
+}
 
-async function callElevenLabs(text: string, apiKey: string): Promise<ArrayBuffer> {
+/**
+ * Extract ~3 sentences for request stitching context.
+ */
+function extractStitchingContext(text: string, position: 'head' | 'tail'): string {
+  const clean = cleanForTTS(text);
+  const sentences = clean.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 5);
+  if (sentences.length === 0) return '';
+  const slice = position === 'tail' ? sentences.slice(-3) : sentences.slice(0, 3);
+  return slice.join(' ').slice(0, 500);
+}
+
+async function callElevenLabs(
+  text: string,
+  apiKey: string,
+  previousText?: string,
+  nextText?: string,
+): Promise<ArrayBuffer> {
+  const body: Record<string, unknown> = {
+    text,
+    model_id: MODEL_ID,
+    voice_settings: VOICE_SETTINGS,
+  };
+
+  if (previousText?.trim()) body.previous_text = previousText;
+  if (nextText?.trim()) body.next_text = nextText;
+
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
     {
       method: 'POST',
-      headers: {
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text: text,
-        model_id: MODEL_ID,
-        language_code: 'pt',
-        voice_settings: VOICE_SETTINGS,
-      }),
+      headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     },
   );
 
@@ -115,9 +103,10 @@ async function generateAudio(
   supabaseAdmin: any,
   lessonId: string,
   filePrefix: string,
+  previousText?: string,
+  nextText?: string,
 ): Promise<{ audioUrl: string; sizeKB: number; durationEstimate: number }> {
-  // Single call — no dual generation waste
-  const audioBuffer = await callElevenLabs(text, apiKey);
+  const audioBuffer = await callElevenLabs(text, apiKey, previousText, nextText);
 
   const sizeKB = Math.round(audioBuffer.byteLength / 1024);
   const durationEstimate = Math.round(text.split(/\s+/).length / 2.5);
@@ -149,7 +138,6 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    // ─── AUTH (getClaims pattern) ───
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return jsonError('Unauthorized', 401);
@@ -177,7 +165,6 @@ serve(async (req) => {
     const userId = user.id;
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey) as any;
 
-    // Check admin role
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -187,7 +174,6 @@ serve(async (req) => {
 
     if (!roleData) return jsonError('Admin access required', 403);
 
-    // ─── READ LESSON ───
     const { lessonId } = await req.json();
     if (!lessonId) return jsonError('lessonId is required', 400);
 
@@ -205,23 +191,28 @@ serve(async (req) => {
     const quizzes = content.inlineQuizzes || [];
     const playgrounds = content.inlinePlaygrounds || [];
 
-    console.log(`[v8-reprocess-audio] 🔄 Reprocessing lesson ${lessonId}: ${sections.length} sections, ${quizzes.length} quizzes, ${playgrounds.length} playgrounds`);
+    console.log(`[v8-reprocess-audio] 🔄 Reprocessing lesson ${lessonId}: ${sections.length} sections, ${quizzes.length} quizzes, ${playgrounds.length} playgrounds (model: ${MODEL_ID})`);
 
     const results: any[] = [];
     const errors: any[] = [];
     const cacheBuster = `?t=${Date.now()}`;
 
-    // ─── SECTIONS ───
+    // ─── SECTIONS (with request stitching) ───
     for (let i = 0; i < sections.length; i++) {
-      const plainText = stripMarkdownForTTS(sanitizeNarrationText(sections[i].content || ''));
+      const plainText = cleanForTTS(sections[i].content || '');
       if (!plainText.trim()) {
         console.log(`[v8-reprocess-audio] ⏭️ Skipping empty section ${i}`);
         continue;
       }
 
+      // Stitching context from adjacent sections
+      const prevContext = i > 0 ? extractStitchingContext(sections[i - 1].content || '', 'tail') : undefined;
+      const nextContext = i < sections.length - 1 ? extractStitchingContext(sections[i + 1].content || '', 'head') : undefined;
+
       try {
         const result = await generateAudio(
-          plainText, ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `section-${i}`
+          plainText, ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `section-${i}`,
+          prevContext, nextContext,
         );
         sections[i].audioUrl = result.audioUrl + cacheBuster;
         sections[i].audioDurationSeconds = result.durationEstimate;
@@ -238,25 +229,22 @@ serve(async (req) => {
     for (let i = 0; i < quizzes.length; i++) {
       const quiz = quizzes[i];
 
-      // Quiz question audio
       if (quiz.question) {
         try {
           const result = await generateAudio(
-            sanitizeNarrationText(quiz.question), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `quiz-${i}`
+            cleanForTTS(quiz.question), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `quiz-${i}`
           );
           quizzes[i].audioUrl = result.audioUrl + cacheBuster;
           results.push({ index: i, type: 'quiz', ...result });
-          console.log(`[v8-reprocess-audio] ✅ Quiz ${i}: ${result.sizeKB}KB`);
         } catch (err) {
           errors.push({ index: i, type: 'quiz', error: err instanceof Error ? err.message : String(err) });
         }
       }
 
-      // Reinforcement
       if (quiz.reinforcement) {
         try {
           const result = await generateAudio(
-            sanitizeNarrationText(quiz.reinforcement), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `quiz-${i}-reinforcement`
+            cleanForTTS(quiz.reinforcement), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `quiz-${i}-reinforcement`
           );
           quizzes[i].reinforcementAudioUrl = result.audioUrl + cacheBuster;
           results.push({ index: i, type: 'quiz-reinforcement', ...result });
@@ -265,11 +253,10 @@ serve(async (req) => {
         }
       }
 
-      // Explanation
       if (quiz.explanation) {
         try {
           const result = await generateAudio(
-            sanitizeNarrationText(quiz.explanation), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `quiz-${i}-explanation`
+            cleanForTTS(quiz.explanation), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `quiz-${i}-explanation`
           );
           quizzes[i].explanationAudioUrl = result.audioUrl + cacheBuster;
           results.push({ index: i, type: 'quiz-explanation', ...result });
@@ -286,7 +273,7 @@ serve(async (req) => {
       if (pg.narration?.trim()) {
         try {
           const result = await generateAudio(
-            sanitizeNarrationText(pg.narration), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `playground-${i}`
+            cleanForTTS(pg.narration), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `playground-${i}`
           );
           playgrounds[i].audioUrl = result.audioUrl + cacheBuster;
           results.push({ index: i, type: 'playground', ...result });
@@ -298,7 +285,7 @@ serve(async (req) => {
       if (pg.successMessage?.trim()) {
         try {
           const result = await generateAudio(
-            sanitizeNarrationText(pg.successMessage), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `playground-${i}-success`
+            cleanForTTS(pg.successMessage), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `playground-${i}-success`
           );
           playgrounds[i].successAudioUrl = result.audioUrl + cacheBuster;
           results.push({ index: i, type: 'playground-success', ...result });
@@ -310,7 +297,7 @@ serve(async (req) => {
       if (pg.tryAgainMessage?.trim()) {
         try {
           const result = await generateAudio(
-            sanitizeNarrationText(pg.tryAgainMessage), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `playground-${i}-tryagain`
+            cleanForTTS(pg.tryAgainMessage), ELEVENLABS_API_KEY, supabaseAdmin, lessonId, `playground-${i}-tryagain`
           );
           playgrounds[i].tryAgainAudioUrl = result.audioUrl + cacheBuster;
           results.push({ index: i, type: 'playground-tryagain', ...result });
@@ -321,12 +308,7 @@ serve(async (req) => {
     }
 
     // ─── UPDATE LESSON IN DB ───
-    const updatedContent = {
-      ...content,
-      sections,
-      inlineQuizzes: quizzes,
-      inlinePlaygrounds: playgrounds,
-    };
+    const updatedContent = { ...content, sections, inlineQuizzes: quizzes, inlinePlaygrounds: playgrounds };
 
     const { error: updateError } = await supabaseAdmin
       .from('lessons')

@@ -6,37 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const VOICE_ID = 'oqUwsXKac3MSo4E51ySV';
-const MODEL_ID = 'eleven_v3';
-const VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75 };
-
-
-// ElevenLabs v3 — COMPLETE official audio tags whitelist (from docs + blog 2026-03-06)
-const ELEVENLABS_EMOTION_TAGS = new Set([
-  'happy', 'sad', 'excited', 'angry', 'whisper', 'annoyed', 'appalled',
-  'thoughtful', 'surprised', 'sarcastic', 'curious', 'crying', 'mischievously',
-  'impressed', 'delighted', 'amazed', 'warmly', 'excitedly', 'curiously',
-  'dramatically', 'happily', 'sorrowful',
-  'calm', 'nervous', 'frustrated', 'serious', 'cheerful', 'empathetic',
-  'assertive', 'dramatic tone', 'reflective', 'hopeful', 'energetic',
-  'warm', 'encouraging',
-  'laughs', 'laughing', 'chuckles', 'sighs', 'sigh', 'clears throat',
-  'exhales', 'exhales sharply', 'inhales deeply', 'snorts', 'gulps',
-  'swallows', 'gasps', 'wheezing', 'giggles', 'giggling', 'muttering',
-  'stammers', 'whispers',
-  'pause', 'short pause', 'long pause', 'rushed', 'slows down',
-  'hesitates', 'drawn out', 'deliberate', 'rapid-fire', 'timidly',
-  'emphasized', 'understated',
-  'interrupting', 'overlapping', 'singing', 'sings', 'woo',
-  'happy gasp', 'frustrated sigh', 'laughs softly', 'starts laughing',
-  'with genuine belly laugh',
-]);
+const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice
+const MODEL_ID = 'eleven_multilingual_v2';
+const VOICE_SETTINGS = { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true };
 
 interface RequestBody {
   lessonId: string;
   type: 'section' | 'quiz' | 'quiz-reinforcement' | 'quiz-explanation' | 'playground' | 'playground-success' | 'playground-tryagain';
   index: number;
   text: string;
+  previousText?: string;
+  nextText?: string;
 }
 
 serve(async (req) => {
@@ -82,7 +62,7 @@ serve(async (req) => {
 
     // Parse input
     const body: RequestBody = await req.json();
-    const { lessonId, type, index, text } = body;
+    const { lessonId, type, index, text, previousText, nextText } = body;
 
     if (!lessonId || !text?.trim() || type === undefined || index === undefined) {
       return jsonError('lessonId, type, index, and text are required', 400);
@@ -93,32 +73,40 @@ serve(async (req) => {
       return jsonError('ElevenLabs API key not configured', 500);
     }
 
-    // Clean text for TTS
-    const cleanText = stripMarkdownForTTS(sanitizeNarrationText(text));
-    // Strip emotion/prosody tags to check if there's actual speakable content
-    const speakableText = cleanText.replace(/\[[^\]]{1,40}\]/g, '').replace(/\s+/g, ' ').trim();
+    // Clean text for TTS — strip ALL bracket tags (v2 ignores audio tags)
+    const cleanText = stripAllBracketTags(stripMarkdownForTTS(sanitizeNarrationText(text)));
+    const speakableText = cleanText.replace(/\s+/g, ' ').trim();
     if (!speakableText || speakableText.length < 10) {
-      console.log(`[v8-section-audio] ⏭️ Skipping ${type} ${index}: only ${speakableText.length} speakable chars ("${speakableText.slice(0, 50)}")`);
+      console.log(`[v8-section-audio] ⏭️ Skipping ${type} ${index}: only ${speakableText.length} speakable chars`);
       return new Response(
         JSON.stringify({ skipped: true, reason: `only ${speakableText.length} speakable chars after sanitization` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Generate TTS
-    console.log(`[v8-section-audio] 🎵 ${type} ${index} for ${lessonId.slice(0, 8)}... (${cleanText.length} chars)`);
+    // Generate TTS with request stitching
+    console.log(`[v8-section-audio] 🎵 ${type} ${index} for ${lessonId.slice(0, 8)}... (${cleanText.length} chars, model: ${MODEL_ID})`);
+
+    const ttsBody: Record<string, unknown> = {
+      text: cleanText,
+      model_id: MODEL_ID,
+      voice_settings: VOICE_SETTINGS,
+    };
+
+    // Request stitching: provide context from adjacent sections
+    if (previousText?.trim()) {
+      ttsBody.previous_text = extractStitchingContext(previousText, 'tail');
+    }
+    if (nextText?.trim()) {
+      ttsBody.next_text = extractStitchingContext(nextText, 'head');
+    }
 
     const ttsResponse = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
       {
         method: 'POST',
         headers: { 'xi-api-key': elevenLabsKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: cleanText,
-          model_id: MODEL_ID,
-          language_code: 'pt',
-          voice_settings: VOICE_SETTINGS,
-        }),
+        body: JSON.stringify(ttsBody),
       }
     );
 
@@ -183,7 +171,6 @@ function sanitizeNarrationText(text: string): string {
   return text
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
-    // Strip non-Latin scripts (Devanagari, Bengali, Gurmukhi, Arabic, Cyrillic, CJK, Japanese, Thai, Korean)
     .replace(/[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F\uAC00-\uD7AF]/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -203,8 +190,28 @@ function stripMarkdownForTTS(markdown: string): string {
     .replace(/^\s*>\s+/gm, '')
     .replace(/---+/g, '')
     .replace(/\n{3,}/g, '\n\n')
-    .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
-      return ELEVENLABS_EMOTION_TAGS.has(inner.toLowerCase().trim()) ? match : '';
-    })
     .trim();
+}
+
+/** Strip ALL bracket tags — v2 does not support audio tags */
+function stripAllBracketTags(text: string): string {
+  return text
+    .replace(/\[([^\]]{1,40})\]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/**
+ * Extract ~3 sentences for request stitching context.
+ * 'tail' = last 3 sentences (for previous_text)
+ * 'head' = first 3 sentences (for next_text)
+ */
+function extractStitchingContext(text: string, position: 'head' | 'tail'): string {
+  const clean = stripAllBracketTags(stripMarkdownForTTS(sanitizeNarrationText(text)));
+  const sentences = clean.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 5);
+  if (sentences.length === 0) return '';
+  const slice = position === 'tail'
+    ? sentences.slice(-3)
+    : sentences.slice(0, 3);
+  return slice.join(' ').slice(0, 500);
 }

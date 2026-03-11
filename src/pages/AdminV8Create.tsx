@@ -870,7 +870,9 @@ export default function AdminV8Create() {
         setPipelineProgress(55 + Math.round((i / finalData.sections.length) * 20));
 
         try {
-          const result = await generateOneAudio('section', i, section.content || '');
+          const prevText = i > 0 ? finalData.sections[i - 1].content : undefined;
+          const nxtText = i < finalData.sections.length - 1 ? finalData.sections[i + 1].content : undefined;
+          const result = await generateOneAudio('section', i, section.content || '', prevText, nxtText);
           if (result) {
             audioResults.push(result);
             totalSizeKB += result.sizeKB;
