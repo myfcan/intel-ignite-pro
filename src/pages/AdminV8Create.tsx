@@ -303,7 +303,7 @@ export default function AdminV8Create() {
       const audioStartTime = Date.now();
       const cacheBuster = `?t=${Date.now()}`;
 
-      const generateOneAudio = async (type: string, index: number, text: string): Promise<AudioResult | null> => {
+      const generateOneAudio = async (type: string, index: number, text: string, previousText?: string, nextText?: string): Promise<AudioResult | null> => {
         if (!text?.trim()) return null;
         const res = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-section-audio`,
@@ -314,7 +314,7 @@ export default function AdminV8Create() {
               Authorization: `Bearer ${session.access_token}`,
               apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             },
-            body: JSON.stringify({ lessonId, type, index, text }),
+            body: JSON.stringify({ lessonId, type, index, text, previousText, nextText }),
           }
         );
         if (!res.ok) {
