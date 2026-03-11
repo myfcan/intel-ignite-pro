@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { Json } from "@/integrations/supabase/types";
 import { V7PipelineMonitor, PipelineStep, PipelineLog } from "@/components/admin/V7PipelineMonitor";
 import { parseFullContent, ParseResult } from "@/lib/v8ContentParser";
 import { V8SectionSetup } from "@/components/admin/V8SectionSetup";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ─── Types ───
 interface AudioResult {
