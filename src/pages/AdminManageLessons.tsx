@@ -454,7 +454,7 @@ export default function AdminManageLessons() {
                             )}
                           </CardDescription>
                         </div>
-                        {trail.trail_type !== 'v8' && trail.courses.length === 0 && (
+                        {trail.courses.length === 0 && (
                           <Badge variant="outline" className="border-amber-400 text-amber-600 text-xs">
                             Sem jornadas
                           </Badge>
