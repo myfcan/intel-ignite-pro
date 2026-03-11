@@ -23,11 +23,17 @@ interface ParsedQuiz {
 // parseFullContent — Master function
 // ═══════════════════════════════════════════════
 
+export interface ExerciseMarkerWithIndex {
+  afterSectionIndex: number;
+  type: string;
+}
+
 export interface ParseResult extends V8LessonData {
   hasManualExercises: boolean;
   hasManualQuizzes: boolean;
   hasManualPlaygrounds: boolean;
   manualExerciseTypes: string[];
+  manualExerciseMarkers: ExerciseMarkerWithIndex[];
 }
 
 export function parseFullContent(rawText: string): ParseResult {
