@@ -1141,8 +1141,34 @@ export default function AdminV8Create() {
                 min={1}
               />
             </div>
+            <div>
+              <label className="text-[11px] font-medium text-slate-500 mb-1 block">Trilha (N1)</label>
+              <Select value={selectedTrailId} onValueChange={(v) => { setSelectedTrailId(v); setSelectedCourseId(''); }}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 rounded-xl text-sm">
+                  <SelectValue placeholder="Selecione a trilha" />
+                </SelectTrigger>
+                <SelectContent>
+                  {trails.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-slate-500 mb-1 block">Jornada (N2)</label>
+              <Select value={selectedCourseId} onValueChange={setSelectedCourseId} disabled={!selectedTrailId || coursesForTrail.length === 0}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 rounded-xl text-sm">
+                  <SelectValue placeholder={!selectedTrailId ? "Selecione a trilha primeiro" : coursesForTrail.length === 0 ? "Nenhuma jornada" : "Selecione a jornada"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {coursesForTrail.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <p className="text-[10px] text-slate-500 mt-2">💡 Após criar, use o Gerenciador de Lições para mover a aula para uma trilha.</p>
+          <p className="text-[10px] text-slate-500 mt-2">💡 Selecione trilha e jornada para vincular a aula à hierarquia correta.</p>
         </motion.div>
 
         {/* ─── EDITOR (Content / JSON toggle) ─── */}
