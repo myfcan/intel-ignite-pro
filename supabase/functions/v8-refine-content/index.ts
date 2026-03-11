@@ -54,7 +54,9 @@ CONGRUÊNCIA GRAMATICAL OBRIGATÓRIA:
 - Todos os textos DEVEM ter concordância sujeito-verbo e gênero-número correta.
 - ERRO CLÁSSICO: "Sou um casal" → CORRETO: "Somos um casal". Sujeito coletivo/plural exige verbo concordante.
 - Outros erros proibidos: "Nós é" → "Nós somos", "A gente vamos" → "A gente vai", "Eu e minha esposa vai" → "Eu e minha esposa vamos".
-- Revise CADA frase para garantir concordância antes de retornar.`;
+- Revise CADA frase para garantir concordância antes de retornar.
+
+14. **Sem caracteres não-latinos**: NUNCA insira caracteres de outros alfabetos (Devanagari, Cirílico, Árabe, CJK, Tailandês, Coreano). Todo o texto deve usar exclusivamente o alfabeto latino com acentos portugueses (á, é, í, ó, ú, ã, õ, ç, etc.). Se encontrar palavras em outros scripts no texto original, substitua pelo equivalente em português.`;
 
 const REFINE_TOOLS = [
   {
@@ -108,12 +110,12 @@ function sanitizePedagogicalText(text: string): string {
   return text
     .replace(/(^|\n)\s*(?:Segmento\s+vida\s+real\s+desta\s+atividade|Atividade\s+prática|Atividade\s+pratica|Contexto\s+real)\s*:[^\n]*(?=\n|$)/gi, '$1')
     .replace(/(^|\n)\s*(?:Responda rapidamente[^\n]*|Confie nos seus instintos[^\n]*|Sem pensar muito[^\n]*|Responda agora[^\n]*)(?=\n|$)/gi, '$1')
+    // Strip non-Latin scripts (Devanagari, Bengali, Gurmukhi, Arabic, Cyrillic, CJK, Japanese, Thai, Korean)
+    .replace(/[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F\uAC00-\uD7AF]/g, '')
     // Strip bracket tags EXCEPT ElevenLabs emotion tags and structural markers
     .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
       const normalized = inner.toLowerCase().trim();
-      // Preserve ElevenLabs emotion/prosody tags
       if (ELEVENLABS_EMOTION_TAGS.has(normalized)) return match;
-      // Preserve structural markers (QUIZ, PLAYGROUND, EXERCISE:*)
       if (/^(quiz|playground|exercise:[a-z_-]+)$/i.test(inner.trim())) return match;
       return '';
     })

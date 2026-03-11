@@ -36,6 +36,8 @@ export function sanitizeV8PedagogicalText(text: string): string {
   return text
     .replace(META_LABEL_LINE_REGEX, "$1")
     .replace(RUSH_LINE_REGEX, "$1")
+    // Strip non-Latin scripts (Devanagari, Bengali, Gurmukhi, Arabic, Cyrillic, CJK, Japanese, Thai, Korean)
+    .replace(/[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F\uAC00-\uD7AF]/g, '')
     // Strip bracket tags EXCEPT ElevenLabs emotion tags, structural markers, and markdown links
     .replace(/\[([^\]]{1,40})\]/gi, (match, inner) => {
       // Preserve markdown link text [text](url)
