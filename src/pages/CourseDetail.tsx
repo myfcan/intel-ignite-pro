@@ -6,6 +6,7 @@ import { ArrowLeft, Lock, CheckCircle2, Clock, Play, Trophy } from 'lucide-react
 import { motion } from 'framer-motion';
 import { getLessonIcon } from '@/utils/lessonIconMap';
 import { V8CertificateCard } from '@/components/lessons/v8/V8CertificateCard';
+import { CourseDetailSkeleton } from '@/components/skeletons';
 
 interface Lesson {
   id: string;
