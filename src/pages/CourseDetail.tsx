@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Lock, CheckCircle2, Clock, Play, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getLessonIcon } from '@/utils/lessonIconMap';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { V8CertificateCard } from '@/components/lessons/v8/V8CertificateCard';
 
 interface Lesson {
@@ -40,34 +39,23 @@ const CourseDetail = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
-  const [userId, setUserId] = useState<string | undefined>(undefined);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const initializeUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/auth');
-        return;
-      }
-      setUserId(session.user.id);
-    };
-    initializeUser();
-  }, []);
-
-  const { isAdmin, loading: adminLoading } = useIsAdmin(userId);
-
-  useEffect(() => {
-    if (userId) fetchCourseData();
-  }, [id, userId]);
+    if (id) fetchCourseData();
+  }, [id]);
 
   const fetchCourseData = async () => {
     try {
+      // Single getSession call
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate('/auth'); return; }
+      const uid = session.user.id;
 
+      // Step 1: fetch course (need trail_id for next step)
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select('*')
+        .select('id, trail_id, title, description, icon, order_index')
         .eq('id', id)
         .single();
 
@@ -75,33 +63,43 @@ const CourseDetail = () => {
       setCourse(courseData);
       setTrailId(courseData.trail_id);
 
-      const { data: trailData } = await supabase
-        .from('trails')
-        .select('trail_type, title')
-        .eq('id', courseData.trail_id)
-        .single();
-      setTrailType(trailData?.trail_type ?? null);
-      setTrailTitle(trailData?.title ?? null);
+      // Step 2: Parallel fetch — trail, lessons, progress, roles
+      const [trailResult, lessonsResult, progressResult, rolesResult] = await Promise.all([
+        supabase
+          .from('trails')
+          .select('trail_type, title')
+          .eq('id', courseData.trail_id)
+          .single(),
+        supabase
+          .from('lessons')
+          .select('id, title, description, order_index, estimated_time, difficulty_level, is_active, lesson_type, model')
+          .eq('course_id', id)
+          .eq('is_active', true)
+          .order('order_index'),
+        supabase
+          .from('user_progress')
+          .select('lesson_id, status')
+          .eq('user_id', uid)
+          .in('status', ['completed']),
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', uid),
+      ]);
 
-      const { data: lessonsData, error: lessonsError } = await supabase
-        .from('lessons')
-        .select('*')
-        .eq('course_id', id)
-        .eq('is_active', true)
-        .order('order_index');
+      setTrailType(trailResult.data?.trail_type ?? null);
+      setTrailTitle(trailResult.data?.title ?? null);
 
-      if (lessonsError) throw lessonsError;
-      setLessons(lessonsData || []);
+      if (lessonsResult.error) throw lessonsResult.error;
+      setLessons(lessonsResult.data || []);
 
-      const { data: progressData } = await supabase
-        .from('user_progress')
-        .select('lesson_id, status')
-        .eq('user_id', session.user.id)
-        .in('status', ['completed']);
-
-      if (progressData) {
-        setCompletedLessons(progressData.map(p => p.lesson_id));
+      if (progressResult.data) {
+        setCompletedLessons(progressResult.data.map(p => p.lesson_id));
       }
+
+      // Inline admin check (replaces useIsAdmin hook)
+      const roles = (rolesResult.data || []).map(r => r.role);
+      setIsAdmin(roles.includes('admin') || roles.includes('supervisor'));
     } catch (error: any) {
       console.error('Error fetching course:', error);
       toast({ title: "Erro ao carregar curso", description: error.message, variant: "destructive" });
