@@ -1,113 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Lock, CheckCircle2, Clock, Play, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getLessonIcon } from '@/utils/lessonIconMap';
 import { V8CertificateCard } from '@/components/lessons/v8/V8CertificateCard';
 import { CourseDetailSkeleton } from '@/components/skeletons';
-
-interface Lesson {
-  id: string;
-  title: string;
-  description: string;
-  order_index: number;
-  estimated_time: number;
-  difficulty_level: string;
-  is_active: boolean;
-  lesson_type?: string;
-  model?: string;
-}
-
-interface Course {
-  id: string;
-  trail_id: string;
-  title: string;
-  description: string | null;
-  icon: string | null;
-  order_index: number;
-}
+import { useCourseDetailQuery } from '@/hooks/useCourseDetailQuery';
 
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [course, setCourse] = useState<Course | null>(null);
-  const [trailId, setTrailId] = useState<string | null>(null);
-  const [trailType, setTrailType] = useState<string | null>(null);
-  const [trailTitle, setTrailTitle] = useState<string | null>(null);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
 
+  const { data, isLoading, error } = useCourseDetailQuery(id);
+
+  // Handle auth error
   useEffect(() => {
-    if (id) fetchCourseData();
-  }, [id]);
-
-  const fetchCourseData = async () => {
-    try {
-      // Single getSession call
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate('/auth'); return; }
-      const uid = session.user.id;
-
-      // Step 1: fetch course (need trail_id for next step)
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('id, trail_id, title, description, icon, order_index')
-        .eq('id', id)
-        .single();
-
-      if (courseError) throw courseError;
-      setCourse(courseData);
-      setTrailId(courseData.trail_id);
-
-      // Step 2: Parallel fetch — trail, lessons, progress, roles
-      const [trailResult, lessonsResult, progressResult, rolesResult] = await Promise.all([
-        supabase
-          .from('trails')
-          .select('trail_type, title')
-          .eq('id', courseData.trail_id)
-          .single(),
-        supabase
-          .from('lessons')
-          .select('id, title, description, order_index, estimated_time, difficulty_level, is_active, lesson_type, model')
-          .eq('course_id', id)
-          .eq('is_active', true)
-          .order('order_index'),
-        supabase
-          .from('user_progress')
-          .select('lesson_id, status')
-          .eq('user_id', uid)
-          .in('status', ['completed']),
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', uid),
-      ]);
-
-      setTrailType(trailResult.data?.trail_type ?? null);
-      setTrailTitle(trailResult.data?.title ?? null);
-
-      if (lessonsResult.error) throw lessonsResult.error;
-      setLessons(lessonsResult.data || []);
-
-      if (progressResult.data) {
-        setCompletedLessons(progressResult.data.map(p => p.lesson_id));
-      }
-
-      // Inline admin check (replaces useIsAdmin hook)
-      const roles = (rolesResult.data || []).map(r => r.role);
-      setIsAdmin(roles.includes('admin') || roles.includes('supervisor'));
-    } catch (error: any) {
-      console.error('Error fetching course:', error);
+    if (error?.message === 'NOT_AUTHENTICATED') {
+      navigate('/auth');
+    } else if (error) {
       toast({ title: "Erro ao carregar curso", description: error.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error]);
+
+  const course = data?.course ?? null;
+  const trailId = course?.trail_id ?? null;
+  const trailType = data?.trailType ?? null;
+  const trailTitle = data?.trailTitle ?? null;
+  const lessons = data?.lessons ?? [];
+  const completedLessons = data?.completedLessonIds ?? [];
+  const isAdmin = data?.isAdmin ?? false;
 
   const getLessonStatus = (lesson: Lesson, index: number) => {
     if (completedLessons.includes(lesson.id)) return 'completed';
