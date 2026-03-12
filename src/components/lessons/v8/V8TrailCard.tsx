@@ -46,9 +46,15 @@ export const V8TrailCard = ({
   navigateToId,
 }: V8TrailCardProps) => {
   const navigate = useNavigate();
+  const prefetch = usePrefetchCourseDetailData();
   const progress = lessonCount > 0 ? Math.round((completedCount / lessonCount) * 100) : 0;
   const theme = V8_THEMES[(orderIndex - 1) % V8_THEMES.length];
   const destination = navigateToId ? `/course/${navigateToId}` : `/v8-trail/${trailId}`;
+  const prefetchId = navigateToId || null;
+
+  const handlePrefetch = () => {
+    if (prefetchId) prefetch(prefetchId);
+  };
 
   return (
     <motion.div
