@@ -63,6 +63,8 @@ export const V8TrailCard = ({
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.3 }}
       onClick={() => navigate(destination)}
+      onMouseEnter={handlePrefetch}
+      onTouchStart={handlePrefetch}
       className="group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer w-full"
       style={{
         scrollSnapAlign: 'start',

@@ -51,6 +51,8 @@ const CourseCard = ({
       transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
       whileHover={!isLocked ? { y: -4, scale: 1.01 } : undefined}
       onClick={handleClick}
+      onMouseEnter={handlePrefetch}
+      onTouchStart={handlePrefetch}
       className={`group relative bg-white rounded-2xl border overflow-hidden transition-all duration-300 ${
         isLocked
           ? 'opacity-50 cursor-not-allowed border-gray-200'
