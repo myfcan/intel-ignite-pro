@@ -125,6 +125,7 @@ const PATENT_NAMES: Record<number, string> = {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  usePrefetchCourseDetail();
   const [user, setUser] = useState<User | null>(null);
   const [trails, setTrails] = useState<Trail[]>([]);
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
