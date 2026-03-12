@@ -108,14 +108,7 @@ export default function V8TrailDetail() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 text-violet-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 text-sm">Carregando trilha...</p>
-        </div>
-      </div>
-    );
+    return <V8TrailDetailSkeleton />;
   }
 
   if (!trail) {
