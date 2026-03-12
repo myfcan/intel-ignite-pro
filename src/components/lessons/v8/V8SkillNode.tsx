@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, Lock, Play } from "lucide-react";
+import { CheckCircle2, Lock, Play, Star } from "lucide-react";
 import { getLessonIcon } from "@/utils/lessonIconMap";
 
 export type NodeStatus = "completed" | "in_progress" | "available" | "locked";
@@ -13,34 +13,11 @@ interface V8SkillNodeProps {
   onClick: () => void;
 }
 
-const STATUS_STYLES: Record<NodeStatus, { bg: string; shadow: string; border: string }> = {
-  completed: {
-    bg: "linear-gradient(135deg, hsl(258 90% 56%), hsl(270 76% 68%))",
-    shadow: "0 6px 20px rgba(124, 58, 237, 0.35)",
-    border: "2.5px solid hsl(258, 70%, 75%)",
-  },
-  in_progress: {
-    bg: "linear-gradient(135deg, hsl(258 90% 56%), hsl(270 76% 68%))",
-    shadow: "0 6px 24px rgba(124, 58, 237, 0.45)",
-    border: "2.5px solid hsl(258, 80%, 70%)",
-  },
-  available: {
-    bg: "hsl(258, 40%, 85%)",
-    shadow: "0 3px 10px rgba(124, 58, 237, 0.12)",
-    border: "2px solid hsl(258, 30%, 88%)",
-  },
-  locked: {
-    bg: "hsl(250, 15%, 92%)",
-    shadow: "0 2px 4px rgba(0,0,0,0.04)",
-    border: "1.5px solid hsl(250, 10%, 88%)",
-  },
-};
-
 export const V8SkillNode = ({ title, status, index, isFirst, onClick }: V8SkillNodeProps) => {
   const isLocked = status === "locked";
   const isCompleted = status === "completed";
   const isInProgress = status === "in_progress";
-  const style = STATUS_STYLES[status];
+  const isAvailable = status === "available";
 
   const IconComponent = isLocked
     ? Lock
@@ -50,44 +27,94 @@ export const V8SkillNode = ({ title, status, index, isFirst, onClick }: V8SkillN
         ? Play
         : getLessonIcon(title);
 
+  // 3D isometric colors
+  const mainBg = isCompleted
+    ? "linear-gradient(135deg, hsl(258 80% 58%), hsl(270 70% 62%))"
+    : isInProgress
+      ? "linear-gradient(135deg, hsl(258 75% 55%), hsl(270 65% 60%))"
+      : isAvailable
+        ? "linear-gradient(135deg, hsl(258 50% 78%), hsl(270 45% 82%))"
+        : "linear-gradient(135deg, hsl(240 10% 88%), hsl(240 8% 84%))";
+
+  const bottomBg = isCompleted
+    ? "hsl(258 70% 42%)"
+    : isInProgress
+      ? "hsl(258 65% 40%)"
+      : isAvailable
+        ? "hsl(258 35% 66%)"
+        : "hsl(240 8% 72%)";
+
+  const shadowColor = isCompleted || isInProgress
+    ? "rgba(124, 58, 237, 0.35)"
+    : isAvailable
+      ? "rgba(124, 58, 237, 0.15)"
+      : "rgba(0,0,0,0.06)";
+
   return (
     <motion.button
-      initial={{ opacity: 0, scale: 0.6 }}
+      initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.35, delay: index * 0.06, type: "spring", stiffness: 220 }}
-      whileHover={!isLocked ? { scale: 1.08 } : undefined}
-      whileTap={!isLocked ? { scale: 0.94 } : undefined}
+      transition={{ duration: 0.35, delay: index * 0.06, type: "spring", stiffness: 200 }}
+      whileHover={!isLocked ? { scale: 1.1, y: -2 } : undefined}
+      whileTap={!isLocked ? { scale: 0.92 } : undefined}
       onClick={isLocked ? undefined : onClick}
       disabled={isLocked}
-      className={`relative w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-        isLocked ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
-      }`}
-      style={{
-        background: style.bg,
-        boxShadow: style.shadow,
-        border: style.border,
-      }}
+      className={`relative flex-shrink-0 ${isLocked ? "opacity-45 cursor-not-allowed" : "cursor-pointer"}`}
       aria-label={`Aula ${index + 1}: ${title}`}
     >
-      <IconComponent className={`w-9 h-9 ${isLocked ? "text-gray-400" : status === "available" ? "text-violet-600" : "text-white"}`} />
+      {/* 3D bottom layer */}
+      <div
+        className="absolute w-[72px] h-[72px] rounded-full"
+        style={{
+          background: bottomBg,
+          top: 5,
+          left: 0,
+        }}
+      />
 
-      {/* Pulse ring for in-progress */}
-      {isInProgress && (
-        <motion.div
-          className="absolute inset-0 rounded-2xl"
-          style={{ border: "2px solid hsl(258, 70%, 70%)" }}
-          animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      {/* Main circle */}
+      <div
+        className="relative w-[72px] h-[72px] rounded-full flex items-center justify-center"
+        style={{
+          background: mainBg,
+          boxShadow: `0 6px 20px ${shadowColor}`,
+          border: isCompleted || isInProgress
+            ? "3px solid hsla(258, 60%, 75%, 0.6)"
+            : isAvailable
+              ? "3px solid hsla(258, 30%, 88%, 0.8)"
+              : "2.5px solid hsla(240, 8%, 82%, 0.6)",
+        }}
+      >
+        <IconComponent
+          className={`w-8 h-8 ${
+            isLocked
+              ? "text-muted-foreground/60"
+              : isAvailable
+                ? "text-violet-700"
+                : "text-white"
+          }`}
         />
-      )}
 
-      {/* Completion check ring */}
-      {isCompleted && (
+        {/* Completed star badge */}
+        {isCompleted && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: index * 0.06 + 0.3, type: "spring" }}
+            className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center shadow-md"
+          >
+            <Star className="w-4 h-4 text-white" fill="white" />
+          </motion.div>
+        )}
+      </div>
+
+      {/* Pulse ring for in-progress / available */}
+      {(isInProgress || (isAvailable && isFirst)) && (
         <motion.div
-          className="absolute inset-0 rounded-2xl"
-          style={{ border: "2px solid hsl(258, 60%, 72%)" }}
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0, 0.3] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 w-[72px] h-[72px] rounded-full"
+          style={{ border: "2.5px solid hsl(258, 65%, 65%)" }}
+          animate={{ scale: [1, 1.22, 1], opacity: [0.5, 0, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
       )}
     </motion.button>

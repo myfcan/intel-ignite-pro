@@ -5,8 +5,10 @@ import { ArrowLeft, Lock, CheckCircle2, Clock, Play, Trophy } from 'lucide-react
 import { motion } from 'framer-motion';
 import { getLessonIcon } from '@/utils/lessonIconMap';
 import { V8CertificateCard } from '@/components/lessons/v8/V8CertificateCard';
+import { V8SkillTree } from '@/components/lessons/v8/V8SkillTree';
 import { CourseDetailSkeleton } from '@/components/skeletons';
 import { useCourseDetailQuery, type Lesson } from '@/hooks/useCourseDetailQuery';
+import type { NodeStatus } from '@/components/lessons/v8/V8SkillNode';
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -139,89 +141,31 @@ const CourseDetail = () => {
               trailTitle={trailTitle || course.title}
             />
 
-            {/* Lessons List */}
-            <div className="flex-1 min-w-0 space-y-3">
+            {/* Skill Tree */}
+            <div className="flex-1 min-w-0">
               {lessons.length > 0 ? (
-                lessons.map((lesson, index) => {
-                  const status = getLessonStatus(lesson, index);
-                  const isLocked = status === 'locked';
-                  const isCompleted = status === 'completed';
-
-                  return (
-                    <motion.div
-                      key={lesson.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.08, duration: 0.3 }}
-                      onClick={() => handleLessonClick(lesson, status)}
-                      className={`group bg-white rounded-2xl border border-gray-100 shadow-sm p-4 transition-all duration-200 ${
-                        isLocked
-                          ? 'opacity-60 cursor-not-allowed'
-                          : 'cursor-pointer hover:border-violet-200 hover:shadow-md'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                            isCompleted
-                              ? 'bg-gradient-to-br from-amber-400 to-orange-500'
-                              : isLocked
-                                ? 'bg-gray-100'
-                                : 'bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 group-hover:from-violet-100 group-hover:to-indigo-100'
-                          }`}
-                        >
-                          {isCompleted ? (
-                            <Trophy className="w-5 h-5 text-white" />
-                          ) : isLocked ? (
-                            <Lock className="w-5 h-5 text-gray-400" />
-                          ) : (
-                            (() => { const LIcon = getLessonIcon(lesson.title); return <LIcon className="w-5 h-5 text-violet-600" />; })()
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider">
-                            Aula {index + 1}
-                          </p>
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {lesson.title}
-                          </p>
-                          {lesson.description && (
-                            <p className="text-xs text-gray-500 truncate mt-0.5">{lesson.description}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {isCompleted && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-semibold rounded-full">
-                              <CheckCircle2 className="w-3 h-3" />
-                              Concluída
-                            </span>
-                          )}
-                          <div className="flex items-center gap-1 text-xs text-gray-400">
-                            <Clock className="w-3 h-3" />
-                            <span>{lesson.estimated_time || 10}min</span>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Progress bar */}
-                      {!isLocked && (
-                        <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <motion.div
-                            className={`h-full rounded-full ${
-                              isCompleted
-                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                                : 'bg-gradient-to-r from-violet-500 to-indigo-500'
-                            }`}
-                            initial={{ width: 0 }}
-                            animate={{ width: isCompleted ? '100%' : '0%' }}
-                            transition={{ delay: index * 0.08 + 0.3, duration: 0.6, ease: "easeOut" }}
-                          />
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })
+                <V8SkillTree
+                  lessons={lessons.map((lesson, index) => {
+                    const rawStatus = getLessonStatus(lesson, index);
+                    const status: NodeStatus = rawStatus === 'unlocked'
+                      ? (index === 0 || completedLessons.includes(lessons[index - 1]?.id) ? 'available' : 'available')
+                      : rawStatus as NodeStatus;
+                    return {
+                      id: lesson.id,
+                      title: lesson.title,
+                      description: lesson.description || undefined,
+                      estimatedTime: lesson.estimated_time || undefined,
+                      status,
+                    };
+                  })}
+                  onLessonClick={(lessonId) => {
+                    const lesson = lessons.find(l => l.id === lessonId);
+                    if (lesson) handleLessonClick(lesson, getLessonStatus(lesson, lessons.indexOf(lesson)));
+                  }}
+                  allCompleted={allCompleted}
+                />
               ) : (
-                <div className="text-center py-12 text-gray-500 text-sm">
+                <div className="text-center py-12 text-muted-foreground text-sm">
                   Nenhuma aula disponível nesta jornada ainda.
                 </div>
               )}

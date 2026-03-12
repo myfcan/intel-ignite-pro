@@ -4,6 +4,7 @@ import { Trophy, Zap, Coins, Flame, ArrowRight, RotateCcw } from "lucide-react";
 import confetti from "canvas-confetti";
 import { registerGamificationEvent } from "@/services/gamification";
 import { V8LessonRating } from "./V8LessonRating";
+import { V8StreakCelebration } from "./V8StreakCelebration";
 import { PASS_SCORE } from "@/constants/v8Rules";
 import { updateMissionProgress } from "@/lib/updateMissionProgress";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,8 @@ export const V8CompletionScreen = ({
     isNewPatent: boolean;
   } | null>(null);
   const [streakDays, setStreakDays] = useState(0);
+  const [isFirstLesson, setIsFirstLesson] = useState(false);
+  const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const hasRegistered = useRef(false);
   const { playSound } = useV7SoundEffects(0.6, true);
@@ -53,8 +56,6 @@ export const V8CompletionScreen = ({
             patentName: result.patent_name ?? "",
             isNewPatent: result.is_new_patent ?? false,
           });
-
-          // Play level-up sound for new patent (synced with animation delay)
           if (result.is_new_patent) {
             setTimeout(() => playSound("level-up"), 1200);
           }
@@ -71,51 +72,38 @@ export const V8CompletionScreen = ({
 
     register();
 
-    // Play success sound & confetti only when there's a meaningful score
     if (avgScore > 0) {
       playSound("success");
-
-      // First confetti burst
       setTimeout(() => {
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ["#6366f1", "#8b5cf6", "#10b981", "#fbbf24"],
-        });
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ["#6366f1", "#8b5cf6", "#10b981", "#fbbf24"] });
       }, 400);
-
-      // Second confetti burst for extra celebration
       setTimeout(() => {
-        confetti({
-          particleCount: 80,
-          spread: 100,
-          origin: { y: 0.5, x: 0.3 },
-          colors: ["#f59e0b", "#ec4899", "#6366f1"],
-        });
-        confetti({
-          particleCount: 80,
-          spread: 100,
-          origin: { y: 0.5, x: 0.7 },
-          colors: ["#10b981", "#8b5cf6", "#fbbf24"],
-        });
+        confetti({ particleCount: 80, spread: 100, origin: { y: 0.5, x: 0.3 }, colors: ["#f59e0b", "#ec4899", "#6366f1"] });
+        confetti({ particleCount: 80, spread: 100, origin: { y: 0.5, x: 0.7 }, colors: ["#10b981", "#8b5cf6", "#fbbf24"] });
       }, 1200);
     }
   }, [lessonId, avgScore]);
 
-  // Fetch real streak
+  // Fetch streak + check if first lesson
   useEffect(() => {
-    const fetchStreak = async () => {
+    const fetchStreakAndProgress = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from("user_streaks")
-        .select("current_streak")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setStreakDays(data?.current_streak ?? 0);
+
+      const [streakRes, progressRes] = await Promise.all([
+        supabase.from("user_streaks").select("current_streak").eq("user_id", user.id).maybeSingle(),
+        supabase.from("user_progress").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "completed"),
+      ]);
+
+      const streak = streakRes.data?.current_streak ?? 0;
+      setStreakDays(streak);
+
+      const completedCount = progressRes.count ?? 0;
+      if (completedCount <= 1 && streak >= 1) {
+        setIsFirstLesson(true);
+      }
     };
-    fetchStreak();
+    fetchStreakAndProgress();
   }, []);
 
   const xp = gamificationResult?.xpDelta ?? 40;
@@ -134,6 +122,15 @@ export const V8CompletionScreen = ({
   }, [playSound]);
 
   const handleNextLesson = () => {
+    if (isFirstLesson && streakDays >= 1) {
+      setShowStreakCelebration(true);
+    } else {
+      setShowRatingModal(true);
+    }
+  };
+
+  const handleStreakClose = () => {
+    setShowStreakCelebration(false);
     setShowRatingModal(true);
   };
 
@@ -165,7 +162,7 @@ export const V8CompletionScreen = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-3xl font-bold text-slate-900"
+            className="text-3xl font-bold text-foreground"
           >
             Aula Concluída!
           </motion.h2>
@@ -174,7 +171,7 @@ export const V8CompletionScreen = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="text-slate-500 text-sm"
+              className="text-muted-foreground text-sm"
             >
               Score médio: {avgScore}%
             </motion.p>
@@ -188,22 +185,20 @@ export const V8CompletionScreen = ({
           transition={{ delay: 0.5 }}
           className="grid grid-cols-3 gap-3 w-full max-w-sm"
         >
-          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-border bg-muted/50">
             <Zap className="w-5 h-5 text-indigo-500" />
             <CountUp value={xp} delay={600} onTick={handlePlayCountSound} onComplete={handleXpComplete} />
-            <span className="text-[11px] text-slate-500 font-medium">XP</span>
+            <span className="text-[11px] text-muted-foreground font-medium">XP</span>
           </div>
-          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-border bg-muted/50">
             <Coins className="w-5 h-5 text-amber-500" />
             <CountUp value={coins} delay={800} onTick={handlePlayCountSound} onComplete={handleCoinsComplete} />
-            <span className="text-[11px] text-slate-500 font-medium">Moedas</span>
+            <span className="text-[11px] text-muted-foreground font-medium">Moedas</span>
           </div>
-          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+          <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-border bg-muted/50">
             <Flame className="w-5 h-5 text-emerald-500" />
-            <span className="text-xl font-bold text-slate-900 tabular-nums">
-              {streakDays}
-            </span>
-            <span className="text-[11px] text-slate-500 font-medium">Dias</span>
+            <span className="text-xl font-bold text-foreground tabular-nums">{streakDays}</span>
+            <span className="text-[11px] text-muted-foreground font-medium">Dias</span>
           </div>
         </motion.div>
 
@@ -238,13 +233,20 @@ export const V8CompletionScreen = ({
           {onBackToTrail && (
             <button
               onClick={onBackToTrail}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100 text-sm transition-colors"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-muted text-sm transition-colors"
             >
               <RotateCcw className="w-4 h-4" /> Voltar à Trilha
             </button>
           )}
         </motion.div>
       </motion.div>
+
+      {/* Streak Celebration Modal */}
+      <V8StreakCelebration
+        streakDays={streakDays}
+        open={showStreakCelebration}
+        onClose={handleStreakClose}
+      />
 
       {/* Rating Modal */}
       {showRatingModal && (
@@ -258,7 +260,7 @@ export const V8CompletionScreen = ({
   );
 };
 
-// --- CountUp micro-component with sound callbacks ---
+// --- CountUp micro-component ---
 const CountUp = ({
   value,
   delay = 0,
@@ -283,13 +285,10 @@ const CountUp = ({
       const interval = setInterval(() => {
         frame++;
         setDisplay(Math.min(Math.round(step * frame), value));
-
-        // Play tick sound every 5 frames to avoid audio spam
         tickCounter.current++;
         if (onTick && tickCounter.current % 5 === 0) {
           onTick();
         }
-
         if (frame >= totalFrames) {
           clearInterval(interval);
           onComplete?.();
@@ -301,6 +300,6 @@ const CountUp = ({
   }, [value, delay]);
 
   return (
-    <span className="text-xl font-bold text-slate-900 tabular-nums">+{display}</span>
+    <span className="text-xl font-bold text-foreground tabular-nums">+{display}</span>
   );
 };
