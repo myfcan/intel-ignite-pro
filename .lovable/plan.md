@@ -1,184 +1,100 @@
 
-# Espelho Completo V8 — 25 Categorias (~35 arquivos)
 
-## Auditoria Final: Todas as Melhorias Mapeadas
+# Análise de Gaps do Plano — 4 Correções V8 Mobile
 
----
-
-## CAT 1: Renderização Markdown (V8ContentSection)
-- Bold: `font-semibold text-primary`
-- Itálico: highlight marker `bg-primary/10 px-1.5 py-0.5 rounded-md`
-- Listas: container `bg-muted/50 rounded-xl border-border/40`, bullets `bg-primary/60`
-- Blockquotes: callout `border-l-4 border-primary/40 bg-primary/5 rounded-r-xl`
-- Code inline: `bg-muted text-primary rounded-md font-mono`
-- Base: `text-[16.5px] leading-[1.85] tracking-[-0.01em]`
-- Sanitização: `v8TextSanitizer.ts` remove marcadores narração
-- Título: strip automático "Seção X —" via `cleanSectionTitle()`
-
-## CAT 2: Imagens — V8TrimmedImage
-- Trim automático via bounding box (alpha<10, dist<30)
-- Cache in-memory `trimmedImageCache` com `TRIM_VERSION=2`
-- Shimmer loading + fade-in 500ms + `img.decode()` assíncrono
-- Posição: antes do markdown, centralizada, `max-w-[300px] rounded-2xl`
-
-## CAT 3: Scroll & Âncoras (v8ScrollUtils)
-- Âncora estática `scroll-margin-top: 88px` separada do motion.div
-- Drift correction 420ms pós-scroll (threshold 4px)
-- Double-rAF antes do scroll
-- CTA scroll: 300ms + 600ms safety-net
-- Safe zones: TOP=88px, BOTTOM=120px, DELTA=16px
-
-## CAT 4: Player UI (V8LessonPlayer)
-- Background: `bg-white text-slate-900` (Premium Light)
-- Hide scrollbar, padding unificado `pb-36`
-- Barra fixa bottom: `bg-white/95 backdrop-blur-sm`
-- Animação entrada: `opacity 0→1, y 14→0` condicional
-- Preload áudio do próximo item
-
-## CAT 5: Header & Progresso (V8Header)
-- Barra progresso: `h-1 bg-gradient-to-r from-indigo-500 to-violet-500`
-- Glassmorphism: `bg-white/90 backdrop-blur-lg`
-- Contador: `tabular-nums text-[11px]`
-- Report button + drawer de navegação por seções
-
-## CAT 6: Audio Player (V8AudioPlayer)
-- Play button: gradiente `indigo-500 → violet-500`, 36px
-- Progress bar clicável `h-1.5`
-- Velocidade: ciclo `1x → 1.25x → 1.5x → 2x`
-- Timer `font-mono tabular-nums`
-- Loading: spinner + animate-pulse
-
-## CAT 7: Audio-First Lock (useAudioFirstLock + V8AudioLockOverlay)
-- Lock: `opacity-40 pointer-events-none` durante narração
-- Overlay: `Headphones animate-pulse` + mensagem
-- Unlock visual: `ring-2 ring-indigo-400/60` por 1.5s
-- Escopo: V8InlineExercise, V8CompleteSentenceInline, V8QuizInline, V8QuizTrueFalse, V8QuizFillBlank (modo dual: texto + chips)
-
-## CAT 8: Exercícios Inline (8 tipos)
-1. **Multiple Choice** — botões com feedback verde/vermelho, ícone Target
-2. **FlipCard Quiz** — Light Theme, COLOR_MAP/ICON_MAP, confetti localizado, progress bar
-3. **True/False** — 4 afirmações com toggle
-4. **Platform Match** — match cenários↔plataformas, validação defensiva
-5. **Timed Quiz** — 4 timer states, bônus tempo, SFX, max 2 perguntas
-6. **Scenario Selection** — formato dual (simples + completo), scroll integrado
-7. **Fill-in-Blanks** — chips arrastáveis
-8. **Complete Sentence** — lacunas inline com chip bank
-
-## CAT 9: Coursiv Prompt Builder (V8CompleteSentenceInline)
-- Badge: `Puzzle` icon em `bg-cyan-50 border-cyan-200`
-- Blank states: active/filled/empty com cores distintas
-- Word bank: chips shuffled, tap-to-fill, auto-advance
-- Submit: só quando `allFilled`
-- Feedback: erros com `line-through` + correção verde
-- Retry: grid 2 colunas
-- Contrato V8-C01: 4 lacunas, 0 distratores
-
-## CAT 10: Playground Interativo (V8PlaygroundInline)
-- Fases: intro→amateur→professional→compare→challenge→done (acumulativas)
-- Badge: `Sparkles` em `bg-violet-50`
-- Comparação: grid 2 colunas ❌/✅
-- Challenge: avaliação IA via edge function `v8-evaluate-prompt`
-- Anti-copy context, feedback estruturado, max 3 tentativas
-- Reset externo via `useImperativeHandle`
-
-## CAT 11: Insight Reward (V8InsightReward)
-- Card `border-2 border-amber-300 bg-amber-50`
-- Claim idempotente (verifica events antes)
-- Confetti 100 partículas + SFX
-- Estado locked se playground score < 81
-
-## CAT 12: Learn & Grow (V8LearnAndGrowBlock)
-- Design: `border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50`
-- 3 linhas numeradas: whatChanged, beforeAfter, practicalExample
-- Último item do timeline
-
-## CAT 13: Tela de Conclusão (V8CompletionScreen)
-- Troféu com gradiente indigo-violet
-- Stats grid 3 colunas: XP, Moedas, Streak
-- CountUp 750ms com delay escalonado
-- Confetti condicional (só se avgScore > 0)
-- Patent badge com spring animation
-
-## CAT 14: Modal de Avaliação (V8LessonRating)
-- 5 estrelas Lucide com hover/active scale
-- Textarea 500 chars, upsert no banco
-- Thank you auto-close 1.2s
-
-## CAT 15: Mode Selector (V8ModeSelector)
-- 2 cards: Ler (BookOpen) / Ouvir (Headphones)
-- Hover spring animation
-- `unlockAudio()` no iOS
-
-## CAT 16: Gamification & XP (distributed)
-- XP por exercício: `registerGamificationEvent` idempotente
-- Micro-feedback: badge flutuante `+5 XP` animado
-- XP por insight e conclusão
-- `playgroundScores` para conditional insight unlock
-
-## CAT 17: Timeline & Dedup (useV8Player)
-- Ordem: Section→CompleteSentence→InlineExercise→Playground→Insight→Quiz
-- Dedup: inlineExercise tem prioridade sobre quiz legado
-- Preload por tipo: 7 tipos de timeline item
-- Cleanup: `audio.src = ""` no unmount
-
-## CAT 18: Feedback Wrapper (V8InlineExercise)
-- Feedback card: `border-l-4` emerald/amber
-- Retry: `exerciseKey` incrementado para remount
-- Botões: grid 2 colunas (fail) ou full-width (pass)
-- CTA scroll integrado
-
-## CAT 19: Review Gate — Social Proof (V8LessonReviewGate)
-- Reviews determinísticos via hash do lessonId (4 de 5)
-- CTA delay 3s, label dinâmico
-- Bloqueio de fuga (pointerDown + escape)
-- Upsell: Crown → /pricing
-- Design: gradiente violet→indigo, avatares coloridos
-- Animação: cards escalonados 150ms
-
-## CAT 20: Liv Trail Welcome (V8LivTrailWelcome)
-- One-time show via localStorage
-- Delay abertura 600ms, CTA habilita 2s
-- Design Dark: #1F2937→#111827, grid SVG, glow violeta
-- 6 partículas flutuantes animadas
-- Avatar Liv: borda purple, glow radial pulsante, Sparkles girando
-- CTA: gradiente indigo→violet→pink
-
-## CAT 21: Skill Tree (V8SkillTree + V8SkillNode)
-- Layout zigzag: pattern [0,1,0,-1], offset 70px, ROW_HEIGHT=160px
-- Conectores SVG: Bézier quadrática, cor por estado
-- 4 estados visuais: completed, in_progress, available, locked
-- Ícones dinâmicos via getLessonIcon(title)
-- Spring stiffness 220, delay escalonado
-
-## CAT 22: Trail Card (V8TrailCard)
-- V8_ICONS por orderIndex (Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot)
-- 4 temas accent rotacionando
-- Progress bar animada com cor do tema
-
-## CAT 23: Lesson Icon Map (lessonIconMap.ts)
-- 27 keyword→ícone mappings
-- Fallback: BookOpen
-- Usado em: V8LessonCard, V8SkillNode, CourseDetail
-
-## CAT 24: Exercise Error Card (ExerciseErrorCard)
-- Card laranja com AlertTriangle
-- Detalhes técnicos font-mono
-- Link admin sync
-- Usado em 6 exercícios como validação defensiva
-
-## CAT 25: Content Parser (v8ContentParser.ts — 542 linhas)
-- parseFullContent(): extrai título, descrição, seções, playgrounds, quizzes
-- Section 0 auto-criada se conteúdo entre # e ##
-- Meta-filter: ignora parser/fix/TODO/FIXME
-- Sanitização pedagógica integrada
-- Output flags: hasManualExercises, hasManualQuizzes, etc.
+## Veredicto: O plano contém 1 gap CRÍTICO que causará regressão, 1 gap de diagnóstico incorreto, e 2 itens sólidos.
 
 ---
 
-## Utilitários Transversais
-- `v8TextSanitizer.ts` — sanitização de narração
-- `v8ScrollUtils.ts` — scroll helpers
-- `src/index.css` — hide-scrollbar
-- `src/constants/v8Rules.ts` — PASS_SCORE
+## Gap CRÍTICO: Bug 1 — Som duplicado (Double-Play)
 
-**Total: 25 categorias, ~35 arquivos.**
+O plano anterior já adicionou `playSound` ao `V8InlineExercise.tsx` (linha 49):
+```ts
+playSound(didPass ? "quiz-correct" : "quiz-wrong");
+```
+
+**Porém, TODOS os 8 sub-exercícios já possuem seu próprio `useV7SoundEffects` e tocam sons internamente:**
+
+| Exercício | Linha | Sons próprios |
+|---|---|---|
+| TimedQuizExercise | L35 | quiz-correct, quiz-wrong, timer-tick, level-up, streak-bonus |
+| TrueFalseExercise | L39 | quiz-correct, quiz-wrong |
+| MultipleChoiceExercise | L29 | quiz-correct, quiz-wrong |
+| FlipCardQuizExercise | L50 | quiz-correct, quiz-wrong, combo-hit, level-up, completion |
+| ScenarioSelectionExercise | L50 | quiz-correct, quiz-wrong |
+| PlatformMatchExercise | L42 | snap-success, snap-error, level-up, completion |
+| FillInBlanksExercise | L44 | level-up, streak-bonus, error |
+| CompleteSentenceExercise | L35 | completion, success, error |
+
+**Resultado atual**: Cada exercício toca o som DUAS vezes — uma vez internamente, outra vez via `V8InlineExercise.handleComplete`. Isso causa efeitos sonoros sobrepostos/duplicados.
+
+**Correção necessária**: Remover o `playSound` do `V8InlineExercise.handleComplete` (linha 49). Os sub-exercícios já cuidam dos seus próprios sons. O V8InlineExercise NÃO deve duplicar.
+
+---
+
+## Gap de Diagnóstico: Bug 1 & 2 — Causa raiz real do "sem som"
+
+O plano propõe remover `{ once: true }` dos listeners e remover o `sharedAudioContext.close()`. A análise da causa raiz está **parcialmente correta**:
+
+**AudioContext close (linhas 463-469)**: É real — quando `sharedAudioContextUsers` cai a 0 durante transições entre timeline items, após 5s o contexto é fechado. O próximo componente cria um novo contexto que nasce `suspended` no iOS sem gesto do usuário. **Esta correção é válida.**
+
+**`{ once: true }` (linhas 446-448)**: Os listeners de unlock são registrados a cada mount de `useV7SoundEffects`. Como cada sub-exercício e o V8InlineExercise cada um instanciam o hook, os listeners são re-registrados frequentemente. Remover `{ once: true }` fará os listeners persistirem, mas há um risco: cada clique/toque chamará `ctx.resume()` para CADA instância ativa do hook. Com 2+ instâncias simultâneas (V8InlineExercise + sub-exercício), cada toque dispara 2+ chamadas a `resume()`. Isso não é destrutivo, mas é desperdício. **A correção é válida mas o impacto é menor do que descrito.**
+
+**A causa raiz REAL do "sem som" no Timed Quiz e CompletionScreen**: O TimedQuizExercise JÁ tem `playSound` interno. Se o som não saiu, a única causa possível é o AudioContext estar `closed` ou `suspended`. A correção de remover o `close()` resolve isto.
+
+---
+
+## Item sólido: Bug 3 — Shimmer nas estrelas
+
+O plano de adicionar animação golden shimmer em loop com stagger delay por índice está correto. O código atual em `V8LessonRating.tsx` (linhas 155-172) renderiza estrelas estáticas `text-slate-300`. A adição de `framer-motion` animate com loop infinito e parada condicional (`rating > 0`) é implementável sem efeitos colaterais.
+
+---
+
+## Item com diagnóstico incorreto: Bug 4 — Formatação do conteúdo
+
+O plano propõe "enriquecer o markdown renderer para que texto simples tenha visual premium" adicionando auto-detecção de padrões como "Primeiro:", "Segundo:" e renderizando como callout cards.
+
+**Evidência forense**: O `V8ContentSection.tsx` JÁ possui formatação completa:
+- Listas: `bg-muted/50 rounded-xl px-4 py-3 border border-border/40` (linha 214)
+- Bold: `text-primary` (linha 230)
+- Itálico: `bg-primary/10 px-1.5 py-0.5 rounded-md` (linha 233)
+- Blockquote: `border-l-4 border-primary/40 bg-primary/5 rounded-r-xl` (linha 248)
+
+**O problema é de DADOS, não de código.** Se o conteúdo V2 da bridge não usa markdown (sem `**bold**`, sem `- listas`, sem `> blockquotes`), o renderer não tem nada para estilizar. Adicionar heurísticas de auto-detecção (tipo "Primeiro:") cria fragilidade — falsos positivos em conteúdos futuros.
+
+**Abordagem correta**: Verificar se o pipeline da bridge V2 está gerando conteúdo com markdown formatting. Se não estiver, a correção pertence ao pipeline, não ao renderer.
+
+---
+
+## Plano corrigido (3 correções + 1 investigação)
+
+### 1. AudioContext lifecycle — remover close()
+**Arquivo:** `src/components/lessons/v7/cinematic/useV7SoundEffects.ts`
+- Linhas 463-469: remover o bloco que fecha o `sharedAudioContext`
+- Manter o contador `sharedAudioContextUsers` apenas para debug
+- Isto resolve o "sem som" no TimedQuiz e na CompletionScreen
+
+### 2. Remover playSound duplicado do V8InlineExercise
+**Arquivo:** `src/components/lessons/v8/V8InlineExercise.tsx`
+- Linha 49: remover `playSound(didPass ? "quiz-correct" : "quiz-wrong")`
+- Linha 38: remover `const { playSound } = useV7SoundEffects(0.6, true)`
+- Linha 20: remover import de `useV7SoundEffects`
+- Todos os 8 sub-exercícios já tocam sons internamente — o wrapper NÃO deve duplicar
+
+### 3. Shimmer dourado nas estrelas do rating
+**Arquivo:** `src/components/lessons/v8/V8LessonRating.tsx`
+- Adicionar animação `framer-motion` nas estrelas com stagger sequencial (estrela 1→5)
+- Animate: `opacity: [0.3, 1, 0.3]`, `scale: [1, 1.15, 1]` com cor `text-amber-400/fill-amber-400`
+- Condição de parada: `rating > 0` → estrelas fixas, sem shimmer
+- Transition: `repeat: Infinity`, duration 2.5s, delay `i * 0.3`
+
+### 4. Conteúdo — investigar pipeline (NÃO alterar renderer)
+**Ação:** NÃO modificar `V8ContentSection.tsx`. O renderer está correto.
+- Investigar se o prompt da bridge V2 está gerando markdown formatting no conteúdo das seções
+- Se necessário, ajustar o prompt do pipeline para incluir `**bold**`, `- listas` e `> blockquotes`
+
+### Arquivos a editar
+1. `src/components/lessons/v7/cinematic/useV7SoundEffects.ts` — remover close()
+2. `src/components/lessons/v8/V8InlineExercise.tsx` — remover playSound duplicado
+3. `src/components/lessons/v8/V8LessonRating.tsx` — shimmer dourado
+
