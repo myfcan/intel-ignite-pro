@@ -151,24 +151,38 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
                 </p>
               </div>
 
-              {/* Stars */}
+              {/* Stars — golden shimmer loop until user selects */}
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <button
+                  <motion.button
                     key={i}
                     onMouseEnter={() => setHoveredStar(i)}
                     onMouseLeave={() => setHoveredStar(0)}
                     onClick={() => setRating(i)}
                     className="p-1 transition-transform hover:scale-110 active:scale-95"
+                    {...(rating === 0 ? {
+                      animate: {
+                        opacity: [0.35, 1, 0.35],
+                        scale: [1, 1.15, 1],
+                      },
+                      transition: {
+                        duration: 2.5,
+                        repeat: Infinity,
+                        delay: i * 0.3,
+                        ease: "easeInOut",
+                      },
+                    } : {})}
                   >
                     <Star
                       className={`w-9 h-9 transition-colors ${
                         i <= activeRating
                           ? "text-amber-400 fill-amber-400"
-                          : "text-slate-300"
+                          : rating === 0
+                            ? "text-amber-400/60 fill-amber-400/30"
+                            : "text-slate-300"
                       }`}
                     />
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 

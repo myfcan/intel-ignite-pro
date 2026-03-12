@@ -58,7 +58,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
         })
         .catch(() => {});
     }
-  }, [onScore, lessonId, exerciseIndex, playSound]);
+  }, [onScore, lessonId, exerciseIndex]);
 
   const handleRetry = useCallback(() => {
     setCompleted(false);
