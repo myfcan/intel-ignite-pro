@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 const prefetchDashboard = () => import('../pages/Dashboard');
 const prefetchTrailDetail = () => import('../pages/TrailDetail');
 const prefetchOnboarding = () => import('../pages/Onboarding');
+const prefetchCourseDetail = () => import('../pages/CourseDetail');
 
 /**
  * Hook to prefetch frequently accessed pages in the background
