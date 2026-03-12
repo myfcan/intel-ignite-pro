@@ -23,7 +23,7 @@ const getXOffset = (index: number): number => {
   return pattern[index % 4];
 };
 
-const ROW_HEIGHT = 140;
+const ROW_HEIGHT = 150;
 
 export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTreeProps) => {
   const isMobile = useIsMobile();
