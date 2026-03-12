@@ -166,16 +166,21 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
     const cleanTitle = cleanSectionTitle(stripProsodyTagsForDisplay(sanitizeV8PedagogicalText(section.title)));
     const sanitizedContent = stripProsodyTagsForDisplay(sanitizeV8PedagogicalText(section.content));
 
+    let paragraphCount = 0;
+
     return (
       <div
         ref={ref}
         id={`v8-section-${sectionIndex}`}
         className="flex flex-col"
       >
-        {/* 1. Section title */}
-        <h2 className="text-xl font-bold leading-snug text-foreground">
-          {cleanTitle}
-        </h2>
+        {/* 1. Section title with gradient underline */}
+        <div className="flex flex-col gap-2">
+          <h2 className="text-[22px] font-bold leading-tight text-foreground">
+            {cleanTitle}
+          </h2>
+          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-primary to-violet-500 opacity-80" />
+        </div>
 
         {/* 2. Image — BEFORE markdown */}
         {section.imageUrl && (
@@ -188,8 +193,8 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
           </div>
         )}
 
-        {/* 3. Markdown body */}
-        <div className="v8-markdown text-[16.5px] leading-[1.85] tracking-[-0.01em] text-muted-foreground mt-[7px] [&>*:last-child]:mb-0">
+        {/* 3. Markdown body — Premium Editorial */}
+        <div className="v8-markdown text-[16.5px] leading-[1.85] tracking-[-0.01em] text-muted-foreground mt-4 [&>*:last-child]:mb-0">
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
@@ -207,30 +212,42 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
                   {children}
                 </h3>
               ),
-              p: ({ children }) => (
-                <p className="mb-[14px] text-foreground/80">{children}</p>
-              ),
+              p: ({ children }) => {
+                const isFirst = paragraphCount === 0;
+                paragraphCount++;
+                return isFirst ? (
+                  <p className="mb-[18px] text-[17.5px] leading-[1.9] text-foreground/90 first-letter:text-[1.4em] first-letter:font-semibold first-letter:text-primary">
+                    {children}
+                  </p>
+                ) : (
+                  <p className="mb-[18px] text-foreground/75">{children}</p>
+                );
+              },
               ul: ({ children }) => (
-                <ul className="mb-5 space-y-2 ml-0 bg-muted/50 rounded-xl px-4 py-3 border border-border/40">
+                <ul className="mb-5 space-y-2 ml-0 bg-gradient-to-br from-primary/[0.03] to-violet-500/[0.03] rounded-xl px-4 py-3 border border-border/40">
                   {children}
                 </ul>
               ),
               ol: ({ children }) => (
-                <ol className="list-decimal list-inside mb-5 space-y-2 ml-0 bg-muted/50 rounded-xl px-4 py-3 border border-border/40">
+                <ol className="list-decimal list-inside mb-5 space-y-2 ml-0 bg-gradient-to-br from-primary/[0.03] to-violet-500/[0.03] rounded-xl px-4 py-3 border border-border/40">
                   {children}
                 </ol>
               ),
               li: ({ children }) => (
                 <li className="flex items-start gap-2.5 text-foreground/80">
-                  <span className="mt-[10px] block h-[6px] w-[6px] rounded-full bg-primary/60 shrink-0" />
+                  <span className="mt-[10px] block h-[6px] w-[6px] rounded-full bg-gradient-to-br from-primary to-violet-500 shrink-0" />
                   <span className="flex-1">{children}</span>
                 </li>
               ),
               strong: ({ children }) => (
-                <strong className="font-semibold text-primary">{children}</strong>
+                <strong className="font-semibold text-primary bg-primary/[0.06] px-0.5 rounded">
+                  {children}
+                </strong>
               ),
               em: ({ children }) => (
-                <em className="not-italic font-medium text-foreground bg-primary/10 px-1.5 py-0.5 rounded-md">{children}</em>
+                <em className="not-italic font-medium text-foreground bg-gradient-to-r from-primary/10 to-violet-500/10 px-1.5 py-0.5 rounded-md">
+                  {children}
+                </em>
               ),
               code: ({ children, className }) => {
                 const isInline = !className;
@@ -245,12 +262,19 @@ export const V8ContentSection = forwardRef<HTMLDivElement, V8ContentSectionProps
                 );
               },
               blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-primary/40 bg-primary/5 rounded-r-xl pl-5 py-3 my-5 text-foreground/70 italic [&>p]:mb-0">
+                <blockquote className="relative border-l-4 border-transparent bg-primary/[0.04] rounded-r-xl pl-5 py-3 my-5 text-foreground/70 italic shadow-sm [&>p]:mb-0"
+                  style={{ borderImage: 'linear-gradient(to bottom, hsl(var(--primary)), #8b5cf6) 1' }}
+                >
+                  <span className="absolute -left-0.5 top-3 text-primary/30 text-2xl leading-none select-none" aria-hidden>❝</span>
                   {children}
                 </blockquote>
               ),
               hr: () => (
-                <hr className="border-border/60 my-6" />
+                <div className="flex items-center justify-center gap-2 my-8">
+                  <span className="h-1 w-1 rounded-full bg-primary/40" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-primary to-violet-500" />
+                  <span className="h-1 w-1 rounded-full bg-primary/40" />
+                </div>
               ),
             }}
           >
