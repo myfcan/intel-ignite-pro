@@ -66,7 +66,7 @@ const CourseDetail = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <CourseDetailSkeleton />;
   }
 
