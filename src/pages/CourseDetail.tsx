@@ -5,8 +5,10 @@ import { ArrowLeft, Lock, CheckCircle2, Clock, Play, Trophy } from 'lucide-react
 import { motion } from 'framer-motion';
 import { getLessonIcon } from '@/utils/lessonIconMap';
 import { V8CertificateCard } from '@/components/lessons/v8/V8CertificateCard';
+import { V8SkillTree } from '@/components/lessons/v8/V8SkillTree';
 import { CourseDetailSkeleton } from '@/components/skeletons';
 import { useCourseDetailQuery, type Lesson } from '@/hooks/useCourseDetailQuery';
+import type { NodeStatus } from '@/components/lessons/v8/V8SkillNode';
 
 const CourseDetail = () => {
   const { id } = useParams();
