@@ -211,7 +211,7 @@ export const V8LessonPlayer = ({
           )}
 
           {state.phase === "content" && (
-            <div className="flex flex-col gap-[7px]">
+            <div className="flex flex-col gap-4">
               {timeline.slice(0, state.currentIndex + 1).map((item, idx) => {
                 const isLast = idx === state.currentIndex;
                 return (
