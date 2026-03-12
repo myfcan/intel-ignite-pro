@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem, ChevronRight, Building2, Scale, Stethoscope, Lightbulb } from "lucide-react";
+import { usePrefetchCourseDetail } from "@/hooks/usePrefetch";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 import { V8TrailCard } from "@/components/lessons/v8/V8TrailCard";
@@ -124,6 +125,7 @@ const PATENT_NAMES: Record<number, string> = {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  usePrefetchCourseDetail();
   const [user, setUser] = useState<User | null>(null);
   const [trails, setTrails] = useState<Trail[]>([]);
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);

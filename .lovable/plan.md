@@ -1,74 +1,184 @@
 
+# Espelho Completo V8 — 25 Categorias (~35 arquivos)
 
-# Análise de Gaps no Plano de Performance — Dashboard → Jornada V8
+## Auditoria Final: Todas as Melhorias Mapeadas
 
-## O que o plano acerta
+---
 
-1. **getSession() duplicado** — linha 47 e linha 65 de `CourseDetail.tsx`. Confirmado: são 2 round-trips desnecessários ao auth.
-2. **Queries sequenciais** — course → trail → lessons → progress são 4 queries em waterfall (~400-1200ms em 4G).
-3. **adminLoading bloqueia render** — linha 147: `if (loading || adminLoading)` impede qualquer pixel até o admin check retornar.
+## CAT 1: Renderização Markdown (V8ContentSection)
+- Bold: `font-semibold text-primary`
+- Itálico: highlight marker `bg-primary/10 px-1.5 py-0.5 rounded-md`
+- Listas: container `bg-muted/50 rounded-xl border-border/40`, bullets `bg-primary/60`
+- Blockquotes: callout `border-l-4 border-primary/40 bg-primary/5 rounded-r-xl`
+- Code inline: `bg-muted text-primary rounded-md font-mono`
+- Base: `text-[16.5px] leading-[1.85] tracking-[-0.01em]`
+- Sanitização: `v8TextSanitizer.ts` remove marcadores narração
+- Título: strip automático "Seção X —" via `cleanSectionTitle()`
 
-## Gaps identificados (3 problemas reais não cobertos)
+## CAT 2: Imagens — V8TrimmedImage
+- Trim automático via bounding box (alpha<10, dist<30)
+- Cache in-memory `trimmedImageCache` com `TRIM_VERSION=2`
+- Shimmer loading + fade-in 500ms + `img.decode()` assíncrono
+- Posição: antes do markdown, centralizada, `max-w-[300px] rounded-2xl`
 
-### Gap 1: `useIsAdmin` é um 3º waterfall separado
-O plano fala em "eliminar useIsAdmin como blocker de render" mas não propõe **eliminá-lo como query separada**. Atualmente:
-- `initializeUser()` → `setUserId` → dispara `useIsAdmin(userId)` → query a `user_roles`
-- `fetchCourseData()` → 4 queries sequenciais
+## CAT 3: Scroll & Âncoras (v8ScrollUtils)
+- Âncora estática `scroll-margin-top: 88px` separada do motion.div
+- Drift correction 420ms pós-scroll (threshold 4px)
+- Double-rAF antes do scroll
+- CTA scroll: 300ms + 600ms safety-net
+- Safe zones: TOP=88px, BOTTOM=120px, DELTA=16px
 
-São **dois waterfalls paralelos**, mas `useIsAdmin` adiciona latência própria. O Dashboard já resolveu isso (linha 349-352: busca roles junto com user via `Promise.all`). O CourseDetail deveria fazer o mesmo: buscar `user_roles` **dentro** de `fetchCourseData` junto com trail/lessons/progress, eliminando o hook `useIsAdmin` completamente nesta página.
+## CAT 4: Player UI (V8LessonPlayer)
+- Background: `bg-white text-slate-900` (Premium Light)
+- Hide scrollbar, padding unificado `pb-36`
+- Barra fixa bottom: `bg-white/95 backdrop-blur-sm`
+- Animação entrada: `opacity 0→1, y 14→0` condicional
+- Preload áudio do próximo item
 
-### Gap 2: `usePrefetch.ts` não inclui `CourseDetail`
-O hook de prefetch (usado no Auth e Index) carrega Dashboard, TrailDetail e Onboarding, mas **não** carrega CourseDetail. Como o fluxo V8 principal é Dashboard → CourseDetail, o chunk JS do CourseDetail não está em cache quando o usuário clica. O plano menciona "prefetch do chunk no Dashboard" mas precisa também atualizar `usePrefetch.ts`.
+## CAT 5: Header & Progresso (V8Header)
+- Barra progresso: `h-1 bg-gradient-to-r from-indigo-500 to-violet-500`
+- Glassmorphism: `bg-white/90 backdrop-blur-lg`
+- Contador: `tabular-nums text-[11px]`
+- Report button + drawer de navegação por seções
 
-### Gap 3: `select('*')` traz dados desnecessários
-Linha 70: `select('*')` na tabela `courses` e linha 88: `select('*')` na tabela `lessons` transferem todas as colunas (incluindo `content`, `exercises`, `word_timestamps` — campos JSONB potencialmente grandes). Para a listagem de aulas, só precisamos de `id, title, description, order_index, estimated_time, difficulty_level, is_active, lesson_type, model`. Isso pode economizar centenas de KB no mobile.
+## CAT 6: Audio Player (V8AudioPlayer)
+- Play button: gradiente `indigo-500 → violet-500`, 36px
+- Progress bar clicável `h-1.5`
+- Velocidade: ciclo `1x → 1.25x → 1.5x → 2x`
+- Timer `font-mono tabular-nums`
+- Loading: spinner + animate-pulse
 
-## Plano corrigido (4 otimizações)
+## CAT 7: Audio-First Lock (useAudioFirstLock + V8AudioLockOverlay)
+- Lock: `opacity-40 pointer-events-none` durante narração
+- Overlay: `Headphones animate-pulse` + mensagem
+- Unlock visual: `ring-2 ring-indigo-400/60` por 1.5s
+- Escopo: V8InlineExercise, V8CompleteSentenceInline, V8QuizInline, V8QuizTrueFalse, V8QuizFillBlank (modo dual: texto + chips)
 
-### 1. Prefetch do chunk CourseDetail
-**Arquivos:** `src/hooks/usePrefetch.ts` + `src/pages/Dashboard.tsx`
-- Adicionar `CourseDetail` ao prefetch em `usePrefetch.ts`
-- No Dashboard, chamar prefetch do CourseDetail com delay de 2s após mount
+## CAT 8: Exercícios Inline (8 tipos)
+1. **Multiple Choice** — botões com feedback verde/vermelho, ícone Target
+2. **FlipCard Quiz** — Light Theme, COLOR_MAP/ICON_MAP, confetti localizado, progress bar
+3. **True/False** — 4 afirmações com toggle
+4. **Platform Match** — match cenários↔plataformas, validação defensiva
+5. **Timed Quiz** — 4 timer states, bônus tempo, SFX, max 2 perguntas
+6. **Scenario Selection** — formato dual (simples + completo), scroll integrado
+7. **Fill-in-Blanks** — chips arrastáveis
+8. **Complete Sentence** — lacunas inline com chip bank
 
-### 2. Unificar session + eliminar useIsAdmin + paralelizar queries
-**Arquivo:** `src/pages/CourseDetail.tsx`
-- Remover `useIsAdmin` hook
-- Manter um único `getSession()` no mount
-- Após obter o `courseData` (necessário para `trail_id`), disparar em `Promise.all`:
-  - query `trails` (trail_type, title)
-  - query `lessons` (campos específicos, não `*`)
-  - query `user_progress`
-  - query `user_roles` (substitui useIsAdmin)
+## CAT 9: Coursiv Prompt Builder (V8CompleteSentenceInline)
+- Badge: `Puzzle` icon em `bg-cyan-50 border-cyan-200`
+- Blank states: active/filled/empty com cores distintas
+- Word bank: chips shuffled, tap-to-fill, auto-advance
+- Submit: só quando `allFilled`
+- Feedback: erros com `line-through` + correção verde
+- Retry: grid 2 colunas
+- Contrato V8-C01: 4 lacunas, 0 distratores
 
-```text
-ANTES (5 waterfalls):
-  getSession ─► setUserId ─► useIsAdmin(query) 
-                           ─► getSession(2) ─► course ─► trail ─► lessons ─► progress
-  Total: ~6 round-trips sequenciais
+## CAT 10: Playground Interativo (V8PlaygroundInline)
+- Fases: intro→amateur→professional→compare→challenge→done (acumulativas)
+- Badge: `Sparkles` em `bg-violet-50`
+- Comparação: grid 2 colunas ❌/✅
+- Challenge: avaliação IA via edge function `v8-evaluate-prompt`
+- Anti-copy context, feedback estruturado, max 3 tentativas
+- Reset externo via `useImperativeHandle`
 
-DEPOIS (2 steps):
-  getSession ─► course ─► [trail | lessons | progress | roles] em Promise.all
-  Total: 2 round-trips sequenciais
-```
+## CAT 11: Insight Reward (V8InsightReward)
+- Card `border-2 border-amber-300 bg-amber-50`
+- Claim idempotente (verifica events antes)
+- Confetti 100 partículas + SFX
+- Estado locked se playground score < 81
 
-### 3. Select apenas colunas necessárias
-**Arquivo:** `src/pages/CourseDetail.tsx`
-- `courses`: `select('id, trail_id, title, description, icon, order_index')`
-- `lessons`: `select('id, title, description, order_index, estimated_time, difficulty_level, is_active, lesson_type, model')`
+## CAT 12: Learn & Grow (V8LearnAndGrowBlock)
+- Design: `border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50`
+- 3 linhas numeradas: whatChanged, beforeAfter, practicalExample
+- Último item do timeline
 
-### 4. Render não-bloqueante para admin
-**Arquivo:** `src/pages/CourseDetail.tsx`
-- Remover `adminLoading` do guard de loading (linha 147)
-- Tratar `isAdmin` como `false` enquanto a query de roles roda — aulas ficam locked temporariamente
-- Quando roles chega, re-render atualiza o status das aulas
+## CAT 13: Tela de Conclusão (V8CompletionScreen)
+- Troféu com gradiente indigo-violet
+- Stats grid 3 colunas: XP, Moedas, Streak
+- CountUp 750ms com delay escalonado
+- Confetti condicional (só se avgScore > 0)
+- Patent badge com spring animation
 
-## Resultado esperado
-- De ~6 round-trips sequenciais para 2 (getSession + course, depois tudo em paralelo)
-- Redução de payload (select específico vs `*`)
-- Chunk JS já em cache via prefetch
-- Tempo percebido: de ~1.5-2.5s para ~0.4-0.7s no 4G
+## CAT 14: Modal de Avaliação (V8LessonRating)
+- 5 estrelas Lucide com hover/active scale
+- Textarea 500 chars, upsert no banco
+- Thank you auto-close 1.2s
 
-## Arquivos editados
-1. `src/hooks/usePrefetch.ts` — adicionar CourseDetail
-2. `src/pages/CourseDetail.tsx` — refactor completo do data fetching
+## CAT 15: Mode Selector (V8ModeSelector)
+- 2 cards: Ler (BookOpen) / Ouvir (Headphones)
+- Hover spring animation
+- `unlockAudio()` no iOS
 
+## CAT 16: Gamification & XP (distributed)
+- XP por exercício: `registerGamificationEvent` idempotente
+- Micro-feedback: badge flutuante `+5 XP` animado
+- XP por insight e conclusão
+- `playgroundScores` para conditional insight unlock
+
+## CAT 17: Timeline & Dedup (useV8Player)
+- Ordem: Section→CompleteSentence→InlineExercise→Playground→Insight→Quiz
+- Dedup: inlineExercise tem prioridade sobre quiz legado
+- Preload por tipo: 7 tipos de timeline item
+- Cleanup: `audio.src = ""` no unmount
+
+## CAT 18: Feedback Wrapper (V8InlineExercise)
+- Feedback card: `border-l-4` emerald/amber
+- Retry: `exerciseKey` incrementado para remount
+- Botões: grid 2 colunas (fail) ou full-width (pass)
+- CTA scroll integrado
+
+## CAT 19: Review Gate — Social Proof (V8LessonReviewGate)
+- Reviews determinísticos via hash do lessonId (4 de 5)
+- CTA delay 3s, label dinâmico
+- Bloqueio de fuga (pointerDown + escape)
+- Upsell: Crown → /pricing
+- Design: gradiente violet→indigo, avatares coloridos
+- Animação: cards escalonados 150ms
+
+## CAT 20: Liv Trail Welcome (V8LivTrailWelcome)
+- One-time show via localStorage
+- Delay abertura 600ms, CTA habilita 2s
+- Design Dark: #1F2937→#111827, grid SVG, glow violeta
+- 6 partículas flutuantes animadas
+- Avatar Liv: borda purple, glow radial pulsante, Sparkles girando
+- CTA: gradiente indigo→violet→pink
+
+## CAT 21: Skill Tree (V8SkillTree + V8SkillNode)
+- Layout zigzag: pattern [0,1,0,-1], offset 70px, ROW_HEIGHT=160px
+- Conectores SVG: Bézier quadrática, cor por estado
+- 4 estados visuais: completed, in_progress, available, locked
+- Ícones dinâmicos via getLessonIcon(title)
+- Spring stiffness 220, delay escalonado
+
+## CAT 22: Trail Card (V8TrailCard)
+- V8_ICONS por orderIndex (Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot)
+- 4 temas accent rotacionando
+- Progress bar animada com cor do tema
+
+## CAT 23: Lesson Icon Map (lessonIconMap.ts)
+- 27 keyword→ícone mappings
+- Fallback: BookOpen
+- Usado em: V8LessonCard, V8SkillNode, CourseDetail
+
+## CAT 24: Exercise Error Card (ExerciseErrorCard)
+- Card laranja com AlertTriangle
+- Detalhes técnicos font-mono
+- Link admin sync
+- Usado em 6 exercícios como validação defensiva
+
+## CAT 25: Content Parser (v8ContentParser.ts — 542 linhas)
+- parseFullContent(): extrai título, descrição, seções, playgrounds, quizzes
+- Section 0 auto-criada se conteúdo entre # e ##
+- Meta-filter: ignora parser/fix/TODO/FIXME
+- Sanitização pedagógica integrada
+- Output flags: hasManualExercises, hasManualQuizzes, etc.
+
+---
+
+## Utilitários Transversais
+- `v8TextSanitizer.ts` — sanitização de narração
+- `v8ScrollUtils.ts` — scroll helpers
+- `src/index.css` — hide-scrollbar
+- `src/constants/v8Rules.ts` — PASS_SCORE
+
+**Total: 25 categorias, ~35 arquivos.**

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 const prefetchDashboard = () => import('../pages/Dashboard');
 const prefetchTrailDetail = () => import('../pages/TrailDetail');
 const prefetchOnboarding = () => import('../pages/Onboarding');
+const prefetchCourseDetail = () => import('../pages/CourseDetail');
 
 /**
  * Hook to prefetch frequently accessed pages in the background
@@ -47,11 +48,29 @@ export const usePrefetchMainPages = (enabled = true) => {
     const timer1 = setTimeout(() => prefetchDashboard(), 1500);
     const timer2 = setTimeout(() => prefetchOnboarding(), 2000);
     const timer3 = setTimeout(() => prefetchTrailDetail(), 2500);
+    const timer4 = setTimeout(() => prefetchCourseDetail(), 3000);
     
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
+      clearTimeout(timer4);
     };
+  }, [enabled]);
+};
+
+/**
+ * Prefetch CourseDetail chunk from Dashboard
+ * Called when Dashboard mounts since the main V8 flow is Dashboard → CourseDetail
+ */
+export const usePrefetchCourseDetail = (enabled = true) => {
+  useEffect(() => {
+    if (!enabled) return;
+    
+    const timeoutId = setTimeout(() => {
+      prefetchCourseDetail();
+    }, 2000);
+    
+    return () => clearTimeout(timeoutId);
   }, [enabled]);
 };
