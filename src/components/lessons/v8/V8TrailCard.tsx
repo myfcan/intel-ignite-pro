@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { BookOpen, Clock, Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot, LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePrefetchCourseDetailData } from "@/hooks/useCourseDetailQuery";
 
 interface V8TrailCardProps {
   trailId: string;
