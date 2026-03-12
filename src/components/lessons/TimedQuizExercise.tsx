@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, CheckCircle2, XCircle, Timer, Trophy } from 'lucide-react';
+import { Zap, CheckCircle2, XCircle, Timer, Trophy, Clock } from 'lucide-react';
 import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
 import confetti from 'canvas-confetti';
 import { TimedQuizExerciseData } from '@/types/exerciseSchemas';
@@ -15,6 +15,7 @@ interface TimedQuizExerciseProps {
 }
 
 const MAX_QUESTIONS = 2;
+const LETTER_BADGES = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 export function TimedQuizExercise({ title, instruction, data, onComplete }: TimedQuizExerciseProps) {
   const { timePerQuestion, bonusPerSecondLeft, timeoutPenalty, feedback } = data;
@@ -166,38 +167,28 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
       } else if (finalPercent >= 60) {
         playSound('streak-bonus');
       }
-      // Report immediately — parent owns navigation buttons
       onComplete(finalPercent);
     }
   }, [currentQuestionIndex, questions.length, playSound, onComplete]);
 
   const progressPercent = (timeLeft / effectiveTime) * 100;
 
-  const timerColor = {
-    waiting: 'text-slate-400',
-    normal: 'text-cyan-500',
-    warning: 'text-amber-500',
-    critical: 'text-red-500 animate-pulse',
-    timeout: 'text-red-600',
-    answered: isCorrect ? 'text-emerald-500' : 'text-slate-400',
+  const barGradient = {
+    waiting: 'from-muted to-muted',
+    normal: 'from-cyan-500 to-emerald-500',
+    warning: 'from-amber-500 to-orange-500',
+    critical: 'from-red-500 to-red-600',
+    timeout: 'from-red-700 to-red-700',
+    answered: 'from-muted to-muted',
   }[timerState];
 
-  const barColor = {
-    waiting: 'bg-slate-300',
-    normal: 'bg-gradient-to-r from-cyan-500 to-emerald-500',
-    warning: 'bg-gradient-to-r from-amber-500 to-orange-500',
-    critical: 'bg-gradient-to-r from-red-500 to-red-600',
-    timeout: 'bg-red-700',
-    answered: 'bg-slate-300',
-  }[timerState];
-
-  const cardBorderColor = {
-    waiting: 'border-border',
-    normal: 'border-border',
-    warning: 'border-amber-400/50',
-    critical: 'border-red-500/50',
-    timeout: 'border-red-500/60',
-    answered: isCorrect ? 'border-emerald-400/50' : 'border-red-400/40',
+  const timerBadgeBg = {
+    waiting: 'bg-muted text-muted-foreground',
+    normal: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20',
+    warning: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    critical: 'bg-red-500/10 text-red-600 border-red-500/20',
+    timeout: 'bg-red-500/15 text-red-700 border-red-500/30',
+    answered: isCorrect ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-muted text-muted-foreground',
   }[timerState];
 
   // Result screen — feedback only, NO navigation buttons
@@ -212,19 +203,28 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
         animate={{ opacity: 1, scale: 1 }}
         className="max-w-lg mx-auto"
       >
-        <div className="bg-card rounded-xl border border-border p-5 text-center space-y-3">
-          <Trophy className="w-10 h-10 text-amber-500 mx-auto" />
-          <h3 className="text-base font-semibold text-foreground">{title}</h3>
-          <p className="text-sm text-muted-foreground">{feedbackMsg || 'Exercício concluído!'}</p>
-          <div className="flex justify-center gap-6">
+        <div className="rounded-2xl border border-border overflow-hidden">
+          {/* Header gradient */}
+          <div className="bg-gradient-to-r from-primary/10 via-violet-500/10 to-primary/5 px-5 py-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-md">
+              <Trophy className="w-5 h-5 text-white" />
+            </div>
             <div>
+              <h3 className="text-sm font-bold text-foreground">{title}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{feedbackMsg || 'Exercício concluído!'}</p>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="p-4 flex gap-3">
+            <div className="flex-1 rounded-xl bg-gradient-to-br from-cyan-500/5 to-cyan-500/10 border border-cyan-500/15 p-3 text-center">
               <p className="text-2xl font-bold text-cyan-600">{correctCount}/{questions.length}</p>
-              <p className="text-xs text-muted-foreground">Acertos</p>
+              <p className="text-[10px] font-medium text-cyan-600/70 uppercase tracking-wide mt-0.5">Acertos</p>
             </div>
             {totalBonus > 0 && (
-              <div>
-                <p className="text-2xl font-bold text-amber-500">+{totalBonus}</p>
-                <p className="text-xs text-muted-foreground">Bônus</p>
+              <div className="flex-1 rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/15 p-3 text-center">
+                <p className="text-2xl font-bold text-amber-600">+{totalBonus}</p>
+                <p className="text-[10px] font-medium text-amber-600/70 uppercase tracking-wide mt-0.5">Bônus</p>
               </div>
             )}
           </div>
@@ -248,26 +248,35 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
         )}
       </AnimatePresence>
 
-      <div className="flex items-center gap-3">
-        <motion.span
-          className={`text-2xl font-mono font-bold tabular-nums ${timerColor} min-w-[48px] text-center`}
-          animate={timerState === 'critical' ? { scale: [1, 1.06, 1] } : {}}
-          transition={{ duration: 0.8, repeat: Infinity }}
+      {/* Timer bar — premium badge + glow progress */}
+      <div className="flex items-center gap-2.5">
+        <motion.div
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-sm font-bold tabular-nums ${timerBadgeBg}`}
+          animate={timerState === 'critical' ? { scale: [1, 1.05, 1] } : {}}
+          transition={{ duration: 0.6, repeat: Infinity }}
         >
+          <Clock className="w-3.5 h-3.5" />
           {Math.ceil(timeLeft)}s
-        </motion.span>
-        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        </motion.div>
+        <div className="flex-1 h-2 bg-muted/60 rounded-full overflow-hidden relative">
           <motion.div
-            className={`h-full ${barColor} rounded-full`}
+            className={`h-full bg-gradient-to-r ${barGradient} rounded-full relative`}
             style={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.1, ease: 'linear' }}
           />
+          {(timerState === 'normal' || timerState === 'warning') && (
+            <div
+              className="absolute top-0 h-full rounded-full opacity-40 blur-sm bg-gradient-to-r from-cyan-400 to-emerald-400"
+              style={{ width: `${progressPercent}%` }}
+            />
+          )}
         </div>
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
+        <span className="text-[11px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
           {currentQuestionIndex + 1}/{questions.length}
         </span>
       </div>
 
+      {/* Question card */}
       <motion.div
         key={currentQuestionIndex}
         initial={{ opacity: 0, y: 12 }}
@@ -280,82 +289,97 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
           ? { x: { duration: 0.3, repeat: Infinity } }
           : { duration: 0.35 }
         }
-        className={`bg-card rounded-xl border ${cardBorderColor} p-4 transition-colors duration-200`}
+        className="space-y-3"
       >
-        <p className="text-[15px] font-medium text-foreground mb-3 leading-snug">
-          {currentQuestion.question}
-        </p>
+        {/* Question — distinct card */}
+        <div className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/[0.04] to-violet-500/[0.04] p-4 relative">
+          <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-gradient-to-b from-primary to-violet-500" />
+          <p className="text-[15px] font-semibold text-foreground leading-snug pl-3">
+            {currentQuestion.question}
+          </p>
+        </div>
 
+        {/* Options — individual cards with letter badges */}
         <div className="space-y-2">
-          {currentQuestion.options.map((option) => {
+          {currentQuestion.options.map((option, idx) => {
             const isSelected = selectedOptionId === option.id;
             const showCorrect = showExplanation && option.isCorrect;
             const showWrong = showExplanation && isSelected && !option.isCorrect;
+            const isDisabled = timerState === 'answered' || timerState === 'timeout';
 
-            let optionClasses = 'border border-border bg-muted/40 hover:bg-muted/70 hover:border-primary/30 text-foreground';
+            let optionClasses = 'border-border bg-card hover:border-primary/30 hover:shadow-sm text-foreground';
+            let badgeClasses = 'bg-muted text-muted-foreground';
+
             if (showCorrect) {
-              optionClasses = 'border border-emerald-500 bg-emerald-50 text-emerald-700';
+              optionClasses = 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm shadow-emerald-500/10';
+              badgeClasses = 'bg-emerald-500 text-white';
             } else if (showWrong) {
-              optionClasses = 'border border-red-500 bg-red-50 text-red-700';
-            } else if (timerState === 'answered' || timerState === 'timeout') {
-              optionClasses = 'border border-border/50 bg-muted/20 text-muted-foreground cursor-default';
+              optionClasses = 'border-red-500 bg-red-50 text-red-700 shadow-sm shadow-red-500/10';
+              badgeClasses = 'bg-red-500 text-white';
+            } else if (isDisabled) {
+              optionClasses = 'border-border/50 bg-muted/20 text-muted-foreground cursor-default';
+              badgeClasses = 'bg-muted/60 text-muted-foreground/60';
             }
 
             return (
               <motion.button
                 key={option.id}
                 onClick={() => handleSelectOption(option.id)}
-                disabled={timerState === 'answered' || timerState === 'timeout'}
-                whileTap={timerState !== 'answered' && timerState !== 'timeout' ? { scale: 0.98 } : {}}
+                disabled={isDisabled}
+                whileTap={!isDisabled ? { scale: 0.98 } : {}}
                 animate={showWrong ? { x: [-2, 2, -2, 0] } : {}}
                 transition={showWrong ? { duration: 0.25 } : {}}
-                className={`w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-150 flex items-center gap-2 ${optionClasses}`}
+                className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-all duration-150 flex items-center gap-3 ${optionClasses}`}
               >
-                {showCorrect && <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-500" />}
-                {showWrong && <XCircle className="w-4 h-4 flex-shrink-0 text-red-500" />}
-                <span>{option.text}</span>
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${badgeClasses}`}>
+                  {showCorrect ? <CheckCircle2 className="w-4 h-4" /> : showWrong ? <XCircle className="w-4 h-4" /> : LETTER_BADGES[idx]}
+                </span>
+                <span className="flex-1">{option.text}</span>
               </motion.button>
             );
           })}
         </div>
 
+        {/* Explanation */}
         <AnimatePresence>
           {showExplanation && currentQuestion.explanation && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-3 p-2.5 rounded-lg bg-muted/50 border border-border"
+              className="p-3 rounded-xl bg-muted/40 border border-border"
             >
               <p className="text-xs text-muted-foreground leading-relaxed">{currentQuestion.explanation}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* Bonus indicator */}
         <AnimatePresence>
           {timerState === 'answered' && isCorrect && Math.ceil(timeLeft) > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mt-2 flex items-center justify-center gap-1.5"
+              className="flex items-center justify-center gap-1.5 py-1"
             >
               <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-xs font-semibold text-amber-600">
-                +{Math.ceil(timeLeft) * bonusPerSecondLeft} bônus
+              <span className="text-xs font-bold text-amber-600">
+                +{Math.ceil(timeLeft) * bonusPerSecondLeft} bônus de velocidade
               </span>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* Timeout indicator */}
         <AnimatePresence>
           {timerState === 'timeout' && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mt-2 text-center"
+              className="text-center py-1"
             >
-              <span className="text-xs font-medium text-red-500 flex items-center justify-center gap-1">
+              <span className="text-xs font-semibold text-red-500 flex items-center justify-center gap-1.5 bg-red-500/5 rounded-lg py-1.5 px-3 mx-auto w-fit">
                 <Timer className="w-3.5 h-3.5" /> Tempo esgotado
               </span>
             </motion.div>

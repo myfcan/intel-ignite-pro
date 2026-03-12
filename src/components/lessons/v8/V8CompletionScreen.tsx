@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Trophy, Zap, Coins, Flame, ArrowRight, RotateCcw } from "lucide-react";
 import confetti from "canvas-confetti";
@@ -53,6 +53,11 @@ export const V8CompletionScreen = ({
             patentName: result.patent_name ?? "",
             isNewPatent: result.is_new_patent ?? false,
           });
+
+          // Play level-up sound for new patent (synced with animation delay)
+          if (result.is_new_patent) {
+            setTimeout(() => playSound("level-up"), 1200);
+          }
         }
       } catch {
         // Silently fail
@@ -116,6 +121,18 @@ export const V8CompletionScreen = ({
   const xp = gamificationResult?.xpDelta ?? 40;
   const coins = gamificationResult?.coinsDelta ?? 10;
 
+  const handlePlayCountSound = useCallback(() => {
+    playSound("count-up", { volume: 0.3 });
+  }, [playSound]);
+
+  const handleXpComplete = useCallback(() => {
+    playSound("combo-hit", { volume: 0.5 });
+  }, [playSound]);
+
+  const handleCoinsComplete = useCallback(() => {
+    playSound("combo-hit", { volume: 0.6 });
+  }, [playSound]);
+
   const handleNextLesson = () => {
     setShowRatingModal(true);
   };
@@ -173,12 +190,12 @@ export const V8CompletionScreen = ({
         >
           <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
             <Zap className="w-5 h-5 text-indigo-500" />
-            <CountUp value={xp} delay={600} />
+            <CountUp value={xp} delay={600} onTick={handlePlayCountSound} onComplete={handleXpComplete} />
             <span className="text-[11px] text-slate-500 font-medium">XP</span>
           </div>
           <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
             <Coins className="w-5 h-5 text-amber-500" />
-            <CountUp value={coins} delay={800} />
+            <CountUp value={coins} delay={800} onTick={handlePlayCountSound} onComplete={handleCoinsComplete} />
             <span className="text-[11px] text-slate-500 font-medium">Moedas</span>
           </div>
           <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-slate-200 bg-slate-50">
@@ -241,19 +258,42 @@ export const V8CompletionScreen = ({
   );
 };
 
-// --- CountUp micro-component ---
-const CountUp = ({ value, delay = 0 }: { value: number; delay?: number }) => {
+// --- CountUp micro-component with sound callbacks ---
+const CountUp = ({
+  value,
+  delay = 0,
+  onTick,
+  onComplete,
+}: {
+  value: number;
+  delay?: number;
+  onTick?: () => void;
+  onComplete?: () => void;
+}) => {
   const [display, setDisplay] = useState(0);
+  const tickCounter = useRef(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       let frame = 0;
       const totalFrames = 30;
       const step = value / totalFrames;
+      tickCounter.current = 0;
+
       const interval = setInterval(() => {
         frame++;
         setDisplay(Math.min(Math.round(step * frame), value));
-        if (frame >= totalFrames) clearInterval(interval);
+
+        // Play tick sound every 5 frames to avoid audio spam
+        tickCounter.current++;
+        if (onTick && tickCounter.current % 5 === 0) {
+          onTick();
+        }
+
+        if (frame >= totalFrames) {
+          clearInterval(interval);
+          onComplete?.();
+        }
       }, 25);
       return () => clearInterval(interval);
     }, delay);
