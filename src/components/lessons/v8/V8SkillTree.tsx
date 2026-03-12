@@ -63,7 +63,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
             const nextAvailable = lessons[i + 1].status !== "locked";
             const isLockedSegment = !isCompleted && !nextAvailable;
 
-            const pathD = `M ${x1},${y1} Q ${cx},${cy} ${x2},${y2}`;
+            const pathD = `M ${x1},${y1} C ${x1},${midY} ${x2},${midY} ${x2},${y2}`;
 
             const strokeColor = isCompleted
               ? "hsl(var(--primary))"
