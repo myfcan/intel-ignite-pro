@@ -51,6 +51,9 @@ export default function V8TrailDetail() {
       return data;
     },
     enabled: !!trailId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch all lessons for these courses to compute progress
