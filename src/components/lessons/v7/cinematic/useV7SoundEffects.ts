@@ -454,20 +454,11 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
     };
   }, [unlockAudio]);
 
-  // Track shared context usage (don't close on unmount - sounds need to finish)
+  // Track shared context usage — never close to avoid iOS suspended state on re-create
   useEffect(() => {
     sharedAudioContextUsers++;
     return () => {
       sharedAudioContextUsers--;
-      // Only close if no more users after a delay (let sounds finish)
-      if (sharedAudioContextUsers <= 0) {
-        setTimeout(() => {
-          if (sharedAudioContextUsers <= 0 && sharedAudioContext && sharedAudioContext.state !== 'closed') {
-            sharedAudioContext.close();
-            sharedAudioContext = null;
-          }
-        }, 5000); // 5s delay to let any playing sounds finish
-      }
     };
   }, []);
 

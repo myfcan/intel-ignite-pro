@@ -17,7 +17,7 @@ import { V8AudioPlayer } from "./V8AudioPlayer";
 import { useAudioFirstLock } from "./useAudioFirstLock";
 import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
-import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
+
 
 interface V8InlineExerciseProps {
   exercise: V8InlineExerciseType;
@@ -35,7 +35,6 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
   const [exerciseKey, setExerciseKey] = useState(0);
   const [xpAwarded, setXpAwarded] = useState(false);
   const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
-  const { playSound } = useV7SoundEffects(0.6, true);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const hasRegisteredXp = useRef(false);
 
@@ -45,8 +44,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
     setPassed(didPass);
     onScore?.(score);
 
-    // Bug 1 fix: Play sound effect based on result
-    playSound(didPass ? "quiz-correct" : "quiz-wrong");
+    // Sub-exercises already play their own sound effects — no duplicate here
 
     // Award XP for correct exercise (idempotent via lessonId + exerciseIndex in payload)
     if (didPass && lessonId && exerciseIndex !== undefined && !hasRegisteredXp.current) {
@@ -60,7 +58,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
         })
         .catch(() => {});
     }
-  }, [onScore, lessonId, exerciseIndex, playSound]);
+  }, [onScore, lessonId, exerciseIndex]);
 
   const handleRetry = useCallback(() => {
     setCompleted(false);
