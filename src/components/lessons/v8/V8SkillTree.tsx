@@ -111,7 +111,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
         {/* Nodes + labels below */}
         <div className="relative w-full z-10" style={{ height: totalHeight }}>
           {lessons.map((lesson, i) => {
-            const amplitude = isMobile ? 16 : 17;
+            const amplitude = isMobile ? 14 : 13;
             const xPercent = 50 + getXOffset(i) * amplitude;
             const yPx = 20 + i * ROW_HEIGHT;
             const isFirst = i === firstAvailableIndex;
