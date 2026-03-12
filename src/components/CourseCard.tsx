@@ -29,6 +29,7 @@ const CourseCard = ({
   index = 0,
 }: CourseCardProps) => {
   const navigate = useNavigate();
+  const prefetch = usePrefetchCourseDetailData();
   const isLocked = status === 'locked';
   const isCompleted = status === 'completed';
   const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
@@ -37,6 +38,10 @@ const CourseCard = ({
     if (!isLocked) {
       navigate(`/course/${course.id}`);
     }
+  };
+
+  const handlePrefetch = () => {
+    if (!isLocked) prefetch(course.id);
   };
 
   return (
