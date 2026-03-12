@@ -50,7 +50,7 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
             if (i === lessons.length - 1) return null;
             // Match CSS: xPercent = 50 + offset * amplitude_css
             // SVG viewBox=400, so SVG_x = (xPercent/100) * 400
-            const ampCss = isMobile ? 16 : 17;
+            const ampCss = isMobile ? 14 : 13;
             const x1 = (50 + getXOffset(i) * ampCss) / 100 * 400;
             const y1 = 20 + i * ROW_HEIGHT + 40;
             const x2 = (50 + getXOffset(i + 1) * ampCss) / 100 * 400;
