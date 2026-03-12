@@ -110,7 +110,7 @@ const CourseDetail = () => {
 
   const getLessonStatus = (lesson: Lesson, index: number) => {
     if (completedLessons.includes(lesson.id)) return 'completed';
-    if (!adminLoading && isAdmin) return 'unlocked';
+    if (isAdmin) return 'unlocked';
     if (index === 0 || completedLessons.includes(lessons[index - 1]?.id)) return 'unlocked';
     return 'locked';
   };
