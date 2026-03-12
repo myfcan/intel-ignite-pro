@@ -44,8 +44,7 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
     setPassed(didPass);
     onScore?.(score);
 
-    // Bug 1 fix: Play sound effect based on result
-    playSound(didPass ? "quiz-correct" : "quiz-wrong");
+    // Sub-exercises already play their own sound effects — no duplicate here
 
     // Award XP for correct exercise (idempotent via lessonId + exerciseIndex in payload)
     if (didPass && lessonId && exerciseIndex !== undefined && !hasRegisteredXp.current) {
