@@ -94,6 +94,9 @@ export default function V8TrailDetail() {
       return data;
     },
     enabled: !!allLessons && allLessons.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const [showLivWelcome, setShowLivWelcome] = useState(true);
