@@ -6,6 +6,7 @@ import { ArrowLeft, Lock, CheckCircle2, Clock, Play, Trophy } from 'lucide-react
 import { motion } from 'framer-motion';
 import { getLessonIcon } from '@/utils/lessonIconMap';
 import { V8CertificateCard } from '@/components/lessons/v8/V8CertificateCard';
+import { CourseDetailSkeleton } from '@/components/skeletons';
 
 interface Lesson {
   id: string;
@@ -143,14 +144,7 @@ const CourseDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4" />
-          <p className="text-muted-foreground">Carregando curso...</p>
-        </div>
-      </div>
-    );
+    return <CourseDetailSkeleton />;
   }
 
   if (!course) {
