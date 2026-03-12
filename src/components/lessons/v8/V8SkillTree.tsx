@@ -46,21 +46,24 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
           viewBox={`0 0 400 ${totalHeight}`}
           preserveAspectRatio="xMidYMin meet"
         >
-          {lessons.map((_, i) => {
+        {lessons.map((_, i) => {
             if (i === lessons.length - 1) return null;
-            const amplitude = isMobile ? 55 : 60;
-            const x1 = 200 + getXOffset(i) * amplitude;
-            const y1 = 20 + i * ROW_HEIGHT + 36;
-            const x2 = 200 + getXOffset(i + 1) * amplitude;
-            const y2 = 20 + (i + 1) * ROW_HEIGHT;
-            const cx = (x1 + x2) / 2 - (getXOffset(i) + getXOffset(i + 1)) * (isMobile ? 30 : 20);
-            const cy = y1 + (y2 - y1) * 0.5;
+            // Match CSS: xPercent = 50 + offset * amplitude_css
+            // SVG viewBox=400, so SVG_x = (xPercent/100) * 400
+            const ampCss = isMobile ? 16 : 17;
+            const x1 = (50 + getXOffset(i) * ampCss) / 100 * 400;
+            const y1 = 20 + i * ROW_HEIGHT + 40;
+            const x2 = (50 + getXOffset(i + 1) * ampCss) / 100 * 400;
+            const y2 = 20 + (i + 1) * ROW_HEIGHT + 4;
+            const midY = (y1 + y2) / 2;
+            const cx = x1;
+            const cy = midY;
 
             const isCompleted = lessons[i].status === "completed";
             const nextAvailable = lessons[i + 1].status !== "locked";
             const isLockedSegment = !isCompleted && !nextAvailable;
 
-            const pathD = `M ${x1},${y1} Q ${cx},${cy} ${x2},${y2}`;
+            const pathD = `M ${x1},${y1} C ${x1},${midY} ${x2},${midY} ${x2},${y2}`;
 
             const strokeColor = isCompleted
               ? "hsl(var(--primary))"
