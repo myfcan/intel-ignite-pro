@@ -17,7 +17,7 @@ import { V8AudioPlayer } from "./V8AudioPlayer";
 import { useAudioFirstLock } from "./useAudioFirstLock";
 import { V8AudioLockOverlay } from "./V8AudioLockOverlay";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
-import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
+
 
 interface V8InlineExerciseProps {
   exercise: V8InlineExerciseType;
