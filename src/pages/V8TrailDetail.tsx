@@ -7,6 +7,7 @@ import { V8TrailDetailSkeleton } from "@/components/skeletons";
 import { supabase } from "@/integrations/supabase/client";
 import { V8CertificateCard } from "@/components/lessons/v8/V8CertificateCard";
 import { V8LivTrailWelcome } from "@/components/lessons/v8/V8LivTrailWelcome";
+import { usePrefetchCourseDetailData } from "@/hooks/useCourseDetailQuery";
 
 const TRAIL_ICONS: Record<string, LucideIcon> = {
   Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, BookOpen,
@@ -17,6 +18,7 @@ const JOURNEY_ICONS: LucideIcon[] = [Rocket, Brain, Zap, Target, Code, Crown, Do
 export default function V8TrailDetail() {
   const { trailId } = useParams<{ trailId: string }>();
   const navigate = useNavigate();
+  const prefetchCourse = usePrefetchCourseDetailData();
 
   const { data: trail, isLoading: trailLoading } = useQuery({
     queryKey: ["v8-trail", trailId],
@@ -30,6 +32,9 @@ export default function V8TrailDetail() {
       return data;
     },
     enabled: !!trailId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch courses (journeys) for this trail with lesson counts
@@ -46,6 +51,9 @@ export default function V8TrailDetail() {
       return data;
     },
     enabled: !!trailId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch all lessons for these courses to compute progress
@@ -64,6 +72,9 @@ export default function V8TrailDetail() {
       return data;
     },
     enabled: !!journeys && journeys.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch progress for all lessons
@@ -83,6 +94,9 @@ export default function V8TrailDetail() {
       return data;
     },
     enabled: !!allLessons && allLessons.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const [showLivWelcome, setShowLivWelcome] = useState(true);
@@ -189,6 +203,8 @@ export default function V8TrailDetail() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.08, duration: 0.3 }}
                     onClick={() => navigate(`/course/${journey.id}`)}
+                    onMouseEnter={() => prefetchCourse(journey.id)}
+                    onTouchStart={() => prefetchCourse(journey.id)}
                     className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:border-violet-200 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
