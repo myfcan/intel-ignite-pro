@@ -35,7 +35,6 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
   const [exerciseKey, setExerciseKey] = useState(0);
   const [xpAwarded, setXpAwarded] = useState(false);
   const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(exercise.audioUrl, isActiveAudio);
-  const { playSound } = useV7SoundEffects(0.6, true);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const hasRegisteredXp = useRef(false);
 
