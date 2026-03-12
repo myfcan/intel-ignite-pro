@@ -71,60 +71,26 @@ async function fetchCourseDetail(courseId: string): Promise<CourseDetailData> {
 export function useCourseDetailQuery(courseId: string | undefined) {
   return useQuery<CourseDetailData>({
     queryKey: ['course-detail', courseId],
-    queryFn: async (): Promise<CourseDetailData> => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('NOT_AUTHENTICATED');
-      const uid = session.user.id;
-
-      // Step 1: fetch course (need trail_id for next step)
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('id, trail_id, title, description, icon, order_index')
-        .eq('id', courseId!)
-        .single();
-
-      if (courseError) throw courseError;
-
-      // Step 2: Parallel fetch — trail, lessons, progress, roles
-      const [trailResult, lessonsResult, progressResult, rolesResult] = await Promise.all([
-        supabase
-          .from('trails')
-          .select('trail_type, title')
-          .eq('id', courseData.trail_id)
-          .single(),
-        supabase
-          .from('lessons')
-          .select('id, title, description, order_index, estimated_time, difficulty_level, is_active, lesson_type, model')
-          .eq('course_id', courseId!)
-          .eq('is_active', true)
-          .order('order_index'),
-        supabase
-          .from('user_progress')
-          .select('lesson_id, status')
-          .eq('user_id', uid)
-          .in('status', ['completed']),
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', uid),
-      ]);
-
-      if (lessonsResult.error) throw lessonsResult.error;
-
-      const roles = (rolesResult.data || []).map(r => r.role);
-
-      return {
-        course: courseData as Course,
-        trailType: trailResult.data?.trail_type ?? null,
-        trailTitle: trailResult.data?.title ?? null,
-        lessons: (lessonsResult.data || []) as Lesson[],
-        completedLessonIds: (progressResult.data || []).map(p => p.lesson_id).filter(Boolean) as string[],
-        isAdmin: roles.includes('admin') || roles.includes('supervisor'),
-      };
-    },
+    queryFn: () => fetchCourseDetail(courseId!),
     enabled: !!courseId,
-    staleTime: 5 * 60 * 1000,    // 5 min — cache stays fresh
-    gcTime: 10 * 60 * 1000,      // 10 min — keep in memory after unmount
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+}
+
+/**
+ * Hook that returns a prefetch handler for CourseDetail data.
+ * Use on onMouseEnter / onTouchStart of journey cards.
+ */
+export function usePrefetchCourseDetailData() {
+  const queryClient = useQueryClient();
+
+  return useCallback((courseId: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ['course-detail', courseId],
+      queryFn: () => fetchCourseDetail(courseId),
+      staleTime: 5 * 60 * 1000,
+    });
+  }, [queryClient]);
 }
