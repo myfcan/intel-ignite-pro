@@ -66,7 +66,6 @@ export default function V8TrailDetail() {
         .from("lessons")
         .select("id, course_id, is_active")
         .eq("is_active", true)
-        .eq("model", "v8")
         .in("course_id", courseIds);
       if (error) throw error;
       return data;
