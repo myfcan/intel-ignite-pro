@@ -18,6 +18,7 @@ const JOURNEY_ICONS: LucideIcon[] = [Rocket, Brain, Zap, Target, Code, Crown, Do
 export default function V8TrailDetail() {
   const { trailId } = useParams<{ trailId: string }>();
   const navigate = useNavigate();
+  const prefetchCourse = usePrefetchCourseDetailData();
 
   const { data: trail, isLoading: trailLoading } = useQuery({
     queryKey: ["v8-trail", trailId],
