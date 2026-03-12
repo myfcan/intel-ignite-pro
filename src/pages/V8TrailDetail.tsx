@@ -203,6 +203,8 @@ export default function V8TrailDetail() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.08, duration: 0.3 }}
                     onClick={() => navigate(`/course/${journey.id}`)}
+                    onMouseEnter={() => prefetchCourse(journey.id)}
+                    onTouchStart={() => prefetchCourse(journey.id)}
                     className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:border-violet-200 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
