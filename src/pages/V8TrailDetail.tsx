@@ -7,6 +7,7 @@ import { V8TrailDetailSkeleton } from "@/components/skeletons";
 import { supabase } from "@/integrations/supabase/client";
 import { V8CertificateCard } from "@/components/lessons/v8/V8CertificateCard";
 import { V8LivTrailWelcome } from "@/components/lessons/v8/V8LivTrailWelcome";
+import { usePrefetchCourseDetailData } from "@/hooks/useCourseDetailQuery";
 
 const TRAIL_ICONS: Record<string, LucideIcon> = {
   Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, BookOpen,
