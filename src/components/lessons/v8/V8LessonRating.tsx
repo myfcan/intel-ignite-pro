@@ -19,7 +19,7 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
   const [loading, setLoading] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Always start rating modal clean on open (no prefilled previous feedback)
+  // Always start rating modal clean on open
   useEffect(() => {
     if (!open) return;
 
@@ -151,8 +151,8 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
                 </p>
               </div>
 
-              {/* Stars — golden shimmer loop until user selects */}
-              <div className="flex gap-2">
+              {/* Stars — enhanced golden shimmer */}
+              <div className="flex gap-2.5">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <motion.button
                     key={i}
@@ -162,23 +162,28 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
                     className="p-1 transition-transform hover:scale-110 active:scale-95"
                     {...(rating === 0 ? {
                       animate: {
-                        opacity: [0.35, 1, 0.35],
-                        scale: [1, 1.15, 1],
+                        opacity: [0.3, 1, 0.3],
+                        scale: [0.85, 1.25, 0.85],
+                        filter: [
+                          "drop-shadow(0 0 0px rgba(251,191,36,0))",
+                          "drop-shadow(0 0 10px rgba(251,191,36,0.6))",
+                          "drop-shadow(0 0 0px rgba(251,191,36,0))",
+                        ],
                       },
                       transition: {
-                        duration: 2.5,
+                        duration: 1.8,
                         repeat: Infinity,
-                        delay: i * 0.3,
+                        delay: i * 0.25,
                         ease: "easeInOut",
                       },
                     } : {})}
                   >
                     <Star
-                      className={`w-9 h-9 transition-colors ${
+                      className={`w-10 h-10 transition-colors ${
                         i <= activeRating
                           ? "text-amber-400 fill-amber-400"
                           : rating === 0
-                            ? "text-amber-400/60 fill-amber-400/30"
+                            ? "text-amber-400/70 fill-amber-400/40"
                             : "text-slate-300"
                       }`}
                     />
@@ -186,13 +191,24 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
                 ))}
               </div>
 
+              {/* Pulsating hint when no rating */}
+              {rating === 0 && (
+                <motion.p
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className="text-xs font-medium text-amber-500"
+                >
+                  Toque nas estrelas ⭐
+                </motion.p>
+              )}
+
               {/* Labels */}
               <div className="flex justify-between w-full px-1">
                 <span className="text-[11px] text-slate-400">Não é a minha praia</span>
                 <span className="text-[11px] text-slate-400">Adorei!</span>
               </div>
 
-              {/* Comment textarea — always visible */}
+              {/* Comment textarea */}
               <div className="w-full">
                 <Textarea
                   placeholder="Conte-nos mais sobre sua experiência... (opcional)"
@@ -208,7 +224,6 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
 
               {/* Actions */}
               <div className="flex flex-col gap-2.5 w-full">
-                {/* Submit button */}
                 <button
                   onClick={handleSubmit}
                   disabled={rating === 0 || loading}
@@ -223,7 +238,6 @@ export const V8LessonRating = ({ lessonId, open, onClose }: V8LessonRatingProps)
                   )}
                 </button>
 
-                {/* Skip button */}
                 <button
                   onClick={() => onClose()}
                   className="text-sm text-slate-400 hover:text-slate-600 transition-colors py-1"
