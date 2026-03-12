@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Lesson {
+export interface Lesson {
   id: string;
   title: string;
   description: string;

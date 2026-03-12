@@ -13,6 +13,9 @@ export default function V8Lesson() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const hasSavedProgress = useRef(false);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const hasSavedProgress = useRef(false);
 
   // Fetch lesson
   const { data: lesson, isLoading, error } = useQuery({

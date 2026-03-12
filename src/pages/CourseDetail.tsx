@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { getLessonIcon } from '@/utils/lessonIconMap';
 import { V8CertificateCard } from '@/components/lessons/v8/V8CertificateCard';
 import { CourseDetailSkeleton } from '@/components/skeletons';
-import { useCourseDetailQuery } from '@/hooks/useCourseDetailQuery';
+import { useCourseDetailQuery, type Lesson } from '@/hooks/useCourseDetailQuery';
 
 const CourseDetail = () => {
   const { id } = useParams();
