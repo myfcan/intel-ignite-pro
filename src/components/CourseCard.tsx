@@ -1,6 +1,7 @@
 import { LucideIcon, Lock, BookOpen, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { usePrefetchCourseDetailData } from '@/hooks/useCourseDetailQuery';
 
 interface CourseCardProps {
   course: {
