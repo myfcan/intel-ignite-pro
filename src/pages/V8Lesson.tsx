@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { V8LessonData } from "@/types/v8Lesson";
@@ -13,6 +13,7 @@ export default function V8Lesson() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const hasSavedProgress = useRef(false);
+  const queryClient = useQueryClient();
 
   // Fetch lesson
   const { data: lesson, isLoading, error } = useQuery({
@@ -101,6 +102,9 @@ export default function V8Lesson() {
       ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
       : 100;
     await saveProgress("completed", avg);
+
+    // Invalidate course-detail cache so progress is fresh on return
+    queryClient.invalidateQueries({ queryKey: ['course-detail'] });
 
     // Navigate back to journey or dashboard
     if (lesson?.course_id) {

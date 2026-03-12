@@ -1,67 +1,184 @@
 
+# Espelho Completo V8 — 25 Categorias (~35 arquivos)
 
-# Plano: React Query Cache para CourseDetail (Retorno Instantâneo)
+## Auditoria Final: Todas as Melhorias Mapeadas
 
-## Situação Atual (evidência forense)
+---
 
-**`CourseDetail.tsx` linhas 36-43**: usa `useState` + `useEffect` para fetching manual. Cada navegação para a página re-executa `fetchCourseData()` do zero — 2 round-trips sequenciais (getSession → course → Promise.all).
+## CAT 1: Renderização Markdown (V8ContentSection)
+- Bold: `font-semibold text-primary`
+- Itálico: highlight marker `bg-primary/10 px-1.5 py-0.5 rounded-md`
+- Listas: container `bg-muted/50 rounded-xl border-border/40`, bullets `bg-primary/60`
+- Blockquotes: callout `border-l-4 border-primary/40 bg-primary/5 rounded-r-xl`
+- Code inline: `bg-muted text-primary rounded-md font-mono`
+- Base: `text-[16.5px] leading-[1.85] tracking-[-0.01em]`
+- Sanitização: `v8TextSanitizer.ts` remove marcadores narração
+- Título: strip automático "Seção X —" via `cleanSectionTitle()`
 
-**`App.tsx` linha 127**: `const queryClient = new QueryClient()` — sem `defaultOptions`, staleTime padrão é 0 (refetch toda vez).
+## CAT 2: Imagens — V8TrimmedImage
+- Trim automático via bounding box (alpha<10, dist<30)
+- Cache in-memory `trimmedImageCache` com `TRIM_VERSION=2`
+- Shimmer loading + fade-in 500ms + `img.decode()` assíncrono
+- Posição: antes do markdown, centralizada, `max-w-[300px] rounded-2xl`
 
-**Outras páginas já usam React Query**: `V8TrailDetail.tsx`, `AllTrails.tsx`, `V8Lesson.tsx` — todas com `useQuery`. CourseDetail é a única página principal que NÃO usa.
+## CAT 3: Scroll & Âncoras (v8ScrollUtils)
+- Âncora estática `scroll-margin-top: 88px` separada do motion.div
+- Drift correction 420ms pós-scroll (threshold 4px)
+- Double-rAF antes do scroll
+- CTA scroll: 300ms + 600ms safety-net
+- Safe zones: TOP=88px, BOTTOM=120px, DELTA=16px
 
-**`V7CinematicPlayer.tsx` linha 19**: já usa `useQueryClient()` para invalidação manual de cache pós-completion.
+## CAT 4: Player UI (V8LessonPlayer)
+- Background: `bg-white text-slate-900` (Premium Light)
+- Hide scrollbar, padding unificado `pb-36`
+- Barra fixa bottom: `bg-white/95 backdrop-blur-sm`
+- Animação entrada: `opacity 0→1, y 14→0` condicional
+- Preload áudio do próximo item
 
-## Implementação (2 arquivos)
+## CAT 5: Header & Progresso (V8Header)
+- Barra progresso: `h-1 bg-gradient-to-r from-indigo-500 to-violet-500`
+- Glassmorphism: `bg-white/90 backdrop-blur-lg`
+- Contador: `tabular-nums text-[11px]`
+- Report button + drawer de navegação por seções
 
-### 1. Criar `src/hooks/useCourseDetailQuery.ts`
+## CAT 6: Audio Player (V8AudioPlayer)
+- Play button: gradiente `indigo-500 → violet-500`, 36px
+- Progress bar clicável `h-1.5`
+- Velocidade: ciclo `1x → 1.25x → 1.5x → 2x`
+- Timer `font-mono tabular-nums`
+- Loading: spinner + animate-pulse
 
-Hook dedicado que encapsula todo o data fetching atual do CourseDetail em um `useQuery`:
+## CAT 7: Audio-First Lock (useAudioFirstLock + V8AudioLockOverlay)
+- Lock: `opacity-40 pointer-events-none` durante narração
+- Overlay: `Headphones animate-pulse` + mensagem
+- Unlock visual: `ring-2 ring-indigo-400/60` por 1.5s
+- Escopo: V8InlineExercise, V8CompleteSentenceInline, V8QuizInline, V8QuizTrueFalse, V8QuizFillBlank (modo dual: texto + chips)
 
-- **queryKey**: `['course-detail', courseId]` — cache por curso
-- **queryFn**: exatamente a mesma lógica de `fetchCourseData()` atual (getSession → course → Promise.all de trail/lessons/progress/roles)
-- **staleTime**: `5 * 60 * 1000` (5 min) — dados ficam frescos, remount não refetcha
-- **gcTime**: `10 * 60 * 1000` (10 min) — mantém em cache mesmo após unmount
-- **refetchOnWindowFocus**: `false` — não refetcha só porque o usuário voltou à aba
-- **Retorno tipado**: `{ course, trailType, trailTitle, lessons, completedLessonIds, isAdmin }`
-- **Auth error handling**: se `getSession()` retorna null, throw `NOT_AUTHENTICATED`
+## CAT 8: Exercícios Inline (8 tipos)
+1. **Multiple Choice** — botões com feedback verde/vermelho, ícone Target
+2. **FlipCard Quiz** — Light Theme, COLOR_MAP/ICON_MAP, confetti localizado, progress bar
+3. **True/False** — 4 afirmações com toggle
+4. **Platform Match** — match cenários↔plataformas, validação defensiva
+5. **Timed Quiz** — 4 timer states, bônus tempo, SFX, max 2 perguntas
+6. **Scenario Selection** — formato dual (simples + completo), scroll integrado
+7. **Fill-in-Blanks** — chips arrastáveis
+8. **Complete Sentence** — lacunas inline com chip bank
 
-### 2. Refatorar `src/pages/CourseDetail.tsx`
+## CAT 9: Coursiv Prompt Builder (V8CompleteSentenceInline)
+- Badge: `Puzzle` icon em `bg-cyan-50 border-cyan-200`
+- Blank states: active/filled/empty com cores distintas
+- Word bank: chips shuffled, tap-to-fill, auto-advance
+- Submit: só quando `allFilled`
+- Feedback: erros com `line-through` + correção verde
+- Retry: grid 2 colunas
+- Contrato V8-C01: 4 lacunas, 0 distratores
 
-**Remover**: 7 `useState` (course, trailId, trailType, trailTitle, lessons, loading, completedLessons, isAdmin), o `useEffect`, e a função `fetchCourseData`.
+## CAT 10: Playground Interativo (V8PlaygroundInline)
+- Fases: intro→amateur→professional→compare→challenge→done (acumulativas)
+- Badge: `Sparkles` em `bg-violet-50`
+- Comparação: grid 2 colunas ❌/✅
+- Challenge: avaliação IA via edge function `v8-evaluate-prompt`
+- Anti-copy context, feedback estruturado, max 3 tentativas
+- Reset externo via `useImperativeHandle`
 
-**Adicionar**: 
-```ts
-const { data, isLoading, error } = useCourseDetailQuery(id);
-```
+## CAT 11: Insight Reward (V8InsightReward)
+- Card `border-2 border-amber-300 bg-amber-50`
+- Claim idempotente (verifica events antes)
+- Confetti 100 partículas + SFX
+- Estado locked se playground score < 81
 
-**Desestruturar**: extrair `course`, `trailType`, `trailTitle`, `lessons`, `completedLessonIds`, `isAdmin` de `data`.
+## CAT 12: Learn & Grow (V8LearnAndGrowBlock)
+- Design: `border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50`
+- 3 linhas numeradas: whatChanged, beforeAfter, practicalExample
+- Último item do timeline
 
-**Loading**: `isLoading` substitui o antigo `loading` — skeleton exibido via `<CourseDetailSkeleton />`.
+## CAT 13: Tela de Conclusão (V8CompletionScreen)
+- Troféu com gradiente indigo-violet
+- Stats grid 3 colunas: XP, Moedas, Streak
+- CountUp 750ms com delay escalonado
+- Confetti condicional (só se avgScore > 0)
+- Patent badge com spring animation
 
-**Error**: se `error?.message === 'NOT_AUTHENTICATED'`, navegar para `/auth`. Outros erros mostram toast.
+## CAT 14: Modal de Avaliação (V8LessonRating)
+- 5 estrelas Lucide com hover/active scale
+- Textarea 500 chars, upsert no banco
+- Thank you auto-close 1.2s
 
-**Invalidação pós-aula**: quando o usuário retorna de uma aula, React Query verifica `staleTime`. Se > 5 min, refetcha automaticamente. Para invalidação imediata (ex: após completar aula), as páginas V8Lesson/V7CinematicPlayer já podem chamar:
-```ts
-queryClient.invalidateQueries({ queryKey: ['course-detail'] });
-```
-Isto já é o padrão usado em V7CinematicPlayer (linha 19).
+## CAT 15: Mode Selector (V8ModeSelector)
+- 2 cards: Ler (BookOpen) / Ouvir (Headphones)
+- Hover spring animation
+- `unlockAudio()` no iOS
 
-### 3. Invalidação no V8Lesson (cache bust pós-completion)
+## CAT 16: Gamification & XP (distributed)
+- XP por exercício: `registerGamificationEvent` idempotente
+- Micro-feedback: badge flutuante `+5 XP` animado
+- XP por insight e conclusão
+- `playgroundScores` para conditional insight unlock
 
-**Arquivo:** `src/pages/V8Lesson.tsx`
+## CAT 17: Timeline & Dedup (useV8Player)
+- Ordem: Section→CompleteSentence→InlineExercise→Playground→Insight→Quiz
+- Dedup: inlineExercise tem prioridade sobre quiz legado
+- Preload por tipo: 7 tipos de timeline item
+- Cleanup: `audio.src = ""` no unmount
 
-Adicionar `useQueryClient` e chamar `queryClient.invalidateQueries({ queryKey: ['course-detail'] })` no handler de completion/back para que ao retornar o progresso esteja atualizado.
+## CAT 18: Feedback Wrapper (V8InlineExercise)
+- Feedback card: `border-l-4` emerald/amber
+- Retry: `exerciseKey` incrementado para remount
+- Botões: grid 2 colunas (fail) ou full-width (pass)
+- CTA scroll integrado
 
-## Resultado
+## CAT 19: Review Gate — Social Proof (V8LessonReviewGate)
+- Reviews determinísticos via hash do lessonId (4 de 5)
+- CTA delay 3s, label dinâmico
+- Bloqueio de fuga (pointerDown + escape)
+- Upsell: Crown → /pricing
+- Design: gradiente violet→indigo, avatares coloridos
+- Animação: cards escalonados 150ms
 
-- **Primeira visita**: dados carregados normalmente (skeleton → conteúdo)
-- **Retorno (< 5 min)**: renderização instantânea do cache, zero round-trips
-- **Retorno (> 5 min)**: refetch automático em background (stale-while-revalidate)
-- **Pós-aula**: cache invalidado, progress atualizado no retorno
+## CAT 20: Liv Trail Welcome (V8LivTrailWelcome)
+- One-time show via localStorage
+- Delay abertura 600ms, CTA habilita 2s
+- Design Dark: #1F2937→#111827, grid SVG, glow violeta
+- 6 partículas flutuantes animadas
+- Avatar Liv: borda purple, glow radial pulsante, Sparkles girando
+- CTA: gradiente indigo→violet→pink
 
-## Arquivos editados
-1. `src/hooks/useCourseDetailQuery.ts` — criar (hook de cache)
-2. `src/pages/CourseDetail.tsx` — refatorar para usar o hook
-3. `src/pages/V8Lesson.tsx` — invalidar cache pós-completion
+## CAT 21: Skill Tree (V8SkillTree + V8SkillNode)
+- Layout zigzag: pattern [0,1,0,-1], offset 70px, ROW_HEIGHT=160px
+- Conectores SVG: Bézier quadrática, cor por estado
+- 4 estados visuais: completed, in_progress, available, locked
+- Ícones dinâmicos via getLessonIcon(title)
+- Spring stiffness 220, delay escalonado
 
+## CAT 22: Trail Card (V8TrailCard)
+- V8_ICONS por orderIndex (Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot)
+- 4 temas accent rotacionando
+- Progress bar animada com cor do tema
+
+## CAT 23: Lesson Icon Map (lessonIconMap.ts)
+- 27 keyword→ícone mappings
+- Fallback: BookOpen
+- Usado em: V8LessonCard, V8SkillNode, CourseDetail
+
+## CAT 24: Exercise Error Card (ExerciseErrorCard)
+- Card laranja com AlertTriangle
+- Detalhes técnicos font-mono
+- Link admin sync
+- Usado em 6 exercícios como validação defensiva
+
+## CAT 25: Content Parser (v8ContentParser.ts — 542 linhas)
+- parseFullContent(): extrai título, descrição, seções, playgrounds, quizzes
+- Section 0 auto-criada se conteúdo entre # e ##
+- Meta-filter: ignora parser/fix/TODO/FIXME
+- Sanitização pedagógica integrada
+- Output flags: hasManualExercises, hasManualQuizzes, etc.
+
+---
+
+## Utilitários Transversais
+- `v8TextSanitizer.ts` — sanitização de narração
+- `v8ScrollUtils.ts` — scroll helpers
+- `src/index.css` — hide-scrollbar
+- `src/constants/v8Rules.ts` — PASS_SCORE
+
+**Total: 25 categorias, ~35 arquivos.**
