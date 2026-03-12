@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { V8SkillNode, type NodeStatus } from "./V8SkillNode";
+import { useRef, useState, useEffect } from "react";
 
 interface LessonItem {
   id: string;
@@ -17,12 +18,14 @@ interface V8SkillTreeProps {
   allCompleted: boolean;
 }
 
-/** Zigzag X offset pattern: center → right → center → left */
-const getXOffset = (index: number): number => {
+/** Single source of truth for node X position (%) */
+const getNodeXPercent = (index: number, isMobile: boolean): number => {
   const pattern = [0, 1, 0, -1];
-  return pattern[index % 4];
+  const amplitude = isMobile ? 13 : 12;
+  return 50 + pattern[index % 4] * amplitude;
 };
 
+const NODE_SIZE = 72;
 const ROW_HEIGHT = 150;
 
 export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTreeProps) => {
@@ -32,32 +35,50 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
   const completedCount = lessons.filter(l => l.status === "completed").length;
   const progressPercent = lessons.length > 0 ? (completedCount / lessons.length) * 100 : 0;
 
+  // Measure actual container width for SVG sync
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [treeWidth, setTreeWidth] = useState(400);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setTreeWidth(entry.contentRect.width);
+      }
+    });
+    ro.observe(el);
+    setTreeWidth(el.offsetWidth);
+    return () => ro.disconnect();
+  }, []);
+
+  /** Convert node index → absolute X pixel in the SVG coordinate system */
+  const getNodeX = (index: number) => (getNodeXPercent(index, isMobile) / 100) * treeWidth;
+  /** Y for the bottom-center of a node (connector start) */
+  const getNodeBottomY = (index: number) => 20 + index * ROW_HEIGHT + NODE_SIZE / 2 + 8;
+  /** Y for the top-center of a node (connector end) */
+  const getNodeTopY = (index: number) => 20 + index * ROW_HEIGHT - 4;
+
   return (
     <div className="relative w-full flex flex-col items-center">
-      {/* Progress bar top */}
       <ProgressHeader completedCount={completedCount} totalLessons={lessons.length} progressPercent={progressPercent} />
 
-      {/* Tree */}
-      <div className="relative w-full flex flex-col items-center pt-4">
-        {/* SVG connectors */}
+      <div ref={containerRef} className="relative w-full flex flex-col items-center pt-4">
+        {/* SVG connectors — viewBox matches real pixel width */}
         <svg
           className="absolute inset-0 w-full pointer-events-none z-0"
           style={{ height: totalHeight }}
-          viewBox={`0 0 400 ${totalHeight}`}
-          preserveAspectRatio="xMidYMin meet"
+          viewBox={`0 0 ${treeWidth} ${totalHeight}`}
+          preserveAspectRatio="none"
         >
-        {lessons.map((_, i) => {
+          {lessons.map((_, i) => {
             if (i === lessons.length - 1) return null;
-            // Match CSS: xPercent = 50 + offset * amplitude_css
-            // SVG viewBox=400, so SVG_x = (xPercent/100) * 400
-            const ampCss = isMobile ? 14 : 13;
-            const x1 = (50 + getXOffset(i) * ampCss) / 100 * 400;
-            const y1 = 20 + i * ROW_HEIGHT + 40;
-            const x2 = (50 + getXOffset(i + 1) * ampCss) / 100 * 400;
-            const y2 = 20 + (i + 1) * ROW_HEIGHT + 4;
+
+            const x1 = getNodeX(i);
+            const y1 = getNodeBottomY(i);
+            const x2 = getNodeX(i + 1);
+            const y2 = getNodeTopY(i + 1);
             const midY = (y1 + y2) / 2;
-            const cx = x1;
-            const cy = midY;
 
             const isCompleted = lessons[i].status === "completed";
             const nextAvailable = lessons[i + 1].status !== "locked";
@@ -82,7 +103,16 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
 
             return (
               <g key={`conn-${i}`}>
-                {/* Glow */}
+                {/* Base rail (always visible, even for locked) */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="hsl(var(--muted-foreground) / 0.15)"
+                  strokeWidth={strokeWidth + 4}
+                  strokeLinecap="round"
+                  opacity={0.3}
+                />
+                {/* Glow for active segments */}
                 {(isCompleted || nextAvailable) && (
                   <path
                     d={pathD}
@@ -108,11 +138,10 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
           })}
         </svg>
 
-        {/* Nodes + labels below */}
+        {/* Nodes + labels */}
         <div className="relative w-full z-10" style={{ height: totalHeight }}>
           {lessons.map((lesson, i) => {
-            const amplitude = isMobile ? 14 : 13;
-            const xPercent = 50 + getXOffset(i) * amplitude;
+            const xPercent = getNodeXPercent(i, isMobile);
             const yPx = 20 + i * ROW_HEIGHT;
             const isFirst = i === firstAvailableIndex;
 
@@ -133,7 +162,6 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
                   isFirst={isFirst}
                   onClick={() => lesson.status !== "locked" && onLessonClick(lesson.id)}
                 />
-                {/* Label below node */}
                 <motion.div
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
