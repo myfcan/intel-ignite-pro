@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { BookOpen, Clock, Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot, LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePrefetchCourseDetailData } from "@/hooks/useCourseDetailQuery";
 
 interface V8TrailCardProps {
   trailId: string;
@@ -45,9 +46,15 @@ export const V8TrailCard = ({
   navigateToId,
 }: V8TrailCardProps) => {
   const navigate = useNavigate();
+  const prefetch = usePrefetchCourseDetailData();
   const progress = lessonCount > 0 ? Math.round((completedCount / lessonCount) * 100) : 0;
   const theme = V8_THEMES[(orderIndex - 1) % V8_THEMES.length];
   const destination = navigateToId ? `/course/${navigateToId}` : `/v8-trail/${trailId}`;
+  const prefetchId = navigateToId || null;
+
+  const handlePrefetch = () => {
+    if (prefetchId) prefetch(prefetchId);
+  };
 
   return (
     <motion.div
@@ -56,6 +63,8 @@ export const V8TrailCard = ({
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.3 }}
       onClick={() => navigate(destination)}
+      onMouseEnter={handlePrefetch}
+      onTouchStart={handlePrefetch}
       className="group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer w-full"
       style={{
         scrollSnapAlign: 'start',

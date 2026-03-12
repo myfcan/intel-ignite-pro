@@ -1,6 +1,7 @@
 import { LucideIcon, Lock, BookOpen, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { usePrefetchCourseDetailData } from '@/hooks/useCourseDetailQuery';
 
 interface CourseCardProps {
   course: {
@@ -28,6 +29,7 @@ const CourseCard = ({
   index = 0,
 }: CourseCardProps) => {
   const navigate = useNavigate();
+  const prefetch = usePrefetchCourseDetailData();
   const isLocked = status === 'locked';
   const isCompleted = status === 'completed';
   const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
@@ -38,6 +40,10 @@ const CourseCard = ({
     }
   };
 
+  const handlePrefetch = () => {
+    if (!isLocked) prefetch(course.id);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -45,6 +51,8 @@ const CourseCard = ({
       transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
       whileHover={!isLocked ? { y: -4, scale: 1.01 } : undefined}
       onClick={handleClick}
+      onMouseEnter={handlePrefetch}
+      onTouchStart={handlePrefetch}
       className={`group relative bg-white rounded-2xl border overflow-hidden transition-all duration-300 ${
         isLocked
           ? 'opacity-50 cursor-not-allowed border-gray-200'
