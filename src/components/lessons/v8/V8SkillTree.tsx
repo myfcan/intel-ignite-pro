@@ -162,24 +162,27 @@ export const V8SkillTree = ({ lessons, onLessonClick, allCompleted }: V8SkillTre
                   isFirst={isFirst}
                   onClick={() => lesson.status !== "locked" && onLessonClick(lesson.id)}
                 />
+
                 <motion.div
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: i * 0.06 + 0.15 }}
-                  className="mt-2 text-center max-w-[140px] sm:max-w-[180px]"
+                  className="relative z-20 mt-2 w-[172px] sm:w-[210px] px-1"
                 >
-                  <p className={`text-xs font-semibold leading-tight line-clamp-2 ${
-                    lesson.status === "locked" ? "text-muted-foreground/50" : "text-foreground"
-                  }`}>
-                    {lesson.title}
-                  </p>
-                  {lesson.estimatedTime && (
-                    <p className={`text-[10px] mt-0.5 ${
-                      lesson.status === "locked" ? "text-muted-foreground/40" : "text-muted-foreground"
+                  <div className="rounded-md bg-background/85 backdrop-blur-[1px] py-1">
+                    <p className={`text-xs font-semibold leading-snug line-clamp-2 text-center ${
+                      lesson.status === "locked" ? "text-muted-foreground/60" : "text-foreground"
                     }`}>
-                      {lesson.estimatedTime} min
+                      {lesson.title}
                     </p>
-                  )}
+                    {lesson.estimatedTime && (
+                      <p className={`text-[10px] mt-0.5 text-center ${
+                        lesson.status === "locked" ? "text-muted-foreground/45" : "text-muted-foreground"
+                      }`}>
+                        {lesson.estimatedTime} min
+                      </p>
+                    )}
+                  </div>
                 </motion.div>
               </div>
             );
