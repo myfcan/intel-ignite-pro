@@ -103,6 +103,9 @@ export default function V8Lesson() {
       : 100;
     await saveProgress("completed", avg);
 
+    // Invalidate course-detail cache so progress is fresh on return
+    queryClient.invalidateQueries({ queryKey: ['course-detail'] });
+
     // Navigate back to journey or dashboard
     if (lesson?.course_id) {
       navigate(`/course/${lesson.course_id}`);
