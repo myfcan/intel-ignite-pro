@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Loader2, Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, ChevronRight, type LucideIcon } from "lucide-react";
+import { ArrowLeft, BookOpen, Brain, Zap, Rocket, Target, TrendingUp, GraduationCap, Crown, Code, DollarSign, ChevronRight, type LucideIcon } from "lucide-react";
+import { V8TrailDetailSkeleton } from "@/components/skeletons";
 import { supabase } from "@/integrations/supabase/client";
 import { V8CertificateCard } from "@/components/lessons/v8/V8CertificateCard";
 import { V8LivTrailWelcome } from "@/components/lessons/v8/V8LivTrailWelcome";
@@ -107,14 +108,7 @@ export default function V8TrailDetail() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 text-violet-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 text-sm">Carregando trilha...</p>
-        </div>
-      </div>
-    );
+    return <V8TrailDetailSkeleton />;
   }
 
   if (!trail) {
