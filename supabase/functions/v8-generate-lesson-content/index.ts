@@ -700,7 +700,7 @@ serve(async (req) => {
         continue;
       }
 
-      const pool = V8_C01_MAP[i];
+      const pool = activeMap[i];
       if (!pool) continue; // No mapping for this index (sections 7+ beyond coursiv/playground)
 
       const selectedType = pool[Math.floor(Math.random() * pool.length)];
