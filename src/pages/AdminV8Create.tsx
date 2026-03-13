@@ -658,6 +658,7 @@ export default function AdminV8Create() {
             manualExercises: parsed.manualExerciseMarkers || [],
             generateImages: false,
             lessonTitle: parsed.title,
+            orderIndex: nextOrderIndex,
           }),
         }
       );

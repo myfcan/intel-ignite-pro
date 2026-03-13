@@ -707,7 +707,7 @@ serve(async (req) => {
       interactionAssignments.push({ sectionIndex: i, type: selectedType });
     }
 
-    console.log(`[v8-generate-lesson-content] V8-C01 map: ${interactionAssignments.map(a => `S${a.sectionIndex}→${a.type}`).join(', ')}${coursivTargetIdx >= 0 ? ` | Coursiv→S${coursivTargetIdx}` : ''} | Playground→S${lastIdx}`);
+    console.log(`[v8-generate-lesson-content] ${selectedPattern} map: ${interactionAssignments.map(a => `S${a.sectionIndex}→${a.type}`).join(', ')}${coursivTargetIdx >= 0 ? ` | Coursiv→S${coursivTargetIdx}` : ''} | Playground→S${lastIdx}`);
 
     // ── 2. Generate inline exercises via unified pipeline (V8-C01) ──
     let generatedQuizzes: any[] = []; // Empty — quizzes are now unified into inlineExercises

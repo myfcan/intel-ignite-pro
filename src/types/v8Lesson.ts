@@ -160,6 +160,7 @@ export interface V8LessonData {
   contentVersion: 'v8';
   title: string;
   description?: string;
+  contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03';
   sections: V8Section[];
   inlineQuizzes: V8InlineQuiz[];
   inlinePlaygrounds?: V8InlinePlayground[];
