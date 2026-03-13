@@ -673,6 +673,26 @@ serve(async (req) => {
     const activeMap = PATTERN_MAPS[selectedPattern] || V8_C01_MAP;
     console.log(`[v8-generate] Pattern: ${selectedPattern} (orderIndex=${orderIndex})`);
 
+    // ── Pedagogical angle per pattern (varies question framing, not type) ──
+    const PEDAGOGICAL_ANGLES: Record<string, string> = {
+      'V8-C01': `ÂNGULO PEDAGÓGICO — IDENTIFICAÇÃO:
+Formule perguntas que testem se o aluno IDENTIFICA o conceito correto entre opções.
+Verbos obrigatórios: identificar, reconhecer, distinguir, apontar.
+Exemplo de pergunta: "Qual destes é um exemplo de prompt específico?"
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-C02': `ÂNGULO PEDAGÓGICO — APLICAÇÃO PRÁTICA:
+Formule perguntas com CENÁRIO REAL que testem se o aluno sabe APLICAR o conceito na prática.
+Comece SEMPRE com uma situação: "Você precisa...", "Seu cliente pediu...", "Imagine que...", "No seu trabalho...".
+Exemplo de pergunta: "Você precisa criar um cardápio para um restaurante. Qual prompt gera o melhor resultado?"
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-C03': `ÂNGULO PEDAGÓGICO — ERRO COMUM:
+Formule perguntas que apresentem algo INCORRETO ou SUBÓTIMO para o aluno detectar o ERRO ou a armadilha.
+Use frases como: "O que está errado em...", "Qual o problema de...", "Por que este prompt falha?", "Identifique a falha...".
+Exemplo de pergunta: "Este prompt parece bom, mas tem um erro comum. Qual é?"
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+    };
+    const angleInstruction = PEDAGOGICAL_ANGLES[selectedPattern] || PEDAGOGICAL_ANGLES['V8-C01'];
+
     // Build interaction assignments for this lesson
     // Manual exercise markers override V8_C01_MAP pool when present
     const manualExerciseMap = new Map<number, string>();
