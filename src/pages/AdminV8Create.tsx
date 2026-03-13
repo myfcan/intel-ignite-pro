@@ -640,7 +640,19 @@ export default function AdminV8Create() {
 
       // Step 2: Call AI to generate quizzes, playgrounds, exercises, images
       setPipelineSteps(prev => prev.map(s => s.id === 'ai-generate' ? { ...s, status: 'running' as const } : s));
-      addLog('info', 'Chamando IA para gerar conteúdo complementar...');
+
+      // Calculate orderIndex for pattern rotation (V8-C01/C02/C03)
+      let nextOrderIndex = 0;
+      if (selectedCourseId) {
+        const { count } = await supabase
+          .from("lessons")
+          .select("id", { count: "exact", head: true })
+          .eq("course_id", selectedCourseId);
+        nextOrderIndex = count ?? 0;
+      }
+      const patternNames = ['V8-C01', 'V8-C02', 'V8-C03'];
+      const selectedPattern = patternNames[nextOrderIndex % 3];
+      addLog('info', `Padrão de exercícios: ${selectedPattern} (orderIndex=${nextOrderIndex})`);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-lesson-content`,
@@ -658,6 +670,7 @@ export default function AdminV8Create() {
             manualExercises: parsed.manualExerciseMarkers || [],
             generateImages: false,
             lessonTitle: parsed.title,
+            orderIndex: nextOrderIndex,
           }),
         }
       );

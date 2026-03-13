@@ -56,7 +56,15 @@ CONGRUÊNCIA GRAMATICAL OBRIGATÓRIA:
 - Outros erros proibidos: "Nós é" → "Nós somos", "A gente vamos" → "A gente vai", "Eu e minha esposa vai" → "Eu e minha esposa vamos".
 - Revise CADA frase para garantir concordância antes de retornar.
 
-14. **Sem caracteres não-latinos**: NUNCA insira caracteres de outros alfabetos (Devanagari, Cirílico, Árabe, CJK, Tailandês, Coreano). Todo o texto deve usar exclusivamente o alfabeto latino com acentos portugueses (á, é, í, ó, ú, ã, õ, ç, etc.). Se encontrar palavras em outros scripts no texto original, substitua pelo equivalente em português.`;
+14. **Sem caracteres não-latinos**: NUNCA insira caracteres de outros alfabetos (Devanagari, Cirílico, Árabe, CJK, Tailandês, Coreano). Todo o texto deve usar exclusivamente o alfabeto latino com acentos portugueses (á, é, í, ó, ú, ã, õ, ç, etc.). Se encontrar palavras em outros scripts no texto original, substitua pelo equivalente em português.
+
+15. **Formatação Editorial Obrigatória**: O conteúdo DEVE usar elementos de markdown que ativam o design premium do renderer:
+   - Use **negrito** para termos-chave e conceitos importantes (2-4 por seção)
+   - Use > blockquotes para insights, reflexões ou frases de destaque (1 por seção quando apropriado)
+   - Use listas com bullet points para enumerações (quando houver 3+ itens)
+   - Use --- (separador horizontal) entre blocos temáticos distintos dentro de uma seção
+   - Use *itálico* para exemplos práticos ou analogias
+   - O primeiro parágrafo de cada seção deve ser o mais forte e impactante (ele recebe estilo drop-cap no renderer)`;
 
 const REFINE_TOOLS = [
   {
