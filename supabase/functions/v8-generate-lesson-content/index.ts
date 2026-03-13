@@ -1349,6 +1349,7 @@ Cada frase deve ter no máximo 25 palavras. Seja direto e inspirador.`;
       inlineExercises: generatedInlineExercises,
       learnAndGrow: generatedLearnAndGrow || undefined,
       exercises: generatedExercises,
+      contractPattern: selectedPattern,
       progress,
       errors: errors.length > 0 ? errors : undefined,
     };
