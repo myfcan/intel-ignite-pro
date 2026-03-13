@@ -598,6 +598,8 @@ serve(async (req) => {
       manualExercises = [],
       generateImages: shouldGenerateImages = false,
       lessonTitle = "Aula",
+      orderIndex = 0,
+      contractPattern: requestedPattern,
     } = await req.json();
 
     if (!sections || !Array.isArray(sections) || sections.length === 0) {
