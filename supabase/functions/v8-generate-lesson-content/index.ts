@@ -636,7 +636,7 @@ serve(async (req) => {
     const lastIdx = sections.length - 1;
     const coursivTargetIdx = lastIdx >= 4 ? lastIdx - 1 : -1;
 
-    // V8-C01 contract: fixed interaction types per section index (0-based)
+    // V8 contract: 3 interaction patterns rotated by orderIndex
     // Sections 0-1: no interaction (introductory)
     // Sections 2-6: mapped types (random pick from pool)
     // lastIdx-1: Coursiv (handled separately)
@@ -648,6 +648,30 @@ serve(async (req) => {
       5: ['platform-match', 'scenario-selection'],
       6: ['timed-quiz', 'fill-in-blanks'],
     };
+    const V8_C02_MAP: Record<number, string[]> = {
+      2: ['scenario-selection', 'true-false'],
+      3: ['flipcard-quiz', 'platform-match'],
+      4: ['fill-in-blanks', 'multiple-choice'],
+      5: ['timed-quiz', 'complete-sentence'],
+      6: ['true-false', 'flipcard-quiz'],
+    };
+    const V8_C03_MAP: Record<number, string[]> = {
+      2: ['flipcard-quiz', 'fill-in-blanks'],
+      3: ['timed-quiz', 'true-false'],
+      4: ['scenario-selection', 'platform-match'],
+      5: ['multiple-choice', 'complete-sentence'],
+      6: ['fill-in-blanks', 'scenario-selection'],
+    };
+
+    const PATTERN_MAPS: Record<string, Record<number, string[]>> = {
+      'V8-C01': V8_C01_MAP,
+      'V8-C02': V8_C02_MAP,
+      'V8-C03': V8_C03_MAP,
+    };
+    const patternNames = ['V8-C01', 'V8-C02', 'V8-C03'] as const;
+    const selectedPattern = requestedPattern || patternNames[Math.abs(orderIndex) % 3];
+    const activeMap = PATTERN_MAPS[selectedPattern] || V8_C01_MAP;
+    console.log(`[v8-generate] Pattern: ${selectedPattern} (orderIndex=${orderIndex})`);
 
     // Build interaction assignments for this lesson
     // Manual exercise markers override V8_C01_MAP pool when present
