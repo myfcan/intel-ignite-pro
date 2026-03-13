@@ -673,6 +673,26 @@ serve(async (req) => {
     const activeMap = PATTERN_MAPS[selectedPattern] || V8_C01_MAP;
     console.log(`[v8-generate] Pattern: ${selectedPattern} (orderIndex=${orderIndex})`);
 
+    // ── Pedagogical angle per pattern (varies question framing, not type) ──
+    const PEDAGOGICAL_ANGLES: Record<string, string> = {
+      'V8-C01': `ÂNGULO PEDAGÓGICO — IDENTIFICAÇÃO:
+Formule perguntas que testem se o aluno IDENTIFICA o conceito correto entre opções.
+Verbos obrigatórios: identificar, reconhecer, distinguir, apontar.
+Exemplo de pergunta: "Qual destes é um exemplo de prompt específico?"
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-C02': `ÂNGULO PEDAGÓGICO — APLICAÇÃO PRÁTICA:
+Formule perguntas com CENÁRIO REAL que testem se o aluno sabe APLICAR o conceito na prática.
+Comece SEMPRE com uma situação: "Você precisa...", "Seu cliente pediu...", "Imagine que...", "No seu trabalho...".
+Exemplo de pergunta: "Você precisa criar um cardápio para um restaurante. Qual prompt gera o melhor resultado?"
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-C03': `ÂNGULO PEDAGÓGICO — ERRO COMUM:
+Formule perguntas que apresentem algo INCORRETO ou SUBÓTIMO para o aluno detectar o ERRO ou a armadilha.
+Use frases como: "O que está errado em...", "Qual o problema de...", "Por que este prompt falha?", "Identifique a falha...".
+Exemplo de pergunta: "Este prompt parece bom, mas tem um erro comum. Qual é?"
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+    };
+    const angleInstruction = PEDAGOGICAL_ANGLES[selectedPattern] || PEDAGOGICAL_ANGLES['V8-C01'];
+
     // Build interaction assignments for this lesson
     // Manual exercise markers override V8_C01_MAP pool when present
     const manualExerciseMap = new Map<number, string>();
@@ -713,7 +733,7 @@ serve(async (req) => {
     let generatedQuizzes: any[] = []; // Empty — quizzes are now unified into inlineExercises
     let generatedInlineExercises: any[] = [];
     if (interactionAssignments.length > 0) {
-      progress.push("Gerando exercícios inline (V8-C01)...");
+      progress.push(`Gerando exercícios inline (${selectedPattern}, ângulo: ${selectedPattern.replace('V8-', '')})...`);
       try {
         const assignmentPrompt = interactionAssignments.map(a => {
           const section = sections[a.sectionIndex];
@@ -722,7 +742,7 @@ serve(async (req) => {
 
         const exResult = await callAI(
           LOVABLE_API_KEY,
-          INLINE_EXERCISE_SYSTEM_PROMPT,
+          INLINE_EXERCISE_SYSTEM_PROMPT + `\n\n${angleInstruction}`,
           `Gere exercícios inline para estas seções. CADA EXERCÍCIO DEVE SER DO TIPO ESPECIFICADO:\n\n${assignmentPrompt}\n\nÍndices válidos para afterSectionIndex: ${interactionAssignments.map(a => a.sectionIndex).join(", ")}`,
           INLINE_EXERCISE_TOOLS,
           "generate_inline_exercises",
