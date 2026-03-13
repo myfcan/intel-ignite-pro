@@ -733,7 +733,7 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
     let generatedQuizzes: any[] = []; // Empty — quizzes are now unified into inlineExercises
     let generatedInlineExercises: any[] = [];
     if (interactionAssignments.length > 0) {
-      progress.push("Gerando exercícios inline (V8-C01)...");
+      progress.push(`Gerando exercícios inline (${selectedPattern}, ângulo: ${selectedPattern.replace('V8-', '')})...`);
       try {
         const assignmentPrompt = interactionAssignments.map(a => {
           const section = sections[a.sectionIndex];
@@ -742,7 +742,7 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
 
         const exResult = await callAI(
           LOVABLE_API_KEY,
-          INLINE_EXERCISE_SYSTEM_PROMPT,
+          INLINE_EXERCISE_SYSTEM_PROMPT + `\n\n${angleInstruction}`,
           `Gere exercícios inline para estas seções. CADA EXERCÍCIO DEVE SER DO TIPO ESPECIFICADO:\n\n${assignmentPrompt}\n\nÍndices válidos para afterSectionIndex: ${interactionAssignments.map(a => a.sectionIndex).join(", ")}`,
           INLINE_EXERCISE_TOOLS,
           "generate_inline_exercises",
