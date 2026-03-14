@@ -1309,6 +1309,59 @@ export default function AdminV8Create() {
 
           {editorMode === "content" ? (
             <>
+              {/* AI Generation Block */}
+              <div className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wand2 className="w-4 h-4 text-violet-500" />
+                  <span className="text-xs font-bold text-slate-700">Gerar Conteúdo com IA</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título da aula</label>
+                    <input
+                      value={genTitle}
+                      onChange={(e) => setGenTitle(e.target.value)}
+                      placeholder={lessonTitle || "Ex: Como usar prompts para e-mails profissionais"}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-violet-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-500 mb-1 block">Variação narrativa</label>
+                    <Select value={genVariation} onValueChange={(v: any) => setGenVariation(v)}>
+                      <SelectTrigger className="bg-white border-slate-200 rounded-lg text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="everyday">🏠 Cotidiano</SelectItem>
+                        <SelectItem value="professional">💼 Profissional</SelectItem>
+                        <SelectItem value="curiosity">🔬 Curiosidade Técnica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-slate-500 mb-1 block">Objetivos (1 por linha, opcional)</label>
+                  <textarea
+                    value={genObjectives}
+                    onChange={(e) => setGenObjectives(e.target.value)}
+                    placeholder={"Entender por que o GPT dá respostas genéricas\nAprender a dar contexto no prompt\nAplicar técnica em situação real"}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-violet-500 resize-y h-16"
+                    rows={3}
+                  />
+                </div>
+                <button
+                  onClick={handleGenerateWithAI}
+                  disabled={isGeneratingContent || isGenerating}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingContent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                  {isGeneratingContent ? "Gerando..." : "Gerar Preview com IA"}
+                </button>
+                <p className="text-[10px] text-slate-400">
+                  Gera apenas o texto (~15s, ~R$0.01). Revise no editor abaixo e depois clique "Converter e Gerar Tudo" para o pipeline completo.
+                </p>
+              </div>
+
               <textarea
                 value={contentText}
                 onChange={(e) => setContentText(e.target.value)}
