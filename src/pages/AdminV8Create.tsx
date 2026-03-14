@@ -209,6 +209,21 @@ export default function AdminV8Create() {
 
   const coursesForTrail = useMemo(() => allCourses.filter(c => c.trail_id === selectedTrailId), [allCourses, selectedTrailId]);
 
+  // Auto-calculate next available order_index for the selected trail
+  const getNextOrderIndex = useCallback(async (): Promise<number> => {
+    if (!selectedTrailId) return 0;
+    const { data } = await supabase
+      .from('lessons')
+      .select('order_index')
+      .eq('trail_id', selectedTrailId)
+      .order('order_index', { ascending: false })
+      .limit(1);
+    if (data && data.length > 0) {
+      return data[0].order_index + 1;
+    }
+    return 0;
+  }, [selectedTrailId]);
+
   // State
   const [lessonTitle, setLessonTitle] = useState("Nova Aula V8");
   const [estimatedTime, setEstimatedTime] = useState(10);
@@ -301,10 +316,11 @@ export default function AdminV8Create() {
 
       let lessonId = savedLessonId;
       if (!lessonId) {
+        const nextOrderIndex = await getNextOrderIndex();
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
           p_title: lessonTitle,
-          p_trail_id: null as unknown as string,
-          p_order_index: 0,
+          p_trail_id: selectedTrailId || null as unknown as string,
+          p_order_index: nextOrderIndex,
           p_estimated_time: estimatedTime,
           p_content: parsed as unknown as Json,
           p_exercises: [] as unknown as Json,
@@ -480,7 +496,7 @@ export default function AdminV8Create() {
               content: parsed as unknown as Json,
               exercises: (parsed.exercises || []) as unknown as Json,
               estimated_time: estimatedTime,
-              order_index: 0,
+              // order_index is NOT updated here to avoid constraint violations
               trail_id: selectedTrailId || null,
               course_id: selectedCourseId || null,
               model: "v8",
@@ -491,10 +507,11 @@ export default function AdminV8Create() {
             .eq("id", savedLessonId);
         if (error) throw error;
       } else {
+        const nextIdx = await getNextOrderIndex();
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
           p_title: lessonTitle,
-          p_trail_id: null as unknown as string,
-          p_order_index: 0,
+          p_trail_id: selectedTrailId || null as unknown as string,
+          p_order_index: nextIdx,
           p_estimated_time: estimatedTime,
           p_content: parsed as unknown as Json,
           p_exercises: (parsed.exercises || []) as unknown as Json,
@@ -900,10 +917,11 @@ export default function AdminV8Create() {
 
       let lessonId = savedLessonId;
       if (!lessonId) {
+        const nextOrdIdx = await getNextOrderIndex();
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
           p_title: finalData.title,
-          p_trail_id: null as unknown as string,
-          p_order_index: 0,
+          p_trail_id: selectedTrailId || null as unknown as string,
+          p_order_index: nextOrdIdx,
           p_estimated_time: estimatedTime,
           p_content: finalData as unknown as Json,
           p_exercises: (finalData.exercises || []) as unknown as Json,
