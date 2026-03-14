@@ -862,6 +862,8 @@ export default function AdminV8Create() {
         contentVersion: "v8",
         title: parsed.title,
         description: parsed.description,
+        contractPattern: selectedPattern as V8LessonData['contractPattern'],
+        narrativeVariation: genVariation,
         sections: (result.sections || parsed.sections).map((s: any, i: number) => ({
           id: `section-${String(i + 1).padStart(2, "0")}`,
           title: s.title,
