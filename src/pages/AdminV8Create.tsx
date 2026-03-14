@@ -316,10 +316,11 @@ export default function AdminV8Create() {
 
       let lessonId = savedLessonId;
       if (!lessonId) {
+        const nextOrderIndex = await getNextOrderIndex();
         const { data: draftId, error: draftError } = await supabase.rpc("create_lesson_draft", {
           p_title: lessonTitle,
-          p_trail_id: null as unknown as string,
-          p_order_index: 0,
+          p_trail_id: selectedTrailId || null as unknown as string,
+          p_order_index: nextOrderIndex,
           p_estimated_time: estimatedTime,
           p_content: parsed as unknown as Json,
           p_exercises: [] as unknown as Json,
