@@ -496,7 +496,7 @@ export default function AdminV8Create() {
               content: parsed as unknown as Json,
               exercises: (parsed.exercises || []) as unknown as Json,
               estimated_time: estimatedTime,
-              order_index: 0,
+              // order_index is NOT updated here to avoid constraint violations
               trail_id: selectedTrailId || null,
               course_id: selectedCourseId || null,
               model: "v8",
