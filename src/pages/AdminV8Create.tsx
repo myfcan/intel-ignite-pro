@@ -548,6 +548,71 @@ export default function AdminV8Create() {
     }
   }, [contentText, toast]);
 
+  // ─── AI Content Generation ───
+  const sectionsToMarkdown = useCallback((title: string, description: string, sections: Array<{ title: string; content: string }>) => {
+    let md = `# ${title}\n\n${description || ""}\n\n`;
+    sections.forEach((s, i) => {
+      md += `## Seção ${i + 1} — ${s.title}\n${s.content}\n\n`;
+    });
+    return md.trim();
+  }, []);
+
+  const handleGenerateWithAI = useCallback(async () => {
+    const titleToUse = genTitle.trim() || lessonTitle;
+    if (!titleToUse) {
+      toast({ title: "❌ Título obrigatório", description: "Preencha o título da aula para gerar.", variant: "destructive" });
+      return;
+    }
+
+    setIsGeneratingContent(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const objectives = genObjectives.split("\n").map(l => l.trim()).filter(Boolean);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-raw-content`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            title: titleToUse,
+            objectives,
+            variationStyle: genVariation,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(errBody.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      const markdown = sectionsToMarkdown(data.title, data.description, data.sections);
+      setContentText(markdown);
+      setLessonTitle(data.title);
+
+      toast({
+        title: "✅ Conteúdo gerado!",
+        description: `${data.sections.length} seções (variação: ${genVariation}). Revise e clique "Converter e Gerar Tudo".`,
+      });
+    } catch (err) {
+      toast({
+        title: "❌ Erro na geração",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingContent(false);
+    }
+  }, [genTitle, genObjectives, genVariation, lessonTitle, toast, sectionsToMarkdown]);
+
   // ─── Convert & Generate All (new automated flow) ───
   const handleConvertAndGenerate = useCallback(async () => {
     if (!contentText.trim()) {
