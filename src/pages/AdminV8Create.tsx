@@ -209,6 +209,21 @@ export default function AdminV8Create() {
 
   const coursesForTrail = useMemo(() => allCourses.filter(c => c.trail_id === selectedTrailId), [allCourses, selectedTrailId]);
 
+  // Auto-calculate next available order_index for the selected trail
+  const getNextOrderIndex = useCallback(async (): Promise<number> => {
+    if (!selectedTrailId) return 0;
+    const { data } = await supabase
+      .from('lessons')
+      .select('order_index')
+      .eq('trail_id', selectedTrailId)
+      .order('order_index', { ascending: false })
+      .limit(1);
+    if (data && data.length > 0) {
+      return data[0].order_index + 1;
+    }
+    return 0;
+  }, [selectedTrailId]);
+
   // State
   const [lessonTitle, setLessonTitle] = useState("Nova Aula V8");
   const [estimatedTime, setEstimatedTime] = useState(10);
