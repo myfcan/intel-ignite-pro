@@ -161,6 +161,7 @@ export interface V8LessonData {
   title: string;
   description?: string;
   contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03';
+  narrativeVariation?: 'everyday' | 'professional' | 'curiosity';
   sections: V8Section[];
   inlineQuizzes: V8InlineQuiz[];
   inlinePlaygrounds?: V8InlinePlayground[];
