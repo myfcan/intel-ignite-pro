@@ -225,7 +225,12 @@ export default function AdminV8Create() {
   // Content mode
   const [editorMode, setEditorMode] = useState<"content" | "json">("content");
   const [contentText, setContentText] = useState("");
-  
+
+  // AI Generation state
+  const [genTitle, setGenTitle] = useState("");
+  const [genObjectives, setGenObjectives] = useState("");
+  const [genVariation, setGenVariation] = useState<"everyday" | "professional" | "curiosity">("everyday");
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   // Parsed data for setup wizard
   const [parsedSections, setParsedSections] = useState<V8Section[]>([]);
   const [parsedQuizzes, setParsedQuizzes] = useState<V8InlineQuiz[]>([]);
