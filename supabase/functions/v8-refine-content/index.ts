@@ -43,6 +43,10 @@ REGRAS OBRIGATÓRIAS:
 
 13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (como "Responde rápido pra mim: quando o GPT parece genérico..."), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
 
+16. **NUNCA termine uma seção com uma pergunta interrogativa**. Seções devem terminar com afirmações, insights ou transições declarativas. Se a última frase da seção terminar com "?", REESCREVA para ser uma afirmação.
+
+17. **PROIBIDO criar frases que funcionem como enunciado de exercício**. Exemplos proibidos: "Teste rápido:", "Vamos testar:", "Qual dos seguintes...", "Responda:", "Agora é sua vez:", "Vamos aplicar:". Exercícios são gerados separadamente pelo pipeline e NÃO devem ser antecipados no texto da seção.
+
 IMPORTANTE:
 - NUNCA gere rótulos meta-narrativos como "Segmento vida real desta atividade:", "Atividade prática:" ou "Contexto real:".
 - NUNCA use frases anti-pedagógicas como "Responda rapidamente" ou "Confie nos seus instintos".
