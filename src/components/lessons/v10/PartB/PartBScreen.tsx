@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { V10LessonStep } from '../../../../types/v10.types';
+import type { LivChatMessage } from './LIVSheet';
+import { supabase } from '@/integrations/supabase/client';
 import PlayerHeader from './PlayerHeader';
 import StepContent from './StepContent';
 import PlayerBar from './PlayerBar';
@@ -54,6 +56,8 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const [playbackSpeed, setPlaybackSpeed] = useState<1 | 1.5 | 2>(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [livOpen, setLivOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<LivChatMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const preloadRef = useRef<HTMLAudioElement>(null);
@@ -201,10 +205,40 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     setCurrentTime(0);
   }, []);
 
-  // LIV ask handler
-  const handleAskLiv = useCallback((_question: string) => {
-    // Placeholder for future Claude API integration
-  }, []);
+  // Reset chat when step changes
+  useEffect(() => {
+    setChatMessages([]);
+  }, [currentStepIndex]);
+
+  // LIV ask handler — calls claude-interact edge function
+  const handleAskLiv = useCallback(async (question: string) => {
+    setChatMessages((prev) => [...prev, { role: 'user', content: question }]);
+    setChatLoading(true);
+
+    try {
+      const step = steps[currentStepIndex];
+      const contextMessage = `[Contexto: Aula "${lessonTitle}", Passo ${step?.step_number}: "${step?.title}". App: ${step?.app_name || 'N/A'}]\n\nPergunta do aluno: ${question}`;
+
+      const { data, error } = await supabase.functions.invoke('claude-interact', {
+        body: {
+          message: contextMessage,
+          context_type: 'lesson',
+        },
+      });
+
+      if (error) throw error;
+
+      const aiResponse = data?.response || 'Desculpe, não consegui processar sua pergunta.';
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
+    } catch {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Ops, houve um erro. Tente novamente em instantes.' },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [currentStepIndex, steps, lessonTitle]);
 
   if (!currentStep || !currentFrame) {
     return null;
@@ -285,6 +319,8 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         liv={currentStep.liv}
         warnings={currentStep.warnings}
         onAskLiv={handleAskLiv}
+        chatMessages={chatMessages}
+        chatLoading={chatLoading}
       />
 
       {/* Audio elements */}

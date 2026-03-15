@@ -216,14 +216,110 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
     debouncedSave({ current_part: 'B', current_step: 0, current_frame: 0 });
   }, [debouncedSave]);
 
-  const handlePartBComplete = useCallback(() => {
+  const handlePartBComplete = useCallback(async () => {
     setCurrentPart('C');
     debouncedSave({
       current_part: 'C',
       completed: true,
       completed_at: new Date().toISOString(),
     });
-  }, [debouncedSave]);
+
+    // --- Gamification: record achievement + update streak ---
+    if (!lesson) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // 1. Record achievement (idempotent — unique on user_id + lesson_id)
+      await supabase.from('v10_user_achievements').upsert(
+        {
+          user_id: user.id,
+          lesson_id: lesson.id,
+          badge_icon: lesson.badge_icon,
+          badge_name: lesson.badge_name,
+          xp_earned: lesson.xp_reward,
+          earned_at: new Date().toISOString(),
+        } as Record<string, unknown>,
+        { onConflict: 'user_id,lesson_id' }
+      );
+
+      // 2. Update streak
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: streakRow } = await supabase
+        .from('v10_user_streaks')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (streakRow) {
+        const streak = streakRow as unknown as V10UserStreak;
+        const lastDate = streak.last_activity_date;
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+        let newStreak = streak.current_streak;
+        let newStart = streak.streak_start_date;
+
+        if (lastDate === today) {
+          // Already active today, no change
+        } else if (lastDate === yesterday) {
+          newStreak += 1;
+        } else {
+          // Streak broken, restart
+          newStreak = 1;
+          newStart = today;
+        }
+
+        const newLongest = Math.max(streak.longest_streak, newStreak);
+
+        await supabase
+          .from('v10_user_streaks')
+          .update({
+            current_streak: newStreak,
+            longest_streak: newLongest,
+            last_activity_date: today,
+            streak_start_date: newStart,
+          } as Record<string, unknown>)
+          .eq('id', streak.id);
+
+        setUserStreak({
+          ...streak,
+          current_streak: newStreak,
+          longest_streak: newLongest,
+          last_activity_date: today,
+          streak_start_date: newStart,
+        });
+      } else {
+        // First ever activity — create streak row
+        const { data: newRow } = await supabase
+          .from('v10_user_streaks')
+          .insert({
+            user_id: user.id,
+            current_streak: 1,
+            longest_streak: 1,
+            last_activity_date: today,
+            streak_start_date: today,
+          } as Record<string, unknown>)
+          .select()
+          .single();
+
+        if (newRow) {
+          setUserStreak(newRow as unknown as V10UserStreak);
+        }
+      }
+
+      // 3. Register gamification event (XP + coins via existing RPC)
+      await supabase.rpc('register_gamification_event', {
+        p_user_id: user.id,
+        p_event_type: 'lesson_completed',
+        p_payload: { lesson_id: lesson.id, lesson_title: lesson.title },
+      }).catch(() => {
+        // Non-critical: RPC may not exist in all environments
+      });
+    } catch (err) {
+      console.error('[LessonContainer] Gamification error:', err);
+    }
+  }, [debouncedSave, lesson]);
 
   const handleNextLesson = useCallback(() => {
     // Navigate to next lesson or dashboard
