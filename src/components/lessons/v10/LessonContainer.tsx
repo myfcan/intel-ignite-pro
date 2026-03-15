@@ -302,7 +302,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             longest_streak: newLongest,
             last_activity_date: today,
             streak_start_date: newStart,
-          } as Record<string, unknown>)
+          })
           .eq('id', streak.id);
 
         setUserStreak({
