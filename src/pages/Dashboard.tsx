@@ -352,7 +352,7 @@ const Dashboard = () => {
       const [userResult, rolesResult, dailyUsageResult] = await Promise.all([
         supabase.from('users').select('*').eq('id', userId).maybeSingle(),
         supabase.from('user_roles').select('role').eq('user_id', userId),
-        supabase.from('v10_user_daily_usage').select('interactions_used, interactions_limit').eq('user_id', userId).eq('usage_date', today).maybeSingle(),
+        supabase.from('v10_user_daily_usage' as any).select('interactions_used, interactions_limit').eq('user_id', userId).eq('usage_date', today).maybeSingle(),
       ]);
 
       if (userResult.error) {
