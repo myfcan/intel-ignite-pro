@@ -139,6 +139,13 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -305,9 +312,9 @@ serve(async (req: Request) => {
             // Log the failure
             await supabase.from("v10_bpa_pipeline_log").insert({
               pipeline_id,
-              step: "generate-images",
-              status: "error",
-              message: `Step ${step.step_number}, element ${elementIdx}: ${(err as Error).message}`,
+              stage: 3,
+              action: "generate-images:error",
+              details: { message: `Step ${step.step_number}, element ${elementIdx}: ${(err as Error).message}` },
             });
 
             await delay(1000);
@@ -346,9 +353,9 @@ serve(async (req: Request) => {
     // 10. Log completion
     await supabase.from("v10_bpa_pipeline_log").insert({
       pipeline_id,
-      step: "generate-images",
-      status: "completed",
-      message: `Batch ${batch_index}: ${success} succeeded, ${failed} failed out of ${batchSteps.length} steps (total needing images: ${total})`,
+      stage: 3,
+      action: "generate-images:completed",
+      details: { message: `Batch ${batch_index}: ${success} succeeded, ${failed} failed out of ${batchSteps.length} steps (total needing images: ${total})` },
     });
 
     // 11. Return stats

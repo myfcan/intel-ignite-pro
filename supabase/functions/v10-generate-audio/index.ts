@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +19,13 @@ const VOICE_SETTINGS = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -460,7 +467,7 @@ async function incrementAudiosGenerated(
 async function logPipeline(
   supabase: any,
   pipeline_id: string,
-  step: string,
+  action: string,
   status: string,
   payload: Record<string, unknown>,
 ): Promise<void> {
@@ -468,9 +475,9 @@ async function logPipeline(
     .from('v10_bpa_pipeline_log')
     .insert({
       pipeline_id,
-      step,
-      status,
-      payload,
+      stage: 5,
+      action: `${action}:${status}`,
+      details: payload,
     });
 
   if (error) {

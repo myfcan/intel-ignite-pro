@@ -31,7 +31,7 @@ export const RecapPage: React.FC<RecapPageProps> = ({
       audio.pause();
       setIsPlaying(false);
     } else {
-      audio.play().then(() => setIsPlaying(false)).catch(() => {});
+      audio.play().catch(() => setIsPlaying(false));
       setIsPlaying(true);
     }
   };

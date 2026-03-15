@@ -7,7 +7,7 @@ interface LIVFabProps {
 
 const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick }) => {
   return (
-    <div className="fixed bottom-24 right-4 z-30 w-[52px] h-[52px]">
+    <div className="absolute bottom-24 right-4 z-30 w-[52px] h-[52px]">
       <button
         type="button"
         onClick={onClick}

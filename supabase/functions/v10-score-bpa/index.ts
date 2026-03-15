@@ -11,6 +11,13 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const { pipeline_id } = await req.json();
 
@@ -124,9 +131,9 @@ serve(async (req) => {
       .from('v10_bpa_pipeline_log')
       .insert({
         pipeline_id,
-        step: 'score-bpa',
-        status: 'completed',
-        payload: updatePayload,
+        stage: 1,
+        action: 'score-bpa',
+        details: updatePayload,
       });
 
     if (logError) {
