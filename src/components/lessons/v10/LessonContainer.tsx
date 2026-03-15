@@ -162,13 +162,13 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         if (existing) {
           await supabase
             .from('v10_user_lesson_progress')
-            .update(updates as Record<string, unknown>)
+            .update(updates as any)
             .eq('id', existing.id);
         } else {
           const newProgress = {
             user_id: user.id,
             lesson_id: lesson.id,
-            current_part: 'A' as V10ScreenPart,
+            current_part: 'A',
             current_step: 0,
             current_frame: 0,
             completed: false,
@@ -178,7 +178,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           };
           const { data } = await supabase
             .from('v10_user_lesson_progress')
-            .insert(newProgress as Record<string, unknown>)
+            .insert(newProgress)
             .select()
             .single();
           if (data) {
@@ -263,7 +263,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           badge_name: lesson.badge_name,
           xp_earned: lesson.xp_reward,
           earned_at: new Date().toISOString(),
-        } as Record<string, unknown>,
+        },
         { onConflict: 'user_id,lesson_id' }
       );
 
@@ -302,7 +302,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             longest_streak: newLongest,
             last_activity_date: today,
             streak_start_date: newStart,
-          } as Record<string, unknown>)
+          })
           .eq('id', streak.id);
 
         setUserStreak({
@@ -322,7 +322,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             longest_streak: 1,
             last_activity_date: today,
             streak_start_date: today,
-          } as Record<string, unknown>)
+          })
           .select()
           .single();
 
@@ -332,13 +332,14 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
       }
 
       // 3. Register gamification event (XP + coins via existing RPC)
-      await supabase.rpc('register_gamification_event', {
-        p_user_id: user.id,
-        p_event_type: 'lesson_completed',
-        p_payload: { lesson_id: lesson.id, lesson_title: lesson.title },
-      }).catch(() => {
+      try {
+        await supabase.rpc('register_gamification_event', {
+          p_event_type: 'lesson_completed',
+          p_payload: { lesson_id: lesson.id, lesson_title: lesson.title },
+        });
+      } catch {
         // Non-critical: RPC may not exist in all environments
-      });
+      }
     } catch (err) {
       console.error('[LessonContainer] Gamification error:', err);
       setGamificationError(true);
