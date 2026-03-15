@@ -140,7 +140,7 @@ serve(async (req) => {
     }
 
     // Generate cache key
-    const cacheKey = `${lesson_id || 'general'}_${context_type}_${message.substring(0, 50)}`;
+    const cacheKey = `${lesson_id || 'general'}_${context_type}_${message}`;
     const crypto = await import('https://deno.land/std@0.177.0/crypto/mod.ts');
     const encoder = new TextEncoder();
     const data = encoder.encode(cacheKey);

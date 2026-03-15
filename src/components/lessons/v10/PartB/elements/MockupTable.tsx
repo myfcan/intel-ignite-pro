@@ -7,7 +7,7 @@ interface MockupTableProps {
 
 const MockupTable: React.FC<MockupTableProps> = ({ headers, rows }) => {
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
+    <div className="overflow-x-auto max-h-[300px] overflow-y-auto rounded-lg border border-gray-200">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">

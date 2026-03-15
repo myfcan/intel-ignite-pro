@@ -21,9 +21,14 @@ const ChromeHeader: React.FC<ChromeHeaderProps> = ({ url }) => {
           style={{ backgroundColor: '#28C840' }}
         />
       </div>
-      <div className="flex-1 bg-white rounded px-3 py-1 text-xs font-mono text-gray-500 truncate border border-gray-200">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 bg-white rounded px-3 py-1 text-xs font-mono text-gray-500 truncate border border-gray-200 hover:text-indigo-600 transition-colors"
+      >
         {url}
-      </div>
+      </a>
     </div>
   );
 };

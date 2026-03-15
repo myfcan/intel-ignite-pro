@@ -123,7 +123,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         ]);
 
         if (progressRes.data) {
-          const prog = progressRes.data as unknown as V10UserProgress;
+          const prog = progressRes.data as V10UserProgress;
           setUserProgress(prog);
           // Resume from saved part
           if (!prog.completed) {
@@ -132,7 +132,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         }
 
         if (streakRes.data) {
-          setUserStreak(streakRes.data as unknown as V10UserStreak);
+          setUserStreak(streakRes.data as V10UserStreak);
         }
       }
     } catch (err) {
@@ -182,7 +182,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             .select()
             .single();
           if (data) {
-            setUserProgress(data as unknown as V10UserProgress);
+            setUserProgress(data as V10UserProgress);
           }
         }
       } catch (err) {
@@ -276,7 +276,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         .maybeSingle();
 
       if (streakRow) {
-        const streak = streakRow as unknown as V10UserStreak;
+        const streak = streakRow as V10UserStreak;
         const lastDate = streak.last_activity_date;
         const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
@@ -327,7 +327,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           .single();
 
         if (newRow) {
-          setUserStreak(newRow as unknown as V10UserStreak);
+          setUserStreak(newRow as V10UserStreak);
         }
       }
 

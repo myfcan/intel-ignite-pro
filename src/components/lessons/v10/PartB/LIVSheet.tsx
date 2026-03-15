@@ -74,6 +74,9 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
   }, [chatMessages, chatLoading]);
 
   const handleClose = () => {
+    if (chatInput.trim() && !window.confirm('Você tem texto não enviado. Deseja fechar mesmo assim?')) {
+      return;
+    }
     setExpanded(null);
     onClose();
   };

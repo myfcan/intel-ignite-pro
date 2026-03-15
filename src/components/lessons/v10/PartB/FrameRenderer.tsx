@@ -120,6 +120,7 @@ function renderElement(element: V10Element, index: number): React.ReactNode {
       return <ShimmerPlaceholder key={index} height={element.height} />;
 
     default:
+      console.warn(`[FrameRenderer] Unknown element type: ${(element as V10Element).type}`);
       return null;
   }
 }
