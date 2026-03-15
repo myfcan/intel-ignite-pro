@@ -142,14 +142,12 @@ export default function AdminV10PipelineEditor() {
       setPipeline(updated);
 
       // Log the update
-      const logPayload: Record<string, unknown> = {
+      await supabase.from('v10_bpa_pipeline_log').insert({
         pipeline_id: pipeline.id,
         stage: pipeline.current_stage,
         action: 'update',
         details: { updated_fields: Object.keys(updates) },
-      };
-
-      await supabase.from('v10_bpa_pipeline_log').insert(logPayload);
+      });
     },
     [pipeline],
   );
