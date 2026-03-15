@@ -193,14 +193,12 @@ export default function AdminV10PipelineEditor() {
     setActiveStage(nextStage);
 
     // Log the stage advance
-    const logPayload: Record<string, unknown> = {
+    await supabase.from('v10_bpa_pipeline_log').insert({
       pipeline_id: pipeline.id,
-      stage: nextStage,
+      stage: nextStage as number,
       action: 'stage_advance',
       details: { from: pipeline.current_stage, to: nextStage },
-    };
-
-    await supabase.from('v10_bpa_pipeline_log').insert(logPayload);
+    });
 
     toast.success(`Avançou para a etapa ${nextStage}: ${STAGES[nextStage - 1].label}`);
     setAdvancing(false);
