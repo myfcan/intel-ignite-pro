@@ -1,184 +1,151 @@
 
-# Espelho Completo V8 — 25 Categorias (~35 arquivos)
 
-## Auditoria Final: Todas as Melhorias Mapeadas
+# Auditoria Forense do Plano: Modelo 2 — Editor de Variações (3 variações)
 
----
-
-## CAT 1: Renderização Markdown (V8ContentSection)
-- Bold: `font-semibold text-primary`
-- Itálico: highlight marker `bg-primary/10 px-1.5 py-0.5 rounded-md`
-- Listas: container `bg-muted/50 rounded-xl border-border/40`, bullets `bg-primary/60`
-- Blockquotes: callout `border-l-4 border-primary/40 bg-primary/5 rounded-r-xl`
-- Code inline: `bg-muted text-primary rounded-md font-mono`
-- Base: `text-[16.5px] leading-[1.85] tracking-[-0.01em]`
-- Sanitização: `v8TextSanitizer.ts` remove marcadores narração
-- Título: strip automático "Seção X —" via `cleanSectionTitle()`
-
-## CAT 2: Imagens — V8TrimmedImage
-- Trim automático via bounding box (alpha<10, dist<30)
-- Cache in-memory `trimmedImageCache` com `TRIM_VERSION=2`
-- Shimmer loading + fade-in 500ms + `img.decode()` assíncrono
-- Posição: antes do markdown, centralizada, `max-w-[300px] rounded-2xl`
-
-## CAT 3: Scroll & Âncoras (v8ScrollUtils)
-- Âncora estática `scroll-margin-top: 88px` separada do motion.div
-- Drift correction 420ms pós-scroll (threshold 4px)
-- Double-rAF antes do scroll
-- CTA scroll: 300ms + 600ms safety-net
-- Safe zones: TOP=88px, BOTTOM=120px, DELTA=16px
-
-## CAT 4: Player UI (V8LessonPlayer)
-- Background: `bg-white text-slate-900` (Premium Light)
-- Hide scrollbar, padding unificado `pb-36`
-- Barra fixa bottom: `bg-white/95 backdrop-blur-sm`
-- Animação entrada: `opacity 0→1, y 14→0` condicional
-- Preload áudio do próximo item
-
-## CAT 5: Header & Progresso (V8Header)
-- Barra progresso: `h-1 bg-gradient-to-r from-indigo-500 to-violet-500`
-- Glassmorphism: `bg-white/90 backdrop-blur-lg`
-- Contador: `tabular-nums text-[11px]`
-- Report button + drawer de navegação por seções
-
-## CAT 6: Audio Player (V8AudioPlayer)
-- Play button: gradiente `indigo-500 → violet-500`, 36px
-- Progress bar clicável `h-1.5`
-- Velocidade: ciclo `1x → 1.25x → 1.5x → 2x`
-- Timer `font-mono tabular-nums`
-- Loading: spinner + animate-pulse
-
-## CAT 7: Audio-First Lock (useAudioFirstLock + V8AudioLockOverlay)
-- Lock: `opacity-40 pointer-events-none` durante narração
-- Overlay: `Headphones animate-pulse` + mensagem
-- Unlock visual: `ring-2 ring-indigo-400/60` por 1.5s
-- Escopo: V8InlineExercise, V8CompleteSentenceInline, V8QuizInline, V8QuizTrueFalse, V8QuizFillBlank (modo dual: texto + chips)
-
-## CAT 8: Exercícios Inline (8 tipos)
-1. **Multiple Choice** — botões com feedback verde/vermelho, ícone Target
-2. **FlipCard Quiz** — Light Theme, COLOR_MAP/ICON_MAP, confetti localizado, progress bar
-3. **True/False** — 4 afirmações com toggle
-4. **Platform Match** — match cenários↔plataformas, validação defensiva
-5. **Timed Quiz** — 4 timer states, bônus tempo, SFX, max 2 perguntas
-6. **Scenario Selection** — formato dual (simples + completo), scroll integrado
-7. **Fill-in-Blanks** — chips arrastáveis
-8. **Complete Sentence** — lacunas inline com chip bank
-
-## CAT 9: Coursiv Prompt Builder (V8CompleteSentenceInline)
-- Badge: `Puzzle` icon em `bg-cyan-50 border-cyan-200`
-- Blank states: active/filled/empty com cores distintas
-- Word bank: chips shuffled, tap-to-fill, auto-advance
-- Submit: só quando `allFilled`
-- Feedback: erros com `line-through` + correção verde
-- Retry: grid 2 colunas
-- Contrato V8-C01: 4 lacunas, 0 distratores
-
-## CAT 10: Playground Interativo (V8PlaygroundInline)
-- Fases: intro→amateur→professional→compare→challenge→done (acumulativas)
-- Badge: `Sparkles` em `bg-violet-50`
-- Comparação: grid 2 colunas ❌/✅
-- Challenge: avaliação IA via edge function `v8-evaluate-prompt`
-- Anti-copy context, feedback estruturado, max 3 tentativas
-- Reset externo via `useImperativeHandle`
-
-## CAT 11: Insight Reward (V8InsightReward)
-- Card `border-2 border-amber-300 bg-amber-50`
-- Claim idempotente (verifica events antes)
-- Confetti 100 partículas + SFX
-- Estado locked se playground score < 81
-
-## CAT 12: Learn & Grow (V8LearnAndGrowBlock)
-- Design: `border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50`
-- 3 linhas numeradas: whatChanged, beforeAfter, practicalExample
-- Último item do timeline
-
-## CAT 13: Tela de Conclusão (V8CompletionScreen)
-- Troféu com gradiente indigo-violet
-- Stats grid 3 colunas: XP, Moedas, Streak
-- CountUp 750ms com delay escalonado
-- Confetti condicional (só se avgScore > 0)
-- Patent badge com spring animation
-
-## CAT 14: Modal de Avaliação (V8LessonRating)
-- 5 estrelas Lucide com hover/active scale
-- Textarea 500 chars, upsert no banco
-- Thank you auto-close 1.2s
-
-## CAT 15: Mode Selector (V8ModeSelector)
-- 2 cards: Ler (BookOpen) / Ouvir (Headphones)
-- Hover spring animation
-- `unlockAudio()` no iOS
-
-## CAT 16: Gamification & XP (distributed)
-- XP por exercício: `registerGamificationEvent` idempotente
-- Micro-feedback: badge flutuante `+5 XP` animado
-- XP por insight e conclusão
-- `playgroundScores` para conditional insight unlock
-
-## CAT 17: Timeline & Dedup (useV8Player)
-- Ordem: Section→CompleteSentence→InlineExercise→Playground→Insight→Quiz
-- Dedup: inlineExercise tem prioridade sobre quiz legado
-- Preload por tipo: 7 tipos de timeline item
-- Cleanup: `audio.src = ""` no unmount
-
-## CAT 18: Feedback Wrapper (V8InlineExercise)
-- Feedback card: `border-l-4` emerald/amber
-- Retry: `exerciseKey` incrementado para remount
-- Botões: grid 2 colunas (fail) ou full-width (pass)
-- CTA scroll integrado
-
-## CAT 19: Review Gate — Social Proof (V8LessonReviewGate)
-- Reviews determinísticos via hash do lessonId (4 de 5)
-- CTA delay 3s, label dinâmico
-- Bloqueio de fuga (pointerDown + escape)
-- Upsell: Crown → /pricing
-- Design: gradiente violet→indigo, avatares coloridos
-- Animação: cards escalonados 150ms
-
-## CAT 20: Liv Trail Welcome (V8LivTrailWelcome)
-- One-time show via localStorage
-- Delay abertura 600ms, CTA habilita 2s
-- Design Dark: #1F2937→#111827, grid SVG, glow violeta
-- 6 partículas flutuantes animadas
-- Avatar Liv: borda purple, glow radial pulsante, Sparkles girando
-- CTA: gradiente indigo→violet→pink
-
-## CAT 21: Skill Tree (V8SkillTree + V8SkillNode)
-- Layout zigzag: pattern [0,1,0,-1], offset 70px, ROW_HEIGHT=160px
-- Conectores SVG: Bézier quadrática, cor por estado
-- 4 estados visuais: completed, in_progress, available, locked
-- Ícones dinâmicos via getLessonIcon(title)
-- Spring stiffness 220, delay escalonado
-
-## CAT 22: Trail Card (V8TrailCard)
-- V8_ICONS por orderIndex (Compass, MessageSquare, Sparkles, Brain, Palette, Zap, Bot)
-- 4 temas accent rotacionando
-- Progress bar animada com cor do tema
-
-## CAT 23: Lesson Icon Map (lessonIconMap.ts)
-- 27 keyword→ícone mappings
-- Fallback: BookOpen
-- Usado em: V8LessonCard, V8SkillNode, CourseDetail
-
-## CAT 24: Exercise Error Card (ExerciseErrorCard)
-- Card laranja com AlertTriangle
-- Detalhes técnicos font-mono
-- Link admin sync
-- Usado em 6 exercícios como validação defensiva
-
-## CAT 25: Content Parser (v8ContentParser.ts — 542 linhas)
-- parseFullContent(): extrai título, descrição, seções, playgrounds, quizzes
-- Section 0 auto-criada se conteúdo entre # e ##
-- Meta-filter: ignora parser/fix/TODO/FIXME
-- Sanitização pedagógica integrada
-- Output flags: hasManualExercises, hasManualQuizzes, etc.
+## ANÁLISE COM DADOS REAIS
 
 ---
 
-## Utilitários Transversais
-- `v8TextSanitizer.ts` — sanitização de narração
-- `v8ScrollUtils.ts` — scroll helpers
-- `src/index.css` — hide-scrollbar
-- `src/constants/v8Rules.ts` — PASS_SCORE
+## 1. CONFIRMADO: O ponto de inserção na UI está claro
 
-**Total: 25 categorias, ~35 arquivos.**
+**Evidência real — `AdminV8Create.tsx` linhas 1331-1381:**
+O bloco "Gerar Conteúdo com IA" ocupa as linhas 1331-1381 e contém: `genTitle`, `genVariation` (Select com 3 opções), `genObjectives` (textarea), botão "Gerar Preview com IA". O Modelo 2 precisa ser inserido como alternativa dentro desse bloco.
+
+**Risco: ZERO.** O ponto de inserção é claro e isolado.
+
+---
+
+## 2. CONFIRMADO: `handleGenerateWithAI` é o handler de referência
+
+**Evidência real — `AdminV8Create.tsx` linhas 577-631:**
+```typescript
+const handleGenerateWithAI = useCallback(async () => {
+  // ...
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-raw-content`,
+    // ...
+  );
+  const data = await res.json();
+  const markdown = sectionsToMarkdown(data.title, data.description, data.sections);
+  setContentText(markdown);
+```
+
+O handler chama a edge function, converte resultado para markdown via `sectionsToMarkdown()`, e popula `contentText`. O Modelo 2 terá um handler análogo mas **não usa `sectionsToMarkdown`** — ele popula `contentText` com o texto da variação escolhida diretamente.
+
+---
+
+## 3. GAP SISTÊMICO CONFIRMADO: `narrativeVariation` contaminação
+
+**Evidência real — `AdminV8Create.tsx` linha 883:**
+```typescript
+narrativeVariation: genVariation,
+```
+
+O `genVariation` (linha 247, default `"everyday"`) é sempre salvo no `finalData`. Se o admin usa Modelo 2 e depois roda "Converter e Gerar Tudo", o `narrativeVariation` será `"everyday"` em vez de refletir que veio do Editor de Variações.
+
+**Correção obrigatória:** Quando Modelo 2 for usado e o admin clicar "Usar esta variação", setar `genVariation` para um valor que identifique o Modelo 2 — ou adicionar lógica condicional na linha 883 baseada em `genModel`.
+
+**Impacto sem correção:** Metadado incorreto no JSON salvo. Não quebra o pipeline, mas compromete rastreabilidade.
+
+---
+
+## 4. GAP UX CONFIRMADO: Texto curto ≠ 9 seções
+
+**Evidência real — `AdminV8Create.tsx` linha 642:**
+```typescript
+const parsed = parseFullContent(contentText);
+```
+
+**Evidência real — linha 869:**
+```typescript
+if (preFinalSections.length < 9) {
+  throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo 9)`);
+}
+```
+
+O Modelo 2 gera variações de um **texto narrativo curto** (3-6 linhas). Se o admin clicar "Converter e Gerar Tudo" diretamente com esse texto, `parseFullContent` vai encontrar 0-1 seções e o Hard Gate aborta.
+
+**Isso NÃO é um bug** — é o comportamento esperado do pipeline V8-C01. Mas a UX deve guiar:
+- Opção A: Mostrar aviso no card da variação escolhida: "Este texto precisa ser estruturado em 9 seções antes do pipeline."
+- Opção B: Usar a variação como inspiração/conteúdo de 1 seção, e o admin monta as outras 8 manualmente.
+
+**Risco: MÉDIO.** O admin pode se confundir achando que o texto da variação é a aula completa.
+
+---
+
+## 5. ANÁLISE: Edge Function `v8-generate-variations` — Riscos
+
+### 5a. Prompt injection via âncoras
+O admin cola âncoras livremente no textarea. Essas strings vão direto para o prompt do sistema. Se alguém colar instruções maliciosas nas âncoras, pode alterar o comportamento da IA.
+
+**Risco: BAIXO** (apenas admins autenticados usam, não é user-facing). Mitigação: sanitizar âncoras removendo `\n---\n`, `SYSTEM:`, etc.
+
+### 5b. Custo e latência
+3 variações de texto curto (3-6 linhas cada) via `google/gemini-2.5-flash` com tool calling. Estimativa: ~3-5 segundos, ~$0.002 por chamada.
+
+**Risco: NENHUM.**
+
+### 5c. Formato da resposta
+Com tool calling e schema estrito (`variations: [{ lever, leverName, text, anchorChecklist }]`), o risco de formato inesperado é baixo. O `v8-generate-raw-content` já usa o mesmo padrão com sucesso (linha 82-111).
+
+**Risco: BAIXO.**
+
+### 5d. Shuffle de alavancas
+O plano propõe embaralhar 6 alavancas e selecionar 3 aleatórias. Usar `Math.random()` com Fisher-Yates no Deno é seguro.
+
+**Risco: NENHUM.**
+
+---
+
+## 6. ANÁLISE: Efeito sistêmico no pipeline downstream
+
+| Componente | Impacto | Justificativa |
+|------------|---------|---------------|
+| `parseFullContent()` | **NENHUM** | Só é chamado quando admin clica "Converter e Gerar Tudo", não na geração do Modelo 2 |
+| `v8-refine-content` | **NENHUM** | Só é chamado dentro de `handleConvertAndGenerate`, não pelo Modelo 2 |
+| Hard Gate V8-C01 | **NENHUM** | O Modelo 2 popula `contentText`, não dispara o pipeline |
+| `handleSave` | **NENHUM** | Salva o `jsonText`, não o `contentText` bruto |
+| Audio pipeline | **NENHUM** | Só roda após JSON válido |
+| `create_lesson_draft` RPC | **NENHUM** | Só chamado no pipeline completo |
+
+**Conclusão: ZERO efeito sistêmico.** O Modelo 2 opera exclusivamente no textarea `contentText` (pré-pipeline). É uma ferramenta de escrita, não de geração estruturada.
+
+---
+
+## 7. ANÁLISE: Tamanho do arquivo `AdminV8Create.tsx`
+
+**Atual: 1581 linhas.** Adicionar o Modelo 2 (seletor + 2 textareas + handler + display de 3 cards) adiciona ~100-130 linhas.
+
+**Risco: BAIXO.** O arquivo já é grande mas a adição é modular (confinada ao bloco 1331-1381).
+
+---
+
+## 8. RESUMO DE RISCOS
+
+| Risco | Severidade | Probabilidade | Ação |
+|-------|-----------|--------------|------|
+| `narrativeVariation` contaminada | Baixo | 100% sem fix | Setar valor condicional na linha 883 |
+| Admin confunde variação com aula completa | Médio | Alto sem UX | Adicionar aviso no card da variação |
+| IA ignora âncoras | Baixo | ~5% | Checklist no output + log de warning |
+| IA retorna <3 variações | Baixo | ~2% | Padding defensivo como no `v8-generate-raw-content` linha 195 |
+| Timeout da edge function | Desprezível | <1% | Texto curto, resposta rápida |
+
+---
+
+## 9. PLANO VALIDADO — Pronto para execução
+
+### Arquivos
+
+| Arquivo | Ação |
+|---------|------|
+| `supabase/functions/v8-generate-variations/index.ts` | **NOVO** |
+| `supabase/config.toml` | **EDITAR** — Adicionar entry |
+| `src/pages/AdminV8Create.tsx` | **EDITAR** — Seletor + campos + handler + cards |
+| `src/types/v8Lesson.ts` | **EDITAR** — Expandir `narrativeVariation` |
+
+### Correções obrigatórias incluídas no plano
+1. Linha 883 de `AdminV8Create.tsx`: `narrativeVariation` condicional baseada em `genModel`
+2. UI: aviso no card da variação sobre necessidade de estruturar em 9 seções
+3. Edge function: padding defensivo se IA retornar <3 variações
+4. Edge function: sanitização básica de âncoras (strip de instruções)
+
