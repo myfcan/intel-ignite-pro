@@ -638,6 +638,67 @@ export default function AdminV8Create() {
     }
   }, [genTitle, genObjectives, genVariation, lessonTitle, toast, sectionsToMarkdown]);
 
+  // ─── Model 2: Generate Variations ───
+  const handleGenerateVariations = useCallback(async () => {
+    if (!genBaseText.trim() || genBaseText.trim().length < 20) {
+      toast({ title: "❌ Texto base obrigatório", description: "Cole o texto base (mín. 20 caracteres).", variant: "destructive" });
+      return;
+    }
+
+    setIsGeneratingVariations(true);
+    setGeneratedVariations([]);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const anchors = genAnchors.split("\n").map(l => l.trim()).filter(Boolean);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-variations`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ baseText: genBaseText, anchors }),
+        }
+      );
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(errBody.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      setGeneratedVariations(data.variations || []);
+
+      toast({
+        title: "✅ 3 Variações geradas!",
+        description: `Alavancas: ${(data.leversUsed || []).join(", ")}. Escolha uma abaixo.`,
+      });
+    } catch (err) {
+      toast({
+        title: "❌ Erro na geração de variações",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingVariations(false);
+    }
+  }, [genBaseText, genAnchors, toast]);
+
+  const handleUseVariation = useCallback((variation: { lever: string; leverName: string; text: string }) => {
+    setContentText(variation.text);
+    setSelectedVariationLever(variation.lever);
+    setGeneratedVariations([]);
+    toast({
+      title: `✅ Variação ${variation.lever} aplicada`,
+      description: "⚠️ Este texto é uma variação narrativa. Estruture em 9 seções com ## Título antes de rodar o pipeline.",
+    });
+  }, [toast]);
+
   // ─── Convert & Generate All (new automated flow) ───
   const handleConvertAndGenerate = useCallback(async () => {
     if (!contentText.trim()) {
