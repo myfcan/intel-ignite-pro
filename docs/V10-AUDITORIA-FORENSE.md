@@ -10,11 +10,11 @@
 
 | Severidade | Qtd | Descrição |
 |---|---|---|
-| CRITICAL | 7 | Bugs que causam crash, perda de dados ou bypass de segurança |
+| CRITICAL | 8 | Bugs que causam crash, perda de dados ou bypass de segurança |
 | HIGH | 5 | Bugs que afetam UX significativamente ou expõem riscos |
 | MEDIUM | 16 | Problemas de robustez, edge cases, UX menor |
 | LOW | 8 | Melhorias de qualidade, code smell |
-| **TOTAL** | **36** | |
+| **TOTAL** | **37** | |
 
 ---
 
@@ -170,6 +170,15 @@ Dots de 8px são impossíveis de tocar com precisão no celular, especialmente p
 Sem limite de chamadas. Um atacante pode spammar para gerar custos na API de AI.
 
 **Correção:** Adicionar rate limiting por user (ex: max 10 chamadas/hora via `v10_pipeline_log` count).
+
+---
+
+### C8 — `price_brl` Tipo Errado: `decimal(10,2)` Retorna String
+**Arquivo:** `v10.types.ts:291` vs `create_v10_tables.sql:140`
+
+TypeScript define `price_brl: number`, mas SQL é `decimal(10,2)`. O Supabase serializa decimais como **string** no JSON (`"37.90"` em vez de `37.90`). Comparações estritas falham: `plan.price_brl === 37.90` é `false`.
+
+**Correção:** Mudar para `price_brl: string` no TypeScript, ou usar `Number(plan.price_brl)` nos usos.
 
 ---
 
