@@ -43,6 +43,8 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingUpdatesRef = useRef<Partial<V10UserProgress> | null>(null);
+  const completingRef = useRef(false);
+  const [gamificationError, setGamificationError] = useState(false);
   const progressRef = useRef(userProgress);
   progressRef.current = userProgress;
 
@@ -235,6 +237,9 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
   }, [debouncedSave]);
 
   const handlePartBComplete = useCallback(async () => {
+    if (completingRef.current) return;
+    completingRef.current = true;
+
     setCurrentPart('C');
     debouncedSave({
       current_part: 'C',
@@ -336,6 +341,8 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
       });
     } catch (err) {
       console.error('[LessonContainer] Gamification error:', err);
+      setGamificationError(true);
+      setTimeout(() => setGamificationError(false), 5000);
     }
   }, [debouncedSave, lesson]);
 
@@ -444,6 +451,16 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             />
           </div>
         </div>
+
+        {/* Gamification error toast */}
+        {gamificationError && (
+          <div
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-sm text-white/90 shadow-lg animate-pulse"
+            style={{ backgroundColor: 'rgba(239, 68, 68, 0.9)', maxWidth: 340 }}
+          >
+            Erro ao salvar conquista. Seus dados ser&atilde;o sincronizados depois.
+          </div>
+        )}
 
         {/* Sidebar — visible on desktop only */}
         <div className="hidden min-w-[260px] max-w-[320px] flex-shrink-0 md:flex md:flex-col md:my-6 md:gap-4">

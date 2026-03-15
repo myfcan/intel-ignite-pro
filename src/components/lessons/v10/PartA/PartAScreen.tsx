@@ -30,6 +30,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioEnded, setAudioEnded] = useState(false);
+  const [showPlayOverlay, setShowPlayOverlay] = useState(false);
 
   // ---------- Audio callbacks ----------
 
@@ -71,12 +72,13 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
     audio.play().then(() => {
       setIsPlaying(true);
       setAudioEnded(false);
+      setShowPlayOverlay(false);
       // Move to slide 1 if we are still on the hero
       if (slides.length > 1) {
         setCurrentIndex(1);
       }
-    }).catch((err) => {
-      console.warn('[PartA] Audio play failed:', err);
+    }).catch(() => {
+      setShowPlayOverlay(true);
     });
   }, [slides.length]);
 
@@ -107,6 +109,39 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
       />
+
+      {/* Autoplay blocked overlay */}
+      {showPlayOverlay && (
+        <button
+          type="button"
+          onClick={() => {
+            const audio = audioRef.current;
+            if (audio) {
+              audio.play().then(() => {
+                setIsPlaying(true);
+                setShowPlayOverlay(false);
+                if (slides.length > 1) setCurrentIndex(1);
+              }).catch(() => {});
+            }
+          }}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/60"
+          style={{ backdropFilter: 'blur(4px)' }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+            <span className="text-white/80 text-sm font-medium">
+              Toque para ativar o &aacute;udio
+            </span>
+          </div>
+        </button>
+      )}
 
       {/* Slides area */}
       <IntroSlides

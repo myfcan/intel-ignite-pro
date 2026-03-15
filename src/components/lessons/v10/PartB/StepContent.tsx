@@ -79,17 +79,21 @@ const StepContent: React.FC<StepContentProps> = ({
                 key={i}
                 type="button"
                 onClick={() => onFrameChange(i)}
-                className={`rounded-full transition-all ${
-                  i === currentFrame
-                    ? 'w-6 h-2'
-                    : 'w-2 h-2'
-                }`}
-                style={{
-                  backgroundColor:
-                    i === currentFrame ? accentColor : '#D1D5DB',
-                }}
-                aria-label={`Frame ${i + 1} de ${step.frames.length}`}
-              />
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label={`Frame ${i + 1} de ${step.frames?.length ?? 0}`}
+              >
+                <span
+                  className={`rounded-full transition-all block ${
+                    i === currentFrame
+                      ? 'w-6 h-2'
+                      : 'w-2 h-2'
+                  }`}
+                  style={{
+                    backgroundColor:
+                      i === currentFrame ? accentColor : '#D1D5DB',
+                  }}
+                />
+              </button>
             ))}
           </div>
         )}
