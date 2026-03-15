@@ -263,7 +263,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           badge_name: lesson.badge_name,
           xp_earned: lesson.xp_reward,
           earned_at: new Date().toISOString(),
-        } as Record<string, unknown>,
+        },
         { onConflict: 'user_id,lesson_id' }
       );
 
