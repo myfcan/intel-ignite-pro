@@ -64,10 +64,10 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const preloadRef = useRef<HTMLAudioElement>(null);
 
   const currentStep = steps[currentStepIndex];
-  const currentFrame = currentStep?.frames[currentFrameIndex];
+  const currentFrame = currentStep?.frames?.[currentFrameIndex];
   const isLastStep = currentStepIndex === steps.length - 1;
   const isLastFrame = currentStep
-    ? currentFrameIndex === currentStep.frames.length - 1
+    ? currentFrameIndex === (currentStep.frames?.length ?? 1) - 1
     : true;
 
   const { phases, phaseNumbers } = useMemo(() => getPhases(steps), [steps]);
@@ -171,7 +171,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const handleContinue = useCallback(() => {
     if (!currentStep) return;
 
-    if (currentFrameIndex < currentStep.frames.length - 1) {
+    if (currentFrameIndex < (currentStep.frames?.length ?? 1) - 1) {
       // Next frame
       setCurrentFrameIndex((prev) => prev + 1);
     } else if (currentStepIndex < steps.length - 1) {
@@ -192,7 +192,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     } else if (currentStepIndex > 0) {
       const prevStep = steps[currentStepIndex - 1];
       setCurrentStepIndex((prev) => prev - 1);
-      setCurrentFrameIndex(prevStep ? prevStep.frames.length - 1 : 0);
+      setCurrentFrameIndex(prevStep?.frames ? prevStep.frames.length - 1 : 0);
       setCurrentTime(0);
     } else {
       onBack();
@@ -293,7 +293,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
 
         {/* LIV Fab */}
         <LIVFab
-          hasWarnings={currentStep.warnings !== null && currentStep.warnings.warn !== null}
+          hasWarnings={!!currentStep.warnings?.warn}
           onClick={() => {
             audioRef.current?.pause();
             setIsPlaying(false);
@@ -340,8 +340,8 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       <LIVSheet
         isOpen={livOpen}
         onClose={() => setLivOpen(false)}
-        liv={currentStep.liv}
-        warnings={currentStep.warnings}
+        liv={currentStep.liv ?? { tip: '', analogy: '', sos: '' }}
+        warnings={currentStep.warnings ?? null}
         onAskLiv={handleAskLiv}
         chatMessages={chatMessages}
         chatLoading={chatLoading}

@@ -99,11 +99,11 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
   const getContent = (key: OptionKey): string => {
     switch (key) {
       case 'tip':
-        return liv.tip;
+        return liv?.tip ?? '';
       case 'analogy':
-        return liv.analogy;
+        return liv?.analogy ?? '';
       case 'sos':
-        return liv.sos;
+        return liv?.sos ?? '';
       default:
         return '';
     }

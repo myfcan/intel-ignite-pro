@@ -134,7 +134,7 @@ const FrameRenderer: React.FC<FrameRendererProps> = ({ frame, accentColor }) => 
         barColor={frame.bar_color}
       >
         <div className="flex flex-col gap-3">
-          {frame.elements.map((element, index) => renderElement(element, index))}
+          {(frame.elements || []).map((element, index) => renderElement(element, index))}
         </div>
       </MockupChrome>
 

@@ -42,6 +42,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
   const [error, setError] = useState<string | null>(null);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingUpdatesRef = useRef<Partial<V10UserProgress> | null>(null);
   const progressRef = useRef(userProgress);
   progressRef.current = userProgress;
 
@@ -191,24 +192,37 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
 
   const debouncedSave = useCallback(
     (updates: Partial<V10UserProgress>) => {
+      pendingUpdatesRef.current = updates;
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
       saveTimerRef.current = setTimeout(() => {
+        pendingUpdatesRef.current = null;
         saveProgress(updates);
       }, 1000);
     },
     [saveProgress],
   );
 
-  // Cleanup debounce on unmount
+  // Flush pending save on beforeunload + cleanup on unmount
   useEffect(() => {
-    return () => {
+    const flushPending = () => {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      if (pendingUpdatesRef.current) {
+        saveProgress(pendingUpdatesRef.current);
+        pendingUpdatesRef.current = null;
       }
     };
-  }, []);
+
+    window.addEventListener('beforeunload', flushPending);
+    return () => {
+      window.removeEventListener('beforeunload', flushPending);
+      flushPending();
+    };
+  }, [saveProgress]);
 
   // ---------- Part transitions ----------
   const handleProgressUpdate = useCallback((step: number, frame: number) => {
@@ -411,7 +425,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               lessonTitle={lesson.title}
               onComplete={handlePartBComplete}
               onBack={() => setCurrentPart('A')}
-              initialStep={userProgress?.current_step ? userProgress.current_step - 1 : 0}
+              initialStep={Math.min((userProgress?.current_step ?? 1) - 1, Math.max(steps.length - 1, 0))}
               initialFrame={userProgress?.current_frame ?? 0}
               onProgressUpdate={handleProgressUpdate}
             />

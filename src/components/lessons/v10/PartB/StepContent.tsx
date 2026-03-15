@@ -17,7 +17,7 @@ const StepContent: React.FC<StepContentProps> = ({
   onFrameChange,
   accentColor,
 }) => {
-  const frame = step.frames[currentFrame];
+  const frame = step.frames?.[currentFrame];
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -72,7 +72,7 @@ const StepContent: React.FC<StepContentProps> = ({
         )}
 
         {/* Frame dots */}
-        {step.frames.length > 1 && (
+        {step.frames?.length > 1 && (
           <div className="flex items-center justify-center gap-2 py-2">
             {step.frames.map((_, i) => (
               <button
