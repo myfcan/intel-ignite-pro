@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.v8-reprocess-audio]
 verify_jwt = false
+
+[functions.v8-generate-variations]
+verify_jwt = false
