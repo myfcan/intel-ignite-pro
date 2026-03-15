@@ -162,7 +162,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         if (existing) {
           await supabase
             .from('v10_user_lesson_progress')
-            .update(updates as any)
+            .update(updates as Record<string, unknown>)
             .eq('id', existing.id);
         } else {
           const newProgress = {
@@ -332,14 +332,13 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
       }
 
       // 3. Register gamification event (XP + coins via existing RPC)
-      try {
-        await supabase.rpc('register_gamification_event', {
-          p_event_type: 'lesson_completed',
-          p_payload: { lesson_id: lesson.id, lesson_title: lesson.title },
-        });
-      } catch {
+      await supabase.rpc('register_gamification_event', {
+        p_user_id: user.id,
+        p_event_type: 'lesson_completed',
+        p_payload: { lesson_id: lesson.id, lesson_title: lesson.title },
+      }).catch(() => {
         // Non-critical: RPC may not exist in all environments
-      }
+      });
     } catch (err) {
       console.error('[LessonContainer] Gamification error:', err);
       setGamificationError(true);

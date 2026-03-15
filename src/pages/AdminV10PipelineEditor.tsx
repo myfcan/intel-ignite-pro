@@ -128,7 +128,7 @@ export default function AdminV10PipelineEditor() {
 
       const { data, error: updateError } = await supabase
         .from('v10_bpa_pipeline')
-        .update(payload as any)
+        .update(payload as Record<string, unknown>)
         .eq('id', pipeline.id)
         .select()
         .single();
