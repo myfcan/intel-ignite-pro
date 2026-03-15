@@ -1503,35 +1503,53 @@ export default function AdminV8Create() {
                     {generatedVariations.length > 0 && (
                       <div className="space-y-3 mt-3">
                         <p className="text-[11px] font-semibold text-slate-600">Escolha uma variação:</p>
-                        {generatedVariations.map((v, i) => (
-                          <div key={i} className="p-3 rounded-lg border border-slate-200 bg-white space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-500">#{i + 1}</span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
-                                  {v.lever}: {v.leverName}
-                                </span>
-                              </div>
-                              {v.anchorChecklist && (
-                                <div className="flex gap-1">
-                                  {Object.entries(v.anchorChecklist).map(([key, ok]) => (
-                                    <span key={key} className={`text-[9px] font-mono ${ok ? "text-emerald-600" : "text-red-400"}`}>
-                                      {ok ? "✓" : "✗"}{key}
-                                    </span>
-                                  ))}
+                        {generatedVariations.map((v, i) => {
+                          const totalWords = v.sections?.reduce((sum, s) => sum + (s.content || "").split(/\s+/).filter(Boolean).length, 0) || 0;
+                          return (
+                            <div key={i} className="p-3 rounded-lg border border-slate-200 bg-white space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-500">#{i + 1}</span>
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                                    {v.lever}: {v.leverName}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">
+                                    {v.sections?.length || 0} seções · {totalWords} palavras
+                                  </span>
                                 </div>
-                              )}
+                                {v.anchorChecklist && (
+                                  <div className="flex gap-1">
+                                    {Object.entries(v.anchorChecklist).map(([key, ok]) => (
+                                      <span key={key} className={`text-[9px] font-mono ${ok ? "text-emerald-600" : "text-red-400"}`}>
+                                        {ok ? "✓" : "✗"}{key}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-semibold text-slate-800">{v.title}</p>
+                              {v.description && <p className="text-[10px] text-slate-500">{v.description}</p>}
+                              <div className="space-y-1 max-h-32 overflow-y-auto">
+                                {(v.sections || []).slice(0, 4).map((s, si) => (
+                                  <div key={si} className="text-[10px] text-slate-600">
+                                    <span className="font-semibold text-slate-700">{si}. {s.title}:</span>{" "}
+                                    {(s.content || "").slice(0, 150)}{(s.content || "").length > 150 ? "…" : ""}
+                                  </div>
+                                ))}
+                                {(v.sections || []).length > 4 && (
+                                  <p className="text-[9px] text-slate-400 italic">+{(v.sections || []).length - 4} seções...</p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleUseVariation(v)}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500 text-white text-[11px] font-bold hover:bg-violet-600 transition-colors"
+                              >
+                                <Check className="w-3 h-3" />
+                                Usar esta variação
+                              </button>
                             </div>
-                            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{v.text}</p>
-                            <button
-                              onClick={() => handleUseVariation(v)}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500 text-white text-[11px] font-bold hover:bg-violet-600 transition-colors"
-                            >
-                              <Check className="w-3 h-3" />
-                              Usar esta variação
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </>
