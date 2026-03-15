@@ -14,6 +14,7 @@ interface LIVSheetProps {
   onAskLiv: (question: string) => void;
   chatMessages: LivChatMessage[];
   chatLoading: boolean;
+  chatLimitReached?: boolean;
 }
 
 type OptionKey = 'tip' | 'analogy' | 'sos' | 'chat' | null;
@@ -60,6 +61,7 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
   onAskLiv,
   chatMessages,
   chatLoading,
+  chatLimitReached = false,
 }) => {
   const [expanded, setExpanded] = useState<OptionKey>(null);
   const [chatInput, setChatInput] = useState('');
@@ -246,13 +248,14 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={handleChatKeyDown}
-                  placeholder="Digite sua dúvida..."
-                  className="flex-1 min-h-[44px] rounded-xl bg-white/10 border border-white/10 px-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder={chatLimitReached ? 'Limite diário atingido' : 'Digite sua dúvida...'}
+                  disabled={chatLimitReached}
+                  className="flex-1 min-h-[44px] rounded-xl bg-white/10 border border-white/10 px-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-40"
                 />
                 <button
                   type="button"
                   onClick={handleSendChat}
-                  disabled={chatLoading || !chatInput.trim()}
+                  disabled={chatLoading || !chatInput.trim() || chatLimitReached}
                   className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-indigo-500 text-white disabled:opacity-40 transition-opacity"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

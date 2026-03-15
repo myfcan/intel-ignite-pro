@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { V10UserStreak } from '../../../../types/v10.types';
 import { Confetti } from './Confetti';
 
@@ -29,6 +29,16 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({
   onNextLesson,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
+  const hasAutoFired = useRef(false);
+
+  // Auto-fire confetti when C3 becomes active
+  useEffect(() => {
+    if (isActive && !hasAutoFired.current) {
+      hasAutoFired.current = true;
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3500);
+    }
+  }, [isActive]);
 
   const handleShare = () => {
     setShowConfetti(true);

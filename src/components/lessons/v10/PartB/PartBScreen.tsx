@@ -58,6 +58,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const [livOpen, setLivOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<LivChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatLimitReached, setChatLimitReached] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const preloadRef = useRef<HTMLAudioElement>(null);
@@ -106,13 +107,18 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     }
   }, [currentStepIndex, currentStep?.audio_url]);
 
-  // Preload next step audio
+  // Preload next step audio & discard N-2
   useEffect(() => {
     const nextStep = steps[currentStepIndex + 1];
     const preload = preloadRef.current;
-    if (preload && nextStep?.audio_url) {
-      preload.src = nextStep.audio_url;
-      preload.load();
+    if (preload) {
+      if (nextStep?.audio_url) {
+        preload.src = nextStep.audio_url;
+        preload.load();
+      } else {
+        preload.removeAttribute('src');
+        preload.load();
+      }
     }
   }, [currentStepIndex, steps]);
 
@@ -228,6 +234,20 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
 
       if (error) throw error;
 
+      // Handle daily usage limit
+      if (data?.limit_reached) {
+        const limit = data.limit ?? 0;
+        setChatLimitReached(true);
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `Você usou suas ${limit} interações de hoje. Amanhã o contador reseta! Quer desbloquear mais? Veja os planos disponíveis.`,
+          },
+        ]);
+        return;
+      }
+
       const aiResponse = data?.response || 'Desculpe, não consegui processar sua pergunta.';
       setChatMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
     } catch {
@@ -274,7 +294,11 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         {/* LIV Fab */}
         <LIVFab
           hasWarnings={currentStep.warnings !== null && currentStep.warnings.warn !== null}
-          onClick={() => setLivOpen(true)}
+          onClick={() => {
+            audioRef.current?.pause();
+            setIsPlaying(false);
+            setLivOpen(true);
+          }}
         />
 
         {/* Bottom bar */}
@@ -321,6 +345,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         onAskLiv={handleAskLiv}
         chatMessages={chatMessages}
         chatLoading={chatLoading}
+        chatLimitReached={chatLimitReached}
       />
 
       {/* Audio elements */}
