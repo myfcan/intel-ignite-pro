@@ -168,7 +168,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           const newProgress = {
             user_id: user.id,
             lesson_id: lesson.id,
-            current_part: 'A' as V10ScreenPart,
+            current_part: 'A',
             current_step: 0,
             current_frame: 0,
             completed: false,
@@ -178,7 +178,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           };
           const { data } = await supabase
             .from('v10_user_lesson_progress')
-            .insert(newProgress as Record<string, unknown>)
+            .insert(newProgress)
             .select()
             .single();
           if (data) {
