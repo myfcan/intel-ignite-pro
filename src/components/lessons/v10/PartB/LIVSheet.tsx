@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { V10Liv, V10Warning } from '../../../../types/v10.types';
+
+export interface LivChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 interface LIVSheetProps {
   isOpen: boolean;
@@ -7,9 +12,11 @@ interface LIVSheetProps {
   liv: V10Liv;
   warnings: V10Warning | null;
   onAskLiv: (question: string) => void;
+  chatMessages: LivChatMessage[];
+  chatLoading: boolean;
 }
 
-type OptionKey = 'tip' | 'analogy' | 'sos' | null;
+type OptionKey = 'tip' | 'analogy' | 'sos' | 'chat' | null;
 
 interface OptionItem {
   key: OptionKey;
@@ -34,8 +41,14 @@ const OPTIONS: OptionItem[] = [
   {
     key: 'sos',
     icon: '\u{1F198}',
+    title: 'SOS',
+    subtitle: 'Ajuda detalhada para quando travar',
+  },
+  {
+    key: 'chat',
+    icon: '\u{1F4AC}',
     title: 'Perguntar à LIV',
-    subtitle: 'Ajuda detalhada da LIV',
+    subtitle: 'Converse com a IA sobre este passo',
   },
 ];
 
@@ -45,8 +58,18 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
   liv,
   warnings,
   onAskLiv,
+  chatMessages,
+  chatLoading,
 }) => {
   const [expanded, setExpanded] = useState<OptionKey>(null);
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, chatLoading]);
 
   const handleClose = () => {
     setExpanded(null);
@@ -55,8 +78,19 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
 
   const handleOptionClick = (key: OptionKey) => {
     setExpanded(key);
-    if (key === 'sos') {
-      onAskLiv(liv.sos);
+  };
+
+  const handleSendChat = () => {
+    const trimmed = chatInput.trim();
+    if (!trimmed) return;
+    onAskLiv(trimmed);
+    setChatInput('');
+  };
+
+  const handleChatKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendChat();
     }
   };
 
@@ -164,6 +198,68 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
                   </svg>
                 </button>
               ))}
+            </div>
+          ) : expanded === 'chat' ? (
+            /* Chat interface */
+            <div className="flex flex-col gap-3">
+              {/* Messages */}
+              <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto">
+                {chatMessages.length === 0 && (
+                  <p className="text-xs text-white/40 text-center py-4">
+                    Faça uma pergunta sobre este passo
+                  </p>
+                )}
+                {chatMessages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'bg-indigo-500/30 text-white'
+                          : 'bg-white/10 text-white/80'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white/10 rounded-xl px-3 py-2 text-sm text-white/50">
+                      <span className="inline-flex gap-1">
+                        <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                        <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                        <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={handleChatKeyDown}
+                  placeholder="Digite sua dúvida..."
+                  className="flex-1 min-h-[44px] rounded-xl bg-white/10 border border-white/10 px-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendChat}
+                  disabled={chatLoading || !chatInput.trim()}
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-indigo-500 text-white disabled:opacity-40 transition-opacity"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="px-1 py-2 rounded-xl bg-white/5">
