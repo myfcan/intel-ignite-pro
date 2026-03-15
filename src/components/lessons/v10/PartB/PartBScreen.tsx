@@ -252,7 +252,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       style={{ backgroundColor: '#FAFBFC' }}
     >
       {/* Main player column */}
-      <div className="flex flex-col flex-1 min-w-0 h-full">
+      <div className="flex flex-col flex-1 min-w-0 h-full relative">
         {/* Header */}
         <PlayerHeader
           lessonTitle={lessonTitle}

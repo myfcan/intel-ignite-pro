@@ -23,7 +23,14 @@ export async function registerGamificationEvent(
   payload: Record<string, any> = {}
 ): Promise<GamificationResult | null> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('[Gamification] No authenticated user');
+      return null;
+    }
+
     const { data, error } = await supabase.rpc('register_gamification_event', {
+      p_user_id: user.id,
       p_event_type: eventType,
       p_event_reference_id: eventReferenceId || null,
       p_payload: payload

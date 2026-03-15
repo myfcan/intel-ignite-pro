@@ -211,6 +211,10 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
   }, []);
 
   // ---------- Part transitions ----------
+  const handleProgressUpdate = useCallback((step: number, frame: number) => {
+    debouncedSave({ current_step: step + 1, current_frame: frame });
+  }, [debouncedSave]);
+
   const handlePartAComplete = useCallback(() => {
     setCurrentPart('B');
     debouncedSave({ current_part: 'B', current_step: 0, current_frame: 0 });
@@ -409,9 +413,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               onBack={() => setCurrentPart('A')}
               initialStep={userProgress?.current_step ? userProgress.current_step - 1 : 0}
               initialFrame={userProgress?.current_frame ?? 0}
-              onProgressUpdate={(step, frame) => {
-                debouncedSave({ current_step: step + 1, current_frame: frame });
-              }}
+              onProgressUpdate={handleProgressUpdate}
             />
           </div>
 
