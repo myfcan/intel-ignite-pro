@@ -78,21 +78,19 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
         toast.error('Erro ao sugerir score via IA');
         return;
       }
-      const { scores: suggestedScores } = data as {
-        scores: {
-          score_refero: number;
-          score_docs: number;
-          score_pedagogy: number;
-          score_difficulty: number;
-          score_relevance: number;
-        };
+      const suggestedScores = data as {
+        score_refero: number;
+        score_docs: number;
+        score_pedagogy: number;
+        score_difficulty: number;
+        score_relevance: number;
       };
       setScores({
-        score_refero: suggestedScores.score_refero,
-        score_docs: suggestedScores.score_docs,
-        score_pedagogy: suggestedScores.score_pedagogy,
-        score_difficulty: suggestedScores.score_difficulty,
-        score_relevance: suggestedScores.score_relevance,
+        score_refero: suggestedScores.score_refero ?? 0,
+        score_docs: suggestedScores.score_docs ?? 0,
+        score_pedagogy: suggestedScores.score_pedagogy ?? 0,
+        score_difficulty: suggestedScores.score_difficulty ?? 0,
+        score_relevance: suggestedScores.score_relevance ?? 0,
       });
       toast.success('Score sugerido pela IA!');
     } catch {

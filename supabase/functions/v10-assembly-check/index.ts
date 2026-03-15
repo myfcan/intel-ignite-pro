@@ -12,6 +12,13 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -178,6 +185,7 @@ serve(async (req) => {
       .from("v10_bpa_pipeline_log")
       .insert({
         pipeline_id,
+        stage: 6,
         action: "assembly_check",
         details: results,
       });

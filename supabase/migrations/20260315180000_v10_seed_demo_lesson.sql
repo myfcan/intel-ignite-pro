@@ -677,11 +677,15 @@ VALUES (
   now() - interval '1 day',
   'fernando'
 )
-ON CONFLICT DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
 -- 6. v10_bpa_pipeline_log (3 entries)
+-- Delete existing seed logs first to ensure idempotency (table has no natural unique key)
 -- ============================================================
+DELETE FROM v10_bpa_pipeline_log
+WHERE pipeline_id = 'a0000001-0001-4000-8000-000000000002';
+
 INSERT INTO v10_bpa_pipeline_log (pipeline_id, stage, action, details, created_at)
 VALUES
   ('a0000001-0001-4000-8000-000000000002', 1, 'score_calculated',
@@ -692,5 +696,4 @@ VALUES
    now() - interval '5 days'),
   ('a0000001-0001-4000-8000-000000000002', 7, 'published',
    '{"published_by": "fernando", "message": "Aula publicada com sucesso. Todos os checklists aprovados."}'::jsonb,
-   now() - interval '1 day')
-ON CONFLICT DO NOTHING;
+   now() - interval '1 day');
