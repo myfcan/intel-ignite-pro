@@ -51,41 +51,53 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check user's daily limit
+    // Get user plan to determine daily limit
     const { data: userData, error: userDataError } = await supabase
       .from('users')
-      .select('plan, daily_interaction_limit, interactions_used_today, last_interaction_reset')
+      .select('plan, daily_interaction_limit')
       .eq('id', user.id)
       .single();
 
     if (userDataError) throw userDataError;
 
-    // Reset daily counter if needed
-    const lastReset = new Date(userData.last_interaction_reset);
-    const now = new Date();
-    const shouldReset = lastReset.getDate() !== now.getDate() || 
-                       lastReset.getMonth() !== now.getMonth() || 
-                       lastReset.getFullYear() !== now.getFullYear();
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const dailyLimit = userData.daily_interaction_limit ?? 5;
 
-    if (shouldReset) {
-      await supabase
-        .from('users')
-        .update({ 
-          interactions_used_today: 0,
-          last_interaction_reset: now.toISOString()
-        })
-        .eq('id', user.id);
-      userData.interactions_used_today = 0;
+    // Upsert today's row in v10_user_daily_usage (creates new row per day automatically)
+    const { data: usageRow, error: usageError } = await supabase
+      .from('v10_user_daily_usage')
+      .upsert(
+        { user_id: user.id, usage_date: today, interactions_limit: dailyLimit },
+        { onConflict: 'user_id,usage_date', ignoreDuplicates: true }
+      )
+      .select('interactions_used, interactions_limit')
+      .single();
+
+    // If upsert with ignoreDuplicates returned nothing, fetch the existing row
+    let interactionsUsed = usageRow?.interactions_used ?? 0;
+    let interactionsLimit = usageRow?.interactions_limit ?? dailyLimit;
+
+    if (!usageRow) {
+      const { data: existingRow, error: fetchError } = await supabase
+        .from('v10_user_daily_usage')
+        .select('interactions_used, interactions_limit')
+        .eq('user_id', user.id)
+        .eq('usage_date', today)
+        .single();
+
+      if (fetchError) throw fetchError;
+      interactionsUsed = existingRow.interactions_used;
+      interactionsLimit = existingRow.interactions_limit;
     }
 
     // Check if limit reached
-    if (userData.interactions_used_today >= userData.daily_interaction_limit) {
+    if (interactionsUsed >= interactionsLimit) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Limite diário atingido',
           limit_reached: true,
-          limit: userData.daily_interaction_limit,
-          used: userData.interactions_used_today
+          limit: interactionsLimit,
+          used: interactionsUsed
         }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -182,20 +194,20 @@ Ao final da resposta, adicione: "💡 Sugestão:" com UMA sugestão curta de com
         response_text: aiResponse
       });
 
-    // Increment user's interaction count
+    // Increment interaction count in v10_user_daily_usage
+    const newUsed = interactionsUsed + 1;
     await supabase
-      .from('users')
-      .update({ 
-        interactions_used_today: userData.interactions_used_today + 1
-      })
-      .eq('id', user.id);
+      .from('v10_user_daily_usage')
+      .update({ interactions_used: newUsed })
+      .eq('user_id', user.id)
+      .eq('usage_date', today);
 
     return new Response(
       JSON.stringify({
         response: aiResponse,
         cached: false,
         limit_reached: false,
-        remaining: userData.daily_interaction_limit - userData.interactions_used_today - 1
+        remaining: interactionsLimit - newUsed
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
