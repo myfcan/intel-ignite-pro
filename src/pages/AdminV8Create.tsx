@@ -689,15 +689,17 @@ export default function AdminV8Create() {
     }
   }, [genBaseText, genAnchors, toast]);
 
-  const handleUseVariation = useCallback((variation: { lever: string; leverName: string; text: string }) => {
-    setContentText(variation.text);
+  const handleUseVariation = useCallback((variation: { lever: string; leverName: string; title: string; description: string; sections: Array<{ title: string; content: string }> }) => {
+    const markdown = sectionsToMarkdown(variation.title, variation.description, variation.sections);
+    setContentText(markdown);
+    setLessonTitle(variation.title);
     setSelectedVariationLever(variation.lever);
     setGeneratedVariations([]);
     toast({
-      title: `✅ Variação ${variation.lever} aplicada`,
-      description: "⚠️ Este texto é uma variação narrativa. Estruture em 9 seções com ## Título antes de rodar o pipeline.",
+      title: `✅ Variação ${variation.lever} (${variation.leverName}) aplicada`,
+      description: `Lição completa com ${variation.sections.length} seções carregada no editor.`,
     });
-  }, [toast]);
+  }, [toast, sectionsToMarkdown]);
 
   // ─── Convert & Generate All (new automated flow) ───
   const handleConvertAndGenerate = useCallback(async () => {
