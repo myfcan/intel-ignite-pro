@@ -2063,6 +2063,30 @@ export type Database = {
           },
         ]
       }
+      v10_user_daily_usage: {
+        Row: {
+          id: string
+          interactions_limit: number
+          interactions_used: number
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          interactions_limit?: number
+          interactions_used?: number
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          interactions_limit?: number
+          interactions_used?: number
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       v10_user_lesson_progress: {
         Row: {
           completed: boolean
