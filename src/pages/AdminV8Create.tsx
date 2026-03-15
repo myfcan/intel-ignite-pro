@@ -1496,7 +1496,7 @@ export default function AdminV8Create() {
                       {isGeneratingVariations ? "Gerando 3 variações..." : "Gerar 3 Variações"}
                     </button>
                     <p className="text-[10px] text-slate-400">
-                      Gera 3 variações estilísticas com alavancas aleatórias (~5s). Escolha uma e depois estruture em 9 seções.
+                      Gera 3 variações completas (9 seções cada) com alavancas aleatórias (~15-25s). Escolha a melhor.
                     </p>
 
                     {/* Variation Cards */}
