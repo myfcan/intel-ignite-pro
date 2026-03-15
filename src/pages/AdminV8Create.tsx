@@ -246,6 +246,14 @@ export default function AdminV8Create() {
   const [genObjectives, setGenObjectives] = useState("");
   const [genVariation, setGenVariation] = useState<"everyday" | "professional" | "curiosity">("everyday");
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+
+  // Model 2 — Editor de Variações
+  const [genModel, setGenModel] = useState<"model1" | "model2">("model1");
+  const [genBaseText, setGenBaseText] = useState("");
+  const [genAnchors, setGenAnchors] = useState("");
+  const [generatedVariations, setGeneratedVariations] = useState<Array<{ lever: string; leverName: string; text: string; anchorChecklist?: Record<string, boolean> }>>([]);
+  const [isGeneratingVariations, setIsGeneratingVariations] = useState(false);
+  const [selectedVariationLever, setSelectedVariationLever] = useState<string | null>(null);
   // Parsed data for setup wizard
   const [parsedSections, setParsedSections] = useState<V8Section[]>([]);
   const [parsedQuizzes, setParsedQuizzes] = useState<V8InlineQuiz[]>([]);
