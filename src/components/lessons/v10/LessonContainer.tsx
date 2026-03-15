@@ -322,7 +322,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             longest_streak: 1,
             last_activity_date: today,
             streak_start_date: today,
-          } as Record<string, unknown>)
+          })
           .select()
           .single();
 
