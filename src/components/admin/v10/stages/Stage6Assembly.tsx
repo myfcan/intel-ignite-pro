@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2, ClipboardCheck, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { V10BpaPipeline, V10LessonStep, V10LessonNarration, V10IntroSlide, V10Lesson } from '@/types/v10.types';
+import type { V10BpaPipeline } from '@/types/v10.types';
 
 interface Stage6AssemblyProps {
   pipeline: V10BpaPipeline;

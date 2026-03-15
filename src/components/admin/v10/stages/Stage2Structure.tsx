@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
@@ -69,6 +69,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const [creatingLesson, setCreatingLesson] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [auditing, setAuditing] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const fetchSteps = useCallback(async () => {
     if (!pipeline.lesson_id) return;
@@ -193,6 +194,29 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     }
   };
 
+  const handleGenerateWithAI = async () => {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
+        body: { pipeline_id: pipeline.id, num_steps: 10 },
+      });
+      if (error) {
+        toast.error('Erro ao gerar passos com IA');
+        return;
+      }
+      const result = data as { steps_count: number; lesson_id?: string };
+      toast.success(`${result.steps_count} passos gerados pela IA!`);
+      await fetchSteps();
+      if (result.lesson_id && !pipeline.lesson_id) {
+        await onUpdate({ lesson_id: result.lesson_id });
+      }
+    } catch {
+      toast.error('Erro ao gerar passos com IA');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handleAudit = async () => {
     setAuditing(true);
     try {
@@ -221,14 +245,25 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
               Nenhuma aula vinculada ao pipeline
             </p>
           </div>
-          <Button
-            onClick={handleCreateLesson}
-            disabled={creatingLesson}
-            className="min-h-[44px]"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {creatingLesson ? 'Criando...' : 'Criar Aula'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleCreateLesson}
+              disabled={creatingLesson}
+              className="min-h-[44px]"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {creatingLesson ? 'Criando...' : 'Criar Aula'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleGenerateWithAI}
+              disabled={generating}
+              className="min-h-[44px]"
+            >
+              {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              {generating ? 'Gerando...' : 'Criar Aula + Gerar com IA'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -377,14 +412,25 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
             </div>
           </div>
         ) : (
-          <Button
-            variant="outline"
-            onClick={() => setShowForm(true)}
-            className="min-h-[44px] w-full"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar Passo
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowForm(true)}
+              className="min-h-[44px] w-full"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar Passo
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleGenerateWithAI}
+              disabled={generating || !pipeline.lesson_id}
+              className="min-h-[44px] w-full"
+            >
+              {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              {generating ? 'Gerando passos...' : 'Gerar com IA (10 passos)'}
+            </Button>
+          </div>
         )}
 
         {/* Audit button */}
