@@ -162,7 +162,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         if (existing) {
           await supabase
             .from('v10_user_lesson_progress')
-            .update(updates as Record<string, unknown>)
+            .update(updates as any)
             .eq('id', existing.id);
         } else {
           const newProgress = {

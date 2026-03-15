@@ -121,14 +121,14 @@ export default function AdminV10PipelineEditor() {
     async (updates: Partial<V10BpaPipeline>) => {
       if (!pipeline) return;
 
-      const payload: Record<string, unknown> = {
+      const payload = {
         ...updates,
         updated_at: new Date().toISOString(),
       };
 
       const { data, error: updateError } = await supabase
         .from('v10_bpa_pipeline')
-        .update(payload as Record<string, unknown>)
+        .update(payload as any)
         .eq('id', pipeline.id)
         .select()
         .single();
