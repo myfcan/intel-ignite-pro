@@ -88,21 +88,21 @@ export function Stage7Publish({ pipeline, onUpdate }: Stage7PublishProps) {
 
     setPublishing(true);
     try {
-      const { error } = await supabase
-        .from('v10_lessons')
-        .update({ status: 'published' } as Record<string, unknown>)
-        .eq('id', pipeline.lesson_id);
+      const { data, error } = await supabase.functions.invoke('v10-publish-lesson', {
+        body: { pipeline_id: pipeline.id, action: 'publish' }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await onUpdate({
-        published_at: new Date().toISOString(),
+        published_at: data.published_at,
         status: 'published',
       } as Partial<V10BpaPipeline>);
 
       toast.success('Aula publicada com sucesso! 🎉🎊');
-    } catch {
-      toast.error('Erro ao publicar aula');
+    } catch (err) {
+      toast.error(`Erro ao publicar: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
     } finally {
       setPublishing(false);
     }
@@ -118,12 +118,12 @@ export function Stage7Publish({ pipeline, onUpdate }: Stage7PublishProps) {
 
     setUnpublishing(true);
     try {
-      const { error } = await supabase
-        .from('v10_lessons')
-        .update({ status: 'draft' } as Record<string, unknown>)
-        .eq('id', pipeline.lesson_id);
+      const { data, error } = await supabase.functions.invoke('v10-publish-lesson', {
+        body: { pipeline_id: pipeline.id, action: 'unpublish' }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await onUpdate({
         published_at: null,
@@ -131,8 +131,8 @@ export function Stage7Publish({ pipeline, onUpdate }: Stage7PublishProps) {
       } as Partial<V10BpaPipeline>);
 
       toast.success('Aula despublicada');
-    } catch {
-      toast.error('Erro ao despublicar aula');
+    } catch (err) {
+      toast.error(`Erro ao despublicar: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
     } finally {
       setUnpublishing(false);
     }
