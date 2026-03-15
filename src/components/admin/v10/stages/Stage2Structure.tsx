@@ -101,13 +101,13 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       const payload = {
         slug: pipeline.slug,
         title: pipeline.title,
-        status: 'draft',
+        status: 'draft' as const,
         total_steps: 0,
         estimated_minutes: 0,
-        tools: [],
+        tools: [] as string[],
         xp_reward: 0,
         order_in_trail: 0,
-      } as Record<string, unknown>;
+      };
 
       const { data, error } = await supabase
         .from('v10_lessons')
