@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Image, CheckCircle2, Sparkles, Save, AlertTriangle } from 'lucide-react';
+import { Image, CheckCircle2, Sparkles, Save, AlertTriangle, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline } from '@/types/v10.types';
 
 interface Stage3ImagesProps {
@@ -16,6 +17,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   const [imagesGenerated, setImagesGenerated] = useState(pipeline.images_generated);
   const [imagesApproved, setImagesApproved] = useState(pipeline.images_approved);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const progressPercent = imagesNeeded > 0
     ? Math.round((imagesApproved / imagesNeeded) * 100)
@@ -48,8 +50,29 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
     toast.info('Todas as imagens geradas foram marcadas como aprovadas. Clique em Salvar para confirmar.');
   };
 
-  const handleGenerate = () => {
-    toast.info('Geração de imagens em implementação futura');
+  const handleGenerate = async () => {
+    if (!pipeline.lesson_id) {
+      toast.error('Vincule uma aula primeiro');
+      return;
+    }
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('v10-generate-images', {
+        body: { pipeline_id: pipeline.id, api: 'openai', batch_size: 2, batch_index: 0 }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const stats = data?.stats;
+      if (stats) {
+        setImagesGenerated(prev => prev + stats.success);
+        toast.success(`${stats.success} imagens geradas! ${stats.hasMoreBatches ? 'Clique novamente para o próximo lote.' : 'Todos os lotes concluídos.'}`);
+      }
+    } catch (err) {
+      toast.error(`Erro ao gerar imagens: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -137,10 +160,10 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
             variant="outline"
             className="min-h-[44px]"
             onClick={handleGenerate}
-            disabled={pipeline.lesson_id === null}
+            disabled={pipeline.lesson_id === null || generating}
           >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Gerar Imagens
+            {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {generating ? 'Gerando...' : 'Gerar Imagens'}
           </Button>
 
           <Button

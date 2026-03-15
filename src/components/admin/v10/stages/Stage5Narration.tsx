@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle } from 'lucide-react';
+import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonNarration, V10LessonStep } from '@/types/v10.types';
 
@@ -21,6 +21,7 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const [narrations, setNarrations] = useState<V10LessonNarration[]>([]);
   const [steps, setSteps] = useState<V10LessonStep[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const progressPercent = audiosTotal > 0
     ? Math.round((audiosGenerated / audiosTotal) * 100)
@@ -87,8 +88,52 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
     toast.info('Todos os áudios gerados foram marcados como aprovados. Clique em Salvar para confirmar.');
   };
 
-  const handleGenerate = () => {
-    toast.info('Geração de áudios em implementação futura');
+  const handleGenerate = async () => {
+    if (!pipeline.lesson_id) {
+      toast.error('Vincule uma aula primeiro');
+      return;
+    }
+    setGenerating(true);
+    try {
+      // Generate Part A narration
+      toast.info('Gerando narração Parte A...');
+      const { error: errA } = await supabase.functions.invoke('v10-generate-audio', {
+        body: { pipeline_id: pipeline.id, target: 'part_a' }
+      });
+      if (errA) console.error('Part A error:', errA);
+
+      // Generate Part C narration
+      toast.info('Gerando narração Parte C...');
+      const { error: errC } = await supabase.functions.invoke('v10-generate-audio', {
+        body: { pipeline_id: pipeline.id, target: 'part_c' }
+      });
+      if (errC) console.error('Part C error:', errC);
+
+      // Generate step audios
+      const stepNumbers = steps.filter(s => !s.audio_url).map(s => s.step_number);
+      if (stepNumbers.length > 0) {
+        toast.info(`Gerando áudio para ${stepNumbers.length} passos...`);
+        const { error: errS } = await supabase.functions.invoke('v10-generate-audio', {
+          body: { pipeline_id: pipeline.id, target: 'steps', step_numbers: stepNumbers }
+        });
+        if (errS) console.error('Steps audio error:', errS);
+      }
+
+      toast.success('Geração de áudios concluída!');
+      // Refresh data
+      if (pipeline.lesson_id) {
+        const [narrResult, stepsResult] = await Promise.all([
+          supabase.from('v10_lesson_narrations').select('*').eq('lesson_id', pipeline.lesson_id as string),
+          supabase.from('v10_lesson_steps').select('*').eq('lesson_id', pipeline.lesson_id as string).order('step_number', { ascending: true }),
+        ]);
+        if (narrResult.data) setNarrations(narrResult.data as unknown as V10LessonNarration[]);
+        if (stepsResult.data) setSteps(stepsResult.data as unknown as V10LessonStep[]);
+      }
+    } catch (err) {
+      toast.error(`Erro ao gerar áudios: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const partANarration = narrations.find((n) => n.part === 'A');
@@ -286,10 +331,10 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
             variant="outline"
             className="min-h-[44px]"
             onClick={handleGenerate}
-            disabled={!pipeline.lesson_id}
+            disabled={!pipeline.lesson_id || generating}
           >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Gerar Áudios
+            {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {generating ? 'Gerando áudios...' : 'Gerar Áudios'}
           </Button>
 
           <Button

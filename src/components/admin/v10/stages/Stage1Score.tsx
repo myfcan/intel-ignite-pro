@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { Save } from 'lucide-react';
+import { Save, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10ScoreSemaphore } from '@/types/v10.types';
 
 interface Stage1ScoreProps {
@@ -58,12 +59,47 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
   });
   const [docsManualInput, setDocsManualInput] = useState(pipeline.docs_manual_input ?? '');
   const [saving, setSaving] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
 
   const scoreTotal = scores.score_refero + scores.score_docs + scores.score_pedagogy + scores.score_difficulty + scores.score_relevance;
   const semaphore = computeSemaphore(scoreTotal);
 
   const handleSliderChange = (key: ScoreField['key'], value: number[]) => {
     setScores((prev) => ({ ...prev, [key]: value[0] }));
+  };
+
+  const handleSuggestScore = async () => {
+    setSuggesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('v10-score-bpa', {
+        body: { pipeline_id: pipeline.id },
+      });
+      if (error) {
+        toast.error('Erro ao sugerir score via IA');
+        return;
+      }
+      const { scores: suggestedScores } = data as {
+        scores: {
+          score_refero: number;
+          score_docs: number;
+          score_pedagogy: number;
+          score_difficulty: number;
+          score_relevance: number;
+        };
+      };
+      setScores({
+        score_refero: suggestedScores.score_refero,
+        score_docs: suggestedScores.score_docs,
+        score_pedagogy: suggestedScores.score_pedagogy,
+        score_difficulty: suggestedScores.score_difficulty,
+        score_relevance: suggestedScores.score_relevance,
+      });
+      toast.success('Score sugerido pela IA!');
+    } catch {
+      toast.error('Erro ao sugerir score via IA');
+    } finally {
+      setSuggesting(false);
+    }
   };
 
   const handleSave = async () => {
@@ -147,7 +183,16 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
           />
         </div>
 
-        {/* Save button */}
+        {/* Action buttons */}
+        <Button
+          variant="outline"
+          onClick={handleSuggestScore}
+          disabled={suggesting}
+          className="min-h-[44px] w-full"
+        >
+          <Sparkles className="mr-2 h-4 w-4" />
+          {suggesting ? 'Analisando...' : 'IA Sugerir Score'}
+        </Button>
         <Button
           onClick={handleSave}
           disabled={saving}
