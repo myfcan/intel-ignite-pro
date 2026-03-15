@@ -139,6 +139,38 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        {/* ========== PIPELINE V10 ========== */}
+        <Card className="border-2 border-violet-500/50 bg-gradient-to-r from-violet-500/10 to-indigo-500/10 shadow-lg shadow-violet-500/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Rocket className="w-8 h-8 text-violet-500" />
+              Pipeline V10
+              <span className="text-xs bg-violet-600 text-white px-2 py-1 rounded-full">BPA</span>
+            </CardTitle>
+            <CardDescription className="text-base">
+              Prática guiada em 3 partes (Contexto + Passos + Gamificação) com pipeline de 7 etapas
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              <p>📊 Score de viabilidade</p>
+              <p>📝 27 passos guiados</p>
+              <p>🎙️ Narração ElevenLabs</p>
+              <p>🤖 LIV (assistente IA)</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="lg"
+                className="flex-1 min-w-[180px] bg-violet-600 hover:bg-violet-700"
+                onClick={() => navigate('/admin/v10')}
+              >
+                <Rocket className="w-5 h-5 mr-2" />
+                Abrir Pipeline V10
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* ========== GESTÃO DE USUÁRIOS ========== */}
         <Card className="border-2 border-blue-500/50 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 shadow-lg shadow-blue-500/10">
           <CardHeader className="pb-3">

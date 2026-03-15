@@ -124,6 +124,10 @@ const AdminImageLab = lazyRetry(() => import("./pages/AdminImageLab"));
 const AdminAudioPreview = lazyRetry(() => import("./pages/AdminAudioPreview"));
 const AdminLessonRatings = lazyRetry(() => import("./pages/AdminLessonRatings"));
 
+// V10 BPA Lesson System
+const AdminV10Pipeline = lazyRetry(() => import("./pages/AdminV10Pipeline"));
+const V10LessonPlayer = lazyRetry(() => import("./pages/V10LessonPlayer"));
+
 const queryClient = new QueryClient();
 
 // Loading fallback component with elegant animations
@@ -280,6 +284,9 @@ const App = () => (
                 <Route path="/v8/:lessonId" element={<ProtectedRoute><V8Lesson /></ProtectedRoute>} />
                 <Route path="/admin/v8/create" element={<AdminRoute><AdminV8Create /></AdminRoute>} />
                 <Route path="/admin/v8/reprocess-audio" element={<AdminRoute><AdminV8ReprocessAudio /></AdminRoute>} />
+                {/* V10 BPA LESSON SYSTEM */}
+                <Route path="/v10/:lessonSlug" element={<ProtectedRoute><V10LessonPlayer /></ProtectedRoute>} />
+                <Route path="/admin/v10" element={<AdminRoute><AdminV10Pipeline /></AdminRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
