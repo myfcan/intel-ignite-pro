@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>AILIV V10 — SDR de Voz</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--pri:#6366F1;--sec:#8B5CF6;--acc:#34D399;--grad:linear-gradient(135deg,#6366F1,#8B5CF6);--bg:#FAFBFC;--card:#FFF;--bor:#E5E7EB;--mut:#6B7280;--soft:rgba(99,102,241,0.06);--r:14px;--f:'DM Sans',system-ui,sans-serif}
+body{font-family:var(--f);background:#0A0A0F;display:flex;justify-content:center;align-items:center;min-height:100vh;min-height:100dvh}
+.wrap{display:flex;gap:20px;max-width:1100px;width:100%;height:min(92vh,780px);padding:20px}
+@media(max-width:799px){.wrap{padding:0;gap:0}.phone{max-width:100%;height:100vh;height:100dvh;border-radius:0;box-shadow:none}}
+@media(max-width:440px){.wrap{max-width:100%;height:100vh;height:100dvh}}
+
+/* ===== SCREEN SYSTEM ===== */
+/* Each screen is a direct child of .wrap, uses display for toggling */
+.scr{display:none;width:100%;height:100%;flex-direction:column}
+.scr.on{display:flex}
+
+/* ===== SIDEBAR (desktop) ===== */
+.phone{width:100%;max-width:420px;min-width:320px;height:100%;position:relative;overflow:hidden;display:flex;flex-direction:column;background:#0F0B1E;border-radius:32px;box-shadow:0 20px 60px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.04)}
+.sidebar{flex:1;min-width:260px;max-width:320px;display:none;flex-direction:column;gap:8px;padding:8px 0;overflow-y:auto;background:var(--bg);border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05)}
+@media(min-width:800px){.sidebar{display:flex}}
+.sb-b{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;font-size:11px;font-weight:700;margin:8px 12px 0}
+.sb-t{font-size:18px;font-weight:800;margin:8px 12px 0;color:#1F2937}
+.sb-d{font-size:11px;color:var(--mut);line-height:1.5;margin:4px 12px 0}
+.sb-sec{margin-top:12px;padding:0 12px}
+.sb-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin-bottom:6px}
+.sb-tools{display:flex;flex-wrap:wrap;gap:4px}
+.sb-tl{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;border:1px solid}
+.sb-steps{display:flex;flex-direction:column;gap:2px}
+.sb-st{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer}
+.sb-st:hover{background:rgba(99,102,241,0.04)}
+.sb-st.act{background:var(--soft);color:var(--pri);font-weight:700}
+.sb-st.done{color:var(--acc)}.sb-st.lock{color:#D1D5DB}
+.sb-n{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;background:#F3F4F6;color:#6B7280;flex-shrink:0}
+.sb-st.act .sb-n{background:var(--pri);color:#fff}
+.sb-st.done .sb-n{background:var(--acc);color:#fff}
+
+/* ============================================================ */
+/* PART A                                                        */
+/* ============================================================ */
+#A{background:#0F0B1E}
+/* A: slide area */
+.a-body{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.a-slide{display:none;flex-direction:column;align-items:center;text-align:center;padding:20px;width:100%}
+.a-slide.on{display:flex}
+/* A: slide 0 */
+.a-badge{padding:5px 14px;border-radius:20px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.2);color:#A5B4FC;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px}
+.a-h1{font-size:28px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:8px}
+.a-sub{font-size:14px;color:rgba(255,255,255,0.4);line-height:1.5;max-width:300px;margin-bottom:28px}
+.a-play{width:80px;height:80px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 40px rgba(99,102,241,0.4)}
+.a-play:active{transform:scale(0.93)}
+.a-play-lbl{font-size:12px;color:rgba(255,255,255,0.3);margin-top:10px}
+/* A: slide 1-5 visual */
+.a-vis{width:280px;height:180px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:16px}
+.a-vis-ico{font-size:40px;margin-bottom:6px}
+.a-vis-name{font-size:14px;font-weight:800;margin-bottom:2px}
+.a-vis-desc{font-size:10px;opacity:0.5;max-width:220px;line-height:1.4}
+.a-num{font-size:10px;font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+.a-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px}
+.a-desc{font-size:13px;color:rgba(255,255,255,0.4);max-width:280px;line-height:1.5}
+/* A: bottom */
+.a-bot{padding:8px 20px calc(env(safe-area-inset-bottom,8px) + 12px);flex-shrink:0}
+.a-dots{display:flex;gap:6px;justify-content:center;margin-bottom:8px}
+.a-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.12)}
+.a-dot.on{background:var(--pri);width:18px;border-radius:3px}
+.a-prog{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.a-pbar{flex:1;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+.a-pfill{height:100%;background:var(--grad);width:0%;transition:width 0.3s}
+.a-ptime{font-size:10px;color:rgba(255,255,255,0.3);font-family:monospace}
+.a-btn{width:100%;padding:16px;border-radius:14px;border:none;background:var(--grad);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--f);box-shadow:0 6px 24px rgba(99,102,241,0.3);display:none}
+.a-btn.on{display:block}
+.a-btn:active{transform:scale(0.97)}
+.a-skip{width:100%;padding:8px;border:none;background:none;color:rgba(255,255,255,0.2);font-size:11px;cursor:pointer;font-family:var(--f);display:none}
+.a-skip.on{display:block}
+
+/* ============================================================ */
+/* PART B (player) — all existing styles                        */
+/* ============================================================ */
+#B{background:var(--bg)}
+.top{padding:12px 14px 6px;background:rgba(255,255,255,0.9);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,0.04)}
+.hrow{display:flex;align-items:center;gap:8px}
+.bk{width:30px;height:30px;border-radius:10px;background:var(--soft);border:none;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:var(--pri);flex-shrink:0}
+.bk:active{transform:scale(0.9)}.bk.off{opacity:0;pointer-events:none}
+.pbar{flex:1;height:3px;background:var(--bor);border-radius:2px;overflow:hidden}
+.pfill{height:100%;background:var(--grad);transition:width 0.4s}
+.dots{display:flex;gap:3px;padding:4px 38px 0}
+.sd{height:3px;flex:1;border-radius:2px}.sd.done{background:var(--acc)}.sd.act{background:var(--pri)}.sd.idle{background:var(--bor)}
+.chiprow{display:flex;align-items:center;gap:6px;padding:6px 14px 2px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700}
+.warnbadge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700;background:#FEF3C7;color:#D97706;cursor:pointer}
+.sc{flex:1;overflow-y:auto;padding:8px 14px 14px;-webkit-overflow-scrolling:touch}
+.snum{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:2px}
+.stitle{font-size:18px;font-weight:800;letter-spacing:-0.3px;margin-bottom:4px;color:#1F2937}
+.sdesc{font-size:12px;color:var(--mut);line-height:1.6;margin-bottom:12px}
+.mock{border-radius:var(--r);overflow:hidden;border:1px solid var(--bor);box-shadow:0 4px 12px rgba(0,0,0,0.04);margin-bottom:10px}
+.mbar{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;color:#fff;font-size:11px;font-weight:700}
+.mbar span{opacity:0.95}.mbar small{font-size:9px;opacity:0.6}
+.mbody{background:var(--card);padding:6px;position:relative;min-height:120px}
+.mbar-chrome{display:flex;align-items:center;gap:4px;padding:6px 10px;background:#F8FAFC;border-bottom:1px solid #E5E7EB}
+.mbar-dot{width:7px;height:7px;border-radius:50%}.mbar-dot.r{background:#FF5F57}.mbar-dot.y{background:#FFBD2E}.mbar-dot.g{background:#28C840}
+.mbar-url{margin-left:8px;font-size:9px;color:#9CA3AF;font-family:monospace}
+.mfld{margin-bottom:8px}.mlbl{font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px}
+.minp{width:100%;padding:8px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:11px;background:#F9FAFB;color:#374151}
+.msel{width:100%;padding:8px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:11px;background:#F9FAFB}
+.mbtn-p{width:100%;padding:10px;border:none;border-radius:8px;background:var(--grad);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.mbtn-s{width:100%;padding:10px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer}
+.shimmer{background:linear-gradient(90deg,#F3F4F6 25%,#E5E7EB 50%,#F3F4F6 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.navbc{background:#F0F4FF;border:1px solid #C7D2FE;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:10px}
+.nfrom,.nto{font-weight:700;color:var(--pri)}.nhow{color:#6B7280;margin-top:3px;line-height:1.4}
+.deprem{background:rgba(99,102,241,0.04);border-left:3px solid var(--pri);padding:6px 10px;font-size:10px;color:#4F46E5;border-radius:0 6px 6px 0;margin-bottom:8px}
+.wcard{background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:8px 10px;font-size:10px;color:#92400E;line-height:1.5;margin:8px 0}
+.celeb{text-align:center;padding:16px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:12px}
+.celeb-ico{font-size:32px;margin-bottom:4px}.celeb-txt{font-size:14px;font-weight:700;color:#059669}.celeb-next{font-size:11px;color:#6B7280;margin-top:4px}
+.tterm{cursor:help;border-bottom:1px dashed var(--pri)}.tinfo{color:var(--pri);font-size:9px;font-weight:700;cursor:pointer}
+.tterm .ttbubble{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1E293B;color:#F8FAFC;padding:6px 10px;border-radius:8px;font-size:10px;width:200px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+.ttip{position:absolute;left:50%;transform:translateX(-50%);background:var(--grad);color:#fff;padding:8px 12px;border-radius:10px;font-size:10px;font-weight:600;z-index:10;box-shadow:0 4px 16px rgba(99,102,241,0.3);max-width:85%;text-align:center;line-height:1.4}
+.fdots{display:flex;justify-content:center;gap:6px;padding:8px 0 4px}
+.fd{width:8px;height:8px;border-radius:50%;cursor:pointer}.fd.on{background:var(--pri);box-shadow:0 0 0 3px rgba(99,102,241,0.15)}.fd.gon{background:var(--acc)}.fd.past{background:var(--acc)}.fd.off{background:var(--bor)}
+.actc{background:var(--card);border-radius:var(--r);padding:10px 12px;margin:8px 0;box-shadow:0 2px 8px rgba(0,0,0,0.03)}
+.actl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.actt{font-size:12px;color:#374151;line-height:1.6}
+.val{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:var(--r);margin:8px 0}
+.valico{width:24px;height:24px;background:var(--acc);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.vall{font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px}
+.valt{font-size:11px;color:#374151;line-height:1.5;margin-top:1px}
+/* Player bar */
+.bot{background:#1A1625;padding:0 0 calc(env(safe-area-inset-bottom,8px));flex-shrink:0}
+.prow{display:flex;align-items:center;gap:6px;padding:6px 16px 2px}
+.plbl{font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);font-family:monospace;min-width:22px}
+.atrk{flex:1;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden}
+.afil{height:100%;background:linear-gradient(90deg,var(--pri),var(--sec));transition:width 0.3s}
+.crow{display:flex;align-items:center;padding:6px 16px 8px;gap:10px}
+.cb{width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cb:active{transform:scale(0.85)}
+.cb.pl{width:48px;height:48px;background:var(--grad);color:#fff;font-size:17px;box-shadow:0 4px 20px rgba(99,102,241,0.4)}
+.cb.sp{font-size:12px;font-weight:800;color:rgba(255,255,255,0.4);width:36px}
+.cont{flex:1;padding:14px;border-radius:14px;border:none;background:var(--grad);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--f);display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 4px 14px rgba(99,102,241,0.25);margin-left:6px}
+.cont:active{transform:scale(0.97)}
+/* MAIA */
+.mfab{position:absolute;bottom:130px;right:16px;z-index:50;cursor:pointer}
+.mfab:active{transform:scale(0.9)}
+.mring{width:52px;height:52px;border-radius:50%;background:var(--grad);padding:3px;box-shadow:0 4px 20px rgba(99,102,241,0.3)}
+.mring.pu{animation:mp 2s infinite}
+.minn{width:100%;height:100%;border-radius:50%;background:#2D2640;display:flex;align-items:center;justify-content:center;font-size:22px}
+.mdot{width:8px;height:8px;border-radius:50%;background:var(--acc);position:absolute;top:0;right:0;border:2px solid #1A1625;display:none}
+@keyframes mp{0%,100%{box-shadow:0 4px 20px rgba(99,102,241,0.3)}50%{box-shadow:0 4px 20px rgba(99,102,241,0.6),0 0 0 8px rgba(99,102,241,0.08)}}
+.bsbg{position:absolute;inset:0;z-index:150;background:rgba(23,25,35,0.5);backdrop-filter:blur(8px);display:none}
+.bsbg.open{display:block}
+.bs{position:absolute;bottom:0;left:0;right:0;max-height:70vh;background:#1E1B2E;border-radius:24px 24px 0 0;z-index:160;overflow-y:auto;padding:0 0 calc(env(safe-area-inset-bottom,8px)+16px)}
+.bsh{width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:12px auto 16px}
+.bst{font-size:16px;font-weight:800;color:#fff;padding:0 20px 4px}
+.bsc{font-size:13px;font-weight:700;color:var(--pri);float:right}
+.bsl{padding:8px 16px}
+.bsi{display:flex;align-items:center;gap:12px;padding:14px 12px;border-radius:14px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.05);cursor:pointer}
+.bsi:active{background:rgba(99,102,241,0.1)}
+.bsi.act{border-color:var(--pri);background:rgba(99,102,241,0.08)}
+.bsn{width:28px;height:28px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:#fff}
+.bsn.an{background:var(--pri)}
+.bstt{font-size:13px;font-weight:600;color:rgba(255,255,255,0.8)}
+.bsi.act .bstt{color:#fff;font-weight:700}
+.bssub{font-size:10px;color:var(--pri);margin-top:1px}
+.bsw{margin:8px 16px 4px;padding:12px;border-radius:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.15)}
+.bswt{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#D97706;margin-bottom:4px}
+.bswx{font-size:11px;color:#FBBF24;line-height:1.5}
+.bsf{margin:4px 16px;padding:12px;border-radius:12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.12)}
+.bsft{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--pri);margin-bottom:4px}
+.bsfd{font-size:10px;color:rgba(255,255,255,0.4);font-style:italic;margin-bottom:3px}
+.bsfa{font-size:12px;color:rgba(255,255,255,0.8);font-weight:600;line-height:1.5}
+
+/* ============================================================ */
+/* PART C — 3 clean pages                                       */
+/* ============================================================ */
+#C{background:#0F0B1E}
+.c-pg{display:none;flex-direction:column;width:100%;height:100%}
+.c-pg.on{display:flex}
+.c-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.c-foot{padding:12px 20px calc(env(safe-area-inset-bottom,8px)+12px);flex-shrink:0;display:flex;flex-direction:column;gap:6px}
+.c-dots{display:flex;gap:6px;justify-content:center}
+.c-d{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.12)}.c-d.on{background:var(--pri);width:18px;border-radius:3px}
+.c-btn{width:100%;padding:16px;border-radius:14px;border:none;background:var(--grad);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--f);box-shadow:0 6px 24px rgba(99,102,241,0.3)}
+.c-btn:active{transform:scale(0.97)}
+.c-btn-g{background:linear-gradient(135deg,var(--acc),#059669);box-shadow:0 6px 24px rgba(52,211,153,0.3)}
+/* C1 */
+.c1-tag{font-size:10px;font-weight:700;color:var(--pri);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px}
+.c1-h{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px}
+.c1-sub{font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:20px}
+.c1-list{width:100%;max-width:340px;display:flex;flex-direction:column;gap:6px}
+.c1-i{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04)}
+.c1-ck{width:24px;height:24px;border-radius:50%;background:var(--pri);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0}
+.c1-tx{font-size:13px;font-weight:600;color:rgba(255,255,255,0.8)}
+.c1-tx span{display:block;font-size:10px;font-weight:400;color:rgba(255,255,255,0.3);margin-top:2px}
+.c1-last{border-color:rgba(52,211,153,0.2);background:rgba(52,211,153,0.04)}
+.c1-last .c1-ck{background:var(--acc);box-shadow:0 0 12px rgba(52,211,153,0.3)}
+.c1-last .c1-tx{color:var(--acc)}
+.c1-last .c1-tx span{color:rgba(52,211,153,0.5)}
+.c1-audio{display:flex;align-items:center;gap:10px;margin-top:16px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);width:100%;max-width:340px}
+.c1-play{width:32px;height:32px;border-radius:50%;background:var(--grad);border:none;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.c1-play:active{transform:scale(0.9)}
+.c1-albl{font-size:11px;color:rgba(255,255,255,0.5)}
+.c1-albl small{display:block;font-size:9px;color:rgba(255,255,255,0.25);margin-top:1px}
+/* C2 */
+.c2-emo{font-size:56px;margin-bottom:16px;animation:pop 0.5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+.c2-h{font-size:28px;font-weight:800;color:#fff;margin-bottom:8px}
+.c2-p{font-size:14px;color:rgba(255,255,255,0.45);line-height:1.6;max-width:300px;text-align:center;margin-bottom:20px}
+.c2-card{padding:16px 20px;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.06));border:1px solid rgba(99,102,241,0.15);border-radius:14px;margin-bottom:20px;text-align:center;max-width:300px}
+.c2-card b{display:block;font-size:16px;font-weight:700;color:#fff;line-height:1.4}
+.c2-card small{display:block;font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px}
+.c2-stats{display:flex;gap:20px;margin-bottom:20px}
+.c2-st b{display:block;font-size:22px;font-weight:800;color:#fff}
+.c2-st small{font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px}
+/* C3 */
+.c3-glow{width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.25),transparent 70%);display:flex;align-items:center;justify-content:center;margin-bottom:8px;animation:gp 2s ease-in-out infinite}
+@keyframes gp{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.c3-bdg{width:72px;height:72px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 30px rgba(99,102,241,0.4);animation:pop 0.5s cubic-bezier(.34,1.56,.64,1)}
+.c3-tag{font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:2px;margin-bottom:2px}
+.c3-name{font-size:22px;font-weight:800;color:#fff;margin-bottom:12px}
+.c3-xp{display:inline-block;padding:6px 16px;border-radius:20px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.2);color:var(--acc);font-size:14px;font-weight:800;margin-bottom:20px;animation:pop 0.6s cubic-bezier(.34,1.56,.64,1) 0.3s both}
+.c3-str{padding:14px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:14px;margin-bottom:20px;width:100%;max-width:300px}
+.c3-strl{font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;text-align:center}
+.c3-days{display:flex;justify-content:center;gap:8px;margin-bottom:6px}
+.c3-dy{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(255,255,255,0.2)}
+.c3-dy.dn{background:var(--acc);color:#fff;border-color:var(--acc)}
+.c3-dy.td{background:var(--pri);color:#fff;border-color:var(--pri);box-shadow:0 0 12px rgba(99,102,241,0.4)}
+.c3-cnt{font-size:12px;font-weight:700;color:rgba(255,255,255,0.6);text-align:center;margin-top:4px}
+.c3-share{padding:12px 24px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:none;color:rgba(255,255,255,0.5);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--f)}
+.c3-share:active{background:rgba(255,255,255,0.04)}
+/* Confetti */
+.confbox{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:99}
+.cnf{position:absolute;top:-10px;animation:cfall var(--d,3s) ease-in forwards;animation-delay:var(--dl,0s)}
+@keyframes cfall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(600px) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="phone">
+
+<!-- ===================== PART A ===================== -->
+<div class="scr on" id="A">
+  <div class="a-body">
+    <div class="a-slide on" id="as0">
+      <div class="a-badge">AULA PRATICA</div>
+      <div class="a-h1">SDR de Voz<br>com IA</div>
+      <div class="a-sub">Crie um sistema que liga automaticamente para seus leads usando inteligencia artificial</div>
+      <div class="a-play" onclick="playA()"><svg width="22" height="26" viewBox="0 0 22 26" fill="none"><path d="M2 1L20 13L2 25V1Z" fill="white"/></svg></div>
+      <div class="a-play-lbl">Ouvir introducao · 1:52</div>
+    </div>
+    <div class="a-slide" id="as1">
+      <div class="a-vis" style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(124,58,237,0.05))"><div class="a-vis-ico">📝</div><div class="a-vis-name" style="color:#C4B5FD">Google Forms</div><div class="a-vis-desc" style="color:rgba(196,181,253,0.5)">Lead preenche nome, telefone e interesse</div></div>
+      <div class="a-num">Etapa 1</div><div class="a-title">Lead preenche formulario</div><div class="a-desc">O cliente encontra seu formulario e deixa os dados de contato</div>
+    </div>
+    <div class="a-slide" id="as2">
+      <div class="a-vis" style="background:linear-gradient(135deg,rgba(5,150,105,0.15),rgba(5,150,105,0.05))"><div class="a-vis-ico">📊</div><div class="a-vis-name" style="color:#6EE7B7">Google Sheets</div><div class="a-vis-desc" style="color:rgba(110,231,183,0.5)">Dados organizados automaticamente</div></div>
+      <div class="a-num">Etapa 2</div><div class="a-title">Dados na planilha</div><div class="a-desc">Google Sheets organiza cada lead em uma linha</div>
+    </div>
+    <div class="a-slide" id="as3">
+      <div class="a-vis" style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.05))"><div class="a-vis-ico">🌐</div><div class="a-vis-name" style="color:#A5B4FC">Make.com</div><div class="a-vis-desc" style="color:rgba(165,180,252,0.5)">Detecta lead novo e dispara a ligacao</div></div>
+      <div class="a-num">Etapa 3</div><div class="a-title">Make dispara automacao</div><div class="a-desc">A cada 15 minutos, verifica novos leads</div>
+    </div>
+    <div class="a-slide" id="as4">
+      <div class="a-vis" style="background:linear-gradient(135deg,rgba(71,85,105,0.2),rgba(71,85,105,0.05))"><div class="a-vis-ico">📞</div><div class="a-vis-name" style="color:#94A3B8">Bland AI</div><div class="a-vis-desc" style="color:rgba(148,163,184,0.5)">Ligacao com voz natural por telefone</div></div>
+      <div class="a-num">Etapa 4</div><div class="a-title">IA liga pro lead</div><div class="a-desc">Bland AI faz a ligacao e conversa naturalmente</div>
+    </div>
+    <div class="a-slide" id="as5">
+      <div class="a-vis" style="background:linear-gradient(135deg,rgba(52,211,153,0.15),rgba(52,211,153,0.05))"><div class="a-vis-ico" style="font-size:48px">✓</div><div class="a-vis-name" style="color:#6EE7B7">Tudo automatico</div><div class="a-vis-desc" style="color:rgba(110,231,183,0.5)">Planilha atualizada, lead qualificado</div></div>
+      <div class="a-num">Resultado</div><div class="a-title">Sistema rodando sozinho</div><div class="a-desc">27 passos · ~12 min · Zero codigo</div>
+    </div>
+  </div>
+  <div class="a-bot">
+    <div class="a-dots" id="adots"><div class="a-dot on"></div><div class="a-dot"></div><div class="a-dot"></div><div class="a-dot"></div><div class="a-dot"></div><div class="a-dot"></div></div>
+    <div class="a-prog"><div class="a-pbar"><div class="a-pfill" id="apf"></div></div><div class="a-ptime" id="apt">0:00</div></div>
+    <button class="a-btn" id="abtn" onclick="go('B')">Comecar aula →</button>
+    <button class="a-skip" id="askip" onclick="go('B')">Pular introducao</button>
+  </div>
+</div>
+
+<!-- ===================== PART B ===================== -->
+<div class="scr" id="B">
+  <div class="top"><div class="hrow"><button class="bk" id="bk" onclick="goBack()">←</button><div style="flex:1"><div style="font-size:11px;font-weight:800;color:var(--pri)">AILIV</div><div style="font-size:9px;color:var(--mut)">SDR de Voz com IA</div></div><div class="pbar"><div class="pfill" id="pf"></div></div></div><div class="dots" id="dots"></div></div>
+  <div class="chiprow" id="chiprow"></div>
+  <div class="sc" id="sc"></div>
+  <div class="mfab" onclick="toggleM()"><div class="mring pu" id="mring"><div class="minn">🤖</div><div class="mdot" id="mdot"></div></div></div>
+  <div class="bsbg" id="bsbg"><div class="bs" id="bsht"></div></div>
+  <div class="bot"><div class="prow"><span class="plbl" id="plbl">1/27</span><div class="atrk"><div class="afil" id="af"></div></div><span class="plbl" id="at">0:00</span></div><div class="crow"><div style="display:flex;align-items:center;gap:6px"><button class="cb pl" id="ab" onclick="toggleAud()">▶</button><button class="cb sp" id="spd" onclick="cycSpd()">1x</button></div><button class="cont" id="cbt" onclick="onCont()">Continuar</button></div></div>
+</div>
+
+<!-- ===================== PART C ===================== -->
+<div class="scr" id="C">
+  <div class="confbox" id="confbox"></div>
+  <!-- C page 1: Recap -->
+  <div class="c-pg on" id="c1">
+    <div class="c-body">
+      <div class="c1-tag">Aula completa</div>
+      <div class="c1-h">O que voce construiu</div>
+      <div class="c1-sub">Em 27 passos, do zero ao sistema rodando</div>
+      <div class="c1-list">
+        <div class="c1-i"><div class="c1-ck">✓</div><div class="c1-tx">Contas Make + Bland AI<span>Ferramentas configuradas</span></div></div>
+        <div class="c1-i"><div class="c1-ck">✓</div><div class="c1-tx">Formulario + Planilha<span>Captacao de leads automatizada</span></div></div>
+        <div class="c1-i"><div class="c1-ck">✓</div><div class="c1-tx">Automacao no Make<span>Watch → Filtro → HTTP → Update</span></div></div>
+        <div class="c1-i"><div class="c1-ck">✓</div><div class="c1-tx">Agente de voz ativo<span>Script + ligacao automatica</span></div></div>
+        <div class="c1-i c1-last"><div class="c1-ck">✓</div><div class="c1-tx">Teste validado<span>Ligacao real no seu celular</span></div></div>
+      </div>
+      <div class="c1-audio"><button class="c1-play" onclick="this.textContent=this.textContent==='▶'?'⏸':'▶'">▶</button><div class="c1-albl">Ouvir recapitulacao<small>1:08 · Narracao MAIA</small></div></div>
+    </div>
+    <div class="c-foot">
+      <div class="c-dots"><div class="c-d on"></div><div class="c-d"></div><div class="c-d"></div></div>
+      <button class="c-btn" onclick="goC(2)">Continuar</button>
+    </div>
+  </div>
+  <!-- C page 2: Engagement -->
+  <div class="c-pg" id="c2">
+    <div class="c-body" style="text-align:center">
+      <div class="c2-emo">🚀</div>
+      <div class="c2-h">Isso foi incrivel.</div>
+      <div class="c2-p">Voce acabou de criar algo que empresas pagam milhares de reais pra montar.</div>
+      <div class="c2-card"><b>Um SDR de Voz com IA.<br>Funcionando. Automatico. Seu.</b><small>Proximo passo: personalizar o script pro seu negocio</small></div>
+      <div class="c2-stats"><div class="c2-st"><b>27</b><small>passos</small></div><div class="c2-st"><b>~12</b><small>min</small></div><div class="c2-st"><b>0</b><small>codigo</small></div></div>
+    </div>
+    <div class="c-foot">
+      <div class="c-dots"><div class="c-d"></div><div class="c-d on"></div><div class="c-d"></div></div>
+      <button class="c-btn" onclick="goC(3)">Ver minha conquista</button>
+    </div>
+  </div>
+  <!-- C page 3: Gamification -->
+  <div class="c-pg" id="c3">
+    <div class="c-body" style="text-align:center">
+      <div class="c3-glow"><div class="c3-bdg">📞</div></div>
+      <div class="c3-tag">Badge desbloqueado</div>
+      <div class="c3-name">SDR de Voz</div>
+      <div class="c3-xp">+150 XP</div>
+      <div class="c3-str">
+        <div class="c3-strl">Sequencia de aprendizado</div>
+        <div class="c3-days"><div class="c3-dy dn">S</div><div class="c3-dy dn">T</div><div class="c3-dy dn">Q</div><div class="c3-dy td">Q</div><div class="c3-dy">S</div><div class="c3-dy">S</div><div class="c3-dy">D</div></div>
+        <div class="c3-cnt">🔥 4 dias seguidos</div>
+      </div>
+      <button class="c3-share" onclick="boom()">🎉 Compartilhar conquista</button>
+    </div>
+    <div class="c-foot">
+      <div class="c-dots"><div class="c-d"></div><div class="c-d"></div><div class="c-d on"></div></div>
+      <button class="c-btn c-btn-g">Proxima aula →</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /phone -->
+<div class="sidebar" id="sidebar"></div>
+</div><!-- /wrap -->
+
+<script>
+var S=[
+{
+n:1,t:27,
+title:'Criar conta no Make.com',
+desc:'O <span class="tterm" data-tip="Plataforma que conecta apps entre si — tipo um IFTTT profissional">Make.com <span class="tinfo">ⓘ</span></span> é a ferramenta que vai conectar tudo: quando um lead preencher o formulário, o Make dispara a ligação automaticamente.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:45,prog:4,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Página inicial',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/en/register</span></div>\n<div style="text-align:center;padding:24px 16px">\n<div style="font-size:24px;font-weight:800;color:#6366F1;margin-bottom:4px">Make</div>\n<div style="font-size:11px;color:#6B7280;margin-bottom:16px">Crie sua conta gratuita</div>\n<div class="mfld"><label class="mlbl">Email</label><input class="minp" placeholder="seu@email.com" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n<div class="mfld"><label class="mlbl">Senha</label><input class="minp" placeholder="Mínimo 8 caracteres" style="" readonly></div>\n<button class="mbtn-p">✉️ Sign up with email</button>\n<div style="margin:12px 0;font-size:10px;color:#9CA3AF">ou</div>\n<button class="mbtn-s">G Continue with Google</button>\n</div>',
+tip:{h:'👆 Use o mesmo email que usa no Google — vai facilitar na hora de conectar',top:'auto',bottom:'10px'},
+act:'Acesse <b>make.com</b> e clique em <b>Sign up</b>. Use seu email do Google para facilitar.',
+chk:null
+},
+{
+bar:'#6366F1',bt:'make.com',bs:'Onboarding',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/onboarding</span></div>\n<div style="padding:20px 16px">\n<div style="font-size:14px;font-weight:700;margin-bottom:12px">Personalize sua experiência</div>\n<div class="wcard">⚠️ O Make vai fazer várias perguntas. Não importa o que responder — clique Skip ou X em tudo até chegar no Dashboard.</div>\n<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">\n<div class="mfld" style="opacity:0.4"><label class="mlbl">Company size</label><div class="minp shimmer" style="height:32px"></div></div>\n<div class="mfld" style="opacity:0.4"><label class="mlbl">Your role</label><div class="minp shimmer" style="height:32px"></div></div>\n</div>\n<div style="margin-top:12px;display:flex;gap:8px">\n<button class="mbtn-s"> Skip</button>\n<button class="mbtn-p"> Continue</button>\n</div>\n</div>',
+tip:{h:'⏭️ Skip, Skip, Skip — ignore tudo até ver o Dashboard',top:'10px',bottom:'auto'},
+act:'Pule todas as perguntas do onboarding. Clique <b>Skip</b> ou <b>X</b> até chegar no Dashboard.',
+chk:'Você vê o Dashboard do Make com o botão <b>"Create a new scenario"</b>.'
+},
+],
+maia:{t:'Nesse passo você cria sua conta no Make.com. É gratuito e leva 2 minutos. Use o email do Google pra facilitar depois.',a:'O Make é tipo uma linha de montagem digital: você programa "quando acontecer X, faça Y automaticamente". Tipo: lead preencheu formulário → Make manda ligar pro lead.',s:'Se tiver dúvida sobre qual plano escolher: o gratuito já serve. Ele permite 1.000 operações/mês, mais que suficiente pra começar.'},
+draw:{
+warn:'Escolha <b>Hosting Region: US</b> (não Europe). Algumas integrações funcionam melhor na região US.',
+ift:{tag:'SE → ENTÃO',desc:'Apareceu tela de onboarding com perguntas?',act:'Clique <b>Skip</b> ou <b>X</b> em tudo até ver o Dashboard.'}
+}
+},
+{
+n:2,t:27,
+title:'Criar conta no Bland AI',
+desc:'O <span class="tterm" data-tip="Plataforma que faz ligações telefônicas usando inteligência artificial — a voz do seu SDR">Bland AI <span class="tinfo">ⓘ</span></span> é quem vai ligar pro lead. Ele usa IA pra ter uma conversa natural por telefone e qualificar o contato.',
+app:'Bland AI',ai:'📞',
+cbg:'#F1F5F9',cc:'#1E293B',ac:'#475569',
+dur:60,prog:7,
+fr:[
+{
+bar:'#1E293B',bt:'bland.ai',bs:'Sign up',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">app.bland.ai/signup</span></div>\n<div style="text-align:center;padding:24px 16px">\n<div style="font-size:22px;font-weight:800;color:#1E293B;margin-bottom:4px">Bland AI</div>\n<div style="font-size:11px;color:#6B7280;margin-bottom:16px">Crie sua conta para fazer ligações com IA</div><div style="font-size:12px;font-weight:600;color:#6B7280;margin-top:8px">🔄 Mudamos de ferramenta!</div><div style="font-size:11px;color:#9CA3AF;margin-bottom:4px">Saímos do Make → Entramos no Bland AI. Abra nova aba.</div>\n<div class="mfld"><label class="mlbl">Email</label><input class="minp" placeholder="seu@email.com" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n<div class="mfld"><label class="mlbl">Senha</label><input class="minp" placeholder="Crie uma senha" style="" readonly></div>\n<button class="mbtn-p"> Create Account</button>\n</div>',
+tip:{h:'📧 Use o mesmo email do Make.com pra manter tudo organizado',top:'auto',bottom:'10px'},
+act:'Acesse <b>app.bland.ai</b> e crie sua conta.',
+chk:null
+},
+{
+bar:'#1E293B',bt:'bland.ai',bs:'Onboarding',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">app.bland.ai/dashboard</span></div>\n<div style="padding:20px 16px">\n<div style="font-size:14px;font-weight:700;margin-bottom:8px">👋 Meet Blandie!</div>\n<div style="font-size:11px;color:#6B7280;margin-bottom:12px">Pode aparecer um assistente chamado "Blandie". Ignore e vá direto pro Dashboard.</div>\n<div class="wcard">⚠️ Se aparecer tela de tour/onboarding, clique Skip ou X até chegar no Dashboard.</div>\n</div>',
+tip:{h:'⏭️ Pule o tour — vamos direto ao que importa',top:'10px',bottom:'auto'},
+act:'Pule qualquer tour ou onboarding. Vá direto pro <b>Dashboard</b>.',
+chk:null
+},
+{
+bar:'#1E293B',bt:'bland.ai',bs:'Settings → API Keys',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">app.bland.ai/dashboard/settings</span></div>\n<div style="padding:16px">\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Copiar sua <span class="tterm" data-tip="Senha de acesso entre apps — como a senha do Wi-Fi: sem ela, ninguém conecta">API Key <span class="tinfo">ⓘ</span></span></div>\n<div class="navbc"><span class="nfrom">Dashboard</span> → <span class="nto">Settings → API Keys</span><div class="nhow">Menu lateral esquerdo → clique em Settings → aba API Keys no topo</div></div>\n<div style="margin:12px 0">\n<table style="width:100%;font-size:10px;border-collapse:collapse">\n<tr style="background:#F8FAFC"><th style="text-align:left;padding:6px;border-bottom:1px solid #E5E7EB">Name</th><th style="text-align:left;padding:6px;border-bottom:1px solid #E5E7EB">Key</th></tr>\n<tr><td style="padding:6px;border-bottom:1px solid #F1F5F9">Default</td><td style="padding:6px;border-bottom:1px solid #F1F5F9;font-family:monospace;font-size:9px;color:#94A3B8">org_e6b9...435 <span style="color:#EF4444;font-size:8px">← truncada, não dá pra copiar!</span></td></tr>\n</table>\n</div>\n<div class="wcard">⚠️ A key na tabela aparece CORTADA. Você precisa criar uma nova pra conseguir copiar.</div>\n<div style="margin-top:8px"><button class="mbtn-p">🔑 + New API Key</button></div>\n<div style="margin-top:8px;padding:10px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;font-size:10px">\n<b>⏱️ Atenção:</b> Quando criar, aparece uma janela com a key completa. <b>Copie ANTES de fechar</b> — depois não aparece mais!\n</div>\n</div>',
+tip:{h:'🔑 Copie a key e cole no Bloco de Notas — vai precisar no passo 17',top:'auto',bottom:'10px'},
+act:'Clique <b>+ New API Key</b>. Copie a key completa (começa com <b>org_</b>) e salve no Bloco de Notas. Formato: <code>org_e6b9390ff435...</code>',
+chk:'Você tem uma <span class="tterm" data-tip="Senha de acesso entre apps">API Key <span class="tinfo">ⓘ</span></span> do Bland salva no Bloco de Notas, começando com <b>org_</b>.'
+},
+],
+maia:{t:'Aqui você cria conta no Bland AI e pega a API Key (senha de acesso). Essa key vai ser usada no passo 17 pra conectar o Make ao Bland.',a:'API Key é tipo a senha do Wi-Fi: sem ela, o Make não consegue "entrar" no Bland pra mandar fazer a ligação.',s:'Se a key na tabela aparece cortada (org_e6b9...435), é normal! Crie uma nova clicando "+ New API Key". A key completa só aparece uma vez — copie antes de fechar.'},
+draw:{
+warn:'A API Key na tabela aparece <b>truncada</b> (cortada). Você PRECISA criar uma nova pra copiar a versão completa. A key começa com <b>org_</b> (não SK-).',
+ift:{tag:'SE → ENTÃO',desc:'Apareceu "Meet Blandie" ou tour guiado?',act:'Clique <b>X</b> ou <b>Skip</b> e vá pro Dashboard → Settings → API Keys.'}
+}
+},
+{
+n:3,t:27,
+title:'Criar planilha de leads',
+desc:'Agora vamos pro <b>Google Sheets</b>. Essa planilha vai ser o "banco de dados" dos seus leads — onde ficam os contatos que o sistema vai ligar.',
+app:'Sheets',ai:'📊',
+cbg:'#ECFDF5',cc:'#059669',ac:'#059669',
+dur:30,prog:11,
+fr:[
+{
+bar:'#0F9D58',bt:'sheets.google.com',bs:'Nova planilha',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">sheets.google.com/spreadsheets/d/new</span></div>\n<div style="padding:16px">\n<div style="font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px">🔄 Mudamos de ferramenta!</div>\n<div style="font-size:11px;color:#9CA3AF;margin-bottom:12px">Saímos do Bland AI → Entramos no Google Sheets. Abra uma nova aba no navegador.</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden">\n<div style="padding:8px 12px;background:#F8FAFC;display:flex;align-items:center;gap:6px;border-bottom:1px solid #E5E7EB">\n<div style="font-size:14px">📊</div>\n<input class="minp" value="SDR Leads" style="border:none;background:transparent;font-weight:700;font-size:13px;padding:2px;border:2px solid var(--primary);border-radius:4px" readonly>\n</div>\n<div style="font-size:9px;font-family:monospace;padding:4px">\n<div style="display:grid;grid-template-columns:30px repeat(6,1fr);gap:0">\n<div style="background:#F8FAFC;padding:4px;text-align:center;border:1px solid #E5E7EB"></div>\n<div style="background:#F8FAFC;padding:4px;text-align:center;border:1px solid #E5E7EB;font-weight:700">A</div>\n<div style="background:#F8FAFC;padding:4px;text-align:center;border:1px solid #E5E7EB;font-weight:700">B</div>\n<div style="background:#F8FAFC;padding:4px;text-align:center;border:1px solid #E5E7EB;font-weight:700">C</div>\n<div style="background:#F8FAFC;padding:4px;text-align:center;border:1px solid #E5E7EB;font-weight:700">D</div>\n<div style="background:#F8FAFC;padding:4px;text-align:center;border:1px solid #E5E7EB;font-weight:700">E</div>\n<div style="background:#F8FAFC;padding:4px;text-align:center;border:1px solid #E5E7EB;font-weight:700">F</div>\n<div style="background:#F8FAFC;padding:4px;text-align:center;border:1px solid #E5E7EB">1</div>\n<div style="padding:4px;border:1px solid #E5E7EB;color:#6B7280;font-style:italic;font-size:8px">vazia</div>\n<div style="padding:4px;border:1px solid #E5E7EB"></div>\n<div style="padding:4px;border:1px solid #E5E7EB"></div>\n<div style="padding:4px;border:1px solid #E5E7EB"></div>\n<div style="padding:4px;border:1px solid #E5E7EB"></div>\n<div style="padding:4px;border:1px solid #E5E7EB"></div>\n</div>\n</div>\n</div>\n<div style="margin-top:8px;font-size:10px;color:#059669;font-weight:600">💡 Deixe a planilha VAZIA — os cabeçalhos vão ser criados automaticamente pelo formulário no passo 5.</div>\n</div>',
+tip:{h:'📝 Só renomear pra "SDR Leads" e pronto! Não precisa preencher nada.',top:'auto',bottom:'10px'},
+act:'Abra <b>sheets.google.com</b> em nova aba. Crie planilha nova. Renomeie pra <b>"SDR Leads"</b>. Deixe vazia.',
+chk:null
+},
+{
+bar:'#0F9D58',bt:'sheets.google.com',bs:'SDR Leads',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">sheets.google.com/spreadsheets/d/abc123</span></div>\n<div style="padding:16px;text-align:center">\n<div class="celeb"><div class="celeb-ico">✅</div><div class="celeb-txt">Planilha criada! 🎉</div><div class="celeb-next">Próximo: Agora vamos criar o formulário que alimenta essa planilha.</div></div>\n</div>',
+tip:null,
+act:null,
+chk:'Planilha <b>"SDR Leads"</b> aberta no Google Sheets, completamente vazia.'
+},
+],
+maia:{t:'Crie uma planilha chamada "SDR Leads" no Google Sheets. Deixe ela vazia — o formulário vai criar os cabeçalhos automaticamente.',a:'A planilha é tipo um caderno de contatos digital. Cada linha vai ser um lead. Cada coluna, uma informação (nome, telefone, etc).',s:'Se já tem uma planilha de leads, pode usar ela! Só renomeie a aba principal pra "Sheet1" pra não dar conflito.'},
+draw:null
+},
+{
+n:4,t:27,
+title:'Criar formulário de captação',
+desc:'O <span class="tterm" data-tip="Ferramenta gratuita do Google pra criar formulários online — tipo um questionário">Google Forms <span class="tinfo">ⓘ</span></span> vai ser a porta de entrada dos leads. Quando alguém preencher, os dados vão automaticamente pra planilha.',
+app:'Forms',ai:'📝',
+cbg:'#F5F3FF',cc:'#7C3AED',ac:'#7C3AED',
+dur:50,prog:15,
+fr:[
+{
+bar:'#7C3AED',bt:'forms.google.com',bs:'Novo formulário',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">docs.google.com/forms/d/new</span></div>\n<div style="padding:16px">\n<div style="font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px">🔄 Mudamos de ferramenta!</div>\n<div style="font-size:11px;color:#9CA3AF;margin-bottom:12px">Saímos do Sheets → Entramos no Google Forms. Nova aba no navegador.</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:16px">\n<div style="border-top:4px solid #7C3AED;border-radius:4px 4px 0 0;margin:-16px -16px 12px;padding:12px 16px">\n<input class="minp" value="Captação de Leads — SDR IA" style="font-size:16px;font-weight:700;border:2px solid var(--primary);border-radius:4px" readonly>\n</div>\n<div class="mfld"><label class="mlbl">Nome completo</label><input class="minp" placeholder="Resposta curta" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Telefone com DDD</label><input class="minp" placeholder="Ex: 27999887766" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Email</label><input class="minp" placeholder="Resposta curta" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Interesse</label><input class="minp" placeholder="O que procura?" style="" readonly></div>\n<div style="margin-top:12px;padding:10px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;font-size:10px">\n⚠️ <b>Obrigatório:</b> Adicione um campo de <b>consentimento</b> (checkbox): "Aceito receber uma ligação sobre este assunto"\n</div>\n</div>\n</div>',
+tip:{h:'⚖️ O campo de consentimento é obrigatório por lei (LGPD)',top:'auto',bottom:'10px'},
+act:'Acesse <b>forms.google.com</b>. Crie formulário com: Nome, Telefone, Email, Interesse e <b>checkbox de consentimento</b>.',
+chk:null
+},
+{
+bar:'#7C3AED',bt:'forms.google.com',bs:'Campo de consentimento',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">docs.google.com/forms/d/abc/edit</span></div>\n<div style="padding:16px">\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Adicionar campo de consentimento</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div style="font-size:12px;font-weight:600;margin-bottom:8px">Consentimento para contato</div>\n<div style="display:flex;align-items:flex-start;gap:8px;padding:8px;background:#F8FAFC;border-radius:6px;border:2px solid var(--primary)">\n<input type="checkbox" checked style="margin-top:2px" disabled>\n<span style="font-size:11px">Aceito receber uma ligação sobre este assunto</span>\n</div>\n<div style="font-size:9px;color:#EF4444;margin-top:4px">* Obrigatório</div>\n</div>\n</div>',
+tip:{h:'✅ Marque este campo como "Obrigatório" no Forms',top:'10px',bottom:'auto'},
+act:'Adicione campo <b>Checkbox</b> com texto "Aceito receber uma ligação". Marque como <b>Obrigatório</b>.',
+chk:'Formulário tem 5 campos: Nome, Telefone, Email, Interesse e Consentimento (checkbox obrigatório).'
+},
+],
+maia:{t:'Crie um formulário com 5 campos. O mais importante é o checkbox de consentimento — sem ele, ligar pro lead é ilegal.',a:'O formulário é a porta de entrada. Tipo o balcão de atendimento: a pessoa chega, preenche a ficha, e entra na fila pra ser atendida (ligação).',s:'O campo de consentimento deve ser tipo "Checkbox" (não texto). E marque como obrigatório — assim ninguém envia sem aceitar.'},
+draw:{
+warn:'Campo de consentimento é <b>obrigatório por lei (LGPD)</b>. Sem ele, ligar pro lead pode gerar multa.',
+ift:null
+}
+},
+{
+n:5,t:27,
+title:'Conectar Forms à planilha',
+desc:'Agora conectamos o formulário à planilha <b>SDR Leads</b> que você criou no passo 3. Assim, cada resposta vai direto pra planilha.',
+app:'Forms',ai:'📝',
+cbg:'#F5F3FF',cc:'#7C3AED',ac:'#7C3AED',
+dur:35,prog:19,
+fr:[
+{
+bar:'#7C3AED',bt:'forms.google.com',bs:'Respostas → Sheets',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">docs.google.com/forms/d/abc/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando o formulário do passo 4 e a planilha do passo 3.</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Vincular à planilha existente</div>\n<div class="navbc"><span class="nfrom">Formulário (aba Editar)</span> → <span class="nto">Aba Respostas → ícone Sheets</span><div class="nhow">Clique na aba \'Respostas\' no topo → Clique no ícone verde do Sheets (📊)</div></div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px;margin-top:8px">\n<div style="display:flex;align-items:center;gap:8px;padding:8px;background:#EEF2FF;border:2px solid var(--primary);border-radius:6px;margin-bottom:8px">\n<input type="radio" checked disabled>\n<span style="font-size:11px;font-weight:600">Selecionar planilha existente</span>\n</div>\n<div style="display:flex;align-items:center;gap:8px;padding:8px;opacity:0.4">\n<input type="radio" disabled>\n<span style="font-size:11px">Criar nova planilha</span>\n</div>\n<div style="margin-top:8px;padding:8px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;font-size:10px">\n📊 Selecione: <b>SDR Leads</b> (a planilha do passo 3)\n</div>\n</div>\n<div class="wcard">⚠️ Isso vai criar uma ABA nova chamada \'Form Responses 1\' dentro da sua planilha — NÃO na Sheet1. Isso é normal!</div>\n</div>',
+tip:{h:'📌 Escolha "Selecionar existente" e ache "SDR Leads"',top:'auto',bottom:'10px'},
+act:'Na aba <b>Respostas</b>, clique no ícone do Sheets. Escolha <b>"Selecionar planilha existente"</b> → <b>SDR Leads</b>.',
+chk:'Dentro da planilha SDR Leads aparece uma nova aba chamada <b>"Form Responses 1"</b>.'
+},
+],
+maia:{t:'Conecte o Forms à planilha SDR Leads. O Forms vai criar uma aba chamada "Form Responses 1" automaticamente.',a:'É como ligar um cano: formulário (torneira) → planilha (balde). Cada resposta enche mais uma linha no balde.',s:'Se não achar a planilha na lista, verifique se ela está na mesma conta Google. Ou procure pelo nome "SDR Leads".'},
+draw:{
+warn:'O Forms cria uma aba <b>"Form Responses 1"</b> (não Sheet1). No passo 11, você vai precisar usar esse nome EXATO.',
+ift:null
+}
+},
+{
+n:6,t:27,
+title:'Testar o formulário',
+desc:'Antes de seguir, vamos testar se o formulário funciona. Preencha com dados de teste pra verificar.',
+app:'Forms',ai:'📝',
+cbg:'#F5F3FF',cc:'#7C3AED',ac:'#7C3AED',
+dur:25,prog:22,
+fr:[
+{
+bar:'#7C3AED',bt:'forms.google.com',bs:'Preview',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">docs.google.com/forms/d/abc/viewform</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando o formulário do passo 4.</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Preencha com dados de teste</div>\n<div class="navbc"><span class="nfrom">Formulário (edição)</span> → <span class="nto">Preview (visualização)</span><div class="nhow">Clique no ícone do olho 👁️ no topo direito</div></div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px;margin-top:8px">\n<div class="mfld"><label class="mlbl">Nome completo</label><input class="minp" value="Maria Teste" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Telefone</label><input class="minp" value="27999887766" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Email</label><input class="minp" value="teste@email.com" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Interesse</label><input class="minp" value="Saber mais sobre o produto" style="" readonly></div>\n<div style="display:flex;align-items:center;gap:6px;padding:8px;margin-top:4px">\n<input type="checkbox" checked disabled>\n<span style="font-size:11px">Aceito receber uma ligação</span>\n</div>\n<button class="mbtn-p"> Enviar</button>\n</div>\n</div>',
+tip:{h:'📝 Use dados fictícios — é só um teste',top:'auto',bottom:'10px'},
+act:'Clique no <b>olho (Preview)</b>. Preencha com dados de teste e clique <b>Enviar</b>.',
+chk:'Aparece a mensagem "Resposta registrada" após enviar.'
+},
+],
+maia:{t:'Teste o formulário preenchendo com dados fictícios. Use um telefone real se quiser testar a ligação no passo 25.',a:'Testar é como fazer um ensaio antes do show. Garante que tudo funciona antes de colocar em produção.',s:'Se der erro ao enviar, verifique se todos os campos obrigatórios estão preenchidos, especialmente o checkbox.'},
+draw:null
+},
+{
+n:7,t:27,
+title:'Verificar dados na planilha',
+desc:'Vamos confirmar que os dados do teste chegaram na planilha <b>SDR Leads</b> (passo 3).',
+app:'Sheets',ai:'📊',
+cbg:'#ECFDF5',cc:'#059669',ac:'#059669',
+dur:20,prog:26,
+fr:[
+{
+bar:'#0F9D58',bt:'sheets.google.com',bs:'SDR Leads → Form Responses 1',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">sheets.google.com/spreadsheets/d/abc123</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Verificando a planilha do passo 3 + o teste do passo 6.</div>\n<div style="font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px">🔄 Voltamos pro Google Sheets</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;margin-top:8px">\n<div style="display:flex;border-bottom:1px solid #E5E7EB;font-size:9px">\n<div style="padding:6px 12px;border-bottom:2px solid var(--primary);font-weight:700;color:var(--primary)">Form Responses 1</div>\n<div style="padding:6px 12px;color:#9CA3AF">Sheet1</div>\n</div>\n<div style="font-size:8px;font-family:monospace;overflow-x:auto">\n<table style="width:100%;border-collapse:collapse;min-width:400px">\n<tr style="background:#F8FAFC"><th style="padding:4px 6px;border:1px solid #E5E7EB;text-align:left">Timestamp</th><th style="padding:4px 6px;border:1px solid #E5E7EB;text-align:left">Nome</th><th style="padding:4px 6px;border:1px solid #E5E7EB;text-align:left">Telefone</th><th style="padding:4px 6px;border:1px solid #E5E7EB;text-align:left">Email</th><th style="padding:4px 6px;border:1px solid #E5E7EB;text-align:left">Interesse</th><th style="padding:4px 6px;border:1px solid #E5E7EB;text-align:left">Consentimento</th></tr>\n<tr><td style="padding:4px 6px;border:1px solid #F1F5F9;color:#059669">13/03 14:30</td><td style="padding:4px 6px;border:1px solid #F1F5F9">Maria Teste</td><td style="padding:4px 6px;border:1px solid #F1F5F9">27999887766</td><td style="padding:4px 6px;border:1px solid #F1F5F9">teste@email.com</td><td style="padding:4px 6px;border:1px solid #F1F5F9">Saber mais</td><td style="padding:4px 6px;border:1px solid #F1F5F9;color:#059669;font-weight:700">Aceito receber uma ligação</td></tr>\n</table>\n</div>\n</div>\n<div class="celeb"><div class="celeb-ico">✅</div><div class="celeb-txt">Formulário → Planilha funcionando! 🎉</div><div class="celeb-next">Próximo: Agora vamos criar a automação no Make.</div></div>\n</div>',
+tip:null,
+act:'Abra a planilha <b>SDR Leads</b>. Clique na aba <b>"Form Responses 1"</b>. Confira os dados.',
+chk:'Os dados de teste (Maria Teste, 27999887766, etc) aparecem na aba <b>Form Responses 1</b>.'
+},
+],
+maia:{t:'Confira se os dados de teste apareceram na planilha, na aba "Form Responses 1".',a:'É como verificar se a carta chegou na caixa de correio. Se os dados estão lá, o cano (formulário → planilha) está funcionando.',s:'Se não apareceram: 1) Verifique se está na aba "Form Responses 1" (não Sheet1). 2) Espere 30 segundos e recarregue a página.'},
+draw:null
+},
+{
+n:8,t:27,
+title:'Criar cenário no Make',
+desc:'Agora entramos no Make pra criar o <span class="tterm" data-tip="Receita de automação — uma sequência de passos que o Make executa automaticamente">Cenário <span class="tinfo">ⓘ</span></span>. É aqui que a mágica acontece.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:30,prog:30,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Dashboard',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios</span></div>\n<div style="padding:16px">\n<div style="font-size:12px;font-weight:600;color:#6B7280;margin-bottom:4px">🔄 Voltamos pro Make!</div>\n<div style="font-size:11px;color:#9CA3AF;margin-bottom:12px">Saímos do Sheets → Voltamos pro Make.com (conta do passo 1). Abra a aba do Make no navegador.</div>\n<div class="deprem">🔗 Usando a conta Make.com que você criou no passo 1.</div>\n<div style="text-align:center;padding:20px">\n<div style="width:48px;height:48px;background:var(--gradient);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:8px">+</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:4px">Create a new scenario</div>\n<div style="font-size:10px;color:#6B7280">Crie seu primeiro cenário de automação</div>\n</div>\n</div>',
+tip:{h:'➕ Clique no + grande ou em "Create a new scenario"',top:'auto',bottom:'10px'},
+act:'No Dashboard do Make, clique em <b>"Create a new scenario"</b>.',
+chk:'Você vê uma tela em branco com um círculo <b>+</b> no centro (editor de cenário).'
+},
+],
+maia:{t:'Crie um cenário novo no Make. É onde vamos montar a automação: planilha detecta lead → Make dispara ligação.',a:'O cenário é uma receita: ingrediente 1 (lead na planilha) + ingrediente 2 (filtro de consentimento) + ingrediente 3 (ligação) = SDR automático.',s:'Se o botão "Create a new scenario" não aparece, verifique se está logado na conta certa (email do passo 1).'},
+draw:null
+},
+{
+n:9,t:27,
+title:'Adicionar Watch New Rows',
+desc:'Agora vamos adicionar o primeiro <span class="tterm" data-tip="Cada passo dentro do cenário — como uma peça de LEGO que encaixa na próxima">Módulo <span class="tinfo">ⓘ</span></span> no cenário: o <b>Watch New Rows</b>, que fica de olho na planilha esperando novos leads.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:40,prog:33,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Cenário → + Módulo',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando o cenário que você criou no passo 8.</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Adicionar módulo Google Sheets</div>\n<div class="navbc"><span class="nfrom">Cenário vazio</span> → <span class="nto">Buscar módulo</span><div class="nhow">Clique no + no centro → Digite \'Google Sheets\' na busca</div></div>\n<div style="text-align:center;padding:16px">\n<div style="width:56px;height:56px;background:#fff;border:2px dashed var(--primary);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;box-shadow:0 0 0 4px rgba(99,102,241,0.1)">+</div>\n<div style="margin-top:8px;font-size:10px;color:#6B7280">Clique aqui</div>\n</div>\n<div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:8px;padding:8px;margin-top:8px">\n<div style="font-size:10px;font-weight:600;margin-bottom:4px">Resultado da busca:</div>\n<div style="display:flex;align-items:center;gap:8px;padding:8px;background:#fff;border:2px solid var(--primary);border-radius:6px">\n<div style="width:32px;height:32px;background:#0F9D58;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">📊</div>\n<div><div style="font-size:11px;font-weight:700">Google Sheets</div><div style="font-size:9px;color:#6B7280">Watch New Rows</div></div>\n</div>\n</div>\n</div>',
+tip:{h:'🔍 Digite "Google Sheets" e escolha "Watch New Rows"',top:'auto',bottom:'10px'},
+act:'Clique no <b>+</b>. Busque <b>"Google Sheets"</b>. Selecione <b>"Watch New Rows"</b>.',
+chk:null
+},
+{
+bar:'#6366F1',bt:'make.com',bs:'Watch New Rows adicionado',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px;text-align:center">\n<div style="display:inline-flex;align-items:center;gap:12px;padding:12px 20px;background:#ECFDF5;border:2px solid #059669;border-radius:12px;margin:16px 0">\n<div style="width:40px;height:40px;background:#0F9D58;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px">📊</div>\n<div style="text-align:left"><div style="font-size:12px;font-weight:700">Google Sheets</div><div style="font-size:9px;color:#059669">Watch New Rows</div></div>\n</div>\n<div style="font-size:10px;color:#6B7280;margin-top:4px">Módulo adicionado ao cenário ✅</div>\n</div>',
+tip:null,
+act:null,
+chk:'O <span class="tterm" data-tip="peça de LEGO do cenário">módulo <span class="tinfo">ⓘ</span></span> <b>Google Sheets — Watch New Rows</b> aparece no cenário com ícone verde.'
+},
+],
+maia:{t:'Adicione o módulo "Watch New Rows" do Google Sheets. Ele fica monitorando a planilha — quando aparece linha nova, dispara o cenário.',a:'O Watch New Rows é um porteiro que fica na entrada da planilha. Toda vez que alguém novo entra (nova linha), ele avisa: "Ei, chegou lead novo!"',s:'Tem vários módulos do Google Sheets. Escolha especificamente o "Watch New Rows" (assistir novas linhas), não "Search Rows" ou "Get a Row".'},
+draw:null
+},
+{
+n:10,t:27,
+title:'Conectar Google ao Make',
+desc:'O Make precisa de permissão pra acessar sua conta Google. Vamos autorizar via <span class="tterm" data-tip="Autorização segura — você dá permissão sem compartilhar sua senha">OAuth <span class="tinfo">ⓘ</span></span>.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:40,prog:37,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Configurar conexão',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando a conta Make (passo 1) e a mesma conta Google da planilha (passo 3).</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Autorizar acesso ao Google</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div class="mfld"><label class="mlbl">Connection</label><select class="msel" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);"><option >-- Select --</option><option selected>Add new connection</option></select></div>\n</div>\n<div class="wcard">⚠️ Vai abrir uma janela pop-up do Google. NÃO FECHE essa janela até completar a autorização!</div>\n<div style="margin-top:8px;background:#F8FAFC;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div style="font-size:11px;font-weight:600;margin-bottom:4px">O que vai acontecer:</div>\n<div style="font-size:10px;color:#6B7280;line-height:1.6">\n1. Abre janela do Google<br>\n2. Escolha sua conta<br>\n3. Clique "Permitir" / "Allow"<br>\n4. Janela fecha sozinha ✅\n</div>\n</div>\n</div>',
+tip:{h:'🔐 Escolha a mesma conta Google da planilha!',top:'auto',bottom:'10px'},
+act:'No módulo Watch New Rows, em <b>Connection</b>, selecione <b>"Add new connection"</b>. Autorize com sua conta Google.',
+chk:'O campo Connection mostra <b>"My Google connection"</b> (ou similar) com ✅ verde. 🎉 <b>Conexão feita! Agora o Make acessa sua planilha.</b>'
+},
+],
+maia:{t:'Conecte sua conta Google ao Make. Ele precisa de permissão pra ler a planilha automaticamente.',a:'OAuth é como dar a chave do prédio pro entregador. Ele entra, pega o pacote (dados da planilha) e sai — mas não pode mudar a fechadura (sua senha).',s:'Se a janela do Google não abrir: 1) Verifique se pop-ups estão liberados. 2) Tente outro navegador. 3) Desative extensões de bloqueio.'},
+draw:{
+warn:'<b>NÃO feche</b> a janela pop-up do Google antes de completar! Se fechar, a conexão falha e você precisa recomeçar.',
+ift:{tag:'SE → ENTÃO',desc:'Erro 403 ou "access denied" ao conectar?',act:'Refaça: Delete a conexão → "Add new connection" → Use a MESMA conta Google da planilha.'}
+}
+},
+{
+n:11,t:27,
+title:'Configurar campos do Watch',
+desc:'Com o Google conectado, agora configuramos <b>qual planilha</b> o <span class="tterm" data-tip="Módulo que monitora novas linhas na planilha">Watch New Rows <span class="tinfo">ⓘ</span></span> deve monitorar.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:35,prog:41,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Watch New Rows → Config',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando a planilha SDR Leads (passo 3) + conexão Google (passo 10).</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Configurar qual planilha monitorar</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div class="mfld"><label class="mlbl">Spreadsheet</label><select class="msel" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);"><option >-- Select --</option><option selected>SDR Leads</option></select></div>\n<div class="mfld"><label class="mlbl">Sheet Name</label><select class="msel" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);"><option >-- Select --</option><option selected>Form Responses 1</option><option >Sheet1</option></select></div>\n<div class="mfld"><label class="mlbl">Table contains headers</label><input class="minp" value="Yes" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Limit</label><input class="minp" value="1" style="" readonly></div>\n</div>\n<div class="wcard">⚠️ Em Sheet Name, escolha <b>Form Responses 1</b> (NÃO Sheet1). É a aba criada pelo Forms no passo 5.</div>\n</div>',
+tip:{h:'📌 Sheet Name = "Form Responses 1" (não Sheet1!)',top:'10px',bottom:'auto'},
+act:'Configure: <b>Spreadsheet</b> = SDR Leads, <b>Sheet Name</b> = Form Responses 1, <b>Headers</b> = Yes, <b>Limit</b> = 1.',
+chk:'Os 4 campos estão preenchidos corretamente.'
+},
+],
+maia:{t:'Configure o Watch pra monitorar a planilha SDR Leads, aba "Form Responses 1", com headers = Yes e limit = 1.',a:'É como dizer pro porteiro: "Fique de olho naquela porta específica (aba) do prédio (planilha), e avise toda vez que entrar 1 pessoa nova".',s:'Se "SDR Leads" não aparece na lista: verifique se a conexão Google (passo 10) está com a mesma conta que criou a planilha.'},
+draw:null
+},
+{
+n:12,t:27,
+title:'Testar o Watch',
+desc:'Vamos testar se o Watch consegue ler os dados da planilha.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:30,prog:44,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Watch → Run Once',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 O teste vai puxar os dados que você inseriu no passo 6 (Maria Teste).</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Executar teste do Watch</div>\n<div class="navbc"><span class="nfrom">Editor de cenário</span> → <span class="nto">Botão Run Once</span><div class="nhow">Canto inferior esquerdo — botão \'Run Once\'</div></div>\n<div style="text-align:center;margin:16px 0">\n<button class="mbtn-p"> ▶ Run Once</button>\n</div>\n<div class="wcard">⚠️ Se aparecer \'No data\' ou erro 403: delete a conexão Google, refaça o passo 10 e tente de novo.</div>\n<div style="margin-top:8px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;padding:10px;font-size:10px">\n✅ <b>Resultado esperado:</b> Um balão verde aparece no módulo mostrando "1 bundle" com os dados do teste (Maria Teste, 27999887766, etc).\n</div>\n</div>',
+tip:{h:'▶️ Run Once = executa o cenário uma vez pra testar',top:'auto',bottom:'10px'},
+act:'Clique em <b>Run Once</b> (canto inferior esquerdo). Espere o balão verde aparecer.',
+chk:'Balão verde no módulo mostra <b>"1 bundle"</b> com os dados do teste.'
+},
+],
+maia:{t:'Clique em "Run Once" pra testar o Watch. Ele deve mostrar os dados da "Maria Teste" que você inseriu no passo 6.',a:'É como pedir pro porteiro conferir se ele consegue ler a lista de convidados. Se ele lê, tá tudo certo.',s:'Erro "No data"? Vá ao formulário (passo 6), preencha de novo e clique "Run Once" outra vez.'},
+draw:{
+warn:'Se der erro <b>403</b> ou <b>No data</b>: refaça o passo 10 (conexão Google).',
+ift:{tag:'SE → ENTÃO',desc:'Resultado "No data" ou "0 bundles"?',act:'1) Envie nova resposta no formulário. 2) Volte ao Make. 3) Clique "Run Once" de novo.'}
+}
+},
+{
+n:13,t:27,
+title:'Adicionar filtro',
+desc:'Agora adicionamos um <span class="tterm" data-tip="Porteiro que decide quem passa — só deixa seguir quem atende a condição">Filter <span class="tinfo">ⓘ</span></span> entre o Watch e o próximo módulo. Só leads que aceitaram o consentimento passam.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:30,prog:48,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Cenário → Adicionar filtro',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 O filtro fica entre o Watch (passo 9) e o próximo módulo.</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Adicionar filtro de consentimento</div>\n<div style="font-size:11px;color:#6B7280;margin-bottom:12px">O filtro garante que o sistema só liga pra quem aceitou receber a ligação.</div>\n<div style="display:flex;align-items:center;gap:8px;margin:16px 0;justify-content:center">\n<div style="width:40px;height:40px;background:#0F9D58;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">📊</div>\n<div style="width:40px;height:2px;background:#E5E7EB;position:relative">\n<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50);font-size:8px;color:var(--primary);font-weight:700;background:#EEF2FF;padding:2px 6px;border-radius:4px;border:1px solid var(--primary);white-space:nowrap">🔧 Clique aqui</div>\n</div>\n<div style="width:40px;height:40px;background:#E5E7EB;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#9CA3AF;font-size:16px">?</div>\n</div>\n<div style="font-size:10px;color:#6B7280;text-align:center">Clique na <b>linha entre os módulos</b> → Set up a filter</div>\n</div>',
+tip:{h:'🔧 Clique na LINHA entre os módulos (não no módulo)',top:'auto',bottom:'10px'},
+act:'Clique na <b>linha entre os módulos</b>. Selecione <b>"Set up a filter"</b>.',
+chk:'Um ícone de filtro (funil) aparece na linha entre os módulos.'
+},
+],
+maia:{t:'Adicione um filtro clicando na linha entre os módulos. Esse filtro vai bloquear leads que NÃO aceitaram o consentimento.',a:'O filtro é um porteiro na entrada da boate: se você não está na lista (não aceitou), não entra.',s:'Não confunda: clique na LINHA entre os módulos, não no módulo em si. A opção "Set up a filter" aparece como um botão na linha.'},
+draw:null
+},
+{
+n:14,t:27,
+title:'Configurar condição do filtro',
+desc:'Configure a condição do filtro: só passa quem marcou <b>"Aceito"</b> no consentimento.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:35,prog:52,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Filter → Condição',
+html:'\n<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 O valor do filtro vem do checkbox de consentimento do passo 4.</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Configurar condição</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div class="mfld"><label class="mlbl">Label</label><input class="minp" value="Consentimento OK" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n<div style="font-size:10px;font-weight:700;margin:8px 0 4px;color:#6B7280">Condition:</div>\n<div class="mfld"><label class="mlbl">Campo</label><select class="msel" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);"><option >-- Select --</option><option selected>Consentimento para contato</option></select></div>\n<div class="mfld"><label class="mlbl">Operador</label><select class="msel" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);"><option >Equal to</option><option selected>Contains</option><option >Starts with</option></select></div>\n<div class="mfld"><label class="mlbl">Valor</label><input class="minp" value="Aceito" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n</div>\n<div class="wcard">⚠️ Use <b>Contains</b> (não Equal to). O Forms retorna o texto como array — \'Contains\' funciona melhor. E o valor é <b>case-sensitive</b>: copie exatamente da planilha.</div>\n</div>',
+tip:{h:'⚡ Operador = Contains, Valor = copie da planilha!',top:'auto',bottom:'10px'},
+act:'Configure: <b>Label</b> = Consentimento OK, <b>Campo</b> = Consentimento, <b>Operador</b> = Contains, <b>Valor</b> = Aceito.',
+chk:'Filtro configurado com operador <b>Contains</b> e valor <b>"Aceito"</b>.'
+},
+],
+maia:{t:'Configure o filtro: campo = Consentimento, operador = Contains, valor = Aceito. O "Contains" é importante porque o Forms retorna dados como array.',a:'É como ensinar o porteiro: "Se o documento da pessoa CONTÉM a palavra Aceito, pode entrar. Senão, barra."',s:'Se no teste o filtro barra tudo: verifique se o valor está EXATAMENTE como aparece na planilha. Copie direto de lá — é case-sensitive (maiúscula/minúscula importa).'},
+draw:{
+warn:'Valor é <b>case-sensitive</b>. Se na planilha está "Aceito receber uma ligação", o valor "aceito" (minúsculo) NÃO funciona. <b>Copie exatamente da planilha.</b>',
+ift:null
+}
+},
+{
+n:15,t:27,
+title:'Adicionar módulo HTTP',
+desc:'Agora adicionamos o <span class="tterm" data-tip="Pedido que um app manda pra outro pela internet — como enviar uma carta">HTTP Request <span class="tinfo">ⓘ</span></span> que vai se comunicar com o Bland AI.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:35,prog:56,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'HTTP Config',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Este módulo vai se comunicar com o Bland AI (passo 2) pra disparar a ligação.</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Adicionar módulo HTTP</div>\n<div class="navbc"><span class="nfrom">Editor de cenário</span> → <span class="nto">Novo módulo</span><div class="nhow">Clique no + à direita do filtro → Busque \'HTTP\'</div></div>\n<div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:8px;padding:8px;margin:8px 0">\n<div style="display:flex;align-items:center;gap:8px;padding:8px;background:#fff;border:2px solid var(--primary);border-radius:6px">\n<div style="width:32px;height:32px;background:#4F46E5;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">🌐</div>\n<div><div style="font-size:11px;font-weight:700">HTTP</div><div style="font-size:9px;color:#6B7280">Make a request</div></div>\n</div>\n</div>\n<div class="wcard">⚠️ Escolha <b>\'Make a request\'</b> (pedido simples). NÃO escolha \'Make an API Key Auth request\' — vai dar erro 401 no Bland.</div>\n</div>',
+tip:null,
+act:'Clique <b>+</b> após o filtro. Busque <b>"HTTP"</b>. Escolha <b>"Make a request"</b> (NÃO "API Key Auth").',
+chk:'Módulo <b>HTTP — Make a request</b> adicionado ao cenário, após o filtro.'
+},
+],
+maia:{t:'Neste passo você adicionar módulo http. Siga as instruções do mockup.',a:'Cada módulo é como uma peça do quebra-cabeça. Quando todas encaixam, a automação funciona sozinha.',s:'Se tiver dúvida sobre algum campo, confira os passos anteriores — os valores vêm de lá.'},
+draw:{
+warn:'Escolha <b>"Make a request"</b> (pedido simples). NÃO escolha "Make an API Key Auth request" — vai dar erro 401 no Bland porque a autenticação deles é diferente.',
+ift:{tag:'SE → ENTÃO',desc:'Escolheu "API Key Auth" por engano?',act:'Delete o módulo e adicione de novo, escolhendo "Make a request" desta vez.'}
+}
+},
+{
+n:16,t:27,
+title:'Configurar URL e Método',
+desc:'Configure o <span class="tterm" data-tip="Pedido entre apps">HTTP Request <span class="tinfo">ⓘ</span></span> com a URL do Bland AI e o método POST.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:35,prog:59,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'HTTP Config',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 A URL é do Bland AI (conta do passo 2). POST = enviar pedido de ligação.</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">URL e Método</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div class="mfld"><label class="mlbl">URL</label><input class="minp" value="https://api.bland.ai/v1/calls" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n<div class="mfld"><label class="mlbl">Method</label><select class="msel" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);"><option >GET</option><option selected>POST</option><option >PUT</option></select></div>\n</div>\n<div style="margin-top:8px;font-size:10px;color:#6B7280">POST = "enviar dados". GET = "pedir dados". Aqui queremos ENVIAR o pedido de ligação, então usamos POST.</div>\n</div>',
+tip:null,
+act:'Configure: <b>URL</b> = https://api.bland.ai/v1/calls, <b>Method</b> = POST.',
+chk:'URL e método configurados corretamente.'
+},
+],
+maia:{t:'Neste passo você configurar url e método. Siga as instruções do mockup.',a:'Cada módulo é como uma peça do quebra-cabeça. Quando todas encaixam, a automação funciona sozinha.',s:'Se tiver dúvida sobre algum campo, confira os passos anteriores — os valores vêm de lá.'},
+draw:null
+},
+{
+n:17,t:27,
+title:'Adicionar Header de autenticação',
+desc:'Agora adicionamos o <span class="tterm" data-tip="Cabeçalho do pedido — como o remetente de uma carta">Header <span class="tinfo">ⓘ</span></span> com a <span class="tterm" data-tip="Senha de acesso entre apps">API Key <span class="tinfo">ⓘ</span></span> do Bland pra provar que temos permissão.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:35,prog:63,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'HTTP Config',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando a API Key do Bland que você copiou no passo 2.</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Configurar Header</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div style="font-size:10px;font-weight:600;margin-bottom:4px">Headers → Add item:</div>\n<div class="mfld"><label class="mlbl">Name</label><input class="minp" value="authorization" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n<div class="mfld"><label class="mlbl">Value</label><input class="minp" value="org_e6b9390ff435..." style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n</div>\n<div class="wcard">⚠️ ⚠️ NÃO use \'Bearer\' antes da key! Cole DIRETO: org_e6b9390ff435... Se colocar \'Bearer org_...\', vai dar erro 401.</div>\n<div style="margin-top:8px;font-size:10px;color:#6B7280;background:#FEF3C7;padding:8px;border-radius:6px">\n✅ CERTO: <code>org_e6b9390ff435...</code><br>\n❌ ERRADO: <code>Bearer org_e6b9390ff435...</code>\n</div>\n</div>',
+tip:null,
+act:'Em Headers, adicione: <b>Name</b> = authorization, <b>Value</b> = cole sua API Key do passo 2 (sem Bearer!).',
+chk:'Header configurado com name=authorization e value=sua key (começa com org_).'
+},
+],
+maia:{t:'Neste passo você adicionar header de autenticação. Siga as instruções do mockup.',a:'Cada módulo é como uma peça do quebra-cabeça. Quando todas encaixam, a automação funciona sozinha.',s:'Se tiver dúvida sobre algum campo, confira os passos anteriores — os valores vêm de lá.'},
+draw:{
+warn:'A autenticação do Bland é: header <b>authorization</b> = <b>org_suakey</b>. SEM a palavra "Bearer" antes. Se colocar Bearer, erro 401.',
+ift:{tag:'SE → ENTÃO',desc:'Erro 401 Unauthorized ao testar?',act:'1) Verifique se NÃO tem "Bearer" antes da key. 2) Verifique se a key começa com org_ (não SK-). 3) Crie nova key no Bland se necessário.'}
+}
+},
+{
+n:18,t:27,
+title:'Montar Body JSON',
+desc:'Monte o <span class="tterm" data-tip="Corpo do pedido — os dados que você está enviando">Body <span class="tinfo">ⓘ</span></span> em formato <span class="tterm" data-tip="Formato de texto que apps usam pra conversar — como um formulário digital padronizado">JSON <span class="tinfo">ⓘ</span></span>.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:35,prog:67,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'HTTP Config',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 O Body contém os campos do Bland: telefone e script (vêm da planilha, passo 3).</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Configurar Body do pedido</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div class="mfld"><label class="mlbl">Body type</label><select class="msel" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);"><option selected>Raw</option><option >Form data</option><option >Multipart</option></select></div>\n<div class="mfld"><label class="mlbl">Content type</label><select class="msel" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);"><option selected>JSON (application/json)</option><option >XML</option><option >Text</option></select></div>\n<div style="margin-top:8px">\n<label class="mlbl">Request content:</label>\n<div style="background:#1E293B;color:#E2E8F0;padding:12px;border-radius:8px;font-family:monospace;font-size:9px;line-height:1.6;white-space:pre">{\n  "phone_number": "+5527999887766",\n  "task": "Ligar para o lead...",\n  "first_sentence": "Olá! Aqui é...",\n  "language": "pt",\n  "voice": "June",\n  "max_duration": 5\n}</div>\n</div>\n</div>\n<div style="margin-top:8px;font-size:10px;color:#6B7280">No próximo passo, vamos trocar os valores fixos pelas variáveis da planilha.</div>\n</div>',
+tip:null,
+act:'Configure: <b>Body type</b> = Raw, <b>Content type</b> = JSON. Cole o template JSON.',
+chk:'Body tipo Raw/JSON com os campos phone_number, task, first_sentence, language, voice, max_duration.'
+},
+],
+maia:{t:'Neste passo você montar body json. Siga as instruções do mockup.',a:'Cada módulo é como uma peça do quebra-cabeça. Quando todas encaixam, a automação funciona sozinha.',s:'Se tiver dúvida sobre algum campo, confira os passos anteriores — os valores vêm de lá.'},
+draw:null
+},
+{
+n:19,t:27,
+title:'Mapear variáveis da planilha',
+desc:'Agora trocamos os valores fixos pelas variáveis dinâmicas da planilha — pra cada lead novo, o Bland liga pro número certo.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:35,prog:70,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'HTTP Config',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando os dados que vêm da planilha (Watch New Rows, passo 9).</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Trocar valores fixos por variáveis</div>\n<div style="background:#1E293B;color:#E2E8F0;padding:12px;border-radius:8px;font-family:monospace;font-size:9px;line-height:1.8;white-space:pre">{\n  "phone_number": "+55<span style="color:#34D399;font-weight:700">{Telefone}</span>",\n  "task": "Ligue para <span style="color:#34D399;font-weight:700">{Nome}</span>...",\n  "first_sentence": "Olá <span style="color:#34D399;font-weight:700">{Nome}</span>!",\n  "language": "pt",\n  "voice": "June",\n  "max_duration": 5\n}</div>\n<div class="wcard">⚠️ O telefone precisa do prefixo +55 antes do DDD. Se na planilha já tem 27999887766, o valor fica: +55{{Telefone}}</div>\n</div>',
+tip:null,
+act:'No JSON, troque os valores fixos pelos campos da planilha (clique pra selecionar as variáveis do Watch).',
+chk:'O JSON usa variáveis dinâmicas (em verde) no phone_number e task.'
+},
+],
+maia:{t:'Neste passo você mapear variáveis da planilha. Siga as instruções do mockup.',a:'Cada módulo é como uma peça do quebra-cabeça. Quando todas encaixam, a automação funciona sozinha.',s:'Se tiver dúvida sobre algum campo, confira os passos anteriores — os valores vêm de lá.'},
+draw:{
+warn:'O telefone na planilha pode não ter o +55. Adicione manualmente no JSON: <code>"+55" + {{Telefone}}</code>.',
+ift:null
+}
+},
+{
+n:20,t:27,
+title:'Escrever script do agente',
+desc:'Ainda no Make, defina o que o agente de IA vai falar na ligação — o roteiro da conversa.',
+app:'Bland AI',ai:'📞',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:35,prog:74,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'HTTP Config',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 O script usa variáveis da planilha (passo 3) — Nome e Interesse do lead.</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Script do agente de voz</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<label class="mlbl">Campo "task" no JSON:</label>\n<div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:8px;padding:10px;font-size:10px;line-height:1.7;margin-top:4px">\n"Você é um assistente comercial simpático. Ligue para <span style="color:var(--primary);font-weight:700">{Nome}</span> e:<br>\n1. Apresente-se brevemente<br>\n2. Pergunte sobre o interesse em <span style="color:var(--primary);font-weight:700">{Interesse}</span><br>\n3. Se houver interesse, pergunte o melhor horário pra uma reunião<br>\n4. Agradeça e encerre educadamente<br>\nSeja breve, máximo 2 minutos."\n</div>\n</div>\n<div style="margin-top:8px;font-size:10px;color:#059669;font-weight:600">💡 Esse é um modelo base. Depois você personaliza com o tom da sua empresa.</div>\n</div>',
+tip:null,
+act:'Escreva o script do agente no campo <b>task</b>. Use as variáveis {{Nome}} e {{Interesse}} da planilha.',
+chk:'Campo task tem um script com variáveis dinâmicas da planilha. 🎉 <b>Fase 2 completa! Script do agente pronto!</b>'
+},
+],
+maia:{t:'Neste passo você escrever script do agente. Siga as instruções do mockup.',a:'Cada módulo é como uma peça do quebra-cabeça. Quando todas encaixam, a automação funciona sozinha.',s:'Se tiver dúvida sobre algum campo, confira os passos anteriores — os valores vêm de lá.'},
+draw:null
+},
+{
+n:21,t:27,
+title:'Adicionar Update Row',
+desc:'Agora adicionamos um <span class="tterm" data-tip="peça do cenário">módulo <span class="tinfo">ⓘ</span></span> pra atualizar a planilha depois que a ligação for feita. (Continuamos no Make — mesma aba) — assim você sabe quem já foi contatado.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:30,prog:78,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Adicionar Update Row',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Atualiza a planilha SDR Leads (passo 3), aba Form Responses 1 (passo 5).</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Adicionar módulo Update Row</div>\n<div class="navbc"><span class="nfrom">Cenário (após HTTP)</span> → <span class="nto">Novo módulo</span><div class="nhow">Clique no + à direita do HTTP → Busque \'Google Sheets\' → \'Update a Row\'</div></div>\n<div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:8px;padding:8px;margin:8px 0">\n<div style="display:flex;align-items:center;gap:8px;padding:8px;background:#fff;border:2px solid var(--primary);border-radius:6px">\n<div style="width:32px;height:32px;background:#0F9D58;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">📊</div>\n<div><div style="font-size:11px;font-weight:700">Google Sheets</div><div style="font-size:9px;color:#6B7280">Update a Row</div></div>\n</div>\n</div>\n</div>',
+tip:null,
+act:'Clique <b>+</b> após o HTTP. Busque <b>Google Sheets</b> → <b>Update a Row</b>.',
+chk:'Módulo Update a Row adicionado ao cenário, após o HTTP.'
+},
+],
+maia:{t:'Passo 21: Adicionar Update Row. Siga as instruções no mockup.',a:'Cada passo te aproxima mais do SDR completo. Já estamos na reta final!',s:'Se algo deu errado nos passos anteriores, volte e confira. O passo atual depende de tudo que veio antes.'},
+draw:null
+},
+{
+n:22,t:27,
+title:'Configurar Update Row',
+desc:'Configure quais campos atualizar na planilha após a ligação.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:30,prog:81,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Configurar Update Ro',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando a mesma planilha SDR Leads (passo 3) e conexão Google (passo 10).</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Configurar campos do Update</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div class="mfld"><label class="mlbl">Spreadsheet</label><select class="msel" style=""><option selected>SDR Leads</option></select></div>\n<div class="mfld"><label class="mlbl">Sheet</label><select class="msel" style=""><option selected>Form Responses 1</option></select></div>\n<div class="mfld"><label class="mlbl">Row number</label><input class="minp" value="{{Row number do Watch}}" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n<div class="mfld"><label class="mlbl">Coluna: Status</label><input class="minp" value="Ligação enviada ✅" style="" readonly></div>\n</div>\n<div class="wcard">⚠️ O Row Number deve vir do <b>Watch New Rows</b> (variável dinâmica), NÃO um número fixo. Se colocar número fixo, vai sobrescrever sempre a mesma linha!</div>\n</div>',
+tip:null,
+act:'Configure: planilha SDR Leads, aba Form Responses 1. <b>Row number</b> = variável do Watch (dinâmica!). Coluna Status = "Ligação enviada ✅".',
+chk:'Update Row configurado com Row Number dinâmico e status "Ligação enviada ✅".'
+},
+],
+maia:{t:'Passo 22: Configurar Update Row. Siga as instruções no mockup.',a:'Cada passo te aproxima mais do SDR completo. Já estamos na reta final!',s:'Se algo deu errado nos passos anteriores, volte e confira. O passo atual depende de tudo que veio antes.'},
+draw:{
+warn:'O <b>Row Number</b> deve ser a variável dinâmica do Watch, NÃO um número fixo. Se fixar, sobrescreve sempre a mesma linha.',
+ift:null
+}
+},
+{
+n:23,t:27,
+title:'Configurar agendamento',
+desc:'Defina de quanto em quanto tempo o Make verifica novos leads na planilha.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:30,prog:85,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Configurar agendamen',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 O agendamento define quando o cenário (passo 8) verifica novos leads.</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Agendar execução automática</div>\n<div class="navbc"><span class="nfrom">Editor de cenário</span> → <span class="nto">Configuração de scheduling</span><div class="nhow">Clique no relógio ⏰ no canto inferior do editor</div></div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px;margin-top:8px">\n<div class="mfld"><label class="mlbl">Run scenario</label><select class="msel" style=""><option selected>At regular intervals</option><option >Once</option><option >Every day</option></select></div>\n<div class="mfld"><label class="mlbl">Minutes</label><input class="minp" value="15" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n</div>\n<div class="wcard">⚠️ No plano gratuito do Make, o intervalo mínimo é <b>15 minutos</b>. Ou seja, o lead espera no máximo 15 min pra receber a ligação.</div>\n</div>',
+tip:null,
+act:'Clique no ⏰. Configure: <b>At regular intervals</b>, <b>15 minutos</b>.',
+chk:'Scheduling configurado para executar a cada 15 minutos.'
+},
+],
+maia:{t:'Passo 23: Configurar agendamento. Siga as instruções no mockup.',a:'Cada passo te aproxima mais do SDR completo. Já estamos na reta final!',s:'Se algo deu errado nos passos anteriores, volte e confira. O passo atual depende de tudo que veio antes.'},
+draw:{
+warn:'Plano gratuito do Make: intervalo mínimo = <b>15 minutos</b>. Lead espera até 15 min pra receber a ligação.',
+ift:null
+}
+},
+{
+n:24,t:27,
+title:'Salvar e ativar cenário',
+desc:'Salve o cenário e ative o switch pra ele começar a rodar automaticamente.',
+app:'Make',ai:'🌐',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:30,prog:89,
+fr:[
+{
+bar:'#6366F1',bt:'make.com',bs:'Salvar e ativar cená',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">make.com/scenarios/1/edit</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Ativa o cenário completo (passos 8-22). Sem ativar, nada funciona automaticamente.</div><div style="font-size:13px;font-weight:700;margin-bottom:8px">Ativar o cenário</div>\n<div class="navbc"><span class="nfrom">Editor de cenário</span> → <span class="nto">Switch ON/OFF</span><div class="nhow">Canto inferior esquerdo — switch azul</div></div>\n<div style="text-align:center;margin:16px 0">\n<div style="display:inline-flex;align-items:center;gap:12px;padding:12px 24px;background:#EEF2FF;border:2px solid var(--primary);border-radius:12px">\n<div style="font-size:12px;font-weight:700;color:var(--primary)">Cenário</div>\n<div style="width:44px;height:24px;background:var(--primary);border-radius:12px;position:relative"><div style="width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;right:2px;top:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15)"></div></div>\n<div style="font-size:12px;font-weight:700;color:var(--primary)">ON ✅</div>\n</div>\n</div>\n<div class="wcard">⚠️ O switch fica no canto inferior ESQUERDO. Se esquecer de ligar, o cenário não roda!</div>\n</div>',
+tip:null,
+act:'Salve o cenário (Ctrl+S). Ative o <b>switch ON</b> no canto inferior esquerdo.',
+chk:'Switch está na posição <b>ON</b> (azul/verde) e cenário salvo. 🎉 <b>Automação ativa! Agora funciona sozinha!</b>'
+},
+],
+maia:{t:'Passo 24: Salvar e ativar cenário. Siga as instruções no mockup.',a:'Cada passo te aproxima mais do SDR completo. Já estamos na reta final!',s:'Se algo deu errado nos passos anteriores, volte e confira. O passo atual depende de tudo que veio antes.'},
+draw:null
+},
+{
+n:25,t:27,
+title:'Teste ponta a ponta',
+desc:'Hora da verdade! Preencha o formulário com um número REAL e veja se a ligação chega.',
+app:'Make',ai:'📝',
+cbg:'#F5F3FF',cc:'#7C3AED',ac:'#7C3AED',
+dur:30,prog:93,
+fr:[
+{
+bar:'#7C3AED',bt:'forms',bs:'Teste ponta a ponta',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">docs.google.com/forms/d/abc/viewform</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Usando o formulário do passo 4 — agora com número de telefone REAL.</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">🎯 Teste final: preencha o formulário</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px">\n<div class="mfld"><label class="mlbl">Nome</label><input class="minp" value="Seu Nome Real" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Telefone</label><input class="minp" value="SEU NÚMERO COM DDD" style="border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,0.1);" readonly></div>\n<div class="mfld"><label class="mlbl">Email</label><input class="minp" value="seu@email.com" style="" readonly></div>\n<div class="mfld"><label class="mlbl">Interesse</label><input class="minp" value="Testar o sistema" style="" readonly></div>\n<div style="display:flex;align-items:center;gap:6px;padding:8px;margin-top:4px">\n<input type="checkbox" checked disabled>\n<span style="font-size:11px">Aceito receber uma ligação</span>\n</div>\n<button class="mbtn-p"> Enviar</button>\n</div>\n<div class="wcard">⚠️ Use seu número REAL com DDD (ex: 27999887766). Espere até 15 minutos pra receber a ligação (intervalo do Make).</div>\n</div>',
+tip:null,
+act:'Preencha o formulário com seu <b>número real</b>. Envie e espere até <b>15 minutos</b>.',
+chk:'Você recebe uma ligação no seu celular do agente de IA! 🎉'
+},
+],
+maia:{t:'Passo 25: Teste ponta a ponta. Siga as instruções no mockup.',a:'Cada passo te aproxima mais do SDR completo. Já estamos na reta final!',s:'Se algo deu errado nos passos anteriores, volte e confira. O passo atual depende de tudo que veio antes.'},
+draw:{
+warn:'Use telefone <b>REAL</b> com DDD (formato: 27999887766). E espere até <b>15 minutos</b>.',
+ift:{tag:'SE → ENTÃO',desc:'Ligação não chegou em 15 minutos?',act:'1) Confira no Make → Scenarios se houve execução. 2) Verifique se o switch está ON (passo 24). 3) Confira API Key (passo 17).'}
+}
+},
+{
+n:26,t:27,
+title:'Verificar planilha atualizada',
+desc:'Confira se a planilha atualizou o status do lead pra "Ligação enviada ✅".',
+app:'Make',ai:'📊',
+cbg:'#ECFDF5',cc:'#059669',ac:'#059669',
+dur:30,prog:96,
+fr:[
+{
+bar:'#0F9D58',bt:'sheets',bs:'Verificar planilha a',
+html:'<div class="mbar-chrome"><span class="mbar-dot r"></span><span class="mbar-dot y"></span><span class="mbar-dot g"></span><span class="mbar-url">sheets.google.com/spreadsheets/d/abc123</span></div>\n<div style="padding:16px">\n<div class="deprem">🔗 Verificando a planilha SDR Leads após o teste do passo 25.</div>\n<div style="font-size:13px;font-weight:700;margin-bottom:8px">Verificar status na planilha</div>\n<div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;margin-top:8px">\n<table style="width:100%;font-size:8px;font-family:monospace;border-collapse:collapse">\n<tr style="background:#F8FAFC"><th style="padding:4px 6px;border:1px solid #E5E7EB">Nome</th><th style="padding:4px 6px;border:1px solid #E5E7EB">Telefone</th><th style="padding:4px 6px;border:1px solid #E5E7EB">Status</th></tr>\n<tr><td style="padding:4px 6px;border:1px solid #F1F5F9">Seu Nome</td><td style="padding:4px 6px;border:1px solid #F1F5F9">27999887766</td><td style="padding:4px 6px;border:1px solid #F1F5F9;color:#059669;font-weight:700">Ligação enviada ✅</td></tr>\n</table>\n</div>\n<div class="celeb"><div class="celeb-ico">✅</div><div class="celeb-txt">Planilha atualizada automaticamente! 🎉</div><div class="celeb-next">Próximo: Último passo: parabéns!</div></div>\n</div>',
+tip:null,
+act:'Abra a planilha <b>SDR Leads</b>, aba <b>Form Responses 1</b>. Verifique a coluna Status.',
+chk:'Coluna Status mostra <b>"Ligação enviada ✅"</b> na linha do seu teste.'
+},
+],
+maia:{t:'Passo 26: Verificar planilha atualizada. Siga as instruções no mockup.',a:'Cada passo te aproxima mais do SDR completo. Já estamos na reta final!',s:'Se algo deu errado nos passos anteriores, volte e confira. O passo atual depende de tudo que veio antes.'},
+draw:null
+},
+{
+n:27,t:27,
+title:'SDR de Voz — Completo! 🎉',
+desc:'Parabéns! Você criou um sistema de SDR de Voz com IA do zero!',
+app:'AILIV',ai:'🎉',
+cbg:'#EEF2FF',cc:'#6366F1',ac:'#6366F1',
+dur:15,prog:100,
+fr:[
+{
+bar:'#6366F1',bt:'AILIV',bs:'SDR de Voz — Complet',
+html:'<div style="padding:24px 16px;text-align:center">\n<div style="font-size:48px;margin-bottom:12px">🎉</div>\n<div style="font-size:20px;font-weight:800;color:var(--primary);margin-bottom:8px">Parabéns!</div>\n<div style="font-size:13px;color:#374151;line-height:1.7;margin-bottom:16px">\nVocê criou um <b>SDR de Voz com IA</b> completo!<br>\nAgora, quando alguém preencher o formulário,<br>\no sistema liga automaticamente pro lead.\n</div>\n<div style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.06));border-radius:16px;padding:16px;margin:16px 0;text-align:left">\n<div style="font-size:12px;font-weight:700;margin-bottom:8px">📊 O que você construiu:</div>\n<div style="font-size:11px;color:#374151;line-height:2">\n✅ Formulário de captação de leads<br>\n✅ Planilha que organiza tudo<br>\n✅ Automação no Make que conecta tudo<br>\n✅ Agente de IA que liga e conversa<br>\n✅ Atualização automática de status\n</div>\n</div>\n<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:12px;padding:12px;font-size:11px;color:#059669;font-weight:600">\n🚀 Próximo desafio: personalizar o script do agente pro seu negócio!\n</div>\n</div>',
+tip:null,
+act:null,
+chk:null
+},
+],
+maia:{t:'Passo 27: SDR de Voz — Completo! 🎉. Siga as instruções no mockup.',a:'Cada passo te aproxima mais do SDR completo. Já estamos na reta final!',s:'Se algo deu errado nos passos anteriores, volte e confira. O passo atual depende de tudo que veio antes.'},
+draw:null
+}
+];
+
+/* ===== GLOBALS ===== */
+var si=0,fi=0,playing=false,acc=0,timer=null,speed=1,mOpen=false;
+var SECS=['Ferramentas','Formulario','Automacao','Bland AI','Go Live'];
+function getSec(n){if(n<=4)return 0;if(n<=7)return 1;if(n<=14)return 2;if(n<=20)return 3;return 4;}
+
+/* ===== SCREENS ===== */
+function go(id){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on')});
+  document.getElementById(id).classList.add('on');
+  if(id==='B'){render();autoPlay();}
+  if(id==='C'){setTimeout(boom,300);}
+}
+
+/* ===== PART A ===== */
+var aSlide=0,aPlay=false,aTimer,aAcc=0,ADUR=112;
+var ATIMES=[0,15,35,55,75,95];
+function playA(){
+  if(aPlay)return;aPlay=true;
+  document.getElementById('askip').classList.add('on');
+  setASlide(1);
+  aTimer=setInterval(tickA,500);
+}
+function tickA(){
+  if(!aPlay)return;aAcc+=0.5;
+  document.getElementById('apf').style.width=Math.min(aAcc/ADUR*100,100)+'%';
+  var m=Math.floor(aAcc/60),s=Math.floor(aAcc%60);
+  document.getElementById('apt').textContent=m+':'+String(s).padStart(2,'0');
+  for(var i=ATIMES.length-1;i>=0;i--){if(aAcc>=ATIMES[i]&&aSlide<i){setASlide(i);break;}}
+  if(aAcc>=ADUR){aPlay=false;clearInterval(aTimer);document.getElementById('abtn').classList.add('on');document.getElementById('askip').classList.remove('on');}
+}
+function setASlide(i){
+  aSlide=i;
+  for(var j=0;j<6;j++){document.getElementById('as'+j).classList.toggle('on',j===i);}
+  var dots=document.querySelectorAll('.a-dot');
+  dots.forEach(function(d,k){d.className='a-dot'+(k===i?' on':'');});
+}
+
+/* ===== PART B ===== */
+document.addEventListener('click',function(e){
+  if(e.target.classList.contains('tinfo')){
+    var t=e.target.parentElement,ex=t.querySelector('.ttbubble');
+    if(ex){ex.remove();return;}
+    document.querySelectorAll('.ttbubble').forEach(function(b){b.remove()});
+    var tip=t.getAttribute('data-tip');
+    if(tip){var b=document.createElement('div');b.className='ttbubble';b.textContent=tip;t.appendChild(b);setTimeout(function(){b.remove()},4000);}
+  }
+});
+function render(){
+  var s=S[si],f=s.fr[fi],nf=s.fr.length,last=fi===nf-1,lastS=si===S.length-1;
+  document.getElementById('bk').className='bk'+((si===0&&fi===0)?' off':'');
+  document.getElementById('pf').style.width=s.prog+'%';
+  var sec=getSec(s.n),dh='';
+  SECS.forEach(function(p,i){dh+='<div class="sd '+(i<sec?'done':i===sec?'act':'idle')+'"></div>';});
+  document.getElementById('dots').innerHTML=dh;
+  var cr='<div class="chip" style="background:'+s.cbg+';color:'+s.cc+'"><span style="font-size:13px">'+s.ai+'</span> '+s.app+'</div>';
+  if(s.draw&&fi===0)cr+='<div class="warnbadge" onclick="openSh()">⚠️ Avisos</div>';
+  document.getElementById('chiprow').innerHTML=cr;
+  resetAud();
+  document.getElementById('plbl').textContent=s.n+'/'+s.t;
+  var h='<div class="snum" style="color:'+s.ac+'">Passo '+s.n+' de '+s.t+'</div><div class="stitle">'+s.title+'</div><div class="sdesc">'+s.desc+'</div>';
+  h+='<div class="mock"><div class="mbar" style="background:'+f.bar+'"><span>'+f.bt+'</span>'+(f.bs?'<small>'+f.bs+'</small>':'')+'</div><div class="mbody">'+f.html;
+  if(f.tip){var pos=f.tip.top&&f.tip.top!=='auto'?'top:'+f.tip.top:(f.tip.bottom&&f.tip.bottom!=='auto'?'bottom:'+f.tip.bottom:'bottom:10px');h+='<div class="ttip" style="left:50%;transform:translateX(-50%);'+pos+'">'+f.tip.h+'</div>';}
+  h+='</div></div>';
+  if(nf>1){h+='<div class="fdots">';for(var i=0;i<nf;i++)h+='<div class="fd '+(i===fi?(last?'gon':'on'):i<fi?'past':'off')+'" onclick="gf('+i+')"></div>';h+='</div>';}
+  if(f.act)h+='<div class="actc" style="border-left:4px solid '+s.ac+'"><div class="actl" style="color:'+s.ac+'">👆 Faca agora</div><div class="actt">'+f.act+'</div></div>';
+  if(f.chk)h+='<div class="val"><div class="valico">✓</div><div><div class="vall">Deu certo se</div><div class="valt">'+f.chk+'</div></div></div>';
+  document.getElementById('sc').innerHTML=h;
+  document.getElementById('sc').scrollTop=0;
+  document.getElementById('cbt').innerHTML=(last&&f.chk)?(lastS?'🎉 Completo!':'Continuar'):'Continuar';
+  document.getElementById('mdot').style.display=s.draw?'block':'none';
+  renderSB();
+}
+function esc(s){return s.replace(/'/g,"\\'").replace(/\n/g,"\\n");}
+function goTo(i){si=i;fi=0;render();autoPlay();}
+function onCont(){var nf=S[si].fr.length;if(fi<nf-1){fi++;render();autoPlay();}else if(si<S.length-1){si++;fi=0;render();autoPlay();}else{go('C');}}
+function goBack(){if(si===0&&fi===0){go('A');return;}if(fi>0)fi--;else if(si>0){si--;fi=S[si].fr.length-1;}render();autoPlay();}
+function gf(i){fi=i;render();autoPlay();}
+function autoPlay(){playing=true;acc=0;document.getElementById('ab').textContent='⏸';document.getElementById('af').style.width='0%';timer=setTimeout(tick,500/speed);}
+function toggleAud(){playing=!playing;document.getElementById('ab').textContent=playing?'⏸':'▶';if(playing)timer=setTimeout(tick,500/speed);else clearTimeout(timer);}
+function resetAud(){playing=false;acc=0;clearTimeout(timer);document.getElementById('af').style.width='0%';document.getElementById('at').textContent='0:00';document.getElementById('ab').textContent='▶';}
+function tick(){if(!playing)return;acc+=0.5;var dur=S[si].dur,pct=Math.min(acc/dur*100,100);document.getElementById('af').style.width=pct+'%';var m=Math.floor(acc/60),s=Math.floor(acc%60);document.getElementById('at').textContent=m+':'+String(s).padStart(2,'0');if(S[si].fr.length>1&&pct>=60&&fi===0){fi=1;render();}if(acc>=dur){playing=false;document.getElementById('ab').textContent='▶';return;}timer=setTimeout(tick,500/speed);}
+function cycSpd(){var sp=[1,1.5,2];var i=sp.indexOf(speed);speed=sp[(i+1)%sp.length];document.getElementById('spd').textContent=speed+'x';}
+/* MAIA */
+function toggleM(){
+  if(mOpen){closeSh();return;}
+  if(playing){playing=false;document.getElementById('ab').textContent='▶';clearTimeout(timer);}
+  var s=S[si],m=s.maia;
+  var h='<div class="bsh"></div><div class="bst">🤖 MAIA <span class="bsc">Ajuda</span></div><div class="bsl">';
+  h+='<div class="bsi act" onclick="showTip(\''+esc(m.t)+'\',\'💡\')"><div class="bsn an">💡</div><div><div class="bstt">Dica rapida</div><div class="bssub">O que fazer nesse passo</div></div></div>';
+  h+='<div class="bsi" onclick="showTip(\''+esc(m.a)+'\',\'🔄\')"><div class="bsn" style="background:rgba(245,158,11,0.2)">🔄</div><div><div class="bstt">Explica diferente</div><div class="bssub">Analogia simples</div></div></div>';
+  h+='<div class="bsi" onclick="showTip(\''+esc(m.s)+'\',\'🤖\')"><div class="bsn" style="background:rgba(239,68,68,0.2)">🆘</div><div><div class="bstt">Perguntar a MAIA</div><div class="bssub">Ajuda detalhada</div></div></div></div>';
+  if(s.draw){if(s.draw.warn)h+='<div class="bsw"><div class="bswt">⚠️ Cuidado</div><div class="bswx">'+s.draw.warn+'</div></div>';if(s.draw.ift)h+='<div class="bsf"><div class="bsft">⚡ '+s.draw.ift.tag+'</div><div class="bsfd">'+s.draw.ift.desc+'</div><div class="bsfa">'+s.draw.ift.act+'</div></div>';}
+  document.getElementById('bsht').innerHTML=h;document.getElementById('bsbg').classList.add('open');document.getElementById('mring').classList.remove('pu');mOpen=true;
+}
+function showTip(m,ico){
+  document.getElementById('bsht').innerHTML='<div class="bsh"></div><div style="padding:16px"><div onclick="toggleM()" style="display:inline-flex;align-items:center;gap:6px;color:var(--pri);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px">← Voltar</div><div style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.06));border-radius:14px;padding:16px"><div style="font-size:14px;margin-bottom:8px">'+(ico||'💡')+'</div><div style="font-size:13px;line-height:1.7;color:#E2E8F0">'+m+'</div></div></div>';
+}
+function openSh(){toggleM();}
+function closeSh(){document.getElementById('bsbg').classList.remove('open');document.getElementById('mring').classList.add('pu');mOpen=false;}
+document.getElementById('bsbg').onclick=function(e){if(e.target===document.getElementById('bsbg'))closeSh();};
+
+/* ===== SIDEBAR ===== */
+function renderSB(){
+  var sb=document.getElementById('sidebar');if(!sb)return;
+  var s=S[si];
+  var h='<div class="sb-b" style="background:'+s.cbg+';color:'+s.cc+'">'+s.ai+' '+s.app+'</div>';
+  h+='<div class="sb-t">SDR de Voz com IA</div>';
+  h+='<div class="sb-d">Sistema que liga automaticamente para leads usando Make + Bland AI + Google.</div>';
+  h+='<div class="sb-sec"><div class="sb-lbl">Ferramentas</div><div class="sb-tools">';
+  h+='<div class="sb-tl" style="color:#6366F1;border-color:#C7D2FE;background:#EEF2FF">🌐 Make</div>';
+  h+='<div class="sb-tl" style="color:#2563EB;border-color:#BFDBFE;background:#EFF6FF">📞 Bland</div>';
+  h+='<div class="sb-tl" style="color:#059669;border-color:#A7F3D0;background:#ECFDF5">📊 Sheets</div>';
+  h+='<div class="sb-tl" style="color:#7C3AED;border-color:#DDD6FE;background:#F5F3FF">📝 Forms</div>';
+  h+='</div></div>';
+  var ph=[{l:"Fase 1 — Contas e Dados",a:0,b:9},{l:"Fase 2 — Automacao",a:10,b:19},{l:"Fase 3 — Go Live",a:20,b:26}];
+  ph.forEach(function(p){
+    h+='<div class="sb-sec"><div class="sb-lbl">'+p.l+'</div><div class="sb-steps">';
+    for(var i=p.a;i<=p.b;i++){
+      var st=S[i],cls=i<si?'done':i===si?'act':'lock';
+      h+='<div class="sb-st '+cls+'" onclick="goTo('+i+')"><div class="sb-n">'+(i<si?'✓':st.n)+'</div><span>'+st.title+'</span></div>';
+    }
+    h+='</div></div>';
+  });
+  sb.innerHTML=h;
+}
+
+/* ===== PART C ===== */
+function goC(n){
+  for(var i=1;i<=3;i++){document.getElementById('c'+i).classList.toggle('on',i===n);}
+  if(n===3)setTimeout(boom,200);
+}
+function boom(){
+  var c=document.getElementById('confbox');c.innerHTML='';
+  var cols=['#6366F1','#8B5CF6','#34D399','#F59E0B','#EC4899','#3B82F6','#EF4444'];
+  for(var i=0;i<50;i++){
+    var e=document.createElement('div');e.className='cnf';
+    e.style.left=Math.random()*100+'%';
+    e.style.width=(4+Math.random()*6)+'px';e.style.height=e.style.width;
+    e.style.background=cols[Math.floor(Math.random()*cols.length)];
+    e.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    e.style.setProperty('--d',(2+Math.random()*2)+'s');
+    e.style.setProperty('--dl',(Math.random()*0.6)+'s');
+    c.appendChild(e);
+  }
+}
+</script>
+</body>
+</html>
