@@ -68,10 +68,10 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
 
     setSubmitting(true);
 
-    const payload: Record<string, unknown> = {
+    const payload = {
       title: title.trim(),
       slug: slug.trim() || toKebabCase(title),
-      status: 'draft',
+      status: 'draft' as const,
       current_stage: 1,
       score_total: 0,
       score_refero: 0,
@@ -79,7 +79,7 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
       score_pedagogy: 0,
       score_difficulty: 0,
       score_relevance: 0,
-      score_semaphore: 'red',
+      score_semaphore: 'red' as const,
       steps_generated: 0,
       steps_audited: 0,
       audit_passed: false,
@@ -95,11 +95,8 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
       audios_approved: 0,
       assembly_checklist: {},
       assembly_passed: false,
+      ...(toolName.trim() ? { docs_manual_input: toolName.trim() } : {}),
     };
-
-    if (toolName.trim()) {
-      payload.docs_manual_input = toolName.trim();
-    }
 
     const { data, error } = await supabase
       .from('v10_bpa_pipeline')

@@ -392,8 +392,8 @@ const Dashboard = () => {
 
       // Override interaction fields with v10_user_daily_usage data (if available)
       if (dailyUsageResult.data) {
-        finalUser.interactions_used_today = dailyUsageResult.data.interactions_used;
-        finalUser.daily_interaction_limit = dailyUsageResult.data.interactions_limit;
+        finalUser.interactions_used_today = (dailyUsageResult.data as Record<string, number>).interactions_used;
+        finalUser.daily_interaction_limit = (dailyUsageResult.data as Record<string, number>).interactions_limit;
       } else {
         // No usage row for today means 0 used
         finalUser.interactions_used_today = 0;

@@ -101,13 +101,13 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       const payload = {
         slug: pipeline.slug,
         title: pipeline.title,
-        status: 'draft',
+        status: 'draft' as const,
         total_steps: 0,
         estimated_minutes: 0,
-        tools: [],
+        tools: [] as string[],
         xp_reward: 0,
         order_in_trail: 0,
-      } as Record<string, unknown>;
+      };
 
       const { data, error } = await supabase
         .from('v10_lessons')
@@ -138,7 +138,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     const defaultLiv = { tip: '', analogy: '', sos: '' };
 
     const payload = {
-      lesson_id: pipeline.lesson_id,
+      lesson_id: pipeline.lesson_id as string,
       step_number: nextStepNumber,
       title: form.title.trim(),
       description: form.description.trim() || null,
@@ -149,9 +149,9 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       app_badge_color: '#1e293b',
       accent_color: '#6366f1',
       progress_percent: 0,
-      frames: [],
-      liv: defaultLiv,
-    } as Record<string, unknown>;
+      frames: JSON.parse('[]'),
+      liv: defaultLiv as Record<string, string>,
+    };
 
     try {
       const { error } = await supabase

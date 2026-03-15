@@ -1647,6 +1647,520 @@ export type Database = {
         }
         Relationships: []
       }
+      v10_bpa_pipeline: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          assembly_checklist: Json
+          assembly_passed: boolean
+          audios_approved: number
+          audios_generated: number
+          audios_total: number
+          audit_passed: boolean
+          created_at: string
+          created_by: string | null
+          current_stage: number
+          docs_manual_input: string | null
+          id: string
+          images_approved: number
+          images_generated: number
+          images_needed: number
+          lesson_id: string | null
+          mockups_approved: number
+          mockups_from_refero: number
+          mockups_generic: number
+          mockups_total: number
+          preview_at: string | null
+          published_at: string | null
+          score_difficulty: number
+          score_docs: number
+          score_pedagogy: number
+          score_refero: number
+          score_relevance: number
+          score_semaphore: string
+          score_total: number
+          slug: string
+          status: string
+          steps_audited: number
+          steps_generated: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          assembly_checklist?: Json
+          assembly_passed?: boolean
+          audios_approved?: number
+          audios_generated?: number
+          audios_total?: number
+          audit_passed?: boolean
+          created_at?: string
+          created_by?: string | null
+          current_stage?: number
+          docs_manual_input?: string | null
+          id?: string
+          images_approved?: number
+          images_generated?: number
+          images_needed?: number
+          lesson_id?: string | null
+          mockups_approved?: number
+          mockups_from_refero?: number
+          mockups_generic?: number
+          mockups_total?: number
+          preview_at?: string | null
+          published_at?: string | null
+          score_difficulty?: number
+          score_docs?: number
+          score_pedagogy?: number
+          score_refero?: number
+          score_relevance?: number
+          score_semaphore?: string
+          score_total?: number
+          slug: string
+          status?: string
+          steps_audited?: number
+          steps_generated?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          assembly_checklist?: Json
+          assembly_passed?: boolean
+          audios_approved?: number
+          audios_generated?: number
+          audios_total?: number
+          audit_passed?: boolean
+          created_at?: string
+          created_by?: string | null
+          current_stage?: number
+          docs_manual_input?: string | null
+          id?: string
+          images_approved?: number
+          images_generated?: number
+          images_needed?: number
+          lesson_id?: string | null
+          mockups_approved?: number
+          mockups_from_refero?: number
+          mockups_generic?: number
+          mockups_total?: number
+          preview_at?: string | null
+          published_at?: string | null
+          score_difficulty?: number
+          score_docs?: number
+          score_pedagogy?: number
+          score_refero?: number
+          score_relevance?: number
+          score_semaphore?: string
+          score_total?: number
+          slug?: string
+          status?: string
+          steps_audited?: number
+          steps_generated?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_bpa_pipeline_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "v10_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v10_bpa_pipeline_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          id: string
+          pipeline_id: string
+          stage: number
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          id?: string
+          pipeline_id: string
+          stage: number
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          pipeline_id?: string
+          stage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_bpa_pipeline_log_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "v10_bpa_pipeline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v10_lesson_intro_slides: {
+        Row: {
+          appear_at_seconds: number
+          description: string | null
+          icon: string | null
+          id: string
+          label: string | null
+          lesson_id: string
+          slide_order: number
+          subtitle: string | null
+          title: string
+          tool_color: string
+          tool_name: string | null
+        }
+        Insert: {
+          appear_at_seconds?: number
+          description?: string | null
+          icon?: string | null
+          id?: string
+          label?: string | null
+          lesson_id: string
+          slide_order?: number
+          subtitle?: string | null
+          title: string
+          tool_color?: string
+          tool_name?: string | null
+        }
+        Update: {
+          appear_at_seconds?: number
+          description?: string | null
+          icon?: string | null
+          id?: string
+          label?: string | null
+          lesson_id?: string
+          slide_order?: number
+          subtitle?: string | null
+          title?: string
+          tool_color?: string
+          tool_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_lesson_intro_slides_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "v10_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v10_lesson_narrations: {
+        Row: {
+          audio_url: string | null
+          duration_seconds: number
+          id: string
+          lesson_id: string
+          part: string
+          script_text: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          duration_seconds?: number
+          id?: string
+          lesson_id: string
+          part: string
+          script_text?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          duration_seconds?: number
+          id?: string
+          lesson_id?: string
+          part?: string
+          script_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_lesson_narrations_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "v10_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v10_lesson_steps: {
+        Row: {
+          accent_color: string
+          app_badge_bg: string
+          app_badge_color: string
+          app_icon: string | null
+          app_name: string | null
+          audio_url: string | null
+          description: string | null
+          duration_seconds: number
+          frames: Json
+          id: string
+          lesson_id: string
+          liv: Json
+          phase: number
+          progress_percent: number
+          slug: string | null
+          step_number: number
+          title: string
+          warnings: Json | null
+        }
+        Insert: {
+          accent_color?: string
+          app_badge_bg?: string
+          app_badge_color?: string
+          app_icon?: string | null
+          app_name?: string | null
+          audio_url?: string | null
+          description?: string | null
+          duration_seconds?: number
+          frames?: Json
+          id?: string
+          lesson_id: string
+          liv?: Json
+          phase?: number
+          progress_percent?: number
+          slug?: string | null
+          step_number: number
+          title: string
+          warnings?: Json | null
+        }
+        Update: {
+          accent_color?: string
+          app_badge_bg?: string
+          app_badge_color?: string
+          app_icon?: string | null
+          app_name?: string | null
+          audio_url?: string | null
+          description?: string | null
+          duration_seconds?: number
+          frames?: Json
+          id?: string
+          lesson_id?: string
+          liv?: Json
+          phase?: number
+          progress_percent?: number
+          slug?: string | null
+          step_number?: number
+          title?: string
+          warnings?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_lesson_steps_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "v10_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v10_lessons: {
+        Row: {
+          badge_icon: string | null
+          badge_name: string | null
+          created_at: string
+          description: string | null
+          estimated_minutes: number
+          id: string
+          order_in_trail: number
+          slug: string
+          status: string
+          title: string
+          tools: string[]
+          total_steps: number
+          trail_id: string | null
+          updated_at: string
+          xp_reward: number
+        }
+        Insert: {
+          badge_icon?: string | null
+          badge_name?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_minutes?: number
+          id?: string
+          order_in_trail?: number
+          slug: string
+          status?: string
+          title: string
+          tools?: string[]
+          total_steps?: number
+          trail_id?: string | null
+          updated_at?: string
+          xp_reward?: number
+        }
+        Update: {
+          badge_icon?: string | null
+          badge_name?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_minutes?: number
+          id?: string
+          order_in_trail?: number
+          slug?: string
+          status?: string
+          title?: string
+          tools?: string[]
+          total_steps?: number
+          trail_id?: string | null
+          updated_at?: string
+          xp_reward?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_lessons_trail_id_fkey"
+            columns: ["trail_id"]
+            isOneToOne: false
+            referencedRelation: "trails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v10_user_achievements: {
+        Row: {
+          badge_icon: string | null
+          badge_name: string | null
+          earned_at: string
+          id: string
+          lesson_id: string
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          badge_icon?: string | null
+          badge_name?: string | null
+          earned_at?: string
+          id?: string
+          lesson_id: string
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          badge_icon?: string | null
+          badge_name?: string | null
+          earned_at?: string
+          id?: string
+          lesson_id?: string
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_user_achievements_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "v10_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v10_user_daily_usage: {
+        Row: {
+          id: string
+          interactions_limit: number
+          interactions_used: number
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          interactions_limit?: number
+          interactions_used?: number
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          interactions_limit?: number
+          interactions_used?: number
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      v10_user_lesson_progress: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          current_frame: number
+          current_part: string
+          current_step: number
+          id: string
+          lesson_id: string
+          started_at: string
+          time_spent_seconds: number
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          current_frame?: number
+          current_part?: string
+          current_step?: number
+          id?: string
+          lesson_id: string
+          started_at?: string
+          time_spent_seconds?: number
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          current_frame?: number
+          current_part?: string
+          current_step?: number
+          id?: string
+          lesson_id?: string
+          started_at?: string
+          time_spent_seconds?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_user_lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "v10_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v10_user_streaks: {
+        Row: {
+          current_streak: number
+          id: string
+          last_activity_date: string | null
+          longest_streak: number
+          streak_start_date: string | null
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
+          streak_start_date?: string | null
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
+          streak_start_date?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       v7_analytics: {
         Row: {
           created_at: string
