@@ -1399,55 +1399,141 @@ export default function AdminV8Create() {
             <>
               {/* AI Generation Block */}
               <div className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Wand2 className="w-4 h-4 text-violet-500" />
-                  <span className="text-xs font-bold text-slate-700">Gerar Conteúdo com IA</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título da aula</label>
-                    <input
-                      value={genTitle}
-                      onChange={(e) => setGenTitle(e.target.value)}
-                      placeholder={lessonTitle || "Ex: Como usar prompts para e-mails profissionais"}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-violet-500"
-                    />
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Wand2 className="w-4 h-4 text-violet-500" />
+                    <span className="text-xs font-bold text-slate-700">Gerar Conteúdo com IA</span>
                   </div>
-                  <div>
-                    <label className="text-[11px] font-medium text-slate-500 mb-1 block">Variação narrativa</label>
-                    <Select value={genVariation} onValueChange={(v: any) => setGenVariation(v)}>
-                      <SelectTrigger className="bg-white border-slate-200 rounded-lg text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="everyday">🏠 Cotidiano</SelectItem>
-                        <SelectItem value="professional">💼 Profissional</SelectItem>
-                        <SelectItem value="curiosity">🔬 Curiosidade Técnica</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select value={genModel} onValueChange={(v: any) => setGenModel(v)}>
+                    <SelectTrigger className="w-48 bg-white border-slate-200 rounded-lg text-xs h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="model1">📝 Modelo 1 — Completo</SelectItem>
+                      <SelectItem value="model2">🎨 Modelo 2 — Variações</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div>
-                  <label className="text-[11px] font-medium text-slate-500 mb-1 block">Objetivos (1 por linha, opcional)</label>
-                  <textarea
-                    value={genObjectives}
-                    onChange={(e) => setGenObjectives(e.target.value)}
-                    placeholder={"Entender por que o GPT dá respostas genéricas\nAprender a dar contexto no prompt\nAplicar técnica em situação real"}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-violet-500 resize-y h-16"
-                    rows={3}
-                  />
-                </div>
-                <button
-                  onClick={handleGenerateWithAI}
-                  disabled={isGeneratingContent || isGenerating}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGeneratingContent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                  {isGeneratingContent ? "Gerando..." : "Gerar Preview com IA"}
-                </button>
-                <p className="text-[10px] text-slate-400">
-                  Gera apenas o texto (~15s, ~R$0.01). Revise no editor abaixo e depois clique "Converter e Gerar Tudo" para o pipeline completo.
-                </p>
+
+                {genModel === "model1" ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título da aula</label>
+                        <input
+                          value={genTitle}
+                          onChange={(e) => setGenTitle(e.target.value)}
+                          placeholder={lessonTitle || "Ex: Como usar prompts para e-mails profissionais"}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-violet-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-medium text-slate-500 mb-1 block">Variação narrativa</label>
+                        <Select value={genVariation} onValueChange={(v: any) => setGenVariation(v)}>
+                          <SelectTrigger className="bg-white border-slate-200 rounded-lg text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="everyday">🏠 Cotidiano</SelectItem>
+                            <SelectItem value="professional">💼 Profissional</SelectItem>
+                            <SelectItem value="curiosity">🔬 Curiosidade Técnica</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-500 mb-1 block">Objetivos (1 por linha, opcional)</label>
+                      <textarea
+                        value={genObjectives}
+                        onChange={(e) => setGenObjectives(e.target.value)}
+                        placeholder={"Entender por que o GPT dá respostas genéricas\nAprender a dar contexto no prompt\nAplicar técnica em situação real"}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-violet-500 resize-y h-16"
+                        rows={3}
+                      />
+                    </div>
+                    <button
+                      onClick={handleGenerateWithAI}
+                      disabled={isGeneratingContent || isGenerating}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGeneratingContent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                      {isGeneratingContent ? "Gerando..." : "Gerar Preview com IA"}
+                    </button>
+                    <p className="text-[10px] text-slate-400">
+                      Gera 9 seções completas (~15s, ~R$0.01). Revise no editor abaixo e depois clique "Converter e Gerar Tudo".
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-500 mb-1 block">Texto Base (narrativa original)</label>
+                      <textarea
+                        value={genBaseText}
+                        onChange={(e) => setGenBaseText(e.target.value)}
+                        placeholder="Cole aqui o texto narrativo que deseja variar. Ex: A maioria das pessoas usa o ChatGPT como um Google glorificado..."
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-violet-500 resize-y h-24"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-500 mb-1 block">Âncoras obrigatórias (1 por linha, opcional)</label>
+                      <textarea
+                        value={genAnchors}
+                        onChange={(e) => setGenAnchors(e.target.value)}
+                        placeholder={"A1: Mencionar prompts genéricos\nA2: Citar a técnica de contexto\nA3: Exemplo prático de e-mail\nA4: Comparação antes/depois\nA5: Call-to-action para praticar"}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-violet-500 resize-y h-16"
+                        rows={3}
+                      />
+                    </div>
+                    <button
+                      onClick={handleGenerateVariations}
+                      disabled={isGeneratingVariations || isGenerating}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGeneratingVariations ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {isGeneratingVariations ? "Gerando 3 variações..." : "Gerar 3 Variações"}
+                    </button>
+                    <p className="text-[10px] text-slate-400">
+                      Gera 3 variações estilísticas com alavancas aleatórias (~5s). Escolha uma e depois estruture em 9 seções.
+                    </p>
+
+                    {/* Variation Cards */}
+                    {generatedVariations.length > 0 && (
+                      <div className="space-y-3 mt-3">
+                        <p className="text-[11px] font-semibold text-slate-600">Escolha uma variação:</p>
+                        {generatedVariations.map((v, i) => (
+                          <div key={i} className="p-3 rounded-lg border border-slate-200 bg-white space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-500">#{i + 1}</span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                                  {v.lever}: {v.leverName}
+                                </span>
+                              </div>
+                              {v.anchorChecklist && (
+                                <div className="flex gap-1">
+                                  {Object.entries(v.anchorChecklist).map(([key, ok]) => (
+                                    <span key={key} className={`text-[9px] font-mono ${ok ? "text-emerald-600" : "text-red-400"}`}>
+                                      {ok ? "✓" : "✗"}{key}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{v.text}</p>
+                            <button
+                              onClick={() => handleUseVariation(v)}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500 text-white text-[11px] font-bold hover:bg-violet-600 transition-colors"
+                            >
+                              <Check className="w-3 h-3" />
+                              Usar esta variação
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               <textarea
