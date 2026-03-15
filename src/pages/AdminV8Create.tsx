@@ -251,7 +251,7 @@ export default function AdminV8Create() {
   const [genModel, setGenModel] = useState<"model1" | "model2">("model1");
   const [genBaseText, setGenBaseText] = useState("");
   const [genAnchors, setGenAnchors] = useState("");
-  const [generatedVariations, setGeneratedVariations] = useState<Array<{ lever: string; leverName: string; text: string; anchorChecklist?: Record<string, boolean> }>>([]);
+  const [generatedVariations, setGeneratedVariations] = useState<Array<{ lever: string; leverName: string; title: string; description: string; sections: Array<{ title: string; content: string }>; anchorChecklist?: Record<string, boolean> }>>([]);
   const [isGeneratingVariations, setIsGeneratingVariations] = useState(false);
   const [selectedVariationLever, setSelectedVariationLever] = useState<string | null>(null);
   // Parsed data for setup wizard
@@ -689,15 +689,17 @@ export default function AdminV8Create() {
     }
   }, [genBaseText, genAnchors, toast]);
 
-  const handleUseVariation = useCallback((variation: { lever: string; leverName: string; text: string }) => {
-    setContentText(variation.text);
+  const handleUseVariation = useCallback((variation: { lever: string; leverName: string; title: string; description: string; sections: Array<{ title: string; content: string }> }) => {
+    const markdown = sectionsToMarkdown(variation.title, variation.description, variation.sections);
+    setContentText(markdown);
+    setLessonTitle(variation.title);
     setSelectedVariationLever(variation.lever);
     setGeneratedVariations([]);
     toast({
-      title: `✅ Variação ${variation.lever} aplicada`,
-      description: "⚠️ Este texto é uma variação narrativa. Estruture em 9 seções com ## Título antes de rodar o pipeline.",
+      title: `✅ Variação ${variation.lever} (${variation.leverName}) aplicada`,
+      description: `Lição completa com ${variation.sections.length} seções carregada no editor.`,
     });
-  }, [toast]);
+  }, [toast, sectionsToMarkdown]);
 
   // ─── Convert & Generate All (new automated flow) ───
   const handleConvertAndGenerate = useCallback(async () => {
@@ -1494,42 +1496,60 @@ export default function AdminV8Create() {
                       {isGeneratingVariations ? "Gerando 3 variações..." : "Gerar 3 Variações"}
                     </button>
                     <p className="text-[10px] text-slate-400">
-                      Gera 3 variações estilísticas com alavancas aleatórias (~5s). Escolha uma e depois estruture em 9 seções.
+                      Gera 3 variações completas (9 seções cada) com alavancas aleatórias (~15-25s). Escolha a melhor.
                     </p>
 
                     {/* Variation Cards */}
                     {generatedVariations.length > 0 && (
                       <div className="space-y-3 mt-3">
                         <p className="text-[11px] font-semibold text-slate-600">Escolha uma variação:</p>
-                        {generatedVariations.map((v, i) => (
-                          <div key={i} className="p-3 rounded-lg border border-slate-200 bg-white space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-500">#{i + 1}</span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
-                                  {v.lever}: {v.leverName}
-                                </span>
-                              </div>
-                              {v.anchorChecklist && (
-                                <div className="flex gap-1">
-                                  {Object.entries(v.anchorChecklist).map(([key, ok]) => (
-                                    <span key={key} className={`text-[9px] font-mono ${ok ? "text-emerald-600" : "text-red-400"}`}>
-                                      {ok ? "✓" : "✗"}{key}
-                                    </span>
-                                  ))}
+                        {generatedVariations.map((v, i) => {
+                          const totalWords = v.sections?.reduce((sum, s) => sum + (s.content || "").split(/\s+/).filter(Boolean).length, 0) || 0;
+                          return (
+                            <div key={i} className="p-3 rounded-lg border border-slate-200 bg-white space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-500">#{i + 1}</span>
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                                    {v.lever}: {v.leverName}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">
+                                    {v.sections?.length || 0} seções · {totalWords} palavras
+                                  </span>
                                 </div>
-                              )}
+                                {v.anchorChecklist && (
+                                  <div className="flex gap-1">
+                                    {Object.entries(v.anchorChecklist).map(([key, ok]) => (
+                                      <span key={key} className={`text-[9px] font-mono ${ok ? "text-emerald-600" : "text-red-400"}`}>
+                                        {ok ? "✓" : "✗"}{key}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-semibold text-slate-800">{v.title}</p>
+                              {v.description && <p className="text-[10px] text-slate-500">{v.description}</p>}
+                              <div className="space-y-1 max-h-32 overflow-y-auto">
+                                {(v.sections || []).slice(0, 4).map((s, si) => (
+                                  <div key={si} className="text-[10px] text-slate-600">
+                                    <span className="font-semibold text-slate-700">{si}. {s.title}:</span>{" "}
+                                    {(s.content || "").slice(0, 150)}{(s.content || "").length > 150 ? "…" : ""}
+                                  </div>
+                                ))}
+                                {(v.sections || []).length > 4 && (
+                                  <p className="text-[9px] text-slate-400 italic">+{(v.sections || []).length - 4} seções...</p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleUseVariation(v)}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500 text-white text-[11px] font-bold hover:bg-violet-600 transition-colors"
+                              >
+                                <Check className="w-3 h-3" />
+                                Usar esta variação
+                              </button>
                             </div>
-                            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{v.text}</p>
-                            <button
-                              onClick={() => handleUseVariation(v)}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500 text-white text-[11px] font-bold hover:bg-violet-600 transition-colors"
-                            >
-                              <Check className="w-3 h-3" />
-                              Usar esta variação
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </>
