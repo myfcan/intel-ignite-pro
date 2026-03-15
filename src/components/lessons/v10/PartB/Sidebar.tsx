@@ -99,6 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       if (!isLocked) onStepClick(stepIdx);
                     }}
                     disabled={isLocked}
+                    tabIndex={isLocked ? -1 : 0}
                     className={`flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-colors ${
                       isActive
                         ? 'bg-white shadow-sm'

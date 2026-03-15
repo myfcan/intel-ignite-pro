@@ -42,6 +42,9 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
   const [error, setError] = useState<string | null>(null);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingUpdatesRef = useRef<Partial<V10UserProgress> | null>(null);
+  const completingRef = useRef(false);
+  const [gamificationError, setGamificationError] = useState(false);
   const progressRef = useRef(userProgress);
   progressRef.current = userProgress;
 
@@ -120,7 +123,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         ]);
 
         if (progressRes.data) {
-          const prog = progressRes.data as unknown as V10UserProgress;
+          const prog = progressRes.data as V10UserProgress;
           setUserProgress(prog);
           // Resume from saved part
           if (!prog.completed) {
@@ -129,7 +132,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         }
 
         if (streakRes.data) {
-          setUserStreak(streakRes.data as unknown as V10UserStreak);
+          setUserStreak(streakRes.data as V10UserStreak);
         }
       }
     } catch (err) {
@@ -179,7 +182,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             .select()
             .single();
           if (data) {
-            setUserProgress(data as unknown as V10UserProgress);
+            setUserProgress(data as V10UserProgress);
           }
         }
       } catch (err) {
@@ -191,24 +194,37 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
 
   const debouncedSave = useCallback(
     (updates: Partial<V10UserProgress>) => {
+      pendingUpdatesRef.current = updates;
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
       saveTimerRef.current = setTimeout(() => {
+        pendingUpdatesRef.current = null;
         saveProgress(updates);
       }, 1000);
     },
     [saveProgress],
   );
 
-  // Cleanup debounce on unmount
+  // Flush pending save on beforeunload + cleanup on unmount
   useEffect(() => {
-    return () => {
+    const flushPending = () => {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      if (pendingUpdatesRef.current) {
+        saveProgress(pendingUpdatesRef.current);
+        pendingUpdatesRef.current = null;
       }
     };
-  }, []);
+
+    window.addEventListener('beforeunload', flushPending);
+    return () => {
+      window.removeEventListener('beforeunload', flushPending);
+      flushPending();
+    };
+  }, [saveProgress]);
 
   // ---------- Part transitions ----------
   const handleProgressUpdate = useCallback((step: number, frame: number) => {
@@ -221,6 +237,9 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
   }, [debouncedSave]);
 
   const handlePartBComplete = useCallback(async () => {
+    if (completingRef.current) return;
+    completingRef.current = true;
+
     setCurrentPart('C');
     debouncedSave({
       current_part: 'C',
@@ -257,7 +276,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         .maybeSingle();
 
       if (streakRow) {
-        const streak = streakRow as unknown as V10UserStreak;
+        const streak = streakRow as V10UserStreak;
         const lastDate = streak.last_activity_date;
         const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
@@ -308,7 +327,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           .single();
 
         if (newRow) {
-          setUserStreak(newRow as unknown as V10UserStreak);
+          setUserStreak(newRow as V10UserStreak);
         }
       }
 
@@ -322,6 +341,8 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
       });
     } catch (err) {
       console.error('[LessonContainer] Gamification error:', err);
+      setGamificationError(true);
+      setTimeout(() => setGamificationError(false), 5000);
     }
   }, [debouncedSave, lesson]);
 
@@ -411,7 +432,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               lessonTitle={lesson.title}
               onComplete={handlePartBComplete}
               onBack={() => setCurrentPart('A')}
-              initialStep={userProgress?.current_step ? userProgress.current_step - 1 : 0}
+              initialStep={Math.min((userProgress?.current_step ?? 1) - 1, Math.max(steps.length - 1, 0))}
               initialFrame={userProgress?.current_frame ?? 0}
               onProgressUpdate={handleProgressUpdate}
             />
@@ -430,6 +451,16 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             />
           </div>
         </div>
+
+        {/* Gamification error toast */}
+        {gamificationError && (
+          <div
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-sm text-white/90 shadow-lg animate-pulse"
+            style={{ backgroundColor: 'rgba(239, 68, 68, 0.9)', maxWidth: 340 }}
+          >
+            Erro ao salvar conquista. Seus dados ser&atilde;o sincronizados depois.
+          </div>
+        )}
 
         {/* Sidebar — visible on desktop only */}
         <div className="hidden min-w-[260px] max-w-[320px] flex-shrink-0 md:flex md:flex-col md:my-6 md:gap-4">

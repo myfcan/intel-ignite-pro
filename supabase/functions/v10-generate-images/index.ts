@@ -147,6 +147,11 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Auth: require admin/supervisor role
+    const { requireAdmin } = await import("../_shared/auth.ts");
+    const authResult = await requireAdmin(req);
+    if (authResult.error) return authResult.error;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!

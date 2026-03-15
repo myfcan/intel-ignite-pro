@@ -29,6 +29,11 @@ serve(async (req) => {
   }
 
   try {
+    // Auth: require admin/supervisor role
+    const { requireAdmin } = await import("../_shared/auth.ts");
+    const authResult = await requireAdmin(req);
+    if (authResult.error) return authResult.error;
+
     const { pipeline_id, target, step_numbers } = await req.json();
 
     if (!pipeline_id) {

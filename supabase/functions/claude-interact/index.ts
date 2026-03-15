@@ -63,48 +63,84 @@ serve(async (req) => {
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const dailyLimit = userData.daily_interaction_limit ?? 5;
 
-    // Upsert today's row in v10_user_daily_usage (creates new row per day automatically)
-    const { data: usageRow, error: usageError } = await supabase
+    // Ensure today's row exists (INSERT ignored if already present)
+    await supabase
       .from('v10_user_daily_usage')
       .upsert(
         { user_id: user.id, usage_date: today, interactions_limit: dailyLimit },
         { onConflict: 'user_id,usage_date', ignoreDuplicates: true }
-      )
-      .select('interactions_used, interactions_limit')
-      .single();
+      );
 
-    // If upsert with ignoreDuplicates returned nothing, fetch the existing row
-    let interactionsUsed = usageRow?.interactions_used ?? 0;
-    let interactionsLimit = usageRow?.interactions_limit ?? dailyLimit;
+    // Atomic increment: only succeeds if under limit
+    const { data: incrementedRow, error: incrementError } = await supabase
+      .rpc('increment_daily_usage', {
+        p_user_id: user.id,
+        p_usage_date: today,
+      });
 
-    if (!usageRow) {
-      const { data: existingRow, error: fetchError } = await supabase
+    // If RPC doesn't exist yet, fall back to read-then-check
+    if (incrementError && incrementError.message?.includes('function')) {
+      // Fallback: read current usage
+      const { data: usageRow } = await supabase
         .from('v10_user_daily_usage')
         .select('interactions_used, interactions_limit')
         .eq('user_id', user.id)
         .eq('usage_date', today)
         .single();
 
-      if (fetchError) throw fetchError;
-      interactionsUsed = existingRow.interactions_used;
-      interactionsLimit = existingRow.interactions_limit;
-    }
+      const interactionsUsed = usageRow?.interactions_used ?? 0;
+      const interactionsLimit = usageRow?.interactions_limit ?? dailyLimit;
 
-    // Check if limit reached
-    if (interactionsUsed >= interactionsLimit) {
+      if (interactionsUsed >= interactionsLimit) {
+        return new Response(
+          JSON.stringify({
+            limit_reached: true,
+            limit: interactionsLimit,
+            used: interactionsUsed
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Non-atomic increment (fallback only)
+      await supabase
+        .from('v10_user_daily_usage')
+        .update({ interactions_used: interactionsUsed + 1 })
+        .eq('user_id', user.id)
+        .eq('usage_date', today);
+
+      var interactionsRemaining = interactionsLimit - interactionsUsed - 1;
+    } else if (incrementedRow !== null && incrementedRow === -1) {
+      // RPC returned -1 = limit reached (atomic check failed)
+      const { data: usageRow } = await supabase
+        .from('v10_user_daily_usage')
+        .select('interactions_used, interactions_limit')
+        .eq('user_id', user.id)
+        .eq('usage_date', today)
+        .single();
+
       return new Response(
         JSON.stringify({
-          error: 'Limite diário atingido',
           limit_reached: true,
-          limit: interactionsLimit,
-          used: interactionsUsed
+          limit: usageRow?.interactions_limit ?? dailyLimit,
+          used: usageRow?.interactions_used ?? dailyLimit
         }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } else {
+      // RPC succeeded — incrementedRow = new interactions_used count
+      const { data: usageRow } = await supabase
+        .from('v10_user_daily_usage')
+        .select('interactions_limit')
+        .eq('user_id', user.id)
+        .eq('usage_date', today)
+        .single();
+
+      var interactionsRemaining = (usageRow?.interactions_limit ?? dailyLimit) - (incrementedRow ?? 1);
     }
 
     // Generate cache key
-    const cacheKey = `${lesson_id || 'general'}_${context_type}_${message.substring(0, 50)}`;
+    const cacheKey = `${lesson_id || 'general'}_${context_type}_${message}`;
     const crypto = await import('https://deno.land/std@0.177.0/crypto/mod.ts');
     const encoder = new TextEncoder();
     const data = encoder.encode(cacheKey);
@@ -194,20 +230,14 @@ Ao final da resposta, adicione: "💡 Sugestão:" com UMA sugestão curta de com
         response_text: aiResponse
       });
 
-    // Increment interaction count in v10_user_daily_usage
-    const newUsed = interactionsUsed + 1;
-    await supabase
-      .from('v10_user_daily_usage')
-      .update({ interactions_used: newUsed })
-      .eq('user_id', user.id)
-      .eq('usage_date', today);
+    // Interaction already incremented atomically above
 
     return new Response(
       JSON.stringify({
         response: aiResponse,
         cached: false,
         limit_reached: false,
-        remaining: interactionsLimit - newUsed
+        remaining: interactionsRemaining ?? 0
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

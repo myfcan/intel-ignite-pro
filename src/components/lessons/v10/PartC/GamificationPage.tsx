@@ -30,20 +30,32 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const hasAutoFired = useRef(false);
+  const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startConfetti = () => {
+    if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
+    setShowConfetti(true);
+    confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 3500);
+  };
 
   // Auto-fire confetti when C3 becomes active
   useEffect(() => {
     if (isActive && !hasAutoFired.current) {
       hasAutoFired.current = true;
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3500);
+      startConfetti();
     }
   }, [isActive]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
+    };
+  }, []);
+
   const handleShare = () => {
-    setShowConfetti(true);
+    startConfetti();
     onShare();
-    setTimeout(() => setShowConfetti(false), 3500);
   };
 
   // Determine which days of the week are filled based on streak

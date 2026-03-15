@@ -17,7 +17,7 @@ const StepContent: React.FC<StepContentProps> = ({
   onFrameChange,
   accentColor,
 }) => {
-  const frame = step.frames[currentFrame];
+  const frame = step.frames?.[currentFrame];
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -72,24 +72,28 @@ const StepContent: React.FC<StepContentProps> = ({
         )}
 
         {/* Frame dots */}
-        {step.frames.length > 1 && (
+        {step.frames?.length > 1 && (
           <div className="flex items-center justify-center gap-2 py-2">
             {step.frames.map((_, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => onFrameChange(i)}
-                className={`rounded-full transition-all ${
-                  i === currentFrame
-                    ? 'w-6 h-2'
-                    : 'w-2 h-2'
-                }`}
-                style={{
-                  backgroundColor:
-                    i === currentFrame ? accentColor : '#D1D5DB',
-                }}
-                aria-label={`Frame ${i + 1} de ${step.frames.length}`}
-              />
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label={`Frame ${i + 1} de ${step.frames?.length ?? 0}`}
+              >
+                <span
+                  className={`rounded-full transition-all block ${
+                    i === currentFrame
+                      ? 'w-6 h-2'
+                      : 'w-2 h-2'
+                  }`}
+                  style={{
+                    backgroundColor:
+                      i === currentFrame ? accentColor : '#D1D5DB',
+                  }}
+                />
+              </button>
             ))}
           </div>
         )}
