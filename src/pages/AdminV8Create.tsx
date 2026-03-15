@@ -251,7 +251,7 @@ export default function AdminV8Create() {
   const [genModel, setGenModel] = useState<"model1" | "model2">("model1");
   const [genBaseText, setGenBaseText] = useState("");
   const [genAnchors, setGenAnchors] = useState("");
-  const [generatedVariations, setGeneratedVariations] = useState<Array<{ lever: string; leverName: string; text: string; anchorChecklist?: Record<string, boolean> }>>([]);
+  const [generatedVariations, setGeneratedVariations] = useState<Array<{ lever: string; leverName: string; title: string; description: string; sections: Array<{ title: string; content: string }>; anchorChecklist?: Record<string, boolean> }>>([]);
   const [isGeneratingVariations, setIsGeneratingVariations] = useState(false);
   const [selectedVariationLever, setSelectedVariationLever] = useState<string | null>(null);
   // Parsed data for setup wizard
