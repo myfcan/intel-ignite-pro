@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Plus, Eye, Rocket, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Plus, Eye, Rocket, RefreshCw, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import type { V10BpaPipeline } from '@/types/v10.types';
+import { CreateBpaModal } from '@/components/admin/v10/CreateBpaModal';
 
 // ============================================================
 // Types locais (pipeline admin)
@@ -52,10 +54,8 @@ const STAGES = [
 function getStageStatus(pipeline: BpaPipeline, stageNum: number): 'idle' | 'active' | 'partial' | 'complete' | 'error' {
   if (stageNum > pipeline.current_stage) return 'idle';
   if (stageNum < pipeline.current_stage) {
-    // Previous stages are complete
     return 'complete';
   }
-  // Current stage
   switch (stageNum) {
     case 1:
       if (pipeline.score_semaphore === 'red') return 'error';
@@ -177,15 +177,17 @@ function BpaCard({ pipeline, onRefresh }: { pipeline: BpaPipeline; onRefresh: ()
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
-            onClick={() => toast.info('Pipeline editor será implementado na Fase II')}
+            className="flex-1 min-h-[44px]"
+            onClick={() => navigate(`/admin/v10/${pipeline.id}`)}
           >
+            <Pencil className="w-4 h-4 mr-1" />
             Abrir pipeline
           </Button>
           {pipeline.lesson_id && (
             <Button
               variant="outline"
               size="sm"
+              className="min-h-[44px]"
               onClick={() => navigate(`/v10/${pipeline.slug}`)}
             >
               <Eye className="w-4 h-4 mr-1" />
@@ -195,8 +197,8 @@ function BpaCard({ pipeline, onRefresh }: { pipeline: BpaPipeline; onRefresh: ()
           {pipeline.status === 'ready' && (
             <Button
               size="sm"
-              className="bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
-              onClick={() => toast.info('Publicação será implementada na Fase III')}
+              className="min-h-[44px] bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
+              onClick={() => navigate(`/admin/v10/${pipeline.id}`)}
             >
               <Rocket className="w-4 h-4 mr-1" />
               Publicar
@@ -215,6 +217,7 @@ export default function AdminV10Pipeline() {
   const navigate = useNavigate();
   const [pipelines, setPipelines] = useState<BpaPipeline[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const fetchPipelines = async () => {
     setLoading(true);
@@ -228,7 +231,6 @@ export default function AdminV10Pipeline() {
       setPipelines((data as unknown as BpaPipeline[]) || []);
     } catch (err) {
       console.error('Failed to fetch V10 pipelines:', err);
-      // No pipelines yet is normal - just show empty state
     } finally {
       setLoading(false);
     }
@@ -238,8 +240,8 @@ export default function AdminV10Pipeline() {
     fetchPipelines();
   }, []);
 
-  const handleCreateBpa = async () => {
-    toast.info('Criação de novo BPA será implementada na Fase II (Etapa 1: Score de Viabilidade)');
+  const handleBpaCreated = (pipeline: V10BpaPipeline) => {
+    navigate(`/admin/v10/${pipeline.id}`);
   };
 
   return (
@@ -247,7 +249,7 @@ export default function AdminV10Pipeline() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin')}>
+          <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => navigate('/admin')}>
             <ArrowLeft className="w-4 h-4 mr-1" />
             Admin
           </Button>
@@ -258,13 +260,14 @@ export default function AdminV10Pipeline() {
           <Button
             variant="outline"
             size="sm"
+            className="min-h-[44px]"
             onClick={fetchPipelines}
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button
-            className="bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
-            onClick={handleCreateBpa}
+            className="min-h-[44px] bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
+            onClick={() => setCreateModalOpen(true)}
           >
             <Plus className="w-4 h-4 mr-1" />
             Novo BPA
@@ -295,8 +298,8 @@ export default function AdminV10Pipeline() {
                 A primeira etapa é a análise de viabilidade (Score).
               </p>
               <Button
-                className="bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
-                onClick={handleCreateBpa}
+                className="min-h-[44px] bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
+                onClick={() => setCreateModalOpen(true)}
               >
                 <Plus className="w-4 h-4 mr-1" />
                 Criar primeiro BPA
@@ -329,6 +332,13 @@ export default function AdminV10Pipeline() {
           </div>
         </div>
       </div>
+
+      {/* Create BPA Modal */}
+      <CreateBpaModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onCreated={handleBpaCreated}
+      />
     </div>
   );
 }

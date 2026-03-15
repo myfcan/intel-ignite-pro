@@ -126,6 +126,7 @@ const AdminLessonRatings = lazyRetry(() => import("./pages/AdminLessonRatings"))
 
 // V10 BPA Lesson System
 const AdminV10Pipeline = lazyRetry(() => import("./pages/AdminV10Pipeline"));
+const AdminV10PipelineEditor = lazyRetry(() => import("./pages/AdminV10PipelineEditor"));
 const V10LessonPlayer = lazyRetry(() => import("./pages/V10LessonPlayer"));
 
 const queryClient = new QueryClient();
@@ -287,6 +288,7 @@ const App = () => (
                 {/* V10 BPA LESSON SYSTEM */}
                 <Route path="/v10/:lessonSlug" element={<ProtectedRoute><V10LessonPlayer /></ProtectedRoute>} />
                 <Route path="/admin/v10" element={<AdminRoute><AdminV10Pipeline /></AdminRoute>} />
+                <Route path="/admin/v10/:pipelineId" element={<AdminRoute><AdminV10PipelineEditor /></AdminRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
