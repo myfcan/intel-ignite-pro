@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2, Anchor, Play, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2, Anchor, Play, ChevronDown, ChevronUp, Upload, Edit3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonNarration, V10LessonStep, StepAnchor } from '@/types/v10.types';
 import { AdminAnchorTimeline } from '../AdminAnchorTimeline';
+import { ImportFullScriptModal } from './ImportFullScriptModal';
 
 interface Stage5NarrationProps {
   pipeline: V10BpaPipeline;
