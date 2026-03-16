@@ -102,17 +102,19 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
       style={{ backgroundColor: '#0F0B1E' }}
     >
       {/* Hidden audio element */}
-      <audio
-        ref={audioRef}
-        src={audioUrl}
-        preload="metadata"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-      />
+      {hasAudio && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          preload="metadata"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+        />
+      )}
 
       {/* Autoplay blocked overlay */}
-      {showPlayOverlay && (
+      {hasAudio && showPlayOverlay && (
         <button
           type="button"
           onClick={() => {
