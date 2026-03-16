@@ -19,7 +19,6 @@ const StepContent: React.FC<StepContentProps> = ({
   accentColor,
 }) => {
   const frame = step.frames?.[currentFrame];
-  const [showDesc, setShowDesc] = useState(false);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3">
