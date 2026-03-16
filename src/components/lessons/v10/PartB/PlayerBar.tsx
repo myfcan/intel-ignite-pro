@@ -12,6 +12,8 @@ interface PlayerBarProps {
   onContinue: () => void;
   isLastStep: boolean;
   isLastFrame: boolean;
+  continueEnabled?: boolean;
+  onSkipNarration?: () => void;
 }
 
 const GRADIENT = 'linear-gradient(135deg, #6366F1, #8B5CF6)';
@@ -35,6 +37,8 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   onContinue,
   isLastStep,
   isLastFrame,
+  continueEnabled = true,
+  onSkipNarration,
 }) => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const isComplete = isLastStep && isLastFrame;
@@ -97,12 +101,29 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           {speed}x
         </button>
 
+        {/* Skip narration button — only when audio is playing and continue is disabled */}
+        {!continueEnabled && isPlaying && onSkipNarration && (
+          <button
+            type="button"
+            onClick={onSkipNarration}
+            className="shrink-0 min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold text-white/70 bg-white/10 hover:bg-white/15 transition-colors"
+            aria-label="Pular narração"
+          >
+            Pular
+          </button>
+        )}
+
         {/* Continue button */}
         <button
           type="button"
           onClick={onContinue}
-          className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl text-sm font-bold text-white transition-transform active:scale-[0.97]"
-          style={{ background: GRADIENT }}
+          disabled={!continueEnabled}
+          className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97]"
+          style={{
+            background: continueEnabled ? GRADIENT : 'rgba(255,255,255,0.15)',
+            opacity: continueEnabled ? 1 : 0.5,
+            cursor: continueEnabled ? 'pointer' : 'not-allowed',
+          }}
         >
           {isComplete ? (
             <span className="flex items-center gap-1.5">

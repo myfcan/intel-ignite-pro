@@ -1,11 +1,16 @@
 import React from 'react';
 
+export type LivPulseMode = 'normal' | 'intense';
+
 interface LIVFabProps {
   hasWarnings: boolean;
   onClick: () => void;
+  pulseMode?: LivPulseMode;
 }
 
-const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick }) => {
+const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'normal' }) => {
+  const isIntense = pulseMode === 'intense';
+
   return (
     <div className="absolute bottom-28 right-4 z-30 w-[52px] h-[52px]">
       <button
@@ -19,8 +24,12 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick }) => {
           className="rounded-full flex items-center justify-center w-full h-full"
           style={{
             padding: 3,
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            animation: 'liv-pulse 2s ease-in-out infinite',
+            background: isIntense
+              ? 'linear-gradient(135deg, #10B981, #34D399)'
+              : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            animation: isIntense
+              ? 'liv-pulse-intense 0.6s ease-in-out infinite'
+              : 'liv-pulse 2s ease-in-out infinite',
           }}
         >
           <span className="w-full h-full rounded-full bg-[#1E1B2E] flex items-center justify-center text-xl">
@@ -41,6 +50,10 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick }) => {
         @keyframes liv-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
           50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+        }
+        @keyframes liv-pulse-intense {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); transform: scale(1); }
+          50% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); transform: scale(1.08); }
         }
       `}</style>
     </div>

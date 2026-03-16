@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import type { V10LessonStep } from '../../../../types/v10.types';
+import type { V10LessonStep, StepAnchor } from '../../../../types/v10.types';
 import type { LivChatMessage } from './LIVSheet';
 import { supabase } from '@/integrations/supabase/client';
+import { useAnchorEvents } from '@/hooks/useAnchorEvents';
 import PlayerHeader from './PlayerHeader';
 import StepContent from './StepContent';
 import PlayerBar from './PlayerBar';
 import Sidebar from './Sidebar';
 import LIVFab from './LIVFab';
+import type { LivPulseMode } from './LIVFab';
 import LIVSheet from './LIVSheet';
 
 interface PartBScreenProps {
@@ -59,6 +61,9 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const [chatMessages, setChatMessages] = useState<LivChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatLimitReached, setChatLimitReached] = useState(false);
+  const [livPulseMode, setLivPulseMode] = useState<LivPulseMode>('normal');
+  const [continueEnabled, setContinueEnabled] = useState(true);
+  const [currentAnchors, setCurrentAnchors] = useState<StepAnchor[]>([]);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const preloadRef = useRef<HTMLAudioElement>(null);
@@ -79,6 +84,91 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const progressPercent = steps.length > 0
     ? ((currentStepIndex + 1) / steps.length) * 100
     : 0;
+
+  // ── Anchor Text System ──────────────────────────────────────────────────
+
+  // Fetch anchors when step changes
+  useEffect(() => {
+    if (!currentStep?.id) {
+      setCurrentAnchors([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchAnchors() {
+      const { data, error } = await supabase
+        .from('v10_lesson_step_anchors')
+        .select('*')
+        .eq('step_id', currentStep.id)
+        .order('timestamp_seconds', { ascending: true });
+
+      if (!cancelled && !error && data) {
+        setCurrentAnchors(data as unknown as StepAnchor[]);
+      } else if (!cancelled) {
+        setCurrentAnchors([]);
+      }
+    }
+
+    fetchAnchors();
+    return () => { cancelled = true; };
+  }, [currentStep?.id]);
+
+  // Determine if continue button should start disabled
+  // Disabled when: step has audio AND has anchors with 'confirmacao' type
+  const hasAudio = !!currentStep?.audio_url;
+  const hasConfirmacaoAnchor = currentAnchors.some(a => a.anchor_type === 'confirmacao');
+
+  useEffect(() => {
+    // Reset continue state on step change
+    if (hasAudio && hasConfirmacaoAnchor) {
+      setContinueEnabled(false);
+    } else {
+      setContinueEnabled(true);
+    }
+    setLivPulseMode('normal');
+  }, [currentStepIndex, hasAudio, hasConfirmacaoAnchor]);
+
+  // Anchor event handlers
+  const anchorHandlers = useMemo(() => ({
+    onPontosAtencao: () => {
+      setLivPulseMode('intense');
+      setTimeout(() => setLivPulseMode('normal'), 3000);
+    },
+    onConfirmacao: () => {
+      setContinueEnabled(true);
+    },
+    onTrocaFrame: () => {
+      setCurrentFrameIndex(prev =>
+        Math.min(prev + 1, (currentStep?.frames?.length ?? 1) - 1)
+      );
+    },
+    onTrocaFerramenta: () => {
+      // Badge update happens naturally via frame change —
+      // troca_ferramenta is informational, the visual change
+      // comes from the frame's own data
+    },
+  }), [currentStep?.frames?.length]);
+
+  const { fireAllAnchors } = useAnchorEvents(audioRef, currentAnchors, anchorHandlers);
+
+  // When audio is paused, enable continue (audio is invitation, not obligation)
+  const handleAudioPauseForAnchors = useCallback(() => {
+    if (hasConfirmacaoAnchor) {
+      setContinueEnabled(true);
+    }
+  }, [hasConfirmacaoAnchor]);
+
+  // Skip narration: fire all anchors immediately
+  const handleSkipNarration = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      setIsPlaying(false);
+    }
+    fireAllAnchors();
+    setContinueEnabled(true);
+  }, [fireAllAnchors]);
 
   // Notify parent of progress changes
   useEffect(() => {
@@ -140,6 +230,8 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
 
   const handleAudioEnded = useCallback(() => {
     setIsPlaying(false);
+    // When audio finishes naturally, enable continue
+    setContinueEnabled(true);
   }, []);
 
   // Play/Pause toggle
@@ -150,6 +242,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
+      handleAudioPauseForAnchors();
     } else {
       audio.play().then(() => {
         setIsPlaying(true);
@@ -157,7 +250,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         // Silently handle autoplay restrictions
       });
     }
-  }, [isPlaying]);
+  }, [isPlaying, handleAudioPauseForAnchors]);
 
   // Speed cycle
   const handleSpeedChange = useCallback(() => {
@@ -294,9 +387,11 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         {/* LIV Fab */}
         <LIVFab
           hasWarnings={!!currentStep.warnings?.warn}
+          pulseMode={livPulseMode}
           onClick={() => {
             audioRef.current?.pause();
             setIsPlaying(false);
+            handleAudioPauseForAnchors();
             setLivOpen(true);
           }}
         />
@@ -314,6 +409,8 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           onContinue={handleContinue}
           isLastStep={isLastStep}
           isLastFrame={isLastFrame}
+          continueEnabled={continueEnabled}
+          onSkipNarration={hasAudio ? handleSkipNarration : undefined}
         />
       </div>
 
