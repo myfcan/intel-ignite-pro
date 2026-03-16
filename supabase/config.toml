@@ -113,3 +113,6 @@ verify_jwt = false
 
 [functions.v8-generate-variations]
 verify_jwt = false
+
+[functions.v10-process-anchors]
+verify_jwt = false
