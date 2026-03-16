@@ -18,13 +18,13 @@ function useResponsivePosition() {
     const update = () => {
       const w = window.innerWidth;
       if (w >= 1024) {
-        setPos({ avatarRight: 50, buttonRight: 57, avatarBottom: 175, buttonBottom: 119 });
+        setPos({ avatarRight: 70, buttonRight: 77, avatarBottom: 175, buttonBottom: 119 });
       } else if (w >= 768) {
-        setPos({ avatarRight: 38, buttonRight: 45, avatarBottom: 170, buttonBottom: 114 });
+        setPos({ avatarRight: 58, buttonRight: 65, avatarBottom: 170, buttonBottom: 114 });
       } else if (w >= 480) {
-        setPos({ avatarRight: 26, buttonRight: 33, avatarBottom: 165, buttonBottom: 109 });
+        setPos({ avatarRight: 46, buttonRight: 53, avatarBottom: 165, buttonBottom: 109 });
       } else {
-        setPos({ avatarRight: 14, buttonRight: 21, avatarBottom: 165, buttonBottom: 109 });
+        setPos({ avatarRight: 34, buttonRight: 41, avatarBottom: 165, buttonBottom: 109 });
       }
     };
     update();
