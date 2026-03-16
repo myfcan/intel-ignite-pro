@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2, Anchor } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import type { V10BpaPipeline, V10LessonNarration, V10LessonStep } from '@/types/v10.types';
+import type { V10BpaPipeline, V10LessonNarration, V10LessonStep, StepAnchor } from '@/types/v10.types';
+import { AdminAnchorTimeline } from '../AdminAnchorTimeline';
 
 interface Stage5NarrationProps {
   pipeline: V10BpaPipeline;
@@ -135,6 +136,36 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
       setGenerating(false);
     }
   };
+
+  const [anchorCounts, setAnchorCounts] = useState<Record<string, number>>({});
+  const [anchorErrors, setAnchorErrors] = useState<string[]>([]);
+  const [expandedAnchorStep, setExpandedAnchorStep] = useState<string | null>(null);
+
+  // Fetch anchor counts per step
+  useEffect(() => {
+    if (!steps.length) return;
+
+    async function fetchAnchorStats() {
+      const stepIds = steps.map(s => s.id);
+      const { data, error } = await supabase
+        .from('v10_lesson_step_anchors')
+        .select('step_id')
+        .in('step_id', stepIds);
+
+      if (!error && data) {
+        const counts: Record<string, number> = {};
+        for (const row of data) {
+          counts[row.step_id] = (counts[row.step_id] || 0) + 1;
+        }
+        setAnchorCounts(counts);
+      }
+    }
+
+    fetchAnchorStats();
+  }, [steps]);
+
+  const totalAnchors = Object.values(anchorCounts).reduce((sum, c) => sum + c, 0);
+  const stepsWithAnchors = Object.keys(anchorCounts).length;
 
   const partANarration = narrations.find((n) => n.part === 'A');
   const partCNarration = narrations.find((n) => n.part === 'C');
@@ -322,6 +353,70 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Anchor Text System */}
+        {!loadingData && steps.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Anchor className="h-4 w-4 text-indigo-500" />
+              Anchors (Sincronização Áudio ↔ Visual)
+            </h3>
+
+            {/* Anchor stats */}
+            <div className="rounded-lg border p-4">
+              <div className="mb-2 flex items-center gap-4 text-xs">
+                <span className="inline-flex items-center gap-1 text-indigo-700">
+                  <Anchor className="h-3 w-3" />
+                  Total: {totalAnchors} anchors em {stepsWithAnchors} passos
+                </span>
+              </div>
+
+              {/* Step anchor grid */}
+              <div className="flex flex-wrap gap-1.5">
+                {steps.map((step) => {
+                  const count = anchorCounts[step.id] || 0;
+                  const hasAudio = !!step.audio_url;
+                  const isExpanded = expandedAnchorStep === step.id;
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => setExpandedAnchorStep(isExpanded ? null : step.id)}
+                      className={`inline-flex h-7 min-w-7 items-center justify-center rounded text-xs font-medium transition-colors ${
+                        count > 0
+                          ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                          : hasAudio
+                            ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      } ${isExpanded ? 'ring-2 ring-indigo-400' : ''}`}
+                      title={`Step ${step.step_number}: ${step.title} — ${count} anchors`}
+                    >
+                      {step.step_number}
+                      {count > 0 && (
+                        <span className="ml-0.5 text-[9px] opacity-70">({count})</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Expanded anchor timeline for selected step */}
+            {expandedAnchorStep && (() => {
+              const step = steps.find(s => s.id === expandedAnchorStep);
+              if (!step) return null;
+              return (
+                <AdminAnchorTimeline
+                  stepId={step.id}
+                  stepNumber={step.step_number}
+                  stepTitle={step.title}
+                  audioUrl={step.audio_url}
+                  duration={step.duration_seconds}
+                />
+              );
+            })()}
           </div>
         )}
 

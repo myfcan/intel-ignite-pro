@@ -2,47 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
 import { LivAvatar } from '@/components/LivAvatar';
 
+export type LivPulseMode = 'normal' | 'intense';
+
 interface LIVFabProps {
   hasWarnings: boolean;
-  isPlaying: boolean;
-  onTogglePlay: () => void;
-  onOpenSheet: () => void;
-  stepNumber: number;
+  onClick: () => void;
+  pulseMode?: LivPulseMode;
 }
 
-/** Responsive positioning hook matching V5 MobileSectionDrawer pattern */
-function useResponsivePosition() {
-  const [pos, setPos] = useState({ avatarRight: 24, buttonRight: 31, avatarBottom: 160, buttonBottom: 104 });
-
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      if (w >= 1024) {
-        setPos({ avatarRight: 70, buttonRight: 77, avatarBottom: 175, buttonBottom: 124 });
-      } else if (w >= 768) {
-        setPos({ avatarRight: 58, buttonRight: 65, avatarBottom: 170, buttonBottom: 119 });
-      } else if (w >= 480) {
-        setPos({ avatarRight: 46, buttonRight: 53, avatarBottom: 165, buttonBottom: 114 });
-      } else {
-        setPos({ avatarRight: 34, buttonRight: 41, avatarBottom: 165, buttonBottom: 114 });
-      }
-    };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  return pos;
-}
-
-const LIVFab: React.FC<LIVFabProps> = ({
-  hasWarnings,
-  isPlaying,
-  onTogglePlay,
-  onOpenSheet,
-  stepNumber,
-}) => {
-  const pos = useResponsivePosition();
+const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'normal' }) => {
+  const isIntense = pulseMode === 'intense';
 
   return (
     <>
@@ -57,26 +26,23 @@ const LIVFab: React.FC<LIVFabProps> = ({
         }}
         aria-label={isPlaying ? 'Pausar áudio' : 'Reproduzir áudio'}
       >
-        <div className="relative">
-          <LivAvatar
-            size="small"
-            state={isPlaying ? 'speaking' : 'idle'}
-            theme="automacoes"
-            animate={false}
-            enableHover={false}
-            showHalo={false}
-            className={!isPlaying ? 'grayscale opacity-70' : ''}
-          />
-          {/* Status dot — top-left of avatar */}
-          <span
-            className={`absolute top-0 left-0 w-3 h-3 rounded-full border-2 border-[#1E1B2E] ${
-              isPlaying
-                ? 'bg-emerald-400'
-                : 'bg-white/30'
-            }`}
-            style={isPlaying ? { animation: 'liv-status-pulse 2s ease-in-out infinite' } : undefined}
-          />
-        </div>
+        {/* Gradient pulsing ring */}
+        <span
+          className="rounded-full flex items-center justify-center w-full h-full"
+          style={{
+            padding: 3,
+            background: isIntense
+              ? 'linear-gradient(135deg, #10B981, #34D399)'
+              : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            animation: isIntense
+              ? 'liv-pulse-intense 0.6s ease-in-out infinite'
+              : 'liv-pulse 2s ease-in-out infinite',
+          }}
+        >
+          <span className="w-full h-full rounded-full bg-[#1E1B2E] flex items-center justify-center text-xl">
+            &#x1F916;
+          </span>
+        </span>
       </button>
 
       {/* Gradient menu button — opens LIVSheet */}
@@ -112,6 +78,10 @@ const LIVFab: React.FC<LIVFabProps> = ({
         @keyframes liv-status-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
           50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+        }
+        @keyframes liv-pulse-intense {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); transform: scale(1); }
+          50% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); transform: scale(1.08); }
         }
       `}</style>
     </>

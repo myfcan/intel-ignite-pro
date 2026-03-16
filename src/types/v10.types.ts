@@ -376,3 +376,38 @@ export interface V10BpaPipelineLog {
   details: Record<string, unknown>;
   created_at: string;
 }
+
+// ------------------------------------------------------------
+// Anchor Text System — Audio ↔ Visual synchronization
+// ------------------------------------------------------------
+
+/** The 4 types of anchor event in V10 */
+export type AnchorType =
+  | 'pontos_atencao'
+  | 'confirmacao'
+  | 'troca_frame'
+  | 'troca_ferramenta';
+
+/** A single anchor record from v10_lesson_step_anchors */
+export interface StepAnchor {
+  id: string;
+  step_id: string;
+  anchor_type: AnchorType;
+  timestamp_seconds: number;
+  match_phrase: string;
+  label: string | null;
+}
+
+/** Tag marked in the narration script (before processing) */
+export interface AnchorTag {
+  type: AnchorType;
+  position_in_text: number;
+  phrase_after: string;
+}
+
+/** Event tracked at runtime by the player */
+export interface AnchorEvent {
+  type: AnchorType;
+  timestamp: number;
+  fired: boolean;
+}
