@@ -55,7 +55,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
         }}
         aria-label="Abrir assistente LIV"
       >
-        <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} className="pt-0" />
+        <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} className="pt-0 scale-[0.82]" />
       </button>
 
       {/* Gradient menu button — opens LIVSheet */}
