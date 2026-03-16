@@ -187,7 +187,16 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         )}
 
         {/* Action buttons */}
-        {audioEnded ? (
+        {!hasAudio ? (
+          <button
+            type="button"
+            onClick={onComplete}
+            className="w-full min-h-[44px] py-3 rounded-xl text-white font-semibold text-base transition-transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
+          >
+            {'Começar aula \u2192'}
+          </button>
+        ) : audioEnded ? (
           <button
             type="button"
             onClick={onComplete}
