@@ -51,7 +51,7 @@ const MockupChrome: React.FC<MockupChromeProps> = ({
       </div>
 
       {/* Content body */}
-      <div className="bg-white p-4">{children}</div>
+      <div className="bg-white p-3">{children}</div>
     </div>
   );
 };

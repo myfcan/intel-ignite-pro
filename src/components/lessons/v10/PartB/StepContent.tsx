@@ -23,8 +23,8 @@ const StepContent: React.FC<StepContentProps> = ({
   const [showDesc, setShowDesc] = useState(false);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4">
-      <div className="flex flex-col gap-3 max-w-[420px] mx-auto">
+    <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="flex flex-col gap-1.5 max-w-[420px] mx-auto">
         {/* Step number label */}
         <span
           className="text-xs font-bold uppercase tracking-wider"
@@ -38,58 +38,38 @@ const StepContent: React.FC<StepContentProps> = ({
           {step.title}
         </h2>
 
-        {/* Collapsible description */}
-        {step.description && (
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowDesc((v) => !v)}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors min-h-[36px]"
-            >
-              <span>📄</span>
-              <span>Ver contexto</span>
-              {showDesc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
-            {showDesc && (
-              <p className="text-sm text-muted-foreground leading-relaxed mt-1 pl-5">
-                {step.description}
-              </p>
+        {/* Tool badge + Warning inline */}
+        {(step.app_name || (step.warnings && step.warnings.warn)) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {step.app_name && (
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{
+                  backgroundColor: step.app_badge_bg,
+                  color: step.app_badge_color,
+                }}
+              >
+                {step.app_icon && <span>{step.app_icon}</span>}
+                <span>{step.app_name}</span>
+              </span>
+            )}
+            {step.warnings && step.warnings.warn && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors max-w-full text-left"
+                  >
+                    <span className="shrink-0">⚠️</span>
+                    <span className="truncate">{step.warnings.warn}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="top" className="text-sm text-amber-900 bg-amber-50 border-amber-200 max-w-xs">
+                  {step.warnings.warn}
+                </PopoverContent>
+              </Popover>
             )}
           </div>
-        )}
-
-        {/* Tool chip badge */}
-        {step.app_name && (
-          <div className="flex items-center gap-0">
-            <span
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{
-                backgroundColor: step.app_badge_bg,
-                color: step.app_badge_color,
-              }}
-            >
-              {step.app_icon && <span>{step.app_icon}</span>}
-              <span>{step.app_name}</span>
-            </span>
-          </div>
-        )}
-
-        {/* Warning chip → Popover */}
-        {step.warnings && step.warnings.warn && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors min-h-[36px] max-w-full text-left"
-              >
-                <span className="shrink-0">⚠️</span>
-                <span className="truncate">{step.warnings.warn}</span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="top" className="text-sm text-amber-900 bg-amber-50 border-amber-200 max-w-xs">
-              {step.warnings.warn}
-            </PopoverContent>
-          </Popover>
         )}
 
         {/* Frame content */}

@@ -141,7 +141,7 @@ const FrameRenderer: React.FC<FrameRendererProps> = ({ frame, accentColor }) => 
 
       {/* Tip below mockup */}
       {frame.tip && (
-        <div className="rounded-lg px-4 py-3 bg-indigo-50 border border-indigo-100">
+        <div className="rounded-lg px-3 py-2 bg-indigo-50 border border-indigo-100">
           <p className="text-sm text-indigo-700 leading-relaxed">
             {frame.tip.text}
           </p>
