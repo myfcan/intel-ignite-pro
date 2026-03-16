@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
-import { LivAvatar } from '@/components/LivAvatar';
 
 export type LivPulseMode = 'normal' | 'intense';
 
@@ -8,23 +7,49 @@ interface LIVFabProps {
   hasWarnings: boolean;
   onClick: () => void;
   pulseMode?: LivPulseMode;
+  stepNumber?: number;
 }
 
-const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'normal' }) => {
+function useResponsivePosition() {
+  const [pos, setPos] = useState({ avatarRight: 70, buttonRight: 77, avatarBottom: 175, buttonBottom: 124 });
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth;
+      if (w >= 1024) {
+        setPos({ avatarRight: 70, buttonRight: 77, avatarBottom: 175, buttonBottom: 124 });
+      } else if (w >= 768) {
+        setPos({ avatarRight: 58, buttonRight: 65, avatarBottom: 170, buttonBottom: 119 });
+      } else if (w >= 480) {
+        setPos({ avatarRight: 46, buttonRight: 53, avatarBottom: 165, buttonBottom: 114 });
+      } else {
+        setPos({ avatarRight: 34, buttonRight: 41, avatarBottom: 165, buttonBottom: 114 });
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  return pos;
+}
+
+const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'normal', stepNumber = 1 }) => {
   const isIntense = pulseMode === 'intense';
+  const pos = useResponsivePosition();
 
   return (
     <>
-      {/* LivAvatar — play/pause toggle */}
+      {/* LivAvatar — pulsing indicator */}
       <button
         type="button"
-        onClick={onTogglePlay}
+        onClick={onClick}
         className="fixed z-[9999] focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
         style={{
           right: pos.avatarRight,
           bottom: pos.avatarBottom,
         }}
-        aria-label={isPlaying ? 'Pausar áudio' : 'Reproduzir áudio'}
+        aria-label="Abrir assistente LIV"
       >
         {/* Gradient pulsing ring */}
         <span
@@ -48,7 +73,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
       {/* Gradient menu button — opens LIVSheet */}
       <button
         type="button"
-        onClick={onOpenSheet}
+        onClick={onClick}
         className="fixed z-[9999] w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
         style={{
           right: pos.buttonRight,
