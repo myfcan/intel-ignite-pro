@@ -275,7 +275,7 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const handleProcessAll = useCallback(async () => {
     const stepsWithScript = steps.filter(s => {
       const script = editingScripts[s.id] ?? s.narration_script;
-      return script?.trim() && !s.audio_url;
+      return script?.trim() && (reprocessExisting || !s.audio_url);
     });
 
     if (stepsWithScript.length === 0) {
