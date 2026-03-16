@@ -7,7 +7,9 @@ interface IntroSlidesProps {
   currentIndex: number;
   isPlaying: boolean;
   audioDuration: number;
+  hasAudio: boolean;
   onPlay: () => void;
+  onComplete: () => void;
 }
 
 /**
