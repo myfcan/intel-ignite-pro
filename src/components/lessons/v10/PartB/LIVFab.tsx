@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
+import { LivAvatar } from '@/components/LivAvatar';
 
 export type LivPulseMode = 'normal' | 'intense';
 
@@ -11,19 +12,19 @@ interface LIVFabProps {
 }
 
 function useResponsivePosition() {
-  const [pos, setPos] = useState({ avatarRight: 70, buttonRight: 77, avatarBottom: 175, buttonBottom: 124 });
+  const [pos, setPos] = useState({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 120 });
 
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
       if (w >= 1024) {
-        setPos({ avatarRight: 80, buttonRight: 87, avatarBottom: 185, buttonBottom: 134 });
+        setPos({ avatarRight: 80, buttonRight: 86, avatarBottom: 185, buttonBottom: 130 });
       } else if (w >= 768) {
-        setPos({ avatarRight: 68, buttonRight: 75, avatarBottom: 180, buttonBottom: 129 });
+        setPos({ avatarRight: 68, buttonRight: 74, avatarBottom: 180, buttonBottom: 125 });
       } else if (w >= 480) {
-        setPos({ avatarRight: 56, buttonRight: 63, avatarBottom: 175, buttonBottom: 124 });
+        setPos({ avatarRight: 56, buttonRight: 62, avatarBottom: 175, buttonBottom: 120 });
       } else {
-        setPos({ avatarRight: 44, buttonRight: 51, avatarBottom: 175, buttonBottom: 124 });
+        setPos({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 120 });
       }
     };
     update();
@@ -44,30 +45,17 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
       <button
         type="button"
         onClick={onClick}
-        className="fixed z-[9999] focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
+        className="fixed z-[9999] w-14 h-14 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
         style={{
           right: pos.avatarRight,
           bottom: pos.avatarBottom,
+          animation: isIntense
+            ? 'liv-pulse-intense 0.6s ease-in-out infinite'
+            : 'liv-pulse 2s ease-in-out infinite',
         }}
         aria-label="Abrir assistente LIV"
       >
-        {/* Gradient pulsing ring */}
-        <span
-          className="rounded-full flex items-center justify-center w-full h-full"
-          style={{
-            padding: 3,
-            background: isIntense
-              ? 'linear-gradient(135deg, #10B981, #34D399)'
-              : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            animation: isIntense
-              ? 'liv-pulse-intense 0.6s ease-in-out infinite'
-              : 'liv-pulse 2s ease-in-out infinite',
-          }}
-        >
-          <span className="w-full h-full rounded-full bg-[#1E1B2E] flex items-center justify-center text-xl">
-            &#x1F916;
-          </span>
-        </span>
+        <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} />
       </button>
 
       {/* Gradient menu button — opens LIVSheet */}
