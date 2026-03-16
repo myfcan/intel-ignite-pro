@@ -160,11 +160,13 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
       {/* Bottom controls */}
       <div className="flex-shrink-0 pb-6 px-4">
         {/* Audio progress bar */}
-        <IntroAudioBar
-          currentTime={currentTime}
-          duration={duration}
-          isPlaying={isPlaying}
-        />
+        {hasAudio && (
+          <IntroAudioBar
+            currentTime={currentTime}
+            duration={duration}
+            isPlaying={isPlaying}
+          />
+        )}
 
         {/* Dot navigation */}
         {slides.length > 1 && (
