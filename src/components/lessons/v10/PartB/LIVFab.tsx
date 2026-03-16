@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
+import { LivAvatar } from '@/components/LivAvatar';
 
 export type LivPulseMode = 'normal' | 'intense';
 
