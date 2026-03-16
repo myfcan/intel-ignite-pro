@@ -465,9 +465,22 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Part A */}
                 <div className="rounded-lg border p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Volume2 className="h-4 w-4 text-indigo-500" />
-                    <span className="text-sm font-medium">Parte A — Introdução</span>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4 text-indigo-500" />
+                      <span className="text-sm font-medium">Parte A — Introdução</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => {
+                        setEditingPartA(!editingPartA);
+                        if (!editingPartA) setPartAText(partANarration?.script_text ?? '');
+                      }}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
                   </div>
                   {partANarration ? (
                     <div className="space-y-2">
@@ -482,14 +495,29 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
                           </span>
                         )}
                       </div>
-                      {partANarration.script_text && (
+                      {editingPartA ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            className="min-h-[150px] font-mono text-xs"
+                            value={partAText ?? ''}
+                            onChange={(e) => setPartAText(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleSavePartNarration('A')} disabled={savingPartNarration}>
+                              {savingPartNarration ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                              Salvar
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingPartA(false)}>Cancelar</Button>
+                          </div>
+                        </div>
+                      ) : partANarration.script_text ? (
                         <div className="flex items-start gap-1">
                           <FileText className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                           <p className="line-clamp-3 text-xs text-muted-foreground">
                             {partANarration.script_text}
                           </p>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">Nenhuma narração cadastrada</p>
@@ -498,9 +526,22 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
                 {/* Part C */}
                 <div className="rounded-lg border p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Volume2 className="h-4 w-4 text-indigo-500" />
-                    <span className="text-sm font-medium">Parte C — Encerramento</span>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4 text-indigo-500" />
+                      <span className="text-sm font-medium">Parte C — Encerramento</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => {
+                        setEditingPartC(!editingPartC);
+                        if (!editingPartC) setPartCText(partCNarration?.script_text ?? '');
+                      }}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
                   </div>
                   {partCNarration ? (
                     <div className="space-y-2">
@@ -515,14 +556,29 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
                           </span>
                         )}
                       </div>
-                      {partCNarration.script_text && (
+                      {editingPartC ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            className="min-h-[150px] font-mono text-xs"
+                            value={partCText ?? ''}
+                            onChange={(e) => setPartCText(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleSavePartNarration('C')} disabled={savingPartNarration}>
+                              {savingPartNarration ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                              Salvar
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingPartC(false)}>Cancelar</Button>
+                          </div>
+                        </div>
+                      ) : partCNarration.script_text ? (
                         <div className="flex items-start gap-1">
                           <FileText className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                           <p className="line-clamp-3 text-xs text-muted-foreground">
                             {partCNarration.script_text}
                           </p>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">Nenhuma narração cadastrada</p>
