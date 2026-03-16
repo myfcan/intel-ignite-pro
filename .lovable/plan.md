@@ -1,115 +1,157 @@
 
 
-# Benchmark UX + Plano de Compactação — V10 Part B
+# Auditoria Forense do Plano — Com Dados Reais do Código
 
-## Benchmark: Como os grandes apps de educação tratam telas de tutorial step-by-step
+---
 
-### Dados reais coletados
+## 1. CONFIRMADO: A raiz do problema está no template e no refine
 
-**Duolingo** (blog.duolingo.com, Mobbin screens):
-- Tela de exercício: **zero scroll**. Progress bar no topo, conteúdo centralizado, botão "Check" fixo no bottom. Todo o conteúdo cabe em 1 viewport.
-- Máximo de elementos visíveis: 1 pergunta + 4 opções + 1 botão. Nunca mais que isso.
-- Padding interno dos cards: 12px (não 16px).
+**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
+```markdown
+### Seção 3 (índice 2) — Ponte para primeiro exercício
+**Objetivo:** Frase curta de transição para o primeiro exercício.
 
-**Brilliant** (LinkedIn post de Justin Volz, análise pública):
-- Cada "step" é 1 card que ocupa a viewport inteira. Sem scroll vertical. Transição horizontal entre steps.
-- Conteúdo: 1 título curto + 1 visual interativo + 1 botão "Continue" fixo no bottom.
-
-**Mimo** (app público, análise de UX):
-- Tutorial de código: progress bar top, 1 bloco de código central, 1 instrução curta, botão fixo bottom. **Zero scroll.**
-
-### Padrão universal identificado
-```text
-┌─ Progress bar (fixo top) ──────┐
-│                                │
-│     1 título curto             │
-│     1 visual principal         │
-│     (mockup/card/quiz)         │
-│                                │
-│                                │
-└─ Botão ação (fixo bottom) ────┘
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
 ```
-Regra: **tudo cabe em 1 viewport sem scroll.**
+```
+
+E o exercício associado (linha 89):
+```json
+"title": "Teste rápido: respostas genéricas",
+```
+
+Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
+
+**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
+```
+11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
+
+13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
+```
+
+A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
 
 ---
 
-## Diagnóstico do código atual — Orçamento de pixels (390×696)
+## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
 
-Elementos fixos que NÃO scrollam:
-- `PlayerHeader`: `pt-3 pb-2` + back button (36px) + progress bar (6px) + phase dots (20px) = **~80px**
-- `PlayerBar`: `pt-3 pb-4` + progress row + buttons = **~105px**
-- **Disponível para StepContent: ~511px**
+**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
+```typescript
+if (refineResponse.ok) {
+  const refineResult = await refineResponse.json();
+  if (refineResult.sections && Array.isArray(refineResult.sections)) {
+    // Replace section content with refined versions — protect Section 0 (Abertura)
+    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
+      parsed.sections[i].content = refineResult.sections[refIdx].content;
+    }
+  }
+}
+```
 
-Conteúdo atual no StepContent (medição real dos componentes):
-
-| Componente | Código real (padding/gap) | Altura estimada |
-|---|---|---|
-| Step label `text-xs` | linha 29-34 | ~18px |
-| Title `text-lg font-bold` | linha 37-39 | ~26px |
-| Description button `min-h-[36px]` | linha 44-58 | ~36px |
-| Tool badge `px-3 py-1.5` | linha 62-74 | ~32px |
-| Warning chip `min-h-[36px]` | linha 78-93 | ~36px |
-| **gap-3 × 5 items** | linha 27 `gap-3` | **~60px** |
-| MockupChrome title bar `px-4 py-3` | MockupChrome.tsx:20 | ~70px |
-| MockupChrome body `p-4` + elements `gap-3` | MockupChrome.tsx:54 | ~150-300px |
-| Tip card `px-4 py-3` | FrameRenderer.tsx:144 | ~50px |
-| ActionCard `p-4` | ActionCard.tsx:11 | ~75px |
-| ValidationCard `p-4` | ValidationCard.tsx:9 | ~70px |
-| Frame dots `min-h-[44px]` | StepContent.tsx:108 | ~44px |
-| **gap-4 entre cards** | FrameRenderer.tsx:130 | ~48px |
-| **Total** | | **~665-815px** |
-
-**Resultado: 665-815px de conteúdo em 511px de espaço = 30-60% de overflow = scroll pesado.**
+O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
 
 ---
 
-## Plano de correção — 7 mudanças cirúrgicas
+## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
 
-### 1. `StepContent.tsx` — Remover description da UI
-**Linha 41-58**: Remover bloco inteiro do "Collapsible description". A description fica no banco para TTS futuro mas não renderiza. Economia: **~36px**.
+**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
+```typescript
+const finalData: V8LessonData = {
+  contentVersion: "v8",
+  title: parsed.title,
+  // ...
+};
+```
 
-### 2. `StepContent.tsx` — Combinar badge + warning em 1 linha
-**Linhas 61-93**: Envolver tool badge e warning chip num único `<div className="flex items-center gap-2 flex-wrap">`. Economia: **~36px** (elimina 1 item + 1 gap).
-
-### 3. `StepContent.tsx` — Reduzir gap do container
-**Linha 27**: `gap-3` → `gap-1.5`. Economia: **~24px** (4 items × 6px savings).
-
-### 4. `MockupChrome.tsx` — Compactar padding
-**Linha 20**: `px-4 py-3` → `px-3 py-2` (title bar)
-**Linha 54**: `p-4` → `p-3` (body)
-**Linha 23**: `mb-2` → `mb-1` (traffic lights margin)
-Economia: **~20px**.
-
-### 5. `FrameRenderer.tsx` — Compactar gaps e tip
-**Linha 130**: `gap-4` → `gap-2` (entre mockup/tip/action/check)
-**Linha 137**: `gap-3` → `gap-2.5` (entre elements internos)
-**Linha 144**: `px-4 py-3` → `px-3 py-2` (tip card)
-Economia: **~24px**.
-
-### 6. `ActionCard.tsx` — Compactar
-**Linha 11**: `p-4` → `px-3 py-2`
-**Linha 20**: `mt-2` → `mt-1`
-Economia: **~16px**.
-
-### 7. `ValidationCard.tsx` — Compactar
-**Linha 9**: `p-4` → `px-3 py-2`
-Economia: **~12px**.
-
-### Economia total: ~168px
-
-**Novo total**: ~497-647px em 511px de espaço. Os steps com poucos elements (maioria) cabem sem scroll. Steps com muitos elements terão scroll mínimo (~1 card length).
+O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
 
 ---
 
-### Arquivos alterados
+## 4. CONFIRMADO: `v8-generate-raw-content` não existe
 
-| Arquivo | Mudança |
-|---|---|
-| `StepContent.tsx` | Remove description, combina badge+warning, reduz gap |
-| `MockupChrome.tsx` | Reduz padding title bar e body |
-| `FrameRenderer.tsx` | Reduz gaps e tip padding |
-| `ActionCard.tsx` | Compacta padding |
-| `ValidationCard.tsx` | Compacta padding |
+```
+code--search_files: No matches found for pattern 'v8-generate-raw-content'
+```
 
-Nenhuma alteração no banco de dados.
+A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
+
+---
+
+## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+
+**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+```
+
+Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+
+---
+
+## 6. GAPS NO PLANO PROPOSTO
+
+### Gap A: O plano NÃO endereça o `contractPattern` não salvo
+O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
+
+**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
+
+### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
+Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
+
+**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
+
+### Gap C: Parser compatibility com output da IA
+O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
+
+**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
+
+### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
+A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+
+---
+
+## 7. PLANO REVISADO FINAL
+
+### Arquivos a criar/modificar
+
+| Arquivo | Ação | O que muda |
+|---------|------|------------|
+| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
+| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
+| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
+| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
+| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
+
+### Detalhes por arquivo
+
+**1. `v8-generate-raw-content/index.ts` (NOVO)**
+- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
+- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
+- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
+- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
+- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
+- Modelo: `google/gemini-2.5-flash`
+
+**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
+- Adicionar após Regra 13:
+  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
+  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
+
+**3. `AdminV8Create.tsx` (EDITAR)**
+- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
+- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
+- Função `sectionsToMarkdown()` para converter output da function em markdown
+- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
+
+**4. `v8Lesson.ts` (EDITAR linha ~136)**
+- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
+
+### Riscos residuais
+
+| Risco | Severidade | Mitigação |
+|-------|-----------|-----------|
+| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
+| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
+| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
 

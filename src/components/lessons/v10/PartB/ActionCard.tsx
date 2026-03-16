@@ -8,7 +8,7 @@ interface ActionCardProps {
 const ActionCard: React.FC<ActionCardProps> = ({ text, accentColor }) => {
   return (
     <div
-      className="bg-white rounded-lg shadow-sm p-4"
+      className="bg-white rounded-lg shadow-sm px-3 py-2"
       style={{ borderLeft: `4px solid ${accentColor}` }}
     >
       <span
@@ -17,7 +17,7 @@ const ActionCard: React.FC<ActionCardProps> = ({ text, accentColor }) => {
       >
         {'👆 Faça agora'}
       </span>
-      <p className="mt-2 text-sm text-gray-800 leading-relaxed">{text}</p>
+      <p className="mt-1 text-sm text-gray-800 leading-relaxed">{text}</p>
     </div>
   );
 };

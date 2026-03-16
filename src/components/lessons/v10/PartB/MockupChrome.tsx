@@ -17,10 +17,10 @@ const MockupChrome: React.FC<MockupChromeProps> = ({
     <div className="rounded-xl overflow-hidden shadow-md border border-gray-200">
       {/* Title bar */}
       <div
-        className="px-4 py-3"
+        className="px-3 py-2"
         style={{ backgroundColor: barColor }}
       >
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-1">
           <div className="flex gap-1.5">
             <span
               className="w-3 h-3 rounded-full"
@@ -51,7 +51,7 @@ const MockupChrome: React.FC<MockupChromeProps> = ({
       </div>
 
       {/* Content body */}
-      <div className="bg-white p-4">{children}</div>
+      <div className="bg-white p-3">{children}</div>
     </div>
   );
 };
