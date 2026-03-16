@@ -21,7 +21,9 @@ export const IntroSlides: React.FC<IntroSlidesProps> = ({
   currentIndex,
   isPlaying,
   audioDuration,
+  hasAudio,
   onPlay,
+  onComplete,
 }) => {
   return (
     <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
