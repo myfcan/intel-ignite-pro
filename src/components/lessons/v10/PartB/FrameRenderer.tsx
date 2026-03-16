@@ -2,8 +2,6 @@ import React from 'react';
 import type { V10Frame, V10Element } from '../../../../types/v10.types';
 
 import MockupChrome from './MockupChrome';
-import ActionCard from './ActionCard';
-import ValidationCard from './ValidationCard';
 import WarningCard from './WarningCard';
 import NavBreadcrumb from './NavBreadcrumb';
 import DependencyReminder from './DependencyReminder';
@@ -127,35 +125,17 @@ function renderElement(element: V10Element, index: number): React.ReactNode {
 
 const FrameRenderer: React.FC<FrameRendererProps> = ({ frame, accentColor }) => {
   return (
-    <div className="flex flex-col gap-2">
-      {/* Mockup chrome with elements inside */}
-      <MockupChrome
-        barText={frame.bar_text}
-        barSub={frame.bar_sub}
-        barColor={frame.bar_color}
-      >
-        <div className="flex flex-col gap-2.5">
-          {(frame.elements || []).map((element, index) => renderElement(element, index))}
-        </div>
-      </MockupChrome>
-
-      {/* Tip below mockup */}
-      {frame.tip && (
-        <div className="rounded-lg px-3 py-2 bg-indigo-50 border border-indigo-100">
-          <p className="text-sm text-indigo-700 leading-relaxed">
-            {frame.tip.text}
-          </p>
-        </div>
-      )}
-
-      {/* Action card */}
-      {frame.action && (
-        <ActionCard text={frame.action} accentColor={accentColor} />
-      )}
-
-      {/* Validation card */}
-      {frame.check && <ValidationCard text={frame.check} />}
-    </div>
+    <MockupChrome
+      barText={frame.bar_text}
+      barSub={frame.bar_sub}
+      barColor={frame.bar_color}
+      tip={frame.tip}
+      action={frame.action}
+      check={frame.check}
+      accentColor={accentColor}
+    >
+      {(frame.elements || []).map((element, index) => renderElement(element, index))}
+    </MockupChrome>
   );
 };
 

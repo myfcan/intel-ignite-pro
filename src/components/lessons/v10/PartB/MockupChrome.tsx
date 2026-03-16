@@ -4,6 +4,10 @@ interface MockupChromeProps {
   barText: string;
   barSub: string;
   barColor: string;
+  tip?: { text: string } | null;
+  action?: string | null;
+  check?: string | null;
+  accentColor?: string;
   children: React.ReactNode;
 }
 
@@ -11,6 +15,10 @@ const MockupChrome: React.FC<MockupChromeProps> = ({
   barText,
   barSub,
   barColor,
+  tip,
+  action,
+  check,
+  accentColor = '#6366F1',
   children,
 }) => {
   return (
@@ -51,7 +59,39 @@ const MockupChrome: React.FC<MockupChromeProps> = ({
       </div>
 
       {/* Content body */}
-      <div className="bg-white p-3">{children}</div>
+      <div className="bg-white p-3 flex flex-col gap-2.5">
+        {children}
+
+        {/* Tip inline */}
+        {tip?.text && (
+          <div className="rounded-md px-2.5 py-1.5 bg-indigo-50 border border-indigo-100">
+            <p className="text-xs text-indigo-700 leading-snug">
+              💡 {tip.text}
+            </p>
+          </div>
+        )}
+
+        {/* Action inline */}
+        {action && (
+          <div
+            className="rounded-md px-2.5 py-1.5"
+            style={{ backgroundColor: `${accentColor}10`, borderLeft: `3px solid ${accentColor}` }}
+          >
+            <p className="text-xs leading-snug" style={{ color: accentColor }}>
+              👆 {action}
+            </p>
+          </div>
+        )}
+
+        {/* Check inline */}
+        {check && (
+          <div className="rounded-md px-2.5 py-1.5 bg-emerald-50 border border-emerald-100">
+            <p className="text-xs text-emerald-700 leading-snug">
+              ✅ {check}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

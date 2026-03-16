@@ -409,7 +409,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
       {/* Main content area: phone + optional sidebar */}
       <div className="flex items-start justify-center w-full min-h-screen gap-6 px-0 md:px-6">
         {/* Phone container */}
-        <div className="w-full max-w-[420px] min-h-screen flex flex-col md:rounded-2xl md:my-6 md:min-h-0 md:h-[calc(100vh-48px)] md:overflow-hidden md:shadow-2xl"
+        <div className="w-full max-w-[420px] h-dvh flex flex-col overflow-hidden md:rounded-2xl md:my-6 md:min-h-0 md:h-[calc(100vh-48px)] md:shadow-2xl"
           style={{ backgroundColor: '#0F0B1E' }}
         >
           {/* Part A */}
