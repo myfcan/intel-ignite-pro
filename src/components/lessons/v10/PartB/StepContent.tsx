@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { V10LessonStep } from '../../../../types/v10.types';
 import FrameRenderer from './FrameRenderer';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface StepContentProps {
   step: V10LessonStep;
