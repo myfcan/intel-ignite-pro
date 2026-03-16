@@ -152,7 +152,9 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         currentIndex={currentIndex}
         isPlaying={isPlaying}
         audioDuration={duration}
+        hasAudio={hasAudio}
         onPlay={handlePlay}
+        onComplete={onComplete}
       />
 
       {/* Bottom controls */}
