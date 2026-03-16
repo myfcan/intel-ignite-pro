@@ -12,19 +12,19 @@ interface LIVFabProps {
 }
 
 function useResponsivePosition() {
-  const [pos, setPos] = useState({ avatarRight: 44, buttonRight: 45, avatarBottom: 175, buttonBottom: 124 });
+  const [pos, setPos] = useState({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 112 });
 
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
       if (w >= 1024) {
-        setPos({ avatarRight: 80, buttonRight: 81, avatarBottom: 185, buttonBottom: 134 });
+        setPos({ avatarRight: 80, buttonRight: 86, avatarBottom: 185, buttonBottom: 122 });
       } else if (w >= 768) {
-        setPos({ avatarRight: 68, buttonRight: 69, avatarBottom: 180, buttonBottom: 129 });
+        setPos({ avatarRight: 68, buttonRight: 74, avatarBottom: 180, buttonBottom: 117 });
       } else if (w >= 480) {
-        setPos({ avatarRight: 56, buttonRight: 57, avatarBottom: 175, buttonBottom: 124 });
+        setPos({ avatarRight: 56, buttonRight: 62, avatarBottom: 175, buttonBottom: 112 });
       } else {
-        setPos({ avatarRight: 44, buttonRight: 45, avatarBottom: 175, buttonBottom: 124 });
+        setPos({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 112 });
       }
     };
     update();
