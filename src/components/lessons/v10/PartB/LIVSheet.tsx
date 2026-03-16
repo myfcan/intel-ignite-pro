@@ -293,32 +293,13 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
   };
 
   return (
-    <div
-      style={{
-        display: isOpen ? 'flex' : 'none',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
-      className="fixed inset-0 z-50 flex-col justify-end"
-      onClick={handleClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label="LIV Assistente"
-    >
-      {/* Sheet */}
-      <div
-        className="w-full max-w-[420px] mx-auto rounded-t-2xl overflow-hidden flex flex-col"
-        style={{ backgroundColor: '#1E1B2E', maxHeight: '80vh' }}
-        onClick={(e) => e.stopPropagation()}
+    <Drawer open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <DrawerContent
+        className="border-t border-indigo-500/30 max-h-[80vh] mx-auto max-w-[420px]"
+        style={{ backgroundColor: '#1E1B2E' }}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
-        </div>
-
         {/* Title row */}
-        <div className="flex items-center gap-2 px-4 pb-3">
+        <div className="flex items-center gap-2 px-4 pb-3 pt-1">
           <span className="text-xl">🤖</span>
           <span className="text-base font-bold text-white">LIV</span>
           <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
@@ -397,8 +378,8 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
             renderExpandedContent()
           )}
         </div>
-      </div>
-    </div>
+      </DrawerContent>
+    </Drawer>
   );
 };
 
