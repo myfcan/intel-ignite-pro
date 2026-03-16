@@ -465,7 +465,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         )}
 
         {/* Sidebar — visible on desktop only */}
-        <div className="hidden min-w-[260px] max-w-[320px] flex-shrink-0 md:flex md:flex-col md:my-6 md:gap-4">
+        <div className="hidden min-w-[260px] max-w-[320px] flex-shrink-0 lg:flex lg:flex-col lg:my-6 lg:gap-4">
           {/* Lesson info card */}
           <div
             className="rounded-xl p-5"

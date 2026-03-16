@@ -331,7 +331,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         />
       </div>
       <style>{`
-        @media (min-width: 800px) {
+        @media (min-width: 1280px) {
           [data-partb-sidebar] { display: flex !important; }
         }
       `}</style>
