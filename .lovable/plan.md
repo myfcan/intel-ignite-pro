@@ -1,157 +1,167 @@
 
 
-# Auditoria Forense do Plano — Com Dados Reais do Código
+# Auditoria do Plano "Import Full Script" — Dados Reais do Código
 
 ---
 
-## 1. CONFIRMADO: A raiz do problema está no template e no refine
+## GAPS CONFIRMADOS
 
-**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
-```markdown
-### Seção 3 (índice 2) — Ponte para primeiro exercício
-**Objetivo:** Frase curta de transição para o primeiro exercício.
+### Gap 1 (CRÍTICO): Duas pipelines de áudio concorrentes — risco de sobrescrita
 
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
-```
+O Stage5Narration tem **dois caminhos** para gerar áudio de steps:
 
-E o exercício associado (linha 89):
-```json
-"title": "Teste rápido: respostas genéricas",
-```
-
-Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
-
-**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
-```
-11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
-
-13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
-```
-
-A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
-
----
-
-## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
-
-**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
+**Caminho A** — Botão "Gerar Áudios" (linha 704):
 ```typescript
-if (refineResponse.ok) {
-  const refineResult = await refineResponse.json();
-  if (refineResult.sections && Array.isArray(refineResult.sections)) {
-    // Replace section content with refined versions — protect Section 0 (Abertura)
-    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
-      parsed.sections[i].content = refineResult.sections[refIdx].content;
-    }
-  }
-}
+// Stage5Narration.tsx linha 102
+const { error: errA } = await supabase.functions.invoke('v10-generate-audio', {
+  body: { pipeline_id: pipeline.id, target: 'part_a' }
+});
 ```
+Chama `v10-generate-audio`, que **gera o script via IA** (linha 261: `generateStepScript(step, lovableApiKey)`) e usa ElevenLabs **SEM** `with-timestamps` (linha 402: endpoint normal `text-to-speech/{voiceId}?output_format=mp3_44100_128`). **Não extrai anchors.**
 
-O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
-
----
-
-## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
-
-**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
+**Caminho B** — Botão "Processar (ElevenLabs + Anchors)" (linha 610):
 ```typescript
-const finalData: V8LessonData = {
-  contentVersion: "v8",
-  title: parsed.title,
-  // ...
-};
+// Stage5Narration.tsx linha 212
+const { data, error } = await supabase.functions.invoke('v10-process-anchors', {
+  body: { pipeline_id: pipeline.id, step_id: step.id, script }
+});
 ```
+Chama `v10-process-anchors`, que usa o script **já colado pelo admin**, ElevenLabs **COM** `with-timestamps`, e **extrai anchors**.
 
-O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+**Problema**: Se o admin clicar "Gerar Áudios" depois de "Processar Todos", o áudio é sobrescrito SEM anchors. Ambos gravam no mesmo `audio_url` e mesmo storage path `v10/{lesson_id}/step_{N}.mp3`.
+
+**O plano NÃO endereça isso.** Deveria ou remover o botão "Gerar Áudios" do fluxo quando scripts manuais existem, ou unificar os caminhos.
 
 ---
 
-## 4. CONFIRMADO: `v8-generate-raw-content` não existe
+### Gap 2 (CRÍTICO): Parte A e Parte C são READ-ONLY no UI
 
-```
-code--search_files: No matches found for pattern 'v8-generate-raw-content'
+O plano diz que o modal vai salvar `script_text` para Partes A e C em `v10_lesson_narrations`. Correto — as colunas existem no banco.
+
+Porém, o UI atual mostra Partes A e C apenas como **preview read-only** (linhas 430-436):
+```typescript
+// Stage5Narration.tsx linhas 430-436
+{partANarration.script_text && (
+  <div className="flex items-start gap-1">
+    <FileText className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+    <p className="line-clamp-3 text-xs text-muted-foreground">
+      {partANarration.script_text}
+    </p>
+  </div>
+)}
 ```
 
-A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
+Não existe textarea para editar `script_text` de Part A/C. Após a importação, o admin não consegue **revisar ou corrigir** o texto importado sem acessar o banco diretamente.
+
+**O plano NÃO menciona transformar os cards de Part A/C em editáveis** após importação.
 
 ---
 
-## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+### Gap 3 (MÉDIO): `handleProcessAll` ignora steps com `audio_url`
 
-**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+Confirmado na linha 269:
+```typescript
+// Stage5Narration.tsx linha 267-269
+const stepsWithScript = steps.filter(s => {
+  const script = editingScripts[s.id] ?? s.narration_script;
+  return script?.trim() && !s.audio_url;  // ← FILTRA steps com áudio
+});
 ```
 
-Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+Se o admin importar scripts, processar todos, e depois quiser reprocessar (ex: corrigiu um script), o "Processar Todos" não reprocessa porque `audio_url` já existe.
+
+O plano anterior mencionou isso (Gap 7) mas **não propôs solução concreta**. Precisa de um checkbox "Reprocessar steps com áudio existente" ou um botão "Limpar áudios e reprocessar".
 
 ---
 
-## 6. GAPS NO PLANO PROPOSTO
+### Gap 4 (MÉDIO): `v10-generate-audio` para steps gera scripts via IA, ignorando `narration_script`
 
-### Gap A: O plano NÃO endereça o `contractPattern` não salvo
-O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
+Evidência real — `v10-generate-audio/index.ts` linha 260-261:
+```typescript
+// 3. Generate narration script for step
+const script = await generateStepScript(step, lovableApiKey);
+```
 
-**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
+Essa função **NUNCA** lê `step.narration_script`. Ela sempre gera um script novo via IA. Portanto, o botão "Gerar Áudios" é completamente independente do campo `narration_script` que o import vai popular.
 
-### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
-Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
-
-**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
-
-### Gap C: Parser compatibility com output da IA
-O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
-
-**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
-
-### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
-A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+**Efeito sistêmico**: O fluxo Import → Processar Todos usa `v10-process-anchors` (correto). Mas se o admin clicar "Gerar Áudios" por engano, os áudios são regenerados com scripts da IA (não os importados) e sem anchors.
 
 ---
 
-## 7. PLANO REVISADO FINAL
+### Gap 5 (BAIXO): Parte A e C não passam por `v10-process-anchors`
 
-### Arquivos a criar/modificar
+O script do usuário tem frases-âncora na Parte A? Não (verificado no texto fornecido — Parte A não tem "Agora, os pontos de atenção" nem "Deu certo se"). Parte C também não.
 
-| Arquivo | Ação | O que muda |
-|---------|------|------------|
-| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
-| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
-| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
-| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
-| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
+**Portanto**: Partes A e C não precisam de anchor processing. O plano está correto em apenas salvar `script_text`. O áudio de A/C é gerado via `v10-generate-audio` (sem timestamps). Sem gap aqui.
 
-### Detalhes por arquivo
+---
 
-**1. `v8-generate-raw-content/index.ts` (NOVO)**
-- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
-- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
-- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
-- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
-- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
-- Modelo: `google/gemini-2.5-flash`
+### Gap 6 (BAIXO): O plano não especifica o que acontece com narrations A/C que ainda não existem no banco
 
-**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
-- Adicionar após Regra 13:
-  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
-  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
+O `fetchLessonData` (linha 44) busca narrations existentes. Se `v10_lesson_narrations` para esta aula não tiver rows de Part A ou Part C, o import precisa fazer **INSERT**, não UPDATE.
 
-**3. `AdminV8Create.tsx` (EDITAR)**
-- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
-- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
-- Função `sectionsToMarkdown()` para converter output da function em markdown
-- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
+O plano diz "salva em `v10_lesson_narrations` onde `part = 'A'`" mas não diferencia insert vs update. Precisa de upsert logic.
 
-**4. `v8Lesson.ts` (EDITAR linha ~136)**
-- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
+---
 
-### Riscos residuais
+## PLANO REVISADO
 
-| Risco | Severidade | Mitigação |
-|-------|-----------|-----------|
-| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
-| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
-| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
+### Alterações ao plano anterior
+
+| # | Gap | Correção |
+|---|-----|----------|
+| 1 | Dois caminhos de áudio | Desabilitar botão "Gerar Áudios" quando existem steps com `narration_script` preenchido. Mostrar tooltip "Use 'Processar Todos' para steps com script manual" |
+| 2 | Part A/C read-only | Transformar cards de Part A/C em editáveis (textarea colapsável) após import |
+| 3 | `handleProcessAll` ignora steps com áudio | Adicionar checkbox "Incluir steps já processados" no header da seção de scripts |
+| 4 | `v10-generate-audio` ignora `narration_script` | Coberto pelo Gap 1 — desabilitar botão errado |
+| 6 | Insert vs Update para A/C | Usar upsert no modal (SELECT → existe? UPDATE : INSERT) |
+
+### Arquivos
+
+| Arquivo | Ação |
+|---------|------|
+| `src/components/admin/v10/stages/ImportFullScriptModal.tsx` | **NOVO** — Modal com textarea, parser 3 zonas, auto-tagging, preview, upsert A/C |
+| `src/components/admin/v10/stages/Stage5Narration.tsx` | **EDITAR** — Botão "Importar Script", Part A/C editáveis, checkbox reprocessar, desabilitar "Gerar Áudios" quando scripts manuais existem |
+
+### Sem migration SQL necessária
+
+Todas as colunas existem: `v10_lesson_steps.narration_script` e `v10_lesson_narrations.script_text`.
+
+### Parser do ImportFullScriptModal
+
+```text
+Input: texto completo colado pelo admin
+         ↓
+Zona A: tudo entre "PARTE A" e "PARTE B" (ou primeiro "PASSO 1")
+         → salva em v10_lesson_narrations.script_text (part='A')
+         ↓
+Zona B: split por /^PASSO\s+(\d+)\s*[—–-]/gm
+         → 27 blocos → match por step_number → salva em v10_lesson_steps.narration_script
+         ↓
+Zona C: tudo entre "PARTE C" e marcadores de metadata (MÉTRICAS/MAPEAMENTO/MUDANÇA)
+         → salva em v10_lesson_narrations.script_text (part='C')
+         ↓
+Strip: ignora tudo após "MÉTRICAS", "MAPEAMENTO", "Comparação", "MUDANÇA ESTRUTURAL"
+```
+
+Auto-tagging (checkbox, default ON):
+- `[ANCHOR:pontos_atencao]` antes de "Agora, os pontos de atenção desse passo:"
+- `[ANCHOR:confirmacao]` antes de "Deu certo se"
+- `[ANCHOR:troca_ferramenta]` antes de `/Agora (mudamos de ferramenta|vamos pro|voltamos pro|volte pra|abra o)|Abra uma nova aba/i`
+- Warning no UI: "Tags `[ANCHOR:troca_frame]` não são detectáveis automaticamente — adicione manualmente após importação"
+
+### Fluxo completo
+
+```text
+1. Admin abre Stage 5 → clica "Importar Script Completo"
+2. Cola script inteiro (A + B + C + metadata)
+3. Preview: "Parte A: 280 palavras | 27 passos | Parte C: 170 palavras | 3 seções ignoradas"
+4. Auto-tagging ON → ~44 tags inseridas
+5. Clica "Importar" → upsert A, 27 updates, upsert C
+6. Stage 5 recarrega → 27 textareas preenchidos, Part A/C editáveis
+7. Revisa → adiciona [ANCHOR:troca_frame] onde necessário
+8. Marca "Incluir steps já processados" se quiser
+9. Clica "Processar Todos" → v10-process-anchors para cada step
+10. Resultado: 27 áudios + ~44 anchors
+```
 
