@@ -174,7 +174,7 @@ serve(async (req) => {
     const storagePath = `v10/${stepData.lesson_id}/step_${stepData.step_number}.mp3`;
 
     const { error: uploadError } = await supabase.storage
-      .from('lesson-audio')
+      .from('lesson-audios')
       .upload(storagePath, audioBuffer.buffer as ArrayBuffer, {
         contentType: 'audio/mpeg',
         upsert: true,
