@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { V10Liv, V10Warning } from '../../../../types/v10.types';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
 
 export interface LivChatMessage {
   role: 'user' | 'assistant';

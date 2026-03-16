@@ -1,57 +1,120 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { List } from 'lucide-react';
+import { LivAvatar } from '@/components/LivAvatar';
 
 interface LIVFabProps {
   hasWarnings: boolean;
-  onClick: () => void;
+  isPlaying: boolean;
+  onTogglePlay: () => void;
+  onOpenSheet: () => void;
+  stepNumber: number;
 }
 
-const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick }) => {
+/** Responsive positioning hook matching V5 MobileSectionDrawer pattern */
+function useResponsivePosition() {
+  const [pos, setPos] = useState({ avatarRight: 24, buttonRight: 31, avatarBottom: 160, buttonBottom: 104 });
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth;
+      if (w >= 1024) {
+        setPos({ avatarRight: 60, buttonRight: 67, avatarBottom: 165, buttonBottom: 109 });
+      } else if (w >= 768) {
+        setPos({ avatarRight: 48, buttonRight: 55, avatarBottom: 160, buttonBottom: 104 });
+      } else if (w >= 480) {
+        setPos({ avatarRight: 36, buttonRight: 43, avatarBottom: 155, buttonBottom: 99 });
+      } else {
+        setPos({ avatarRight: 24, buttonRight: 31, avatarBottom: 155, buttonBottom: 99 });
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  return pos;
+}
+
+const LIVFab: React.FC<LIVFabProps> = ({
+  hasWarnings,
+  isPlaying,
+  onTogglePlay,
+  onOpenSheet,
+  stepNumber,
+}) => {
+  const pos = useResponsivePosition();
+
   return (
-    <div className="absolute bottom-28 right-4 z-30 w-[52px] h-[52px]">
+    <>
+      {/* LivAvatar — play/pause toggle */}
       <button
         type="button"
-        onClick={onClick}
-        className="w-full h-full flex items-center justify-center rounded-full shadow-lg transition-transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
-        aria-label="Abrir assistente LIV"
+        onClick={onTogglePlay}
+        className="fixed z-[9999] focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
+        style={{
+          right: pos.avatarRight,
+          bottom: pos.avatarBottom,
+        }}
+        aria-label={isPlaying ? 'Pausar áudio' : 'Reproduzir áudio'}
       >
-        {/* Gradient pulsing ring */}
-        <span
-          className="rounded-full flex items-center justify-center w-full h-full"
-          style={{
-            padding: 3,
-            background: hasWarnings
-              ? 'linear-gradient(135deg, #34D399, #10B981)'
-              : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            animation: hasWarnings
-              ? 'liv-pulse-intense 2s ease-in-out infinite'
-              : 'liv-pulse 2s ease-in-out infinite',
-          }}
-        >
-          <span className="w-full h-full rounded-full bg-[#1E1B2E] flex items-center justify-center text-xl">
-            🤖
-          </span>
-        </span>
+        <div className="relative">
+          <LivAvatar
+            size="small"
+            state={isPlaying ? 'speaking' : 'idle'}
+            theme="automacoes"
+            animate={false}
+            enableHover={false}
+            showHalo={false}
+            className={!isPlaying ? 'grayscale opacity-70' : ''}
+          />
+          {/* Status dot — top-left of avatar */}
+          <span
+            className={`absolute top-0 left-0 w-3 h-3 rounded-full border-2 border-[#1E1B2E] ${
+              isPlaying
+                ? 'bg-emerald-400'
+                : 'bg-white/30'
+            }`}
+            style={isPlaying ? { animation: 'liv-status-pulse 2s ease-in-out infinite' } : undefined}
+          />
+        </div>
       </button>
 
-      {/* Green dot indicator — top-right of the FAB */}
-      {hasWarnings && (
-        <span
-          className="w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#1E1B2E]"
-          style={{ display: 'block', marginTop: -48, marginLeft: 38 }}
-        />
-      )}
+      {/* Gradient menu button — opens LIVSheet */}
+      <button
+        type="button"
+        onClick={onOpenSheet}
+        className="fixed z-[9999] w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+        style={{
+          right: pos.buttonRight,
+          bottom: pos.buttonBottom,
+          background: 'linear-gradient(135deg, #06B6D4, #8B5CF6)',
+        }}
+        aria-label="Abrir menu LIV"
+      >
+        <List size={20} className="text-white" strokeWidth={2.5} />
+
+        {/* Badge — warning dot or step number */}
+        {hasWarnings ? (
+          <span
+            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 flex items-center justify-center text-[9px] font-black text-[#1E1B2E]"
+            style={{ animation: 'liv-status-pulse 2s ease-in-out infinite' }}
+          >
+            !
+          </span>
+        ) : (
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center text-[9px] font-black text-purple-600">
+            {stepNumber}
+          </span>
+        )}
+      </button>
 
       <style>{`
-        @keyframes liv-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-          50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
-        }
-        @keyframes liv-pulse-intense {
-          0%, 100% { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2); }
-          50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0.35); }
+        @keyframes liv-status-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+          50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
         }
       `}</style>
-    </div>
+    </>
   );
 };
 
