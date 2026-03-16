@@ -149,6 +149,13 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const [editingScripts, setEditingScripts] = useState<Record<string, string>>({});
   const [savingScript, setSavingScript] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [reprocessExisting, setReprocessExisting] = useState(false);
+  const [editingPartA, setEditingPartA] = useState(false);
+  const [editingPartC, setEditingPartC] = useState(false);
+  const [partAText, setPartAText] = useState<string | undefined>(undefined);
+  const [partCText, setPartCText] = useState<string | undefined>(undefined);
+  const [savingPartNarration, setSavingPartNarration] = useState(false);
 
   // Fetch anchor counts per step
   useEffect(() => {
