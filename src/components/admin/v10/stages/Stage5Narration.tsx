@@ -336,6 +336,52 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const partCNarration = narrations.find((n) => n.part === 'C');
   const stepsWithAudio = steps.filter((s) => s.audio_url !== null);
   const stepsWithoutAudio = steps.filter((s) => s.audio_url === null);
+  const hasManualScripts = steps.some((s) => !!s.narration_script);
+
+  // ── Refresh helper ──
+  const refreshAllData = useCallback(async () => {
+    if (!pipeline.lesson_id) return;
+    const [narrResult, stepsResult] = await Promise.all([
+      supabase.from('v10_lesson_narrations').select('*').eq('lesson_id', pipeline.lesson_id as string),
+      supabase.from('v10_lesson_steps').select('*').eq('lesson_id', pipeline.lesson_id as string).order('step_number', { ascending: true }),
+    ]);
+    if (narrResult.data) setNarrations(narrResult.data as unknown as V10LessonNarration[]);
+    if (stepsResult.data) setSteps(stepsResult.data as unknown as V10LessonStep[]);
+    setEditingScripts({});
+    setPartAText(undefined);
+    setPartCText(undefined);
+  }, [pipeline.lesson_id]);
+
+  // ── Save Part A/C narration script ──
+  const handleSavePartNarration = useCallback(async (part: 'A' | 'C') => {
+    const text = part === 'A' ? partAText : partCText;
+    if (text === undefined) return;
+    const existing = narrations.find((n) => n.part === part);
+
+    setSavingPartNarration(true);
+    try {
+      if (existing) {
+        const { error } = await supabase
+          .from('v10_lesson_narrations')
+          .update({ script_text: text || null } as any)
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else if (pipeline.lesson_id) {
+        const { error } = await supabase
+          .from('v10_lesson_narrations')
+          .insert({ lesson_id: pipeline.lesson_id, part, script_text: text || null } as any);
+        if (error) throw error;
+      }
+      toast.success(`Script Parte ${part} salvo`);
+      await refreshAllData();
+      if (part === 'A') setEditingPartA(false);
+      else setEditingPartC(false);
+    } catch (err: any) {
+      toast.error(`Erro ao salvar Parte ${part}: ${err.message}`);
+    } finally {
+      setSavingPartNarration(false);
+    }
+  }, [partAText, partCText, narrations, pipeline.lesson_id, refreshAllData]);
 
   return (
     <Card>
