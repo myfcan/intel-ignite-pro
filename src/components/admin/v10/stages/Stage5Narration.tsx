@@ -626,22 +626,44 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
         {/* Narration Scripts per Step */}
         {!loadingData && steps.length > 0 && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4 text-indigo-500" />
                 Scripts de Narração (com [ANCHOR:*] tags)
               </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleProcessAll}
-                disabled={processingAll || !pipeline.lesson_id}
-              >
-                {processingAll
-                  ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Processando...</>
-                  : <><Sparkles className="h-3 w-3 mr-1" /> Processar Todos</>
-                }
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowImportModal(true)}
+                  disabled={!pipeline.lesson_id}
+                >
+                  <Upload className="h-3 w-3 mr-1" /> Importar Script Completo
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleProcessAll}
+                  disabled={processingAll || !pipeline.lesson_id}
+                >
+                  {processingAll
+                    ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Processando...</>
+                    : <><Sparkles className="h-3 w-3 mr-1" /> Processar Todos</>
+                  }
+                </Button>
+              </div>
+            </div>
+
+            {/* Reprocess checkbox */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="reprocess-existing"
+                checked={reprocessExisting}
+                onCheckedChange={(v) => setReprocessExisting(!!v)}
+              />
+              <label htmlFor="reprocess-existing" className="text-xs text-muted-foreground cursor-pointer">
+                Incluir steps já processados (reprocessar áudios existentes)
+              </label>
             </div>
 
             <div className="space-y-2">
