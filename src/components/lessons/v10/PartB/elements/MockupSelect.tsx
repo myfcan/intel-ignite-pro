@@ -16,10 +16,10 @@ const MockupSelect: React.FC<MockupSelectProps> = ({
   const selectedValue = options[selected] ?? '';
 
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-gray-700">{label}</label>
+    <div className="flex flex-col gap-0.5">
+      <label className="text-[10px] font-medium text-gray-700">{label}</label>
       <div
-        className={`flex items-center justify-between px-3 py-2 rounded-md text-sm border transition-colors ${
+        className={`flex items-center justify-between px-2.5 py-1 rounded-md text-xs border transition-colors ${
           highlight
             ? 'border-indigo-400 ring-2 ring-indigo-100 bg-indigo-50'
             : 'border-gray-200 bg-[#F9FAFB]'
@@ -27,7 +27,7 @@ const MockupSelect: React.FC<MockupSelectProps> = ({
       >
         <span className="text-gray-900">{selectedValue}</span>
         <svg
-          className="w-4 h-4 text-gray-400 shrink-0 ml-2"
+          className="w-3 h-3 text-gray-400 shrink-0 ml-2"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

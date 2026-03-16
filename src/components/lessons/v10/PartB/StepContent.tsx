@@ -1,7 +1,6 @@
 import React from 'react';
 import type { V10LessonStep } from '../../../../types/v10.types';
 import FrameRenderer from './FrameRenderer';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 interface StepContentProps {
   step: V10LessonStep;
@@ -36,37 +35,26 @@ const StepContent: React.FC<StepContentProps> = ({
           {step.title}
         </h2>
 
-        {/* Tool badge + Warning inline */}
-        {(step.app_name || (step.warnings && step.warnings.warn)) && (
+        {/* Step description (1-line) */}
+        {step.description && (
+          <p className="text-xs text-gray-500 line-clamp-1">
+            {step.description}
+          </p>
+        )}
+
+        {/* Tool badge */}
+        {step.app_name && (
           <div className="flex items-center gap-2 flex-wrap">
-            {step.app_name && (
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-                style={{
-                  backgroundColor: step.app_badge_bg,
-                  color: step.app_badge_color,
-                }}
-              >
-                {step.app_icon && <span>{step.app_icon}</span>}
-                <span>{step.app_name}</span>
-              </span>
-            )}
-            {step.warnings && step.warnings.warn && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors max-w-full text-left"
-                  >
-                    <span className="shrink-0">⚠️</span>
-                    <span className="truncate">{step.warnings.warn}</span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent side="top" className="text-sm text-amber-900 bg-amber-50 border-amber-200 max-w-xs">
-                  {step.warnings.warn}
-                </PopoverContent>
-              </Popover>
-            )}
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{
+                backgroundColor: step.app_badge_bg,
+                color: step.app_badge_color,
+              }}
+            >
+              {step.app_icon && <span>{step.app_icon}</span>}
+              <span>{step.app_name}</span>
+            </span>
           </div>
         )}
 

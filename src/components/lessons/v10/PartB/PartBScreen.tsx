@@ -342,6 +342,9 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         onClose={() => setLivOpen(false)}
         liv={currentStep.liv ?? { tip: '', analogy: '', sos: '' }}
         warnings={currentStep.warnings ?? null}
+        frameTip={currentFrame?.tip || null}
+        frameAction={currentFrame?.action || null}
+        frameCheck={currentFrame?.check || null}
         onAskLiv={handleAskLiv}
         chatMessages={chatMessages}
         chatLoading={chatLoading}

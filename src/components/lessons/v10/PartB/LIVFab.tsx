@@ -19,12 +19,16 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick }) => {
           className="rounded-full flex items-center justify-center w-full h-full"
           style={{
             padding: 3,
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            animation: 'liv-pulse 2s ease-in-out infinite',
+            background: hasWarnings
+              ? 'linear-gradient(135deg, #34D399, #10B981)'
+              : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            animation: hasWarnings
+              ? 'liv-pulse-intense 2s ease-in-out infinite'
+              : 'liv-pulse 2s ease-in-out infinite',
           }}
         >
           <span className="w-full h-full rounded-full bg-[#1E1B2E] flex items-center justify-center text-xl">
-            &#x1F916;
+            🤖
           </span>
         </span>
       </button>
@@ -41,6 +45,10 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick }) => {
         @keyframes liv-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
           50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+        }
+        @keyframes liv-pulse-intense {
+          0%, 100% { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2); }
+          50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0.35); }
         }
       `}</style>
     </div>
