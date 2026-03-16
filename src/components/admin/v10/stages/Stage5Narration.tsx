@@ -835,11 +835,19 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
             variant="outline"
             className="min-h-[44px]"
             onClick={handleGenerate}
-            disabled={!pipeline.lesson_id || generating}
+            disabled={!pipeline.lesson_id || generating || hasManualScripts}
+            title={hasManualScripts ? 'Use "Processar Todos" para steps com script manual' : ''}
           >
             {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {generating ? 'Gerando áudios...' : 'Gerar Áudios'}
+            {generating ? 'Gerando áudios...' : 'Gerar Áudios (IA)'}
           </Button>
+
+          {hasManualScripts && (
+            <p className="flex items-center text-xs text-amber-600">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Scripts manuais detectados — use "Processar Todos" acima
+            </p>
+          )}
 
           <Button
             variant="outline"
@@ -860,6 +868,18 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
         </div>
+
+        {/* Import Full Script Modal */}
+        {pipeline.lesson_id && (
+          <ImportFullScriptModal
+            open={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            lessonId={pipeline.lesson_id}
+            steps={steps.map(s => ({ id: s.id, step_number: s.step_number, title: s.title }))}
+            narrations={narrations.map(n => ({ id: n.id, part: n.part, script_text: n.script_text }))}
+            onImportComplete={refreshAllData}
+          />
+        )}
       </CardContent>
     </Card>
   );
