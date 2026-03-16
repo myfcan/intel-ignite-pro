@@ -394,6 +394,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
             handleAudioPauseForAnchors();
             setLivOpen(true);
           }}
+          stepNumber={currentStep.step_number}
         />
 
         {/* Bottom bar */}
@@ -428,7 +429,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         />
       </div>
       <style>{`
-        @media (min-width: 800px) {
+        @media (min-width: 1280px) {
           [data-partb-sidebar] { display: flex !important; }
         }
       `}</style>
@@ -439,6 +440,9 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         onClose={() => setLivOpen(false)}
         liv={currentStep.liv ?? { tip: '', analogy: '', sos: '' }}
         warnings={currentStep.warnings ?? null}
+        frameTip={currentFrame?.tip || null}
+        frameAction={currentFrame?.action || null}
+        frameCheck={currentFrame?.check || null}
         onAskLiv={handleAskLiv}
         chatMessages={chatMessages}
         chatLoading={chatLoading}

@@ -7,7 +7,9 @@ interface IntroSlidesProps {
   currentIndex: number;
   isPlaying: boolean;
   audioDuration: number;
+  hasAudio: boolean;
   onPlay: () => void;
+  onComplete: () => void;
 }
 
 /**
@@ -19,7 +21,9 @@ export const IntroSlides: React.FC<IntroSlidesProps> = ({
   currentIndex,
   isPlaying,
   audioDuration,
+  hasAudio,
   onPlay,
+  onComplete,
 }) => {
   return (
     <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
@@ -45,35 +49,45 @@ export const IntroSlides: React.FC<IntroSlidesProps> = ({
           </p>
         )}
 
-        {/* Play button */}
-        <button
-          type="button"
-          onClick={onPlay}
-          disabled={isPlaying}
-          className="group relative w-20 h-20 rounded-full flex items-center justify-center mb-4 transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-[#0F0B1E]"
-          style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
-          aria-label="Iniciar introdução em áudio"
-        >
-          {/* Play triangle SVG */}
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="ml-1"
+        {/* Play button or Start button */}
+        {hasAudio ? (
+          <>
+            <button
+              type="button"
+              onClick={onPlay}
+              disabled={isPlaying}
+              className="group relative w-20 h-20 rounded-full flex items-center justify-center mb-4 transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-[#0F0B1E]"
+              style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
+              aria-label="Iniciar introdução em áudio"
+            >
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="ml-1"
+              >
+                <path
+                  d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.04-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14z"
+                  fill="white"
+                />
+              </svg>
+            </button>
+            <p className="text-sm text-white/50">
+              {'Ouvir introdução · '}
+              {formatTime(audioDuration)}
+            </p>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={onComplete}
+            className="px-8 py-3 rounded-xl text-white font-semibold text-base transition-transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
           >
-            <path
-              d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.04-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14z"
-              fill="white"
-            />
-          </svg>
-        </button>
-
-        {/* Duration label */}
-        <p className="text-sm text-white/50">
-          {'Ouvir introdução · '}
-          {formatTime(audioDuration)}
-        </p>
+            {'Começar aula \u2192'}
+          </button>
+        )}
       </div>
 
       {/* Content slides (index >= 1) */}

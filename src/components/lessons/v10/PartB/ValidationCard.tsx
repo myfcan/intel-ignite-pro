@@ -6,7 +6,7 @@ interface ValidationCardProps {
 
 const ValidationCard: React.FC<ValidationCardProps> = ({ text }) => {
   return (
-    <div className="rounded-lg p-4 bg-[#ECFDF5] border border-[#A7F3D0]">
+    <div className="rounded-lg px-3 py-2 bg-[#ECFDF5] border border-[#A7F3D0]">
       <div className="flex items-start gap-3">
         <div className="shrink-0 w-6 h-6 rounded-full bg-[#34D399] flex items-center justify-center mt-0.5">
           <svg

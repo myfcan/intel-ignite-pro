@@ -20,8 +20,8 @@ const StepContent: React.FC<StepContentProps> = ({
   const frame = step.frames?.[currentFrame];
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4">
-      <div className="flex flex-col gap-3 max-w-[420px] mx-auto">
+    <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="flex flex-col gap-1.5 max-w-[420px] mx-auto">
         {/* Step number label */}
         <span
           className="text-xs font-bold uppercase tracking-wider"
@@ -35,16 +35,16 @@ const StepContent: React.FC<StepContentProps> = ({
           {step.title}
         </h2>
 
-        {/* Step description */}
+        {/* Step description (1-line) */}
         {step.description && (
-          <p className="text-sm text-gray-500 leading-relaxed">
+          <p className="text-xs text-gray-500 line-clamp-1">
             {step.description}
           </p>
         )}
 
-        {/* Tool chip badge */}
+        {/* Tool badge */}
         {step.app_name && (
-          <div className="flex items-center gap-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
               style={{
@@ -55,14 +55,6 @@ const StepContent: React.FC<StepContentProps> = ({
               {step.app_icon && <span>{step.app_icon}</span>}
               <span>{step.app_name}</span>
             </span>
-          </div>
-        )}
-
-        {/* Warning badge */}
-        {step.warnings && step.warnings.warn && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200">
-            <span className="text-amber-500 shrink-0 mt-0.5">&#x26A0;</span>
-            <span className="text-sm text-amber-800">{step.warnings.warn}</span>
           </div>
         )}
 

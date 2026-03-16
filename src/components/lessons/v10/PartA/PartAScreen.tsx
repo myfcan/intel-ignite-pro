@@ -23,6 +23,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
   audioUrl,
   onComplete,
 }) => {
+  const hasAudio = !!audioUrl && audioUrl.length > 0;
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -101,17 +102,19 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
       style={{ backgroundColor: '#0F0B1E' }}
     >
       {/* Hidden audio element */}
-      <audio
-        ref={audioRef}
-        src={audioUrl}
-        preload="metadata"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-      />
+      {hasAudio && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          preload="metadata"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+        />
+      )}
 
       {/* Autoplay blocked overlay */}
-      {showPlayOverlay && (
+      {hasAudio && showPlayOverlay && (
         <button
           type="button"
           onClick={() => {
@@ -149,17 +152,21 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         currentIndex={currentIndex}
         isPlaying={isPlaying}
         audioDuration={duration}
+        hasAudio={hasAudio}
         onPlay={handlePlay}
+        onComplete={onComplete}
       />
 
       {/* Bottom controls */}
       <div className="flex-shrink-0 pb-6 px-4">
         {/* Audio progress bar */}
-        <IntroAudioBar
-          currentTime={currentTime}
-          duration={duration}
-          isPlaying={isPlaying}
-        />
+        {hasAudio && (
+          <IntroAudioBar
+            currentTime={currentTime}
+            duration={duration}
+            isPlaying={isPlaying}
+          />
+        )}
 
         {/* Dot navigation */}
         {slides.length > 1 && (
@@ -180,7 +187,16 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         )}
 
         {/* Action buttons */}
-        {audioEnded ? (
+        {!hasAudio ? (
+          <button
+            type="button"
+            onClick={onComplete}
+            className="w-full min-h-[44px] py-3 rounded-xl text-white font-semibold text-base transition-transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
+          >
+            {'Começar aula \u2192'}
+          </button>
+        ) : audioEnded ? (
           <button
             type="button"
             onClick={onComplete}

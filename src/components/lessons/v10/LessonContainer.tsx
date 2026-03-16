@@ -332,13 +332,15 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
       }
 
       // 3. Register gamification event (XP + coins via existing RPC)
-      await supabase.rpc('register_gamification_event', {
-        p_user_id: user.id,
-        p_event_type: 'lesson_completed',
-        p_payload: { lesson_id: lesson.id, lesson_title: lesson.title },
-      }).catch(() => {
+      try {
+        await supabase.rpc('register_gamification_event', {
+          p_user_id: user.id,
+          p_event_type: 'lesson_completed',
+          p_payload: { lesson_id: lesson.id, lesson_title: lesson.title },
+        });
+      } catch {
         // Non-critical: RPC may not exist in all environments
-      });
+      }
     } catch (err) {
       console.error('[LessonContainer] Gamification error:', err);
       setGamificationError(true);
@@ -407,7 +409,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
       {/* Main content area: phone + optional sidebar */}
       <div className="flex items-start justify-center w-full min-h-screen gap-6 px-0 md:px-6">
         {/* Phone container */}
-        <div className="w-full max-w-[420px] min-h-screen flex flex-col md:rounded-2xl md:my-6 md:min-h-0 md:h-[calc(100vh-48px)] md:overflow-hidden md:shadow-2xl"
+        <div className="w-full max-w-[420px] h-dvh flex flex-col overflow-hidden md:rounded-2xl md:my-6 md:min-h-0 md:h-[calc(100vh-48px)] md:shadow-2xl"
           style={{ backgroundColor: '#0F0B1E' }}
         >
           {/* Part A */}
@@ -463,7 +465,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
         )}
 
         {/* Sidebar — visible on desktop only */}
-        <div className="hidden min-w-[260px] max-w-[320px] flex-shrink-0 md:flex md:flex-col md:my-6 md:gap-4">
+        <div className="hidden min-w-[260px] max-w-[320px] flex-shrink-0 lg:flex lg:flex-col lg:my-6 lg:gap-4">
           {/* Lesson info card */}
           <div
             className="rounded-xl p-5"
