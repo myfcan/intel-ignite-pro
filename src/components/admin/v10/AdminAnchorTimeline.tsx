@@ -78,7 +78,7 @@ export function AdminAnchorTimeline({
 
   const fetchAnchors = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('v10_lesson_step_anchors')
       .select('*')
       .eq('step_id', stepId)
