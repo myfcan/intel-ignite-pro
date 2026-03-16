@@ -45,30 +45,17 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
       <button
         type="button"
         onClick={onClick}
-        className="fixed z-[9999] focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
+        className="fixed z-[9999] w-14 h-14 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
         style={{
           right: pos.avatarRight,
           bottom: pos.avatarBottom,
+          animation: isIntense
+            ? 'liv-pulse-intense 0.6s ease-in-out infinite'
+            : 'liv-pulse 2s ease-in-out infinite',
         }}
         aria-label="Abrir assistente LIV"
       >
-        {/* Gradient pulsing ring */}
-        <span
-          className="rounded-full flex items-center justify-center w-full h-full"
-          style={{
-            padding: 3,
-            background: isIntense
-              ? 'linear-gradient(135deg, #10B981, #34D399)'
-              : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            animation: isIntense
-              ? 'liv-pulse-intense 0.6s ease-in-out infinite'
-              : 'liv-pulse 2s ease-in-out infinite',
-          }}
-        >
-          <span className="w-full h-full rounded-full bg-[#1E1B2E] flex items-center justify-center text-xl">
-            &#x1F916;
-          </span>
-        </span>
+        <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} />
       </button>
 
       {/* Gradient menu button — opens LIVSheet */}
