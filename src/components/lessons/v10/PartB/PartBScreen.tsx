@@ -294,11 +294,14 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         {/* LIV Fab */}
         <LIVFab
           hasWarnings={!!currentStep.warnings?.warn}
-          onClick={() => {
+          isPlaying={isPlaying}
+          onTogglePlay={handlePlayPause}
+          onOpenSheet={() => {
             audioRef.current?.pause();
             setIsPlaying(false);
             setLivOpen(true);
           }}
+          stepNumber={currentStep.step_number}
         />
 
         {/* Bottom bar */}
