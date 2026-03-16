@@ -114,14 +114,14 @@ serve(async (req) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
         const supabase = createClient(supabaseUrl, supabaseServiceKey) as any;
-        await logPipeline(supabase, pipeline_id, 'generate-audio', 'error', { error: error.message });
+        await logPipeline(supabase, pipeline_id, 'generate-audio', 'error', { error: (error as any)?.message });
       }
     } catch (_) {
       // ignore logging failure
     }
 
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as any)?.message ?? String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
