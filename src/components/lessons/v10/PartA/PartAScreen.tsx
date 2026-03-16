@@ -23,6 +23,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
   audioUrl,
   onComplete,
 }) => {
+  const hasAudio = !!audioUrl && audioUrl.length > 0;
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
