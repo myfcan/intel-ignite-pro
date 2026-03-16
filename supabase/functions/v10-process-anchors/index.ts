@@ -43,10 +43,28 @@ serve(async (req) => {
     const authResult = await requireAdmin(req);
     if (authResult.error) return authResult.error;
 
-    const { pipeline_id, step_id, script, voice_id } = await req.json();
+    const { pipeline_id, step_id, script: scriptFromBody, voice_id } = await req.json();
 
-    if (!pipeline_id || !step_id || !script) {
-      return jsonResponse({ error: 'pipeline_id, step_id, and script are required' }, 400);
+    if (!pipeline_id || !step_id) {
+      return jsonResponse({ error: 'pipeline_id and step_id are required' }, 400);
+    }
+
+    // Script can come from the request body or from the narration_script column
+    let script = scriptFromBody;
+    if (!script) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const tmpClient = createClient(supabaseUrl, supabaseServiceKey) as any;
+      const { data: stepRow } = await tmpClient
+        .from('v10_lesson_steps')
+        .select('narration_script')
+        .eq('id', step_id)
+        .single();
+      script = stepRow?.narration_script;
+    }
+
+    if (!script) {
+      return jsonResponse({ error: 'No script provided and step has no narration_script' }, 400);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

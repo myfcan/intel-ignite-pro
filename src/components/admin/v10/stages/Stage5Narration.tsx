@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2, Anchor } from 'lucide-react';
+import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2, Anchor, Play, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonNarration, V10LessonStep, StepAnchor } from '@/types/v10.types';
 import { AdminAnchorTimeline } from '../AdminAnchorTimeline';
@@ -141,6 +142,12 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const [anchorErrors, setAnchorErrors] = useState<string[]>([]);
   const [expandedAnchorStep, setExpandedAnchorStep] = useState<string | null>(null);
 
+  // Narration script state
+  const [expandedScriptStep, setExpandedScriptStep] = useState<string | null>(null);
+  const [editingScripts, setEditingScripts] = useState<Record<string, string>>({});
+  const [savingScript, setSavingScript] = useState<string | null>(null);
+  const [processingStep, setProcessingStep] = useState<string | null>(null);
+
   // Fetch anchor counts per step
   useEffect(() => {
     if (!steps.length) return;
@@ -163,6 +170,155 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
     fetchAnchorStats();
   }, [steps]);
+
+  // ── Save narration script ───────────────────────────────────────────────
+  const handleSaveScript = useCallback(async (stepId: string) => {
+    const script = editingScripts[stepId];
+    if (script === undefined) return;
+
+    setSavingScript(stepId);
+    try {
+      const { error } = await supabase
+        .from('v10_lesson_steps')
+        .update({ narration_script: script || null } as any)
+        .eq('id', stepId);
+
+      if (error) throw error;
+
+      // Update local state
+      setSteps(prev => prev.map(s =>
+        s.id === stepId ? { ...s, narration_script: script || null } : s
+      ));
+      toast.success('Script salvo');
+    } catch (err: any) {
+      toast.error(`Erro ao salvar script: ${err.message}`);
+    } finally {
+      setSavingScript(null);
+    }
+  }, [editingScripts]);
+
+  // ── Process step: send script to ElevenLabs + extract anchors ──────────
+  const handleProcessStep = useCallback(async (step: V10LessonStep) => {
+    const script = editingScripts[step.id] ?? step.narration_script;
+    if (!script?.trim()) {
+      toast.error('Passo sem script de narração');
+      return;
+    }
+
+    setProcessingStep(step.id);
+    try {
+      toast.info(`Processando passo ${step.step_number}...`);
+
+      const { data, error } = await supabase.functions.invoke('v10-process-anchors', {
+        body: {
+          pipeline_id: pipeline.id,
+          step_id: step.id,
+          script,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(`Erro: ${data.error}`);
+        return;
+      }
+
+      toast.success(
+        `Passo ${step.step_number}: áudio gerado, ${data.anchors_saved || 0} anchors salvos`
+      );
+
+      // Refresh steps and anchor counts
+      const [stepsResult] = await Promise.all([
+        supabase
+          .from('v10_lesson_steps')
+          .select('*')
+          .eq('lesson_id', pipeline.lesson_id as string)
+          .order('step_number', { ascending: true }),
+      ]);
+      if (stepsResult.data) {
+        setSteps(stepsResult.data as unknown as V10LessonStep[]);
+      }
+
+      // Refresh anchor counts
+      const stepIds = steps.map(s => s.id);
+      const { data: anchorData } = await supabase
+        .from('v10_lesson_step_anchors')
+        .select('step_id')
+        .in('step_id', stepIds);
+      if (anchorData) {
+        const counts: Record<string, number> = {};
+        for (const row of anchorData) {
+          counts[row.step_id] = (counts[row.step_id] || 0) + 1;
+        }
+        setAnchorCounts(counts);
+      }
+    } catch (err: any) {
+      toast.error(`Erro ao processar: ${err.message}`);
+    } finally {
+      setProcessingStep(null);
+    }
+  }, [editingScripts, pipeline.id, pipeline.lesson_id, steps]);
+
+  // ── Process all steps sequentially ─────────────────────────────────────
+  const [processingAll, setProcessingAll] = useState(false);
+
+  const handleProcessAll = useCallback(async () => {
+    const stepsWithScript = steps.filter(s => {
+      const script = editingScripts[s.id] ?? s.narration_script;
+      return script?.trim() && !s.audio_url;
+    });
+
+    if (stepsWithScript.length === 0) {
+      toast.error('Nenhum passo com script pendente de processamento');
+      return;
+    }
+
+    setProcessingAll(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const step of stepsWithScript) {
+      const script = editingScripts[step.id] ?? step.narration_script;
+      setProcessingStep(step.id);
+
+      try {
+        const { data, error } = await supabase.functions.invoke('v10-process-anchors', {
+          body: {
+            pipeline_id: pipeline.id,
+            step_id: step.id,
+            script,
+          },
+        });
+
+        if (error || data?.error) {
+          errorCount++;
+          console.error(`Step ${step.step_number} error:`, error || data?.error);
+        } else {
+          successCount++;
+        }
+      } catch {
+        errorCount++;
+      }
+    }
+
+    setProcessingStep(null);
+    setProcessingAll(false);
+
+    toast.success(`Processamento concluído: ${successCount} ok, ${errorCount} erros`);
+
+    // Refresh all data
+    if (pipeline.lesson_id) {
+      const [stepsResult] = await Promise.all([
+        supabase
+          .from('v10_lesson_steps')
+          .select('*')
+          .eq('lesson_id', pipeline.lesson_id as string)
+          .order('step_number', { ascending: true }),
+      ]);
+      if (stepsResult.data) setSteps(stepsResult.data as unknown as V10LessonStep[]);
+    }
+  }, [steps, editingScripts, pipeline.id, pipeline.lesson_id]);
 
   const totalAnchors = Object.values(anchorCounts).reduce((sum, c) => sum + c, 0);
   const stepsWithAnchors = Object.keys(anchorCounts).length;
@@ -353,6 +509,126 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Narration Scripts per Step */}
+        {!loadingData && steps.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-500" />
+                Scripts de Narração (com [ANCHOR:*] tags)
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleProcessAll}
+                disabled={processingAll || !pipeline.lesson_id}
+              >
+                {processingAll
+                  ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Processando...</>
+                  : <><Sparkles className="h-3 w-3 mr-1" /> Processar Todos</>
+                }
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {steps.map((step) => {
+                const isExpanded = expandedScriptStep === step.id;
+                const hasScript = !!(editingScripts[step.id] ?? step.narration_script);
+                const hasAudio = !!step.audio_url;
+                const isProcessing = processingStep === step.id;
+                const isSaving = savingScript === step.id;
+                const currentScript = editingScripts[step.id] ?? step.narration_script ?? '';
+                const tagCount = (currentScript.match(/\[ANCHOR:[^\]]+\]/g) || []).length;
+
+                return (
+                  <div key={step.id} className="rounded-lg border">
+                    {/* Step header */}
+                    <button
+                      type="button"
+                      className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-muted/50 ${
+                        isExpanded ? 'border-b' : ''
+                      }`}
+                      onClick={() => setExpandedScriptStep(isExpanded ? null : step.id)}
+                    >
+                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded text-xs font-bold ${
+                        hasAudio
+                          ? 'bg-green-100 text-green-700'
+                          : hasScript
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {step.step_number}
+                      </span>
+                      <span className="flex-1 text-sm font-medium truncate">{step.title}</span>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {tagCount > 0 && (
+                          <span className="inline-flex items-center gap-0.5 rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-600">
+                            <Anchor className="h-2.5 w-2.5" /> {tagCount}
+                          </span>
+                        )}
+                        {hasAudio && (
+                          <span className="inline-flex items-center gap-0.5 rounded bg-green-50 px-1.5 py-0.5 text-green-600">
+                            <CheckCircle2 className="h-2.5 w-2.5" /> áudio
+                          </span>
+                        )}
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </div>
+                    </button>
+
+                    {/* Expanded script editor */}
+                    {isExpanded && (
+                      <div className="p-3 space-y-3">
+                        <Textarea
+                          className="min-h-[200px] font-mono text-xs leading-relaxed"
+                          value={currentScript}
+                          onChange={(e) => setEditingScripts(prev => ({
+                            ...prev,
+                            [step.id]: e.target.value,
+                          }))}
+                          placeholder="Cole o script de narração aqui. Use tags [ANCHOR:pontos_atencao], [ANCHOR:confirmacao], [ANCHOR:troca_frame], [ANCHOR:troca_ferramenta] para marcar eventos visuais."
+                        />
+
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSaveScript(step.id)}
+                            disabled={isSaving || editingScripts[step.id] === undefined}
+                          >
+                            {isSaving
+                              ? <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              : <Save className="h-3 w-3 mr-1" />
+                            }
+                            Salvar Script
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            onClick={() => handleProcessStep(step)}
+                            disabled={isProcessing || !hasScript}
+                          >
+                            {isProcessing
+                              ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Processando...</>
+                              : <><Play className="h-3 w-3 mr-1" /> Processar (ElevenLabs + Anchors)</>
+                            }
+                          </Button>
+                        </div>
+
+                        {hasAudio && step.audio_url && (
+                          <div className="flex items-center gap-2">
+                            <Volume2 className="h-3 w-3 text-green-600" />
+                            <audio controls className="h-8 flex-1" src={step.audio_url} preload="none" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
