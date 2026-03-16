@@ -148,7 +148,7 @@ export function AdminAnchorTimeline({
         toast.success('Anchor atualizado');
       } else {
         // Create new
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('v10_lesson_step_anchors')
           .insert({
             step_id: stepId,
