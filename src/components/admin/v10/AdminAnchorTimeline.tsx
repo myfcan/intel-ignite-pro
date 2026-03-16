@@ -135,7 +135,7 @@ export function AdminAnchorTimeline({
     try {
       if (editing.id) {
         // Update existing
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('v10_lesson_step_anchors')
           .update({
             timestamp_seconds: editing.timestamp_seconds,
