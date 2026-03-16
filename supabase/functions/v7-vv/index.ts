@@ -2760,7 +2760,7 @@ function executeDryRun(input: ScriptInput): DryRunResult {
               // Validate frameIndex range and uniqueness
               const seenFrameIndices = new Set<number>();
               for (const trigger of frameTriggers) {
-                const fi = trigger.payload.frameIndex;
+                const fi = (trigger.payload as any)?.frameIndex as number;
                 if (fi < 1 || fi > frames.length - 1) {
                   issues.push({
                     severity: 'error',

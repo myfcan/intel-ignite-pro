@@ -47,7 +47,7 @@ interface GenerateRequest {
 
 interface AudioResult {
   index: number;
-  type: 'section' | 'quiz' | 'quiz-reinforcement' | 'playground';
+  type: 'section' | 'quiz' | 'quiz-reinforcement' | 'playground' | 'quiz-explanation' | 'playground-success' | 'playground-tryagain';
   audioUrl: string;
   durationEstimate: number;
   sizeKB: number;

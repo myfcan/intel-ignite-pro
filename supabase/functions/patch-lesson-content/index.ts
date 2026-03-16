@@ -109,8 +109,8 @@ Deno.serve(async (req) => {
       inlineExercisesCount: content.inlineExercises?.length ?? 0,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('[patch-lesson-content] Error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: err?.message ?? String(err) }), { status: 500, headers: corsHeaders });
   }
 });
