@@ -97,7 +97,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     let cancelled = false;
 
     async function fetchAnchors() {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('v10_lesson_step_anchors')
         .select('*')
         .eq('step_id', currentStep.id)

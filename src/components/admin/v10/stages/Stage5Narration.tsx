@@ -154,14 +154,14 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
     async function fetchAnchorStats() {
       const stepIds = steps.map(s => s.id);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('v10_lesson_step_anchors')
         .select('step_id')
         .in('step_id', stepIds);
 
       if (!error && data) {
         const counts: Record<string, number> = {};
-        for (const row of data) {
+        for (const row of data as any[]) {
           counts[row.step_id] = (counts[row.step_id] || 0) + 1;
         }
         setAnchorCounts(counts);
@@ -242,13 +242,13 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
       // Refresh anchor counts
       const stepIds = steps.map(s => s.id);
-      const { data: anchorData } = await supabase
+      const { data: anchorData } = await (supabase as any)
         .from('v10_lesson_step_anchors')
         .select('step_id')
         .in('step_id', stepIds);
       if (anchorData) {
         const counts: Record<string, number> = {};
-        for (const row of anchorData) {
+        for (const row of anchorData as any[]) {
           counts[row.step_id] = (counts[row.step_id] || 0) + 1;
         }
         setAnchorCounts(counts);

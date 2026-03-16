@@ -78,7 +78,7 @@ export function AdminAnchorTimeline({
 
   const fetchAnchors = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('v10_lesson_step_anchors')
       .select('*')
       .eq('step_id', stepId)
@@ -112,7 +112,7 @@ export function AdminAnchorTimeline({
   // ── Delete anchor ─────────────────────────────────────────────────────────
 
   const handleDelete = useCallback(async (anchorId: string) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('v10_lesson_step_anchors')
       .delete()
       .eq('id', anchorId);
@@ -135,7 +135,7 @@ export function AdminAnchorTimeline({
     try {
       if (editing.id) {
         // Update existing
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('v10_lesson_step_anchors')
           .update({
             timestamp_seconds: editing.timestamp_seconds,
@@ -148,7 +148,7 @@ export function AdminAnchorTimeline({
         toast.success('Anchor atualizado');
       } else {
         // Create new
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('v10_lesson_step_anchors')
           .insert({
             step_id: stepId,
