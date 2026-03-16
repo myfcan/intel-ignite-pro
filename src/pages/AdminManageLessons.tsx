@@ -41,6 +41,21 @@ interface Lesson {
   model: string | null;
 }
 
+interface V10Lesson {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  trail_id: string | null;
+  order_in_trail: number;
+  total_steps: number;
+  estimated_minutes: number;
+  tools: string[];
+  badge_icon: string | null;
+  status: string;
+  created_at: string;
+}
+
 interface Course {
   id: string;
   trail_id: string;
@@ -63,6 +78,7 @@ export default function AdminManageLessons() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [trails, setTrails] = useState<Trail[]>([]);
+  const [v10Lessons, setV10Lessons] = useState<V10Lesson[]>([]);
   const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -92,7 +108,7 @@ export default function AdminManageLessons() {
   const [createNewTrail, setCreateNewTrail] = useState(false);
   const [newTrailTitle, setNewTrailTitle] = useState('');
   const [newTrailIcon, setNewTrailIcon] = useState('');
-  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8'>('v7');
+  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8' | 'v10'>('v7');
 
   useEffect(() => {
     loadData();
@@ -101,15 +117,17 @@ export default function AdminManageLessons() {
   async function loadData() {
     setLoading(true);
     try {
-      const [trailsRes, coursesRes, lessonsRes] = await Promise.all([
+      const [trailsRes, coursesRes, lessonsRes, v10Res] = await Promise.all([
         supabase.from('trails').select('id, title, order_index, trail_type').order('order_index'),
         supabase.from('courses').select('id, trail_id, title, order_index, is_active').order('order_index'),
         supabase.from('lessons').select('id, title, trail_id, course_id, order_index, is_active, created_at, estimated_time, model').order('order_index'),
+        supabase.from('v10_lessons').select('id, slug, title, description, trail_id, order_in_trail, total_steps, estimated_minutes, tools, badge_icon, status, created_at').order('order_in_trail'),
       ]);
 
       if (trailsRes.data) setTrails(trailsRes.data);
       if (coursesRes.data) setCourses(coursesRes.data);
       if (lessonsRes.data) setLessons(lessonsRes.data);
+      if (v10Res.data) setV10Lessons(v10Res.data);
     } finally {
       setLoading(false);
     }
@@ -128,14 +146,20 @@ export default function AdminManageLessons() {
       // Orphaned lessons: have trail_id but no course_id
       const orphanedLessons = lessons.filter(l => l.trail_id === trail.id && !l.course_id);
 
-      return { ...trail, courses: trailCourses, orphanedLessons };
+      // V10 lessons linked to this trail
+      const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id);
+
+      return { ...trail, courses: trailCourses, orphanedLessons, v10Lessons: trailV10Lessons };
     });
 
     // Fully orphaned: no trail_id at all
     const fullyOrphaned = lessons.filter(l => !l.trail_id);
 
-    return { trails: trailMap, fullyOrphaned };
-  }, [trails, courses, lessons]);
+    // V10 orphaned: no trail_id
+    const v10Orphaned = v10Lessons.filter(l => !l.trail_id);
+
+    return { trails: trailMap, fullyOrphaned, v10Orphaned };
+  }, [trails, courses, lessons, v10Lessons]);
 
   function toggleLesson(id: string) {
     const s = new Set(selectedLessons);
@@ -344,6 +368,35 @@ export default function AdminManageLessons() {
 
   const selectedLessonsData = lessons.filter(l => selectedLessons.has(l.id));
 
+  // V10 Lesson row component
+  function V10LessonRow({ lesson }: { lesson: V10Lesson }) {
+    return (
+      <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h4 className="font-medium text-sm truncate">{lesson.badge_icon} {lesson.title}</h4>
+            <Badge variant={lesson.status === 'published' ? 'default' : 'secondary'} className="text-xs">
+              {lesson.status === 'published' ? '🟢 Publicada' : '🟡 Draft'}
+            </Badge>
+            <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">v10</Badge>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>📍 Pos: {lesson.order_in_trail}</span>
+            <span>⏱️ {lesson.estimated_minutes}min</span>
+            <span>📝 {lesson.total_steps} passos</span>
+            <span>📅 {new Date(lesson.created_at).toLocaleDateString('pt-BR')}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button variant="outline" size="sm" onClick={() => navigate(`/v10/${lesson.slug}`)}>
+            <Play className="w-3 h-3 mr-1" />
+            Assistir
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Lesson row component
   function LessonRow({ lesson }: { lesson: Lesson }) {
     return (
@@ -403,7 +456,7 @@ export default function AdminManageLessons() {
               Gerenciar Lições
             </h1>
             <p className="text-muted-foreground text-sm">
-              Trilhas → Jornadas → Aulas • Hierarquia completa (V7 + V8)
+              Trilhas → Jornadas → Aulas • Hierarquia completa (V7 + V8 + V10)
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -447,9 +500,13 @@ export default function AdminManageLessons() {
                           <CardTitle className="text-base flex items-center gap-2">
                             {trail.title}
                             {trail.trail_type === 'v8' && <Badge className="text-xs bg-indigo-500/20 text-indigo-400 border-indigo-500/30">V8</Badge>}
+                            {trail.trail_type === 'v10' && <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">V10</Badge>}
                           </CardTitle>
                           <CardDescription className="text-xs">
-                            {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0)} aula(s)
+                            {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0) + trail.v10Lessons.length} aula(s)
+                            {trail.v10Lessons.length > 0 && (
+                              <span className="text-emerald-500 ml-2">🟢 {trail.v10Lessons.length} V10</span>
+                            )}
                             {trail.orphanedLessons.length > 0 && (
                               <span className="text-amber-500 ml-2">⚠️ {trail.orphanedLessons.length} aula(s) sem jornada</span>
                             )}
@@ -509,6 +566,19 @@ export default function AdminManageLessons() {
                         </Collapsible>
                       ))}
 
+                      {/* V10 lessons in this trail */}
+                      {trail.v10Lessons.length > 0 && (
+                        <div className="ml-4 mt-2">
+                          <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-md mb-1">
+                            <Layers className="w-4 h-4 text-emerald-500" />
+                            <span className="text-sm font-medium text-emerald-700">Aulas V10 ({trail.v10Lessons.length})</span>
+                          </div>
+                          <div className="ml-6 space-y-1">
+                            {trail.v10Lessons.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Orphaned lessons in this trail */}
                       {trail.orphanedLessons.length > 0 && (
                         <div className="ml-4 mt-2">
@@ -539,6 +609,22 @@ export default function AdminManageLessons() {
                 </CardHeader>
                 <CardContent className="space-y-1">
                   {hierarchy.fullyOrphaned.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* V10 orphaned lessons (no trail) */}
+            {hierarchy.v10Orphaned.length > 0 && (
+              <Card className="border-emerald-300">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-base flex items-center gap-2 text-emerald-600">
+                    <Layers className="w-5 h-5" />
+                    Aulas V10 (sem trilha)
+                  </CardTitle>
+                  <CardDescription className="text-xs">{hierarchy.v10Orphaned.length} aula(s) V10 sem trilha atribuída</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  {hierarchy.v10Orphaned.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
                 </CardContent>
               </Card>
             )}
@@ -704,11 +790,12 @@ export default function AdminManageLessons() {
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Tipo</label>
-                    <Select value={newTrailType} onValueChange={(v) => setNewTrailType(v as 'v7' | 'v8')}>
+                    <Select value={newTrailType} onValueChange={(v) => setNewTrailType(v as 'v7' | 'v8' | 'v10')}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="v7">V7 (Trilha → Jornada → Aula)</SelectItem>
                         <SelectItem value="v8">V8 (Trilha → Jornada → Aula)</SelectItem>
+                        <SelectItem value="v10">V10 (BPA Step-by-Step)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
