@@ -112,7 +112,7 @@ export function AdminAnchorTimeline({
   // ── Delete anchor ─────────────────────────────────────────────────────────
 
   const handleDelete = useCallback(async (anchorId: string) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('v10_lesson_step_anchors')
       .delete()
       .eq('id', anchorId);
