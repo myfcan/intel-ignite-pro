@@ -12,19 +12,19 @@ interface LIVFabProps {
 }
 
 function useResponsivePosition() {
-  const [pos, setPos] = useState({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 120 });
+  const [pos, setPos] = useState({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 124 });
 
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
       if (w >= 1024) {
-        setPos({ avatarRight: 80, buttonRight: 86, avatarBottom: 185, buttonBottom: 130 });
+        setPos({ avatarRight: 80, buttonRight: 86, avatarBottom: 185, buttonBottom: 134 });
       } else if (w >= 768) {
-        setPos({ avatarRight: 68, buttonRight: 74, avatarBottom: 180, buttonBottom: 125 });
+        setPos({ avatarRight: 68, buttonRight: 74, avatarBottom: 180, buttonBottom: 129 });
       } else if (w >= 480) {
-        setPos({ avatarRight: 56, buttonRight: 62, avatarBottom: 175, buttonBottom: 120 });
+        setPos({ avatarRight: 56, buttonRight: 62, avatarBottom: 175, buttonBottom: 124 });
       } else {
-        setPos({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 120 });
+        setPos({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 124 });
       }
     };
     update();
@@ -55,7 +55,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
         }}
         aria-label="Abrir assistente LIV"
       >
-        <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} />
+        <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} className="pt-0" />
       </button>
 
       {/* Gradient menu button — opens LIVSheet */}
