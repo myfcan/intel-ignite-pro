@@ -201,6 +201,7 @@ export interface V10LessonStep {
   liv: V10Liv;
   warnings: V10Warning | null;
   audio_url: string | null;
+  narration_script: string | null;
 }
 
 // ------------------------------------------------------------
