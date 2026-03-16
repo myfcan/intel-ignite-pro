@@ -186,7 +186,7 @@ serve(async (req) => {
     }
 
     const { data: urlData } = supabase.storage
-      .from('lesson-audio')
+      .from('lesson-audios')
       .getPublicUrl(storagePath);
 
     const audioUrl = urlData.publicUrl;

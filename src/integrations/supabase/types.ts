@@ -1892,6 +1892,44 @@ export type Database = {
           },
         ]
       }
+      v10_lesson_step_anchors: {
+        Row: {
+          anchor_type: string
+          created_at: string
+          id: string
+          label: string | null
+          match_phrase: string
+          step_id: string
+          timestamp_seconds: number
+        }
+        Insert: {
+          anchor_type: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          match_phrase: string
+          step_id: string
+          timestamp_seconds: number
+        }
+        Update: {
+          anchor_type?: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          match_phrase?: string
+          step_id?: string
+          timestamp_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_lesson_step_anchors_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "v10_lesson_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v10_lesson_steps: {
         Row: {
           accent_color: string
@@ -1906,6 +1944,7 @@ export type Database = {
           id: string
           lesson_id: string
           liv: Json
+          narration_script: string | null
           phase: number
           progress_percent: number
           slug: string | null
@@ -1926,6 +1965,7 @@ export type Database = {
           id?: string
           lesson_id: string
           liv?: Json
+          narration_script?: string | null
           phase?: number
           progress_percent?: number
           slug?: string | null
@@ -1946,6 +1986,7 @@ export type Database = {
           id?: string
           lesson_id?: string
           liv?: Json
+          narration_script?: string | null
           phase?: number
           progress_percent?: number
           slug?: string | null
