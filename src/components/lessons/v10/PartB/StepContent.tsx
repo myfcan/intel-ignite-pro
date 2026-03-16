@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { V10LessonStep } from '../../../../types/v10.types';
 import FrameRenderer from './FrameRenderer';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface StepContentProps {
   step: V10LessonStep;
@@ -18,6 +20,7 @@ const StepContent: React.FC<StepContentProps> = ({
   accentColor,
 }) => {
   const frame = step.frames?.[currentFrame];
+  const [showDesc, setShowDesc] = useState(false);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -35,11 +38,24 @@ const StepContent: React.FC<StepContentProps> = ({
           {step.title}
         </h2>
 
-        {/* Step description */}
+        {/* Collapsible description */}
         {step.description && (
-          <p className="text-sm text-gray-500 leading-relaxed">
-            {step.description}
-          </p>
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowDesc((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors min-h-[36px]"
+            >
+              <span>📄</span>
+              <span>Ver contexto</span>
+              {showDesc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+            {showDesc && (
+              <p className="text-sm text-muted-foreground leading-relaxed mt-1 pl-5">
+                {step.description}
+              </p>
+            )}
+          </div>
         )}
 
         {/* Tool chip badge */}
@@ -58,12 +74,22 @@ const StepContent: React.FC<StepContentProps> = ({
           </div>
         )}
 
-        {/* Warning badge */}
+        {/* Warning chip → Popover */}
         {step.warnings && step.warnings.warn && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200">
-            <span className="text-amber-500 shrink-0 mt-0.5">&#x26A0;</span>
-            <span className="text-sm text-amber-800">{step.warnings.warn}</span>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors min-h-[36px] max-w-full text-left"
+              >
+                <span className="shrink-0">⚠️</span>
+                <span className="truncate">{step.warnings.warn}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" className="text-sm text-amber-900 bg-amber-50 border-amber-200 max-w-xs">
+              {step.warnings.warn}
+            </PopoverContent>
+          </Popover>
         )}
 
         {/* Frame content */}
