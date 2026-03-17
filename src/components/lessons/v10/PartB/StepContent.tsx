@@ -10,6 +10,7 @@ interface StepContentProps {
   onFrameChange: (frame: number) => void;
   accentColor: string;
   onReplayStep?: () => void;
+  showReplay?: boolean;
 }
 
 const StepContent: React.FC<StepContentProps> = ({
