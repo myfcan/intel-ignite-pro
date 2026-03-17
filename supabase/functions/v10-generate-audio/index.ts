@@ -7,12 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const VOICE_ID = 'oqUwsXKac3MSo4E51ySV'; // Taciana - PT-BR
-const MODEL_ID = 'eleven_v3';
+const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - PT-BR (padrão V8)
+const MODEL_ID = 'eleven_multilingual_v2';
 const VOICE_SETTINGS = {
   stability: 0.5,
   similarity_boost: 0.75,
-  style: 0.5,
+  style: 0.3,
   use_speaker_boost: true,
 };
 
