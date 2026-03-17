@@ -846,8 +846,6 @@ export default function AdminManageLessons() {
                     <Input value={newTrailTitle} onChange={(e) => setNewTrailTitle(e.target.value)} placeholder="Ex: Dominando IA Generativa" />
                   </div>
                   <div>
-                  
-                  <div>
                     <label className="text-sm font-medium mb-1 block">Ícone da Trilha (opcional)</label>
                     <Input value={newTrailIcon} onChange={(e) => setNewTrailIcon(e.target.value)} placeholder="Ex: 🚀 ou Brain" />
                   </div>
