@@ -1,0 +1,1 @@
+ALTER TABLE public.courses ALTER COLUMN trail_id DROP NOT NULL;

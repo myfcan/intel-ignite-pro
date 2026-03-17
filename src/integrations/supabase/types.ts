@@ -95,7 +95,7 @@ export type Database = {
           is_active: boolean
           order_index: number
           title: string
-          trail_id: string
+          trail_id: string | null
         }
         Insert: {
           created_at?: string
@@ -105,7 +105,7 @@ export type Database = {
           is_active?: boolean
           order_index?: number
           title: string
-          trail_id: string
+          trail_id?: string | null
         }
         Update: {
           created_at?: string
@@ -115,7 +115,7 @@ export type Database = {
           is_active?: boolean
           order_index?: number
           title?: string
-          trail_id?: string
+          trail_id?: string | null
         }
         Relationships: [
           {
