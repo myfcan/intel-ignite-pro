@@ -30,7 +30,7 @@ const getMotivationalLine = (streak: number) => {
   return 'Comece sua sequência hoje!';
 };
 
-export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, quickAccessContent, continueContent, accessCount = 0, activeTrail, hasProgress = false, v8TrailId }: MobileQuickStatsProps) => {
+export const MobileQuickStats = ({ streakDays, userName, isLoading = false, missionsContent, quickAccessContent, continueContent, accessCount = 0, activeTrail, hasProgress = false }: MobileQuickStatsProps) => {
   const navigate = useNavigate();
   const [missionsOpen, setMissionsOpen] = useState(false);
   const streakPercent = Math.min((streakDays / 30) * 100, 100);
