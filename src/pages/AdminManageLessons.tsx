@@ -892,14 +892,28 @@ export default function AdminManageLessons() {
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Trilha</label>
-                <Select value={v10TargetTrailId} onValueChange={setV10TargetTrailId}>
+                <label className="text-sm font-medium mb-2 block">Trilha (N1)</label>
+                <Select value={v10TargetTrailId} onValueChange={(val) => { setV10TargetTrailId(val); setV10TargetCourseId(''); }}>
                   <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
                   <SelectContent>
                     {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+              {v10TargetTrailId && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Jornada (N2)</label>
+                  <Select value={v10TargetCourseId} onValueChange={setV10TargetCourseId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione uma jornada" /></SelectTrigger>
+                    <SelectContent>
+                      {courses.filter(c => c.trail_id === v10TargetTrailId).map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Obrigatório para respeitar N1→N2→N3</p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium mb-2 block">Posição (order_in_trail)</label>
                 <Input type="number" min={0} value={v10TargetOrder} onChange={(e) => setV10TargetOrder(parseInt(e.target.value) || 0)} />
