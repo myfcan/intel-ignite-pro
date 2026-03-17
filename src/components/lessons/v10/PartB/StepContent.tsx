@@ -16,11 +16,8 @@ const StepContent: React.FC<StepContentProps> = ({
   totalSteps,
   onFrameChange,
   accentColor,
-  onReplayStep,
-  showReplay = false,
 }) => {
   const frame = step.frames?.[currentFrame];
-  const isLastFrame = currentFrame === (step.frames?.length ?? 1) - 1;
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3">
