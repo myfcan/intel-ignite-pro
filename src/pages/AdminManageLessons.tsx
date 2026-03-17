@@ -675,7 +675,49 @@ export default function AdminManageLessons() {
               </Card>
             ))}
 
-            {/* Fully orphaned lessons */}
+            {/* Jornadas Órfãs (courses sem trilha ativa) */}
+            {hierarchy.orphanedCourses.length > 0 && (
+              <Card className="border-amber-400">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-base flex items-center gap-2 text-amber-600">
+                    <AlertTriangle className="w-5 h-5" />
+                    Jornadas Órfãs (sem trilha)
+                  </CardTitle>
+                  <CardDescription className="text-xs">{hierarchy.orphanedCourses.length} jornada(s) sem trilha ativa</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {hierarchy.orphanedCourses.map(course => {
+                    const courseLessons = lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_index - b.order_index);
+                    const courseV10 = v10Lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_in_trail - b.order_in_trail);
+                    return (
+                      <Collapsible key={course.id} open={expandedCourses.has(course.id)} onOpenChange={() => toggleCourse(course.id)}>
+                        <CollapsibleTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer">
+                            {expandedCourses.has(course.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            <BookOpen className="w-4 h-4 text-amber-500" />
+                            <span className="font-medium text-sm flex-1">{course.title}</span>
+                            <Badge variant="outline" className="text-xs">{courseLessons.length + courseV10.length} aulas</Badge>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="ml-10 space-y-1 mt-1">
+                            {courseLessons.length === 0 && courseV10.length === 0 ? (
+                              <p className="text-xs text-muted-foreground py-2">Nenhuma aula nesta jornada</p>
+                            ) : (
+                              <>
+                                {courseLessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
+                                {courseV10.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
+                              </>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
             {hierarchy.fullyOrphaned.length > 0 && (
               <Card className="border-red-300">
                 <CardHeader className="py-3 px-4">
