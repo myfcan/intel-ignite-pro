@@ -541,8 +541,8 @@ const Dashboard = () => {
 
         if (coursesData && coursesData.length > 0) {
           const allCoursesWithProgress: V8Course[] = coursesData.map(course => {
-            const lessons = allLessons.filter(l => l.course_id === course.id);
-            const completed = lessons.filter(l => completedLessonIds.has(l.id)).length;
+            const courseLessons = allLessonsUnified.filter(l => l.course_id === course.id);
+            const completed = courseLessons.filter(l => completedLessonIds.has(l.id)).length;
             return {
               id: course.id,
               title: course.title,
@@ -551,7 +551,7 @@ const Dashboard = () => {
               order_index: course.order_index,
               trail_id: course.trail_id,
               completedLessons: completed,
-              totalLessons: lessons.length,
+              totalLessons: courseLessons.length,
             };
           });
           setV8Courses(allCoursesWithProgress);
