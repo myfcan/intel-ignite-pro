@@ -269,7 +269,7 @@ export function ImportFullScriptModal({
 
       toast.success(
         `Importado: ${savedSteps} passos + ${savedParts} partes (A/C). ${
-          autoTag ? 'Tags [ANCHOR:*] inseridas automaticamente.' : ''
+          effectiveAutoTag ? 'Tags [ANCHOR:*] inseridas automaticamente.' : ''
         }`
       );
 
