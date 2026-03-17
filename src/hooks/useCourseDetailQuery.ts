@@ -12,6 +12,7 @@ export interface Lesson {
   is_active: boolean;
   lesson_type?: string;
   model?: string;
+  slug?: string;
 }
 
 interface Course {
