@@ -70,6 +70,7 @@ interface Trail {
   title: string;
   order_index: number;
   trail_type: string | null;
+  is_active: boolean;
 }
 
 export default function AdminManageLessons() {
