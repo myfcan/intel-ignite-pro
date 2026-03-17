@@ -104,6 +104,13 @@ export default function AdminManageLessons() {
   const [newCourseIcon, setNewCourseIcon] = useState('');
   const [creatingCourse, setCreatingCourse] = useState(false);
 
+  // V10 Move modal
+  const [showV10MoveModal, setShowV10MoveModal] = useState(false);
+  const [v10MoveTarget, setV10MoveTarget] = useState<string>('');
+  const [v10TargetTrailId, setV10TargetTrailId] = useState<string>('');
+  const [v10TargetOrder, setV10TargetOrder] = useState<number>(0);
+  const [movingV10, setMovingV10] = useState(false);
+
   // Create trail inline
   const [createNewTrail, setCreateNewTrail] = useState(false);
   const [newTrailTitle, setNewTrailTitle] = useState('');
@@ -272,7 +279,32 @@ export default function AdminManageLessons() {
     }
   }
 
-  // Create course (jornada)
+  // Move V10 lesson
+  async function handleMoveV10Lesson() {
+    if (!v10MoveTarget || !v10TargetTrailId) {
+      toast({ title: 'Selecione uma trilha', variant: 'destructive' });
+      return;
+    }
+    setMovingV10(true);
+    try {
+      const { error } = await (supabase as any)
+        .from('v10_lessons')
+        .update({ trail_id: v10TargetTrailId, order_in_trail: v10TargetOrder })
+        .eq('id', v10MoveTarget);
+      if (error) throw error;
+      const lesson = v10Lessons.find(l => l.id === v10MoveTarget);
+      toast({ title: 'Aula V10 movida', description: `"${lesson?.title}" atribuída à trilha` });
+      setShowV10MoveModal(false);
+      setV10MoveTarget('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao mover V10', description: error.message, variant: 'destructive' });
+    } finally {
+      setMovingV10(false);
+    }
+  }
+
+  
   async function handleCreateCourse() {
     let trailId = newCourseTrailId;
 
@@ -388,6 +420,15 @@ export default function AdminManageLessons() {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          <Button variant="outline" size="sm" onClick={() => {
+            setV10MoveTarget(lesson.id);
+            setV10TargetTrailId(lesson.trail_id || '');
+            setV10TargetOrder(lesson.order_in_trail);
+            setShowV10MoveModal(true);
+          }}>
+            <FolderInput className="w-3 h-3 mr-1" />
+            Mover
+          </Button>
           <Button variant="outline" size="sm" onClick={() => navigate(`/v10/${lesson.slug}`)}>
             <Play className="w-3 h-3 mr-1" />
             Assistir
@@ -822,6 +863,49 @@ export default function AdminManageLessons() {
               <Button variant="outline" onClick={() => setShowCreateCourseModal(false)} disabled={creatingCourse}>Cancelar</Button>
               <Button onClick={handleCreateCourse} disabled={creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim())}>
                 {creatingCourse ? 'Criando...' : 'Criar Jornada'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* V10 Move Modal */}
+        <Dialog open={showV10MoveModal} onOpenChange={setShowV10MoveModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderInput className="w-5 h-5 text-primary" />
+                Mover Aula V10
+              </DialogTitle>
+              <DialogDescription>Atribua uma trilha e posição para esta aula V10</DialogDescription>
+            </DialogHeader>
+
+            {v10MoveTarget && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Aula:</p>
+                <p className="text-sm text-muted-foreground">{v10Lessons.find(l => l.id === v10MoveTarget)?.title}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Trilha</label>
+                <Select value={v10TargetTrailId} onValueChange={setV10TargetTrailId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                  <SelectContent>
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title} {t.trail_type ? `(${t.trail_type})` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Posição (order_in_trail)</label>
+                <Input type="number" min={0} value={v10TargetOrder} onChange={(e) => setV10TargetOrder(parseInt(e.target.value) || 0)} />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowV10MoveModal(false)} disabled={movingV10}>Cancelar</Button>
+              <Button onClick={handleMoveV10Lesson} disabled={movingV10 || !v10TargetTrailId}>
+                {movingV10 ? 'Movendo...' : 'Confirmar'}
               </Button>
             </DialogFooter>
           </DialogContent>
