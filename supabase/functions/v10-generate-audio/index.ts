@@ -313,7 +313,7 @@ async function generateNarrationScript(
   let userMessage: string;
 
   if (part === 'A') {
-    systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração de aproximadamente 30 segundos (cerca de 80 palavras) para a introdução de uma aula de tecnologia. O script deve:
+    systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração de aproximadamente 30 segundos (cerca de 80 palavras) para a introdução de uma aula de tecnologia. O script deve:
 - Cumprimentar o aluno de forma calorosa
 - Apresentar brevemente o tema da aula
 - Despertar curiosidade sobre o que será aprendido
