@@ -61,6 +61,11 @@ async function fetchCourseDetail(courseId: string): Promise<CourseDetailData> {
   ]);
 
   if (lessonsResult.error) throw lessonsResult.error;
+  if (v10LessonsResult.error) throw v10LessonsResult.error;
+  if (progressResult.error) throw progressResult.error;
+  if (v10ProgressResult.error) throw v10ProgressResult.error;
+  if (rolesResult.error) throw rolesResult.error;
+
   const roles = (rolesResult.data || []).map(r => r.role);
 
   // Merge legacy lessons + V10 lessons into a unified array
@@ -98,12 +103,13 @@ async function fetchCourseDetail(courseId: string): Promise<CourseDetailData> {
 
 export function useCourseDetailQuery(courseId: string | undefined) {
   return useQuery<CourseDetailData>({
-    queryKey: ['course-detail', courseId],
+    queryKey: ['course-detail-v2', courseId],
     queryFn: () => fetchCourseDetail(courseId!),
     enabled: !!courseId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
   });
 }
 
@@ -116,9 +122,9 @@ export function usePrefetchCourseDetailData() {
 
   return useCallback((courseId: string) => {
     queryClient.prefetchQuery({
-      queryKey: ['course-detail', courseId],
+      queryKey: ['course-detail-v2', courseId],
       queryFn: () => fetchCourseDetail(courseId),
-      staleTime: 5 * 60 * 1000,
+      staleTime: 0,
     });
   }, [queryClient]);
 }
