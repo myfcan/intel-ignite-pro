@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { List } from 'lucide-react';
 import { LivAvatar } from '@/components/LivAvatar';
 
@@ -11,33 +11,8 @@ interface LIVFabProps {
   stepNumber?: number;
 }
 
-function useResponsivePosition() {
-  const [pos, setPos] = useState({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 112 });
-
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      if (w >= 1024) {
-        setPos({ avatarRight: 80, buttonRight: 86, avatarBottom: 185, buttonBottom: 122 });
-      } else if (w >= 768) {
-        setPos({ avatarRight: 68, buttonRight: 74, avatarBottom: 180, buttonBottom: 117 });
-      } else if (w >= 480) {
-        setPos({ avatarRight: 56, buttonRight: 62, avatarBottom: 175, buttonBottom: 112 });
-      } else {
-        setPos({ avatarRight: 44, buttonRight: 50, avatarBottom: 175, buttonBottom: 112 });
-      }
-    };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  return pos;
-}
-
 const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'normal', stepNumber = 1 }) => {
   const isIntense = pulseMode === 'intense';
-  const pos = useResponsivePosition();
 
   return (
     <>
@@ -45,10 +20,8 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
       <button
         type="button"
         onClick={onClick}
-        className="fixed z-[9999] w-14 h-14 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
+        className="absolute z-50 w-14 h-14 right-4 bottom-28 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
         style={{
-          right: pos.avatarRight,
-          bottom: pos.avatarBottom,
           animation: isIntense
             ? 'liv-pulse-intense 0.6s ease-in-out infinite'
             : 'liv-pulse 2s ease-in-out infinite',
@@ -62,10 +35,8 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
       <button
         type="button"
         onClick={onClick}
-        className="fixed z-[9999] w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+        className="absolute z-50 w-11 h-11 right-5 bottom-16 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
         style={{
-          right: pos.buttonRight,
-          bottom: pos.buttonBottom,
           background: 'linear-gradient(135deg, #06B6D4, #8B5CF6)',
         }}
         aria-label="Abrir menu LIV"
