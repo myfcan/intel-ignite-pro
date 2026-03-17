@@ -154,9 +154,9 @@ async function handlePartNarration(
   let narrationRecord = narration;
   let script: string;
 
-  if (narrationRecord && narrationRecord.script) {
+  if (narrationRecord && narrationRecord.script_text) {
     // Use existing script
-    script = narrationRecord.script;
+    script = narrationRecord.script_text;
     console.log(`[v10-generate-audio] Using existing script for Part ${part} (${script.length} chars)`);
   } else {
     // 3. Generate script via AI
@@ -167,7 +167,7 @@ async function handlePartNarration(
       // Update existing record with script
       const { error: updateErr } = await supabase
         .from('v10_lesson_narrations')
-        .update({ script })
+        .update({ script_text: script })
         .eq('id', narrationRecord.id);
       if (updateErr) {
         throw new Error(`Error updating narration script: ${updateErr.message}`);
@@ -176,7 +176,7 @@ async function handlePartNarration(
       // Create new narration record
       const { data: newRecord, error: insertErr } = await supabase
         .from('v10_lesson_narrations')
-        .insert({ lesson_id, part, script })
+        .insert({ lesson_id, part, script_text: script })
         .select()
         .single();
       if (insertErr) {
