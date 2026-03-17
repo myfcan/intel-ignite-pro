@@ -24,11 +24,11 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
             <>
               <span
                 className="absolute -inset-1 rounded-full pointer-events-none"
-                style={{ animation: 'liv-speak-ring 1.9s ease-out infinite', border: '2px solid rgba(99, 102, 241, 0.42)' }}
+                style={{ animation: 'liv-speak-ring 2.8s ease-out infinite', border: '2px solid rgba(99, 102, 241, 0.35)' }}
               />
               <span
                 className="absolute -inset-1 rounded-full pointer-events-none"
-                style={{ animation: 'liv-speak-ring 1.9s ease-out 0.7s infinite', border: '2px solid rgba(99, 102, 241, 0.24)' }}
+                style={{ animation: 'liv-speak-ring 2.8s ease-out 1s infinite', border: '2px solid rgba(99, 102, 241, 0.2)' }}
               />
             </>
           )}
@@ -38,7 +38,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
             className="relative w-16 h-16 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-transform active:scale-90"
             style={{
               animation: isIntense
-                ? 'liv-fab-pulse-intense 0.6s ease-in-out infinite'
+                ? 'liv-fab-pulse-intense 1.8s ease-in-out infinite'
                 : 'liv-fab-pulse 2s ease-in-out infinite',
               boxShadow: isIntense
                 ? '0 0 20px rgba(16, 185, 129, 0.45), 0 6px 12px -2px rgba(0, 0, 0, 0.15)'
@@ -90,7 +90,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
         }
         @keyframes liv-fab-pulse-intense {
           0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.45), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1); }
-          50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.65), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1.08); }
+          50% { box-shadow: 0 0 26px rgba(16, 185, 129, 0.55), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1.04); }
         }
         @keyframes liv-speak-ring {
           0% { transform: scale(1); opacity: 0.75; }
