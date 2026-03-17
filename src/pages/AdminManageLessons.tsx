@@ -927,7 +927,7 @@ export default function AdminManageLessons() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowV10MoveModal(false)} disabled={movingV10}>Cancelar</Button>
-              <Button onClick={handleMoveV10Lesson} disabled={movingV10 || !v10TargetTrailId}>
+              <Button onClick={handleMoveV10Lesson} disabled={movingV10 || !v10TargetTrailId || !v10TargetCourseId}>
                 {movingV10 ? 'Movendo...' : 'Confirmar'}
               </Button>
             </DialogFooter>
