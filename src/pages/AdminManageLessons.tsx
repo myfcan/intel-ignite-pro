@@ -59,7 +59,7 @@ interface V10Lesson {
 
 interface Course {
   id: string;
-  trail_id: string;
+  trail_id: string | null;
   title: string;
   order_index: number;
   is_active: boolean;
