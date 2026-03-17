@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Image, CheckCircle2, Sparkles, Save, AlertTriangle, Loader2 } from 'lucide-react';
+import { Image, CheckCircle2, Sparkles, Save, AlertTriangle, Loader2, Calculator } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline } from '@/types/v10.types';
 
@@ -18,6 +18,19 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   const [imagesApproved, setImagesApproved] = useState(pipeline.images_approved);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [stepsCount, setStepsCount] = useState(0);
+
+  // Fetch steps count to help auto-calculate images_needed
+  useEffect(() => {
+    if (!pipeline.lesson_id) return;
+    supabase
+      .from('v10_lesson_steps')
+      .select('id', { count: 'exact', head: true })
+      .eq('lesson_id', pipeline.lesson_id as string)
+      .then(({ count }) => {
+        if (count != null) setStepsCount(count);
+      });
+  }, [pipeline.lesson_id]);
 
   const progressPercent = imagesNeeded > 0
     ? Math.round((imagesApproved / imagesNeeded) * 100)
@@ -50,11 +63,27 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
     toast.info('Todas as imagens geradas foram marcadas como aprovadas. Clique em Salvar para confirmar.');
   };
 
+  const handleAutoCalc = async () => {
+    if (stepsCount > 0) {
+      setImagesNeeded(stepsCount);
+      toast.info(`Necessárias atualizado para ${stepsCount} (1 por passo). Clique em Salvar.`);
+    } else {
+      toast.error('Nenhum passo encontrado');
+    }
+  };
+
   const handleGenerate = async () => {
     if (!pipeline.lesson_id) {
       toast.error('Vincule uma aula primeiro');
       return;
     }
+
+    // Auto-set images_needed if still 0
+    if (imagesNeeded === 0 && stepsCount > 0) {
+      setImagesNeeded(stepsCount);
+      await onUpdate({ images_needed: stepsCount });
+    }
+
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('v10-generate-images', {
@@ -63,10 +92,15 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      const stats = data?.stats;
-      if (stats) {
-        setImagesGenerated(prev => prev + stats.success);
-        toast.success(`${stats.success} imagens geradas! ${stats.hasMoreBatches ? 'Clique novamente para o próximo lote.' : 'Todos os lotes concluídos.'}`);
+      if (data) {
+        const successCount = data.success ?? 0;
+        const hasMore = data.hasMoreBatches ?? false;
+        const totalNeeded = data.total ?? 0;
+        setImagesGenerated(prev => prev + successCount);
+        if (totalNeeded > 0 && imagesNeeded === 0) {
+          setImagesNeeded(totalNeeded);
+        }
+        toast.success(`${successCount} imagens geradas! ${hasMore ? 'Clique novamente para o próximo lote.' : 'Todos os lotes concluídos.'}`);
       }
     } catch (err) {
       toast.error(`Erro ao gerar imagens: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
@@ -154,8 +188,27 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
           </div>
         </div>
 
+        {/* Auto-calculate hint */}
+        {imagesNeeded === 0 && stepsCount > 0 && (
+          <div className="flex items-center gap-2 rounded-md border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
+            <Calculator className="h-4 w-4 shrink-0" />
+            {stepsCount} passos encontrados sem imagens. Clique "Calcular" para definir automaticamente.
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex flex-wrap gap-3">
+          {stepsCount > 0 && (
+            <Button
+              variant="outline"
+              className="min-h-[44px]"
+              onClick={handleAutoCalc}
+            >
+              <Calculator className="mr-2 h-4 w-4" />
+              Calcular ({stepsCount} passos)
+            </Button>
+          )}
+
           <Button
             variant="outline"
             className="min-h-[44px]"
