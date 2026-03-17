@@ -142,22 +142,30 @@ const Dashboard = () => {
   const prevPatentLevelRef = useRef<number | null>(null);
   const [dashboardAccessCount, setDashboardAccessCount] = useState<number>(0);
   
-  // V8 courses (jornadas dentro da trilha V8)
+  // All courses from all trails
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
+  
+  // Split courses: "Caminho da Maestria" trail → "Suas Jornadas", others → "Renda Extra PRO"
+  const maestriaTrailId = trails.find(t => t.order_index === 9)?.id;
+  const maestriaCourses = v8Courses.filter(c => c.trail_id === maestriaTrailId);
+  const rendaExtraCourses = v8Courses.filter(c => c.trail_id !== maestriaTrailId);
   
   // Trilhas órfãs: sem courses (aulas diretas)
   const orphanTrails = trails.filter(t => !v8Courses.some(c => c.trail_id === t.id));
 
-  // Paginação das trilhas órfãs (3 por página = 1 linha de 3)
-  const [trailPage, setTrailPage] = useState(0);
-  const TRAILS_PER_PAGE = 3;
-  const totalTrailPages = Math.max(1, Math.ceil(orphanTrails.length / TRAILS_PER_PAGE));
-  const visibleTrails = orphanTrails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
+  // Renda Extra PRO: non-maestria courses + orphan trails combined count for pagination
+  const rendaExtraTotal = rendaExtraCourses.length + orphanTrails.length;
 
-  // Paginação das jornadas (courses de TODAS as trilhas)
+  const TRAILS_PER_PAGE = 3;
+
+  // Paginação Renda Extra PRO (courses + orphan trails)
+  const [trailPage, setTrailPage] = useState(0);
+  const totalTrailPages = Math.max(1, Math.ceil(rendaExtraTotal / TRAILS_PER_PAGE));
+
+  // Paginação das jornadas Maestria
   const [trailPageV8, setTrailPageV8] = useState(0);
-  const totalTrailPagesV8 = Math.max(1, Math.ceil(v8Courses.length / TRAILS_PER_PAGE));
-  const visibleV8Courses = v8Courses.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
+  const totalTrailPagesV8 = Math.max(1, Math.ceil(maestriaCourses.length / TRAILS_PER_PAGE));
+  const visibleV8Courses = maestriaCourses.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
 
   // Paginação dos desafios profissionais
   const [trailPagePro, setTrailPagePro] = useState(0);
