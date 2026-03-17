@@ -127,7 +127,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           setUserProgress(prog);
           // Resume from saved part
           if (!prog.completed) {
-            setCurrentPart(prog.current_part);
+            setCurrentPart('A');
           }
         }
 
