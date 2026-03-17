@@ -156,6 +156,34 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const [partAText, setPartAText] = useState<string | undefined>(undefined);
   const [partCText, setPartCText] = useState<string | undefined>(undefined);
   const [savingPartNarration, setSavingPartNarration] = useState(false);
+  const [generatingPart, setGeneratingPart] = useState<string | null>(null);
+
+  const handleGeneratePartAudio = async (part: 'A' | 'C') => {
+    if (!pipeline.lesson_id) {
+      toast.error('Vincule uma aula primeiro');
+      return;
+    }
+    const target = part === 'A' ? 'part_a' : 'part_c';
+    setGeneratingPart(part);
+    try {
+      toast.info(`Gerando áudio Parte ${part}...`);
+      const { error } = await supabase.functions.invoke('v10-generate-audio', {
+        body: { pipeline_id: pipeline.id, target }
+      });
+      if (error) throw error;
+      toast.success(`Áudio da Parte ${part} gerado!`);
+      // Refresh narrations
+      const { data } = await supabase
+        .from('v10_lesson_narrations')
+        .select('*')
+        .eq('lesson_id', pipeline.lesson_id as string);
+      if (data) setNarrations(data as unknown as V10LessonNarration[]);
+    } catch (err) {
+      toast.error(`Erro ao gerar áudio Parte ${part}: ${err instanceof Error ? err.message : 'erro'}`);
+    } finally {
+      setGeneratingPart(null);
+    }
+  };
 
   // Fetch anchor counts per step
   useEffect(() => {
