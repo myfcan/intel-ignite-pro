@@ -4,6 +4,7 @@ import { RecapPage } from './RecapPage';
 import { EngagementPage } from './EngagementPage';
 import { GamificationPage } from './GamificationPage';
 import { ExitButton } from '../shared/ExitButton';
+import { V8LessonRating } from '../../v8/V8LessonRating';
 
 interface PartCScreenProps {
   lesson: V10Lesson;
@@ -16,10 +17,11 @@ interface PartCScreenProps {
 /**
  * PartCScreen — Container for Part C (completion / gamification).
  *
- * Manages 3 sub-screens:
+ * Manages 3 sub-screens + rating modal:
  *   C1 = RecapPage
  *   C2 = EngagementPage
  *   C3 = GamificationPage
+ *   → Rating modal (V8LessonRating) before navigating to next lesson
  *
  * Dark background #0F0B1E. Only active page visible via display:none/flex.
  */
@@ -31,6 +33,7 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
   onExit,
 }) => {
   const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   // Build recap items from lesson data
   const recapItems = [
@@ -46,13 +49,23 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
   };
 
   const handleShare = () => {
-    // Share via Web Share API if available
     if (navigator.share) {
       navigator.share({
         title: `Completei: ${lesson.title}`,
         text: `Acabei de completar a aula "${lesson.title}" na AILIV! ${lesson.badge_name ? `Badge: ${lesson.badge_name}` : ''}`,
       }).catch(() => {});
     }
+  };
+
+  // When user clicks "Próxima aula" → show rating modal first
+  const handleNextLessonClick = () => {
+    setShowRatingModal(true);
+  };
+
+  // After rating is submitted or skipped → navigate
+  const handleRatingClose = () => {
+    setShowRatingModal(false);
+    onNextLesson();
   };
 
   return (
@@ -83,8 +96,17 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
         xpReward={lesson.xp_reward}
         streak={streak}
         onShare={handleShare}
-        onNextLesson={onNextLesson}
+        onNextLesson={handleNextLessonClick}
       />
+
+      {/* Rating Modal — same V8 component, same DB table */}
+      {showRatingModal && (
+        <V8LessonRating
+          lessonId={lesson.id}
+          open={showRatingModal}
+          onClose={handleRatingClose}
+        />
+      )}
     </div>
   );
 };
