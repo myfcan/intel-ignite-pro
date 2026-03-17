@@ -38,7 +38,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
             className="relative w-16 h-16 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-transform active:scale-90"
             style={{
               animation: isIntense
-                ? 'liv-fab-pulse-intense 0.6s ease-in-out infinite'
+                ? 'liv-fab-pulse-intense 1.8s ease-in-out infinite'
                 : 'liv-fab-pulse 2s ease-in-out infinite',
               boxShadow: isIntense
                 ? '0 0 20px rgba(16, 185, 129, 0.45), 0 6px 12px -2px rgba(0, 0, 0, 0.15)'
