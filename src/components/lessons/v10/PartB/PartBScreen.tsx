@@ -220,12 +220,15 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       audio.playbackRate = playbackSpeed;
       audio.load();
 
-      const onCanPlay = () => {
-        audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-        audio.removeEventListener('canplay', onCanPlay);
-      };
-      audio.addEventListener('canplay', onCanPlay);
-      return () => audio.removeEventListener('canplay', onCanPlay);
+      // Only autoplay when Part B is the active/visible part
+      if (isActive) {
+        const onCanPlay = () => {
+          audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+          audio.removeEventListener('canplay', onCanPlay);
+        };
+        audio.addEventListener('canplay', onCanPlay);
+        return () => audio.removeEventListener('canplay', onCanPlay);
+      }
     } else {
       audio.pause();
       audio.removeAttribute('src');
