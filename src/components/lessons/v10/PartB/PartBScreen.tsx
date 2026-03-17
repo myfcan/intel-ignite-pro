@@ -49,6 +49,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   lessonTitle,
   onComplete,
   onBack,
+  onExit,
   initialStep = 0,
   initialFrame = 0,
   onProgressUpdate,
