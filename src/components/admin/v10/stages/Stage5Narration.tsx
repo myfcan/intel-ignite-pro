@@ -213,19 +213,13 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
     const script = editingScripts[stepId];
     if (script === undefined) return;
 
-    const currentStep = steps.find((s) => s.id === stepId);
     const nextScript = script || null;
-    const scriptChanged = (currentStep?.narration_script ?? '').trim() !== (nextScript ?? '').trim();
 
     setSavingScript(stepId);
     try {
-      const payload = scriptChanged
-        ? { narration_script: nextScript, audio_url: null, duration_seconds: 0 }
-        : { narration_script: nextScript };
-
       const { error } = await supabase
         .from('v10_lesson_steps')
-        .update(payload as any)
+        .update({ narration_script: nextScript, audio_url: null, duration_seconds: 0 } as any)
         .eq('id', stepId);
 
       if (error) throw error;
@@ -233,20 +227,16 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
       // Update local state
       setSteps(prev => prev.map(s =>
         s.id === stepId
-          ? {
-              ...s,
-              narration_script: nextScript,
-              ...(scriptChanged ? { audio_url: null, duration_seconds: 0 } : {}),
-            }
+          ? { ...s, narration_script: nextScript, audio_url: null, duration_seconds: 0 }
           : s
       ));
-      toast.success(scriptChanged ? 'Script salvo (áudio marcado para reprocesso)' : 'Script salvo');
+      toast.success('Script salvo (áudio marcado para reprocesso)');
     } catch (err: any) {
       toast.error(`Erro ao salvar script: ${err.message}`);
     } finally {
       setSavingScript(null);
     }
-  }, [editingScripts, steps]);
+  }, [editingScripts]);
 
   // ── Process step: send script to ElevenLabs + extract anchors ──────────
   const handleProcessStep = useCallback(async (step: V10LessonStep) => {
@@ -400,20 +390,12 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
     if (text === undefined) return;
     const existing = narrations.find((n) => n.part === part);
 
-    const normalizedNext = (text ?? '').trim();
-    const normalizedCurrent = (existing?.script_text ?? '').trim();
-    const scriptChanged = normalizedNext !== normalizedCurrent;
-
     setSavingPartNarration(true);
     try {
       if (existing) {
-        const payload = scriptChanged
-          ? { script_text: text || null, audio_url: null, duration_seconds: 0 }
-          : { script_text: text || null };
-
         const { error } = await supabase
           .from('v10_lesson_narrations')
-          .update(payload as any)
+          .update({ script_text: text || null, audio_url: null, duration_seconds: 0 } as any)
           .eq('id', existing.id);
         if (error) throw error;
       } else if (pipeline.lesson_id) {
@@ -422,7 +404,7 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
           .insert({ lesson_id: pipeline.lesson_id, part, script_text: text || null, duration_seconds: 0 } as any);
         if (error) throw error;
       }
-      toast.success(scriptChanged ? `Script Parte ${part} salvo (áudio marcado para reprocesso)` : `Script Parte ${part} salvo`);
+      toast.success(`Script Parte ${part} salvo (áudio marcado para reprocesso)`);
       await refreshAllData();
       if (part === 'A') setEditingPartA(false);
       else setEditingPartC(false);
