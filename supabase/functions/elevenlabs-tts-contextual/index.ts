@@ -90,9 +90,9 @@ async function generateAudio(
   whisper?: boolean,
   apiKey?: string
 ): Promise<string> {
-  // Taciana (oqUwsXKac3MSo4E51ySV) - voz PT-BR nativa professional
-  // Se voiceId for passado, usar ele; senão usar Taciana
-  const voice = voiceId || 'oqUwsXKac3MSo4E51ySV'; // Taciana - voz PT-BR nativa (professional)
+  // Alice (Xb7hH8MSUJpSbSDYk0k2) - voz padrão global
+  // Se voiceId for passado, usar ele; senão usar Alice
+  const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice — padrão global
   
   // Voice settings para efeito de sussurro (mesma voz, configurações diferentes)
   const voiceSettings = whisper 
