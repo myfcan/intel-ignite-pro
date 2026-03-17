@@ -1190,7 +1190,7 @@ const Dashboard = () => {
                   }}
                   aria-label="Carrossel de trilhas"
                 >
-                  {v7Trails.map((trail, idx) => {
+                  {orphanTrails.map((trail, idx) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                     const isActive = idx === snapActiveIndex;
                     return (
