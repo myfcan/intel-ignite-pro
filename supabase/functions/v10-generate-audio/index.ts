@@ -322,7 +322,7 @@ async function generateNarrationScript(
 Retorne APENAS o texto do script, sem aspas, sem markdown, sem instruções.`;
     userMessage = `Tema da aula: ${title}\nContexto: ${topic}`;
   } else {
-    systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração de aproximadamente 20 segundos (cerca de 55 palavras) para o encerramento de uma aula de tecnologia. O script deve:
+    systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração de aproximadamente 20 segundos (cerca de 55 palavras) para o encerramento de uma aula de tecnologia. O script deve:
 - Parabenizar o aluno pela conclusão da aula
 - Fazer um breve recap do que foi aprendido
 - Encorajar o aluno a praticar
