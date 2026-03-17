@@ -71,6 +71,24 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const [auditing, setAuditing] = useState(false);
   const [generating, setGenerating] = useState(false);
 
+  // Trail/Course selectors for lesson creation
+  const [trails, setTrails] = useState<Array<{ id: string; title: string }>>([]);
+  const [courses, setCourses] = useState<Array<{ id: string; trail_id: string; title: string }>>([]);
+  const [selectedTrailId, setSelectedTrailId] = useState<string>('');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+
+  useEffect(() => {
+    async function fetchTrailsCourses() {
+      const [t, c] = await Promise.all([
+        supabase.from('trails').select('id, title').eq('is_active', true).order('order_index'),
+        supabase.from('courses').select('id, trail_id, title').eq('is_active', true).order('order_index'),
+      ]);
+      if (t.data) setTrails(t.data);
+      if (c.data) setCourses(c.data);
+    }
+    if (!pipeline.lesson_id) fetchTrailsCourses();
+  }, [pipeline.lesson_id]);
+
   const fetchSteps = useCallback(async () => {
     if (!pipeline.lesson_id) return;
     setLoading(true);
@@ -98,7 +116,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const handleCreateLesson = async () => {
     setCreatingLesson(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         slug: pipeline.slug,
         title: pipeline.title,
         status: 'draft' as const,
@@ -107,9 +125,11 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         tools: [] as string[],
         xp_reward: 0,
         order_in_trail: 0,
+        ...(selectedTrailId ? { trail_id: selectedTrailId } : {}),
+        ...(selectedCourseId ? { course_id: selectedCourseId } : {}),
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('v10_lessons')
         .insert(payload)
         .select('id')
@@ -258,6 +278,33 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
               Nenhuma aula vinculada ao pipeline
             </p>
           </div>
+
+          {/* Trail/Course selectors */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Trilha (N1)</Label>
+              <Select value={selectedTrailId} onValueChange={(val) => { setSelectedTrailId(val); setSelectedCourseId(''); }}>
+                <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                <SelectContent>
+                  {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedTrailId && (
+              <div className="space-y-2">
+                <Label>Jornada (N2)</Label>
+                <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma jornada" /></SelectTrigger>
+                  <SelectContent>
+                    {courses.filter(c => c.trail_id === selectedTrailId).map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <Button
               onClick={handleCreateLesson}

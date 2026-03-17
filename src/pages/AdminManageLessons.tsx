@@ -47,6 +47,7 @@ interface V10Lesson {
   title: string;
   description: string | null;
   trail_id: string | null;
+  course_id: string | null;
   order_in_trail: number;
   total_steps: number;
   estimated_minutes: number;
@@ -58,7 +59,7 @@ interface V10Lesson {
 
 interface Course {
   id: string;
-  trail_id: string;
+  trail_id: string | null;
   title: string;
   order_index: number;
   is_active: boolean;
@@ -69,6 +70,7 @@ interface Trail {
   title: string;
   order_index: number;
   trail_type: string | null;
+  is_active: boolean;
 }
 
 export default function AdminManageLessons() {
@@ -104,11 +106,28 @@ export default function AdminManageLessons() {
   const [newCourseIcon, setNewCourseIcon] = useState('');
   const [creatingCourse, setCreatingCourse] = useState(false);
 
+  // V10 Move modal
+  const [showV10MoveModal, setShowV10MoveModal] = useState(false);
+  const [v10MoveTarget, setV10MoveTarget] = useState<string>('');
+  const [v10TargetTrailId, setV10TargetTrailId] = useState<string>('');
+  const [v10TargetCourseId, setV10TargetCourseId] = useState<string>('');
+  const [v10TargetOrder, setV10TargetOrder] = useState<number>(0);
+  const [movingV10, setMovingV10] = useState(false);
+
+  // Move course (jornada) modal
+  const [showMoveCourseModal, setShowMoveCourseModal] = useState(false);
+  const [moveCourseTarget, setMoveCourseTarget] = useState<string>('');
+  const [moveCourseTrailId, setMoveCourseTrailId] = useState<string>('');
+  const [movingCourse, setMovingCourse] = useState(false);
+
   // Create trail inline
   const [createNewTrail, setCreateNewTrail] = useState(false);
   const [newTrailTitle, setNewTrailTitle] = useState('');
   const [newTrailIcon, setNewTrailIcon] = useState('');
-  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8' | 'v10'>('v7');
+  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8' | 'v10'>('v8');
+  const [showCreateTrailModal, setShowCreateTrailModal] = useState(false);
+  const [soloTrailTitle, setSoloTrailTitle] = useState('');
+  const [soloTrailIcon, setSoloTrailIcon] = useState('');
 
   useEffect(() => {
     loadData();
@@ -118,10 +137,10 @@ export default function AdminManageLessons() {
     setLoading(true);
     try {
       const [trailsRes, coursesRes, lessonsRes, v10Res] = await Promise.all([
-        supabase.from('trails').select('id, title, order_index, trail_type').order('order_index'),
+        supabase.from('trails').select('id, title, order_index, trail_type, is_active').eq('is_active', true).order('order_index'),
         supabase.from('courses').select('id, trail_id, title, order_index, is_active').order('order_index'),
         supabase.from('lessons').select('id, title, trail_id, course_id, order_index, is_active, created_at, estimated_time, model').order('order_index'),
-        supabase.from('v10_lessons').select('id, slug, title, description, trail_id, order_in_trail, total_steps, estimated_minutes, tools, badge_icon, status, created_at').order('order_in_trail'),
+        supabase.from('v10_lessons').select('id, slug, title, description, trail_id, course_id, order_in_trail, total_steps, estimated_minutes, tools, badge_icon, status, created_at').order('order_in_trail'),
       ]);
 
       if (trailsRes.data) setTrails(trailsRes.data);
@@ -135,30 +154,41 @@ export default function AdminManageLessons() {
 
   // Build hierarchy
   const hierarchy = useMemo(() => {
+    const activeTrailIds = new Set(trails.map(t => t.id));
+
     const trailMap = trails.map(trail => {
       const trailCourses = courses
         .filter(c => c.trail_id === trail.id)
         .map(course => ({
           ...course,
           lessons: lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_index - b.order_index),
+          v10Lessons: v10Lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_in_trail - b.order_in_trail),
         }));
 
-      // Orphaned lessons: have trail_id but no course_id
       const orphanedLessons = lessons.filter(l => l.trail_id === trail.id && !l.course_id);
-
-      // V10 lessons linked to this trail
-      const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id);
+      const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id && !l.course_id);
 
       return { ...trail, courses: trailCourses, orphanedLessons, v10Lessons: trailV10Lessons };
     });
 
-    // Fully orphaned: no trail_id at all
-    const fullyOrphaned = lessons.filter(l => !l.trail_id);
+    // Orphaned courses: trail_id is NULL or points to an inactive trail
+    const orphanedCourses = courses.filter(c => !c.trail_id || !activeTrailIds.has(c.trail_id));
 
-    // V10 orphaned: no trail_id
-    const v10Orphaned = v10Lessons.filter(l => !l.trail_id);
+    // Fully orphaned lessons: no trail_id OR trail_id points to inactive trail (and no course_id in active)
+    const fullyOrphaned = lessons.filter(l => {
+      if (!l.trail_id) return true;
+      if (!activeTrailIds.has(l.trail_id) && !l.course_id) return true;
+      return false;
+    });
 
-    return { trails: trailMap, fullyOrphaned, v10Orphaned };
+    // V10 orphaned: no trail_id or trail points to inactive
+    const v10Orphaned = v10Lessons.filter(l => {
+      if (!l.trail_id && !l.course_id) return true;
+      if (l.trail_id && !activeTrailIds.has(l.trail_id) && !l.course_id) return true;
+      return false;
+    });
+
+    return { trails: trailMap, orphanedCourses, fullyOrphaned, v10Orphaned };
   }, [trails, courses, lessons, v10Lessons]);
 
   function toggleLesson(id: string) {
@@ -272,7 +302,63 @@ export default function AdminManageLessons() {
     }
   }
 
-  // Create course (jornada)
+  // Move V10 lesson
+  async function handleMoveV10Lesson() {
+    if (!v10MoveTarget || !v10TargetTrailId) {
+      toast({ title: 'Selecione uma trilha', variant: 'destructive' });
+      return;
+    }
+    setMovingV10(true);
+    try {
+      const updatePayload: Record<string, unknown> = {
+        trail_id: v10TargetTrailId,
+        order_in_trail: v10TargetOrder,
+        course_id: v10TargetCourseId || null,
+      };
+      const { error } = await (supabase as any)
+        .from('v10_lessons')
+        .update(updatePayload)
+        .eq('id', v10MoveTarget);
+      if (error) throw error;
+      const lesson = v10Lessons.find(l => l.id === v10MoveTarget);
+      toast({ title: 'Aula V10 movida', description: `"${lesson?.title}" atribuída à jornada` });
+      setShowV10MoveModal(false);
+      setV10MoveTarget('');
+      setV10TargetCourseId('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao mover V10', description: error.message, variant: 'destructive' });
+    } finally {
+      setMovingV10(false);
+    }
+  }
+
+  // Move course (jornada) to a trail
+  async function handleMoveCourse() {
+    if (!moveCourseTarget || !moveCourseTrailId) {
+      toast({ title: 'Selecione uma trilha', variant: 'destructive' });
+      return;
+    }
+    setMovingCourse(true);
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ trail_id: moveCourseTrailId })
+        .eq('id', moveCourseTarget);
+      if (error) throw error;
+      const course = courses.find(c => c.id === moveCourseTarget);
+      toast({ title: 'Jornada movida', description: `"${course?.title}" vinculada à trilha` });
+      setShowMoveCourseModal(false);
+      setMoveCourseTarget('');
+      setMoveCourseTrailId('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao mover jornada', description: error.message, variant: 'destructive' });
+    } finally {
+      setMovingCourse(false);
+    }
+  }
+
   async function handleCreateCourse() {
     let trailId = newCourseTrailId;
 
@@ -289,10 +375,8 @@ export default function AdminManageLessons() {
       }
     }
 
-    // Determine if V8
-    const effectiveIsV8 = createNewTrail
-      ? newTrailType === 'v8'
-      : trails.find(t => t.id === trailId)?.trail_type === 'v8';
+    // All trail types support courses/jornadas
+    const effectiveIsV8 = true; // Legacy — all trails now treated uniformly
 
     if (!effectiveIsV8 && !newCourseTitle.trim()) {
       toast({ title: 'Nome da jornada obrigatório', variant: 'destructive' });
@@ -388,6 +472,15 @@ export default function AdminManageLessons() {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          <Button variant="outline" size="sm" onClick={() => {
+            setV10MoveTarget(lesson.id);
+            setV10TargetTrailId(lesson.trail_id || '');
+            setV10TargetOrder(lesson.order_in_trail);
+            setShowV10MoveModal(true);
+          }}>
+            <FolderInput className="w-3 h-3 mr-1" />
+            Mover
+          </Button>
           <Button variant="outline" size="sm" onClick={() => navigate(`/v10/${lesson.slug}`)}>
             <Play className="w-3 h-3 mr-1" />
             Assistir
@@ -430,6 +523,16 @@ export default function AdminManageLessons() {
             <Power className="w-3 h-3 mr-1" />
             {activating === lesson.id ? '...' : lesson.is_active ? 'Off' : 'On'}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            setSelectedLessons(new Set([lesson.id]));
+            setTargetTrailId('');
+            setTargetCourseId('');
+            setTargetOrderIndex(lesson.order_index);
+            setShowMoveModal(true);
+          }}>
+            <FolderInput className="w-3 h-3 mr-1" />
+            Mover
+          </Button>
           <Button variant="outline" size="sm" onClick={() => navigate(lesson.model === 'v8' ? `/v8/${lesson.id}` : `/admin/v7/play/${lesson.id}`)}>
             <Play className="w-3 h-3 mr-1" />
             Assistir
@@ -463,6 +566,10 @@ export default function AdminManageLessons() {
             <Button variant="outline" size="sm" onClick={() => navigate('/admin/pipeline/fix-exercises')}>
               <Wrench className="w-4 h-4 mr-1" />
               Corrigir Exercícios
+            </Button>
+            <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50" onClick={() => setShowCreateTrailModal(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Nova Trilha
             </Button>
             <Button variant="outline" size="sm" className="border-green-500 text-green-600 hover:bg-green-50" onClick={() => setShowCreateCourseModal(true)}>
               <Plus className="w-4 h-4 mr-1" />
@@ -499,8 +606,7 @@ export default function AdminManageLessons() {
                         <div className="flex-1">
                           <CardTitle className="text-base flex items-center gap-2">
                             {trail.title}
-                            {trail.trail_type === 'v8' && <Badge className="text-xs bg-indigo-500/20 text-indigo-400 border-indigo-500/30">V8</Badge>}
-                            {trail.trail_type === 'v10' && <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">V10</Badge>}
+                            {trail.trail_type && <Badge variant="outline" className="text-xs">{trail.trail_type}</Badge>}
                           </CardTitle>
                           <CardDescription className="text-xs">
                             {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0) + trail.v10Lessons.length} aula(s)
@@ -551,15 +657,18 @@ export default function AdminManageLessons() {
                               {expandedCourses.has(course.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                               <BookOpen className="w-4 h-4 text-blue-500" />
                               <span className="font-medium text-sm flex-1">{course.title}</span>
-                              <Badge variant="outline" className="text-xs">{course.lessons.length} aulas</Badge>
+                              <Badge variant="outline" className="text-xs">{course.lessons.length + (course.v10Lessons?.length || 0)} aulas</Badge>
                             </div>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="ml-10 space-y-1 mt-1">
-                              {course.lessons.length === 0 ? (
+                              {course.lessons.length === 0 && (!course.v10Lessons || course.v10Lessons.length === 0) ? (
                                 <p className="text-xs text-muted-foreground py-2">Nenhuma aula nesta jornada</p>
                               ) : (
-                                course.lessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)
+                                <>
+                                  {course.lessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
+                                  {course.v10Lessons?.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
+                                </>
                               )}
                             </div>
                           </CollapsibleContent>
@@ -569,9 +678,9 @@ export default function AdminManageLessons() {
                       {/* V10 lessons in this trail */}
                       {trail.v10Lessons.length > 0 && (
                         <div className="ml-4 mt-2">
-                          <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-md mb-1">
-                            <Layers className="w-4 h-4 text-emerald-500" />
-                            <span className="text-sm font-medium text-emerald-700">Aulas V10 ({trail.v10Lessons.length})</span>
+                          <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-md mb-1">
+                            <Layers className="w-4 h-4 text-amber-500" />
+                            <span className="text-sm font-medium text-amber-700">Aulas V10 sem jornada ({trail.v10Lessons.length})</span>
                           </div>
                           <div className="ml-6 space-y-1">
                             {trail.v10Lessons.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
@@ -597,7 +706,58 @@ export default function AdminManageLessons() {
               </Card>
             ))}
 
-            {/* Fully orphaned lessons */}
+            {/* Jornadas Órfãs (courses sem trilha ativa) */}
+            {hierarchy.orphanedCourses.length > 0 && (
+              <Card className="border-amber-400">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-base flex items-center gap-2 text-amber-600">
+                    <AlertTriangle className="w-5 h-5" />
+                    Jornadas Órfãs (sem trilha)
+                  </CardTitle>
+                  <CardDescription className="text-xs">{hierarchy.orphanedCourses.length} jornada(s) sem trilha ativa</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {hierarchy.orphanedCourses.map(course => {
+                    const courseLessons = lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_index - b.order_index);
+                    const courseV10 = v10Lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_in_trail - b.order_in_trail);
+                    return (
+                      <Collapsible key={course.id} open={expandedCourses.has(course.id)} onOpenChange={() => toggleCourse(course.id)}>
+                        <CollapsibleTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer">
+                            {expandedCourses.has(course.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            <BookOpen className="w-4 h-4 text-amber-500" />
+                            <span className="font-medium text-sm flex-1">{course.title}</span>
+                            <Badge variant="outline" className="text-xs">{courseLessons.length + courseV10.length} aulas</Badge>
+                            <Button variant="outline" size="sm" onClick={(e) => {
+                              e.stopPropagation();
+                              setMoveCourseTarget(course.id);
+                              setMoveCourseTrailId('');
+                              setShowMoveCourseModal(true);
+                            }}>
+                              <FolderInput className="w-3 h-3 mr-1" />
+                              Mover
+                            </Button>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="ml-10 space-y-1 mt-1">
+                            {courseLessons.length === 0 && courseV10.length === 0 ? (
+                              <p className="text-xs text-muted-foreground py-2">Nenhuma aula nesta jornada</p>
+                            ) : (
+                              <>
+                                {courseLessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
+                                {courseV10.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
+                              </>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
             {hierarchy.fullyOrphaned.length > 0 && (
               <Card className="border-red-300">
                 <CardHeader className="py-3 px-4">
@@ -789,17 +949,6 @@ export default function AdminManageLessons() {
                     <Input value={newTrailTitle} onChange={(e) => setNewTrailTitle(e.target.value)} placeholder="Ex: Dominando IA Generativa" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Tipo</label>
-                    <Select value={newTrailType} onValueChange={(v) => setNewTrailType(v as 'v7' | 'v8' | 'v10')}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="v7">V7 (Trilha → Jornada → Aula)</SelectItem>
-                        <SelectItem value="v8">V8 (Trilha → Jornada → Aula)</SelectItem>
-                        <SelectItem value="v10">V10 (BPA Step-by-Step)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
                     <label className="text-sm font-medium mb-1 block">Ícone da Trilha (opcional)</label>
                     <Input value={newTrailIcon} onChange={(e) => setNewTrailIcon(e.target.value)} placeholder="Ex: 🚀 ou Brain" />
                   </div>
@@ -822,6 +971,152 @@ export default function AdminManageLessons() {
               <Button variant="outline" onClick={() => setShowCreateCourseModal(false)} disabled={creatingCourse}>Cancelar</Button>
               <Button onClick={handleCreateCourse} disabled={creatingCourse || (!createNewTrail && !newCourseTrailId) || (createNewTrail && !newTrailTitle.trim())}>
                 {creatingCourse ? 'Criando...' : 'Criar Jornada'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* V10 Move Modal */}
+        <Dialog open={showV10MoveModal} onOpenChange={setShowV10MoveModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderInput className="w-5 h-5 text-primary" />
+                Mover Aula V10
+              </DialogTitle>
+              <DialogDescription>Atribua uma trilha e posição para esta aula V10</DialogDescription>
+            </DialogHeader>
+
+            {v10MoveTarget && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Aula:</p>
+                <p className="text-sm text-muted-foreground">{v10Lessons.find(l => l.id === v10MoveTarget)?.title}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Trilha (N1)</label>
+                <Select value={v10TargetTrailId} onValueChange={(val) => { setV10TargetTrailId(val); setV10TargetCourseId(''); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                  <SelectContent>
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {v10TargetTrailId && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Jornada (N2)</label>
+                  <Select value={v10TargetCourseId} onValueChange={setV10TargetCourseId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione uma jornada" /></SelectTrigger>
+                    <SelectContent>
+                      {courses.filter(c => c.trail_id === v10TargetTrailId).map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Obrigatório para respeitar N1→N2→N3</p>
+                </div>
+              )}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Posição (order_in_trail)</label>
+                <Input type="number" min={0} value={v10TargetOrder} onChange={(e) => setV10TargetOrder(parseInt(e.target.value) || 0)} />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowV10MoveModal(false)} disabled={movingV10}>Cancelar</Button>
+              <Button onClick={handleMoveV10Lesson} disabled={movingV10 || !v10TargetTrailId || !v10TargetCourseId}>
+                {movingV10 ? 'Movendo...' : 'Confirmar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Trail Modal (standalone) */}
+        <Dialog open={showCreateTrailModal} onOpenChange={setShowCreateTrailModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="w-5 h-5 text-blue-500" />
+                Criar Nova Trilha
+              </DialogTitle>
+              <DialogDescription>Uma trilha é a seção principal (N1) que agrupa jornadas</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Nome da Trilha</label>
+                <Input value={soloTrailTitle} onChange={(e) => setSoloTrailTitle(e.target.value)} placeholder="Ex: Renda Extra PRO" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
+                <Input value={soloTrailIcon} onChange={(e) => setSoloTrailIcon(e.target.value)} placeholder="Ex: 🚀 ou Brain" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateTrailModal(false)}>Cancelar</Button>
+              <Button
+                disabled={!soloTrailTitle.trim()}
+                onClick={async () => {
+                  const maxOrder = trails.length > 0 ? Math.max(...trails.map(t => t.order_index)) + 1 : 1;
+                  const { error } = await supabase.from('trails').insert({
+                    title: soloTrailTitle.trim(),
+                    icon: soloTrailIcon.trim() || null,
+                    order_index: maxOrder,
+                    is_active: true,
+                    trail_type: 'v8',
+                  });
+                  if (error) {
+                    toast({ title: 'Erro ao criar trilha', description: error.message, variant: 'destructive' });
+                  } else {
+                    toast({ title: 'Trilha criada', description: `"${soloTrailTitle.trim()}"` });
+                    setShowCreateTrailModal(false);
+                    setSoloTrailTitle('');
+                    setSoloTrailIcon('');
+                    await loadData();
+                  }
+                }}
+              >
+                Criar Trilha
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Move Course (Jornada) Modal */}
+        <Dialog open={showMoveCourseModal} onOpenChange={setShowMoveCourseModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderInput className="w-5 h-5 text-primary" />
+                Mover Jornada
+              </DialogTitle>
+              <DialogDescription>Selecione a trilha destino para esta jornada</DialogDescription>
+            </DialogHeader>
+
+            {moveCourseTarget && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Jornada:</p>
+                <p className="text-sm text-muted-foreground">{courses.find(c => c.id === moveCourseTarget)?.title}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Trilha destino (N1)</label>
+                <Select value={moveCourseTrailId} onValueChange={setMoveCourseTrailId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                  <SelectContent>
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowMoveCourseModal(false)} disabled={movingCourse}>Cancelar</Button>
+              <Button onClick={handleMoveCourse} disabled={movingCourse || !moveCourseTrailId}>
+                {movingCourse ? 'Movendo...' : 'Confirmar'}
               </Button>
             </DialogFooter>
           </DialogContent>

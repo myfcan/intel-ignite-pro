@@ -3242,10 +3242,10 @@ async function generateAudio(
         },
         body: JSON.stringify({
           text: sanitizeTextForV3(text),
-          model_id: 'eleven_v3',
+          model_id: 'eleven_multilingual_v2',
           language_code: 'pt',
           voice_settings: {
-            stability: 0.75,
+            stability: 0.5,
             similarity_boost: 0.75,
             style: 0.3,
             use_speaker_boost: true,
@@ -6870,7 +6870,7 @@ Deno.serve(async (req) => {
     // =========================================================================
     // PASSO 2: GERAR OU REUSAR ÁUDIO PRINCIPAL
     // =========================================================================
-    const voiceId = input.voice_id || 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR
+    const voiceId = input.voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice — padrão global
     const shouldGenerateAudio = input.generate_audio !== false && !input.reprocess;
     const isReprocess = input.reprocess === true;
 

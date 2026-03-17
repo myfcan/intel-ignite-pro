@@ -2,14 +2,13 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem, ChevronRight, Building2, Scale, Stethoscope, Lightbulb } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, DollarSign, Award, Bot, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem, ChevronRight } from "lucide-react";
 import { usePrefetchCourseDetail } from "@/hooks/usePrefetch";
 import DashboardHeader from "@/components/DashboardHeader";
-import TrailCard from "@/components/TrailCard";
 import { V8TrailCard } from "@/components/lessons/v8/V8TrailCard";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { GamificationHeader } from "@/components/gamification/GamificationHeader";
 import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
 import { CourseProgressCard } from "@/components/dashboard/CourseProgressCard";
@@ -20,6 +19,7 @@ import { MobileQuickAccess } from "@/components/dashboard/MobileQuickAccess";
 import { DashboardTour } from "@/components/onboarding/DashboardTour";
 import { BuildBadge } from "@/components/BuildBadge";
 import { DASHBOARD_LAYOUT_ID, logRuntimeSignature } from "@/lib/runtimeSignature";
+import { TrailSection } from "@/components/dashboard/TrailSection";
 
 interface User {
   id: string;
@@ -61,24 +61,6 @@ interface V8Course {
   totalLessons: number;
 }
 
-const PROFESSIONAL_CHALLENGES = [
-  { id: 'pro-1', title: 'IA para Corretores', description: 'Domine IA no mercado imobiliário', icon: '🏢', order_index: 2 },
-  { id: 'pro-2', title: 'IA para Advogados', description: 'Automatize processos jurídicos', icon: '⚖️', order_index: 2 },
-  { id: 'pro-3', title: 'Automações com Calendly', description: 'Automatize agendamentos com IA', icon: '📅', order_index: 2 },
-  { id: 'pro-4', title: 'IA para Médicos', description: 'IA aplicada à saúde', icon: '🩺', order_index: 2 },
-  { id: 'pro-5', title: '10X mais Produtivo com IA', description: 'Multiplique sua produtividade', icon: '⚡', order_index: 2 },
-  { id: 'pro-6', title: 'Criando Modelo de Negócios com IA', description: 'Monte seu negócio com IA', icon: '💡', order_index: 2 },
-];
-
-const PRO_ICONS: Record<string, any> = {
-  'pro-1': Building2,
-  'pro-2': Scale,
-  'pro-3': Calendar,
-  'pro-4': Stethoscope,
-  'pro-5': Zap,
-  'pro-6': Lightbulb,
-};
-
 // ══════ MODULE-LEVEL CONSTANTS (Fase 5: avoid re-creation per render) ══════
 const TRAIL_ICONS: Record<string, any> = {
   'Brain': Brain,
@@ -94,17 +76,6 @@ const TRAIL_ICONS: Record<string, any> = {
   '💰': DollarSign,
 };
 
-const TRAIL_GRADIENTS: { [key: string]: string } = {
-  'Fundamentos IA': 'from-indigo-500 to-indigo-600',
-  'Domando as IAs nos Negócios': 'from-violet-500 to-violet-600',
-  'Dominando Copyright Com IA': 'from-purple-500 to-purple-600',
-  'Renda Extra com IA': 'from-yellow-500 to-yellow-600',
-  'IA para Profissionais': 'from-blue-500 to-blue-600',
-  'Expert em vendas com IA': 'from-pink-500 to-pink-600',
-  'Dominando as IAs Avançado': 'from-amber-500 to-orange-600',
-  'Vibe Code: Criando Apps com IA': 'from-emerald-500 to-teal-600',
-};
-
 const TRAIL_CATEGORY_MAP: Record<number, string> = {
   1: 'Fundamentos',
   2: 'Profissionais',
@@ -112,6 +83,8 @@ const TRAIL_CATEGORY_MAP: Record<number, string> = {
   4: 'Copyright',
   5: 'Renda Extra',
   6: 'Vendas',
+  9: 'Maestria',
+  10: 'Renda Extra PRO',
 };
 
 const PATENT_NAMES: Record<number, string> = {
@@ -142,148 +115,50 @@ const Dashboard = () => {
   const prevPatentLevelRef = useRef<number | null>(null);
   const [dashboardAccessCount, setDashboardAccessCount] = useState<number>(0);
   
-  // V8 courses (jornadas dentro da trilha V8)
+  // All courses from all trails
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
   
-  // Separar trilhas V7 e V8
-  const v7Trails = trails.filter(t => t.trail_type !== 'v8');
-  const v8Trails = trails.filter(t => t.trail_type === 'v8');
+  // Dynamic trail sections: group courses by trail_id, Maestria first then by order_index
+  const maestriaTrailId = trails.find(t => t.order_index === 9)?.id;
 
-  // Paginação das trilhas V7 (3 por página = 1 linha de 3)
-  const [trailPage, setTrailPage] = useState(0);
-  const TRAILS_PER_PAGE = 3;
-  const totalTrailPages = Math.max(1, Math.ceil(v7Trails.length / TRAILS_PER_PAGE));
-  const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
-
-  // Paginação das jornadas V8 (courses)
-  const [trailPageV8, setTrailPageV8] = useState(0);
-  const totalTrailPagesV8 = Math.max(1, Math.ceil(v8Courses.length / TRAILS_PER_PAGE));
-  const visibleV8Courses = v8Courses.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
-
-  // Paginação dos desafios profissionais
-  const [trailPagePro, setTrailPagePro] = useState(0);
-  const totalTrailPagesPro = Math.max(1, Math.ceil(PROFESSIONAL_CHALLENGES.length / TRAILS_PER_PAGE));
-  const visibleProChallenges = PROFESSIONAL_CHALLENGES.slice(trailPagePro * TRAILS_PER_PAGE, (trailPagePro + 1) * TRAILS_PER_PAGE);
-
-  // Snap carousel V7: refs e estado do card ativo
-  const snapScrollerRef = useRef<HTMLDivElement | null>(null);
-  const snapItemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [snapActiveIndex, setSnapActiveIndex] = useState(0);
-
-  // Snap carousel V8: refs e estado do card ativo
-  const snapScrollerRefV8 = useRef<HTMLDivElement | null>(null);
-  const snapItemRefsV8 = useRef<(HTMLDivElement | null)[]>([]);
-  const [snapActiveIndexV8, setSnapActiveIndexV8] = useState(0);
-
-  // Snap carousel Pro: refs e estado do card ativo
-  const snapScrollerRefPro = useRef<HTMLDivElement | null>(null);
-  const snapItemRefsPro = useRef<(HTMLDivElement | null)[]>([]);
-  const [snapActiveIndexPro, setSnapActiveIndexPro] = useState(0);
-
-  // IntersectionObserver para detectar card ativo (>=60% visível)
-  useEffect(() => {
-    const root = snapScrollerRef.current;
-    if (!root || v7Trails.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        let best: { idx: number; ratio: number } | null = null;
-        for (const entry of entries) {
-          const idx = Number((entry.target as HTMLElement).dataset.snapIndex);
-          if (Number.isNaN(idx)) continue;
-          if (!best || entry.intersectionRatio > best.ratio) {
-            best = { idx, ratio: entry.intersectionRatio };
-          }
-        }
-        if (best && best.ratio >= 0.6) {
-          setSnapActiveIndex(best.idx);
-        }
-      },
-      {
-        root,
-        threshold: [0.5, 0.8],
+  const trailSections = useMemo(() => {
+    // Group courses by trail_id
+    const grouped = new Map<string, V8Course[]>();
+    for (const course of v8Courses) {
+      if (!grouped.has(course.trail_id)) {
+        grouped.set(course.trail_id, []);
       }
-    );
+      grouped.get(course.trail_id)!.push(course);
+    }
 
-    snapItemRefs.current.forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
-  }, [v7Trails]);
+    // Build sections: only trails with courses
+    const sections: { trail: Trail; courses: V8Course[] }[] = [];
+    
+    // Maestria first
+    if (maestriaTrailId && grouped.has(maestriaTrailId)) {
+      const maestriaTrail = trails.find(t => t.id === maestriaTrailId);
+      if (maestriaTrail) {
+        sections.push({ trail: maestriaTrail, courses: grouped.get(maestriaTrailId)! });
+      }
+    }
 
-  const scrollToSnapIndex = (idx: number) => {
-    const el = snapItemRefs.current[idx];
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  };
+    // Then other ALLOWED trails sorted by order_index (only N1: Maestria=9, IA Profissionais=2, Renda Extra PRO=3)
+    const allowedOrderIndexes = new Set([9, 2, 3]);
+    const otherTrails = trails
+      .filter(t => t.id !== maestriaTrailId && grouped.has(t.id) && allowedOrderIndexes.has(t.order_index))
+      .sort((a, b) => a.order_index - b.order_index);
 
-  // IntersectionObserver V8
-  useEffect(() => {
-    const root = snapScrollerRefV8.current;
-    if (!root || v8Courses.length === 0) return;
+    for (const trail of otherTrails) {
+      sections.push({ trail, courses: grouped.get(trail.id)! });
+    }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        let best: { idx: number; ratio: number } | null = null;
-        for (const entry of entries) {
-          const idx = Number((entry.target as HTMLElement).dataset.snapIndex);
-          if (Number.isNaN(idx)) continue;
-          if (!best || entry.intersectionRatio > best.ratio) {
-            best = { idx, ratio: entry.intersectionRatio };
-          }
-        }
-        if (best && best.ratio >= 0.6) {
-          setSnapActiveIndexV8(best.idx);
-        }
-      },
-      { root, threshold: [0.5, 0.8] }
-    );
-
-    snapItemRefsV8.current.forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
-  }, [v8Courses]);
-
-  const scrollToSnapIndexV8 = (idx: number) => {
-    const el = snapItemRefsV8.current[idx];
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  };
-
-  // IntersectionObserver Pro
-  useEffect(() => {
-    const root = snapScrollerRefPro.current;
-    if (!root || PROFESSIONAL_CHALLENGES.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        let best: { idx: number; ratio: number } | null = null;
-        for (const entry of entries) {
-          const idx = Number((entry.target as HTMLElement).dataset.snapIndex);
-          if (Number.isNaN(idx)) continue;
-          if (!best || entry.intersectionRatio > best.ratio) {
-            best = { idx, ratio: entry.intersectionRatio };
-          }
-        }
-        if (best && best.ratio >= 0.6) {
-          setSnapActiveIndexPro(best.idx);
-        }
-      },
-      { root, threshold: [0.5, 0.8] }
-    );
-
-    snapItemRefsPro.current.forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
-  const scrollToSnapIndexPro = (idx: number) => {
-    const el = snapItemRefsPro.current[idx];
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  };
+    return sections;
+  }, [v8Courses, trails, maestriaTrailId]);
 
   // Fase 3: Guarda anti-stale — valida fingerprint no mount do dashboard
   useEffect(() => {
     logRuntimeSignature({ route: '/dashboard', layoutId: DASHBOARD_LAYOUT_ID });
     
-    // Anti-stale guard: verifica se o layout tag no DOM bate com o esperado
     const guardKey = `ailiv_dashboard_guard_${DASHBOARD_LAYOUT_ID}`;
     const el = document.querySelector(`[data-layout-id]`);
     if (el) {
@@ -292,7 +167,6 @@ const Dashboard = () => {
         console.error(`[AIliv:AntiStale] Layout mismatch: DOM=${actual} vs expected=${DASHBOARD_LAYOUT_ID}`);
         if (!sessionStorage.getItem(guardKey)) {
           sessionStorage.setItem(guardKey, '1');
-          // Purge e reload
           if ('caches' in window) caches.keys().then(n => n.forEach(k => caches.delete(k)));
           window.location.reload();
           return;
@@ -303,12 +177,7 @@ const Dashboard = () => {
     checkAuth();
   }, []);
 
-
-  // REMOVIDO: refreshGamification duplicado que causava múltiplos fetches
-  // O useUserGamification já faz fetch automaticamente via onAuthStateChange
-
   // CRITICAL FIX: useMemo recalcula quando isAdmin muda
-  // Isso garante que as trilhas são recalculadas APÓS admin status ser confirmado
   const trailsProgressWithStatus = useMemo(() => {
     console.log('[Dashboard] Recalculando trailsProgressWithStatus. isAdmin:', isAdmin, 'adminLoading:', adminLoading);
     
@@ -320,14 +189,11 @@ const Dashboard = () => {
       if (tp.progress === 100) {
         status = 'completed';
       } else if (isAdmin) {
-        // Admin tem acesso a todas as trilhas
         console.log('[Dashboard] Admin bypass - trilha desbloqueada:', trail.title);
         status = 'active';
       } else if (trail.order_index === 1) {
-        // Primeira trilha sempre desbloqueada
         status = 'active';
       } else {
-        // Trilhas seguintes dependem da anterior
         const previousProgress = trailsProgress[index - 1];
         status = previousProgress?.progress === 100 ? 'active' : 'locked';
       }
@@ -347,7 +213,6 @@ const Dashboard = () => {
 
       const userId = session.user.id;
 
-      // ══════ Fase 1: Single getSession + parallel queries for users + roles + daily usage ══════
       const today = new Date().toISOString().slice(0, 10);
       const [userResult, rolesResult, dailyUsageResult] = await Promise.all([
         supabase.from('users').select('*').eq('id', userId).maybeSingle(),
@@ -360,7 +225,6 @@ const Dashboard = () => {
         throw userResult.error;
       }
 
-      // Process roles immediately (eliminates useIsAdmin waterfall)
       const roles = (rolesResult.data || []).map((r: any) => r.role);
       const hasAdmin = roles.includes('admin');
       const hasSupervisor = roles.includes('supervisor');
@@ -370,7 +234,6 @@ const Dashboard = () => {
 
       let finalUser = userResult.data;
 
-      // If user doesn't exist, create automatically
       if (!finalUser) {
         const { data: newUser, error: createError } = await supabase
           .from('users')
@@ -390,18 +253,15 @@ const Dashboard = () => {
         finalUser = newUser;
       }
 
-      // Override interaction fields with v10_user_daily_usage data (if available)
       if (dailyUsageResult.data) {
         finalUser.interactions_used_today = (dailyUsageResult.data as Record<string, number>).interactions_used;
         finalUser.daily_interaction_limit = (dailyUsageResult.data as Record<string, number>).interactions_limit;
       } else {
-        // No usage row for today means 0 used
         finalUser.interactions_used_today = 0;
       }
 
       setUser(finalUser);
       
-      // Atomic backend login registration — no sessionStorage needed
       const lastSignInAt = session.user.last_sign_in_at || new Date().toISOString();
       const { data: loginResult, error: loginError } = await supabase
         .rpc('register_dashboard_login', { p_last_sign_in_at: lastSignInAt });
@@ -409,16 +269,13 @@ const Dashboard = () => {
       if (!loginError && loginResult && loginResult.length > 0) {
         const { access_count, is_first_access } = loginResult[0];
         setDashboardAccessCount(access_count);
-        // Store first-access flag for tour (will be read by DashboardTour)
         if (is_first_access) {
           sessionStorage.setItem('ailiv_show_tour_now', '1');
         }
       } else {
-        // Fallback: use DB value
         setDashboardAccessCount(finalUser.dashboard_access_count ?? 0);
       }
 
-      // ══════ Fase 1: Extract gamification from same users query (no separate hook) ══════
       const patentLevel = finalUser.patent_level || 0;
       const newStats = {
         powerScore: finalUser.power_score || 0,
@@ -431,14 +288,12 @@ const Dashboard = () => {
       setGamificationStats(newStats);
       setGamificationLoading(false);
 
-      // Detect patent level up
       if (prevPatentLevelRef.current !== null && patentLevel > prevPatentLevelRef.current) {
         setShowPatentCelebration(true);
         setTimeout(() => setShowPatentCelebration(false), 3500);
       }
       prevPatentLevelRef.current = patentLevel;
 
-      // Fetch trails (already uses parallel queries internally)
       await fetchTrailsWithProgress(userId);
     } catch (error: any) {
       console.error('Error checking auth:', error);
@@ -456,11 +311,12 @@ const Dashboard = () => {
 
   const fetchTrailsWithProgress = async (userId: string) => {
     try {
-      // ══════ Fase 2: Parallel queries with Promise.all ══════
-      const [trailsResult, lessonsResult, progressResult] = await Promise.all([
+      const [trailsResult, lessonsResult, progressResult, v10LessonsResult, v10ProgressResult] = await Promise.all([
         supabase.from('trails').select('*').eq('is_active', true).order('order_index'),
         supabase.from('lessons').select('id, trail_id, course_id').eq('is_active', true),
         supabase.from('user_progress').select('lesson_id, status').eq('user_id', userId).eq('status', 'completed'),
+        (supabase as any).from('v10_lessons').select('id, trail_id, course_id, status').eq('status', 'published'),
+        (supabase as any).from('v10_user_lesson_progress').select('lesson_id, completed').eq('user_id', userId).eq('completed', true),
       ]);
 
       if (trailsResult.error) throw trailsResult.error;
@@ -468,15 +324,23 @@ const Dashboard = () => {
       const trailsData = trailsResult.data || [];
       const allLessons = lessonsResult.data || [];
       const allProgress = progressResult.data || [];
+      const v10LessonsData = (v10LessonsResult.data || []) as Array<{ id: string; trail_id: string | null; course_id: string | null; status: string }>;
+      const v10ProgressData = (v10ProgressResult.data || []) as Array<{ lesson_id: string; completed: boolean }>;
 
       setTrails(trailsData);
 
-      // Create a map of completed lesson IDs for fast lookup
-      const completedLessonIds = new Set(allProgress.map(p => p.lesson_id));
+      const completedLessonIds = new Set([
+        ...allProgress.map(p => p.lesson_id),
+        ...v10ProgressData.map(p => p.lesson_id),
+      ]);
 
-      // Group lessons by trail_id in memory
+      const allLessonsUnified = [
+        ...allLessons,
+        ...v10LessonsData.map(l => ({ id: l.id, trail_id: l.trail_id, course_id: l.course_id })),
+      ];
+
       const lessonsByTrail = new Map<string, string[]>();
-      allLessons.forEach(lesson => {
+      allLessonsUnified.forEach(lesson => {
         if (lesson.trail_id && !lessonsByTrail.has(lesson.trail_id)) {
           lessonsByTrail.set(lesson.trail_id, []);
         }
@@ -485,7 +349,6 @@ const Dashboard = () => {
         }
       });
 
-      // Calculate progress for each trail in memory
       const progressData: TrailProgress[] = [];
       
       for (const trail of trailsData) {
@@ -509,21 +372,20 @@ const Dashboard = () => {
 
       setTrailsProgress(progressData);
 
-      // Fetch V8 courses (conditional — only if v8 trails exist)
-      const v8TrailIds = trailsData.filter(t => t.trail_type === 'v8').map(t => t.id);
-      if (v8TrailIds.length > 0) {
+      // Fetch courses from ALL trails (system-agnostic)
+      const allTrailIds = trailsData.map(t => t.id);
+      if (allTrailIds.length > 0) {
         const { data: coursesData } = await supabase
           .from('courses')
           .select('*')
-          .in('trail_id', v8TrailIds)
+          .in('trail_id', allTrailIds)
           .eq('is_active', true)
           .order('order_index');
 
         if (coursesData && coursesData.length > 0) {
-          // We already have allLessons with course_id — no need for extra query!
-          const v8CoursesWithProgress: V8Course[] = coursesData.map(course => {
-            const lessons = allLessons.filter(l => l.course_id === course.id);
-            const completed = lessons.filter(l => completedLessonIds.has(l.id)).length;
+          const allCoursesWithProgress: V8Course[] = coursesData.map(course => {
+            const courseLessons = allLessonsUnified.filter(l => l.course_id === course.id);
+            const completed = courseLessons.filter(l => completedLessonIds.has(l.id)).length;
             return {
               id: course.id,
               title: course.title,
@@ -532,10 +394,10 @@ const Dashboard = () => {
               order_index: course.order_index,
               trail_id: course.trail_id,
               completedLessons: completed,
-              totalLessons: lessons.length,
+              totalLessons: courseLessons.length,
             };
           });
-          setV8Courses(v8CoursesWithProgress);
+          setV8Courses(allCoursesWithProgress);
         }
       }
     } catch (error: any) {
@@ -548,7 +410,6 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  // Esperar loading do dashboard E do status de admin
   if (loading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -651,7 +512,7 @@ const Dashboard = () => {
               accessCount={dashboardAccessCount}
               activeTrail={activeTrail ? { id: activeTrail.id, title: activeTrail.title } : null}
               hasProgress={hasAnyProgress}
-              v8TrailId={v8Trails.length > 0 ? v8Trails[0].id : null}
+              
             />
 
             {/* ===== PURPLE HERO BANNER - Hidden on mobile ===== */}
@@ -814,481 +675,21 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* ===== SECTION TITLE: TRILHAS ===== */}
-            {(v8Trails.length > 0 || v7Trails.length > 0) && (
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
-            )}
+            {/* ===== DYNAMIC TRAIL SECTIONS ===== */}
+            {trailSections.length > 0 && (
+              <div id="suas-trilhas">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
 
-            {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
-            {v8Courses.length > 0 && (
-            <motion.div
-              id="tour-trilhas"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="mb-6 rounded-[20px] p-5 sm:p-6"
-              style={{
-                background: 'white',
-                border: '1px solid hsl(230 15% 92%)',
-                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
-              }}
-            >
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Crown className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  <h2 className="text-base sm:text-lg font-bold text-indigo-800 tracking-tight whitespace-nowrap truncate">Seu Caminho de Maestria</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* Ver todos pill */}
-                  <button
-                    onClick={() => {
-                      if (v8Trails.length === 1) {
-                        navigate(`/v8-trail/${v8Trails[0].id}`);
-                      } else {
-                        navigate('/all-trails/v8');
-                      }
-                    }}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
-                    style={{ background: 'hsl(226 100% 97%)', color: 'hsl(239 84% 67%)', border: '1px solid hsl(224 76% 90%)' }}
-                  >
-                    Ver todos ›
-                  </button>
-                  {/* Pagination arrows */}
-                  <div className="hidden sm:flex items-center gap-2">
-                    <button
-                      onClick={() => setTrailPageV8(p => Math.max(0, p - 1))}
-                      disabled={trailPageV8 === 0}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-indigo-600 hover:bg-indigo-50'}`}
-                      style={{ background: 'hsl(226 100% 97%)', border: '1px solid hsl(224 76% 90%)' }}
-                    >
-                      ‹
-                    </button>
-                    <button
-                      onClick={() => setTrailPageV8(p => Math.min(totalTrailPagesV8 - 1, p + 1))}
-                      disabled={trailPageV8 >= totalTrailPagesV8 - 1}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPageV8 >= totalTrailPagesV8 - 1 ? 'text-slate-300 cursor-not-allowed' : 'text-indigo-600 hover:bg-indigo-50'}`}
-                      style={{ background: 'hsl(226 100% 97%)', border: '1px solid hsl(224 76% 90%)' }}
-                    >
-                      ›
-                    </button>
-                    <span className="text-xs text-slate-400 font-medium ml-1">
-                      {trailPageV8 + 1}/{totalTrailPagesV8}
-                    </span>
-                  </div>
-                </div>
+                {trailSections.map((section, idx) => (
+                  <TrailSection
+                    key={section.trail.id}
+                    trailTitle={section.trail.id === maestriaTrailId ? 'Seu caminho para Maestria' : section.trail.title}
+                    courses={section.courses}
+                    sectionId={idx === 0 ? 'tour-trilhas' : undefined}
+                    isMaestria={section.trail.id === maestriaTrailId}
+                  />
+                ))}
               </div>
-              {/* Mobile carousel */}
-              <div className="sm:hidden">
-                <div
-                  ref={snapScrollerRefV8}
-                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden"
-                  style={{
-                    scrollSnapType: 'x mandatory',
-                    scrollPaddingLeft: 20,
-                    scrollPaddingRight: 20,
-                    padding: '0 20px 10px 20px',
-                    WebkitOverflowScrolling: 'touch',
-                    overscrollBehaviorX: 'contain',
-                    touchAction: 'pan-x',
-                  }}
-                  aria-label="Carrossel de trilhas V8"
-                >
-                  {v8Courses.map((course, idx) => {
-                    const isActive = idx === snapActiveIndexV8;
-                    return (
-                      <div
-                        key={course.id}
-                        ref={(el) => { snapItemRefsV8.current[idx] = el; }}
-                        data-snap-index={idx}
-                        className="snap-item relative flex-shrink-0"
-                        style={{
-                          scrollSnapAlign: 'center',
-                          scrollSnapStop: 'always',
-                          flex: '0 0 82%',
-                          maxWidth: 360,
-                          transform: isActive ? 'scale(1)' : 'scale(0.94)',
-                          filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
-                          opacity: isActive ? 1 : 0.96,
-                          transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
-                        }}
-                      >
-                        <V8TrailCard
-                          trailId={course.trail_id}
-                          title={course.title}
-                          description={course.description || ''}
-                          icon={course.icon || '📘'}
-                          lessonCount={course.totalLessons}
-                          completedCount={course.completedLessons}
-                          orderIndex={course.order_index}
-                          navigateToId={course.id}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center justify-center gap-2 mt-2">
-                  {v8Courses.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => scrollToSnapIndexV8(idx)}
-                      className="rounded-full transition-all duration-200"
-                      style={{
-                        width: idx === snapActiveIndexV8 ? 10 : 7,
-                        height: idx === snapActiveIndexV8 ? 10 : 7,
-                        background: idx === snapActiveIndexV8
-                          ? 'rgba(99,102,241,1)'
-                          : 'rgba(148,163,184,0.45)',
-                        transform: idx === snapActiveIndexV8 ? 'scale(1.15)' : 'scale(1)',
-                      }}
-                      aria-label={`Ir para jornada V8 ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-              {/* Desktop grid */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={trailPageV8}
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:grid sm:grid-cols-3 gap-4"
-                >
-                  {visibleV8Courses.map((course) => (
-                    <div key={course.id} className="flex-1 min-w-0">
-                      <V8TrailCard
-                        trailId={course.trail_id}
-                        title={course.title}
-                        description={course.description || ''}
-                        icon={course.icon || '📘'}
-                        lessonCount={course.totalLessons}
-                        completedCount={course.completedLessons}
-                        orderIndex={course.order_index}
-                        navigateToId={course.id}
-                      />
-                    </div>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-            )}
-
-            {/* ===== IA PARA PROFISSIONAIS ===== */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mb-6 rounded-[20px] p-5 sm:p-6"
-              style={{
-                background: 'white',
-                border: '1px solid hsl(230 15% 92%)',
-                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
-              }}
-            >
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Briefcase className="w-5 h-5 text-violet-500 flex-shrink-0" />
-                  <h2 className="text-base sm:text-lg font-bold text-violet-800 tracking-tight whitespace-nowrap truncate">IA para Profissionais</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
-                    style={{ background: 'hsl(270 100% 97%)', color: 'hsl(262 83% 58%)', border: '1px solid hsl(270 76% 90%)' }}
-                  >
-                    Ver todos ›
-                  </button>
-                  <div className="hidden sm:flex items-center gap-2">
-                    <button
-                      onClick={() => setTrailPagePro(p => Math.max(0, p - 1))}
-                      disabled={trailPagePro === 0}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPagePro === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50'}`}
-                      style={{ background: 'hsl(270 100% 97%)', border: '1px solid hsl(270 76% 90%)' }}
-                    >
-                      ‹
-                    </button>
-                    <button
-                      onClick={() => setTrailPagePro(p => Math.min(totalTrailPagesPro - 1, p + 1))}
-                      disabled={trailPagePro >= totalTrailPagesPro - 1}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPagePro >= totalTrailPagesPro - 1 ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50'}`}
-                      style={{ background: 'hsl(270 100% 97%)', border: '1px solid hsl(270 76% 90%)' }}
-                    >
-                      ›
-                    </button>
-                    <span className="text-xs text-slate-400 font-medium ml-1">
-                      {trailPagePro + 1}/{totalTrailPagesPro}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mobile carousel */}
-              <div className="sm:hidden">
-                <div
-                  ref={snapScrollerRefPro}
-                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden"
-                  style={{
-                    scrollSnapType: 'x mandatory',
-                    scrollPaddingLeft: 20,
-                    scrollPaddingRight: 20,
-                    padding: '0 20px 10px 20px',
-                    WebkitOverflowScrolling: 'touch',
-                    overscrollBehaviorX: 'contain',
-                    touchAction: 'pan-x',
-                  }}
-                  aria-label="Carrossel de desafios profissionais"
-                >
-                  {PROFESSIONAL_CHALLENGES.map((challenge, idx) => {
-                    const isActive = idx === snapActiveIndexPro;
-                    return (
-                      <div
-                        key={challenge.id}
-                        ref={(el) => { snapItemRefsPro.current[idx] = el; }}
-                        data-snap-index={idx}
-                        className="snap-item relative flex-shrink-0"
-                        style={{
-                          scrollSnapAlign: 'center',
-                          scrollSnapStop: 'always',
-                          flex: '0 0 82%',
-                          maxWidth: 360,
-                          transform: isActive ? 'scale(1)' : 'scale(0.94)',
-                          filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
-                          opacity: isActive ? 1 : 0.96,
-                          transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
-                        }}
-                      >
-                        <TrailCard
-                          trail={challenge}
-                          Icon={PRO_ICONS[challenge.id] || Briefcase}
-                          progress={0}
-                          completedLessons={0}
-                          totalLessons={0}
-                          status={isAdmin ? "active" : "locked"}
-                          gradient=""
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center justify-center gap-2 mt-0">
-                  {PROFESSIONAL_CHALLENGES.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => scrollToSnapIndexPro(idx)}
-                      className="rounded-full transition-all duration-200"
-                      style={{
-                        width: idx === snapActiveIndexPro ? 10 : 7,
-                        height: idx === snapActiveIndexPro ? 10 : 7,
-                        background: idx === snapActiveIndexPro
-                          ? 'rgba(139,92,246,1)'
-                          : 'rgba(148,163,184,0.45)',
-                        transform: idx === snapActiveIndexPro ? 'scale(1.15)' : 'scale(1)',
-                      }}
-                      aria-label={`Ir para desafio ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Desktop grid */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={trailPagePro}
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:grid sm:grid-cols-3 gap-4"
-                >
-                  {visibleProChallenges.map((challenge) => (
-                    <div key={challenge.id} className="flex-1 min-w-0">
-                      <TrailCard
-                        trail={challenge}
-                        Icon={PRO_ICONS[challenge.id] || Briefcase}
-                        progress={0}
-                        completedLessons={0}
-                        totalLessons={0}
-                        status={isAdmin ? "active" : "locked"}
-                        gradient=""
-                      />
-                    </div>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-
-            {/* ===== RENDA EXTRA PRO (V7) ===== */}
-            {v7Trails.length > 0 && (
-            <motion.div
-              id="suas-trilhas"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.25 }}
-              className="mb-6 rounded-[20px] p-5 sm:p-6"
-              style={{
-                background: 'white',
-                border: '1px solid hsl(230 15% 92%)',
-                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
-              }}
-            >
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Rocket className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                  <h2 className="text-base sm:text-lg font-bold text-blue-800 tracking-tight whitespace-nowrap truncate">Renda Extra PRO</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* Ver todos pill */}
-                  <button
-                    onClick={() => {
-                      if (v7Trails.length === 1) {
-                        navigate(`/trail/${v7Trails[0].id}`);
-                      } else {
-                        navigate('/all-trails/v7');
-                      }
-                    }}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
-                    style={{ background: 'hsl(214 100% 97%)', color: 'hsl(217 91% 60%)', border: '1px solid hsl(214 76% 90%)' }}
-                  >
-                    Ver todos ›
-                  </button>
-                  {/* Pagination arrows - hidden on mobile, visible on sm+ */}
-                  <div className="hidden sm:flex items-center gap-2">
-                    <button
-                      onClick={() => setTrailPage(p => Math.max(0, p - 1))}
-                      disabled={trailPage === 0}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                      style={{ background: 'hsl(214 100% 97%)', border: '1px solid hsl(214 76% 90%)' }}
-                    >
-                      ‹
-                    </button>
-                    <button
-                      onClick={() => setTrailPage(p => Math.min(totalTrailPages - 1, p + 1))}
-                      disabled={trailPage >= totalTrailPages - 1}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${trailPage >= totalTrailPages - 1 ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                      style={{ background: 'hsl(214 100% 97%)', border: '1px solid hsl(214 76% 90%)' }}
-                    >
-                      ›
-                    </button>
-                    <span className="text-xs text-slate-400 font-medium ml-1">
-                      {trailPage + 1}/{totalTrailPages}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mobile: Premium Snap Carousel */}
-              <div className="sm:hidden">
-                <style>{`
-                  .snap-carousel { scrollbar-width: none; -ms-overflow-style: none; }
-                  .snap-carousel::-webkit-scrollbar { display: none; }
-                  @media (prefers-reduced-motion: reduce) {
-                    .snap-item { transition: none !important; }
-                  }
-                `}</style>
-                <div
-                  ref={snapScrollerRef}
-                  className="snap-carousel flex gap-4 overflow-x-auto overflow-y-hidden"
-                  style={{
-                    scrollSnapType: 'x mandatory',
-                    scrollPaddingLeft: 20,
-                    scrollPaddingRight: 20,
-                    padding: '0 20px 10px 20px',
-                    WebkitOverflowScrolling: 'touch',
-                    overscrollBehaviorX: 'contain',
-                    touchAction: 'pan-x',
-                  }}
-                  aria-label="Carrossel de trilhas"
-                >
-                  {v7Trails.map((trail, idx) => {
-                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-                    const isActive = idx === snapActiveIndex;
-                    return (
-                      <div
-                        key={trail.id}
-                        ref={(el) => { snapItemRefs.current[idx] = el; }}
-                        data-snap-index={idx}
-                        className="snap-item relative flex-shrink-0"
-                        style={{
-                          scrollSnapAlign: 'center',
-                          scrollSnapStop: 'always',
-                          flex: '0 0 82%',
-                          maxWidth: 360,
-                          transform: isActive ? 'scale(1)' : 'scale(0.94)',
-                          filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
-                          opacity: isActive ? 1 : 0.96,
-                          transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
-                        }}
-                      >
-                        <TrailCard
-                          trail={trail}
-                          Icon={TRAIL_ICONS[trail.icon] || BookOpen}
-                          gradient="from-indigo-500 to-violet-500"
-                          progress={trailProgress?.progress || 0}
-                          completedLessons={trailProgress?.completedLessons || 0}
-                          totalLessons={trailProgress?.totalLessons || 0}
-                          status={trailProgress?.status || "locked"}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Dots */}
-                <div className="flex items-center justify-center gap-2 mt-0">
-                  {v7Trails.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => scrollToSnapIndex(idx)}
-                      className="rounded-full transition-all duration-200"
-                      style={{
-                        width: idx === snapActiveIndex ? 10 : 7,
-                        height: idx === snapActiveIndex ? 10 : 7,
-                        background: idx === snapActiveIndex
-                          ? 'rgba(99,102,241,1)'
-                          : 'rgba(148,163,184,0.45)',
-                        transform: idx === snapActiveIndex ? 'scale(1.15)' : 'scale(1)',
-                      }}
-                      aria-label={`Ir para trilha ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Desktop/Tablet: paginated grid */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={trailPage}
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="hidden sm:grid sm:grid-cols-3 gap-4"
-                >
-              {visibleTrails.map((trail) => {
-                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-
-                      return (
-                        <div key={trail.id} className="flex-1 min-w-0">
-                          <TrailCard
-                            trail={trail}
-                            Icon={TRAIL_ICONS[trail.icon] || BookOpen}
-                            gradient="from-indigo-500 to-violet-500"
-                            progress={trailProgress?.progress || 0}
-                            completedLessons={trailProgress?.completedLessons || 0}
-                            totalLessons={trailProgress?.totalLessons || 0}
-                            status={trailProgress?.status || "locked"}
-                          />
-                        </div>
-                      );
-                  })}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
             )}
 
             {/* ===== FOR YOU - Feature Cards ===== */}
@@ -1314,12 +715,10 @@ const Dashboard = () => {
                     className="h-40 sm:h-44 flex items-center justify-center relative overflow-hidden"
                     style={{ background: 'linear-gradient(145deg, #1E1B4B 0%, #312E81 40%, #4338CA 100%)' }}
                   >
-                    {/* Glow orbs */}
                     <div className="absolute inset-0 pointer-events-none">
                       <div className="absolute w-32 h-32 rounded-full" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)', top: '-10%', left: '10%' }} />
                       <div className="absolute w-24 h-24 rounded-full" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, transparent 70%)', bottom: '5%', right: '15%' }} />
                     </div>
-                    {/* Chat illustration */}
                     <div className="relative z-10 flex flex-col gap-2.5 w-4/5 max-w-[240px]">
                       <div className="self-start rounded-2xl rounded-bl-md px-4 py-2.5" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                         <span className="text-[12px] font-medium text-white/90">Crie um resumo...</span>
@@ -1361,12 +760,10 @@ const Dashboard = () => {
                     className="h-40 sm:h-44 flex items-center justify-center relative overflow-hidden"
                     style={{ background: 'linear-gradient(145deg, #7C2D12 0%, #B45309 40%, #D97706 100%)' }}
                   >
-                    {/* Glow orbs */}
                     <div className="absolute inset-0 pointer-events-none">
                       <div className="absolute w-36 h-36 rounded-full" style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.35) 0%, transparent 70%)', top: '-15%', right: '10%' }} />
                       <div className="absolute w-28 h-28 rounded-full" style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.25) 0%, transparent 70%)', bottom: '0%', left: '15%' }} />
                     </div>
-                    {/* 21 with flame */}
                     <div className="relative z-10 flex flex-col items-center">
                       <div className="flex items-baseline gap-1">
                         <Flame className="w-8 h-8 text-amber-300 mb-1" />
@@ -1407,8 +804,6 @@ const Dashboard = () => {
             />
           </div>
         </div>
-
-        {/* Mobile sidebar replaced by MobileQuickStats inline above */}
 
       </main>
 

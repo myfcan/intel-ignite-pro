@@ -7,12 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const VOICE_ID = 'oqUwsXKac3MSo4E51ySV'; // Taciana - PT-BR
-const MODEL_ID = 'eleven_v3';
+const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - PT-BR (padrão V8)
+const MODEL_ID = 'eleven_multilingual_v2';
 const VOICE_SETTINGS = {
   stability: 0.5,
   similarity_boost: 0.75,
-  style: 0.5,
+  style: 0.3,
   use_speaker_boost: true,
 };
 
@@ -154,9 +154,9 @@ async function handlePartNarration(
   let narrationRecord = narration;
   let script: string;
 
-  if (narrationRecord && narrationRecord.script) {
+  if (narrationRecord && narrationRecord.script_text) {
     // Use existing script
-    script = narrationRecord.script;
+    script = narrationRecord.script_text;
     console.log(`[v10-generate-audio] Using existing script for Part ${part} (${script.length} chars)`);
   } else {
     // 3. Generate script via AI
@@ -167,7 +167,7 @@ async function handlePartNarration(
       // Update existing record with script
       const { error: updateErr } = await supabase
         .from('v10_lesson_narrations')
-        .update({ script })
+        .update({ script_text: script })
         .eq('id', narrationRecord.id);
       if (updateErr) {
         throw new Error(`Error updating narration script: ${updateErr.message}`);
@@ -176,7 +176,7 @@ async function handlePartNarration(
       // Create new narration record
       const { data: newRecord, error: insertErr } = await supabase
         .from('v10_lesson_narrations')
-        .insert({ lesson_id, part, script })
+        .insert({ lesson_id, part, script_text: script })
         .select()
         .single();
       if (insertErr) {
@@ -313,7 +313,7 @@ async function generateNarrationScript(
   let userMessage: string;
 
   if (part === 'A') {
-    systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração de aproximadamente 30 segundos (cerca de 80 palavras) para a introdução de uma aula de tecnologia. O script deve:
+    systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração de aproximadamente 30 segundos (cerca de 80 palavras) para a introdução de uma aula de tecnologia. O script deve:
 - Cumprimentar o aluno de forma calorosa
 - Apresentar brevemente o tema da aula
 - Despertar curiosidade sobre o que será aprendido
@@ -322,7 +322,7 @@ async function generateNarrationScript(
 Retorne APENAS o texto do script, sem aspas, sem markdown, sem instruções.`;
     userMessage = `Tema da aula: ${title}\nContexto: ${topic}`;
   } else {
-    systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração de aproximadamente 20 segundos (cerca de 55 palavras) para o encerramento de uma aula de tecnologia. O script deve:
+    systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração de aproximadamente 20 segundos (cerca de 55 palavras) para o encerramento de uma aula de tecnologia. O script deve:
 - Parabenizar o aluno pela conclusão da aula
 - Fazer um breve recap do que foi aprendido
 - Encorajar o aluno a praticar
@@ -342,7 +342,7 @@ async function generateStepScript(
   const description = step.description || '';
   const frameContent = step.frame_content || step.content || '';
 
-  const systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração curto e claro para um passo de uma aula prática de tecnologia. O script deve:
+  const systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração curto e claro para um passo de uma aula prática de tecnologia. O script deve:
 - Explicar o que o aluno precisa fazer neste passo
 - Ser direto e objetivo, mas amigável
 - Contextualizar o passo dentro do aprendizado
@@ -409,7 +409,6 @@ async function generateTTSAudio(
       body: JSON.stringify({
         text,
         model_id: MODEL_ID,
-        language_code: 'pt',
         voice_settings: VOICE_SETTINGS,
       }),
     }
@@ -434,7 +433,7 @@ async function uploadAudio(
   const uint8 = new Uint8Array(audioBuffer);
 
   const { error: uploadError } = await supabase.storage
-    .from('lesson-audio')
+    .from('lesson-audios')
     .upload(storagePath, uint8.buffer as ArrayBuffer, {
       contentType: 'audio/mpeg',
       upsert: true,
@@ -445,7 +444,7 @@ async function uploadAudio(
   }
 
   const { data: urlData } = supabase.storage
-    .from('lesson-audio')
+    .from('lesson-audios')
     .getPublicUrl(storagePath);
 
   return urlData.publicUrl;

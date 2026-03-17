@@ -862,3 +862,10 @@ All colors MUST be HSL.
   75% { background-position: 50% 0%; }
   100% { background-position: 0% 50%; }
 }
+
+/* Snap carousel — hide scrollbar cross-browser */
+.snap-carousel { scrollbar-width: none; -ms-overflow-style: none; }
+.snap-carousel::-webkit-scrollbar { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .snap-item { transition: none !important; }
+}

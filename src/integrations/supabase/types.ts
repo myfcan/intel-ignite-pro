@@ -95,7 +95,7 @@ export type Database = {
           is_active: boolean
           order_index: number
           title: string
-          trail_id: string
+          trail_id: string | null
         }
         Insert: {
           created_at?: string
@@ -105,7 +105,7 @@ export type Database = {
           is_active?: boolean
           order_index?: number
           title: string
-          trail_id: string
+          trail_id?: string | null
         }
         Update: {
           created_at?: string
@@ -115,7 +115,7 @@ export type Database = {
           is_active?: boolean
           order_index?: number
           title?: string
-          trail_id?: string
+          trail_id?: string | null
         }
         Relationships: [
           {
@@ -1892,6 +1892,44 @@ export type Database = {
           },
         ]
       }
+      v10_lesson_step_anchors: {
+        Row: {
+          anchor_type: string
+          created_at: string
+          id: string
+          label: string | null
+          match_phrase: string
+          step_id: string
+          timestamp_seconds: number
+        }
+        Insert: {
+          anchor_type: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          match_phrase: string
+          step_id: string
+          timestamp_seconds: number
+        }
+        Update: {
+          anchor_type?: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          match_phrase?: string
+          step_id?: string
+          timestamp_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "v10_lesson_step_anchors_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "v10_lesson_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v10_lesson_steps: {
         Row: {
           accent_color: string
@@ -1906,6 +1944,7 @@ export type Database = {
           id: string
           lesson_id: string
           liv: Json
+          narration_script: string | null
           phase: number
           progress_percent: number
           slug: string | null
@@ -1926,6 +1965,7 @@ export type Database = {
           id?: string
           lesson_id: string
           liv?: Json
+          narration_script?: string | null
           phase?: number
           progress_percent?: number
           slug?: string | null
@@ -1946,6 +1986,7 @@ export type Database = {
           id?: string
           lesson_id?: string
           liv?: Json
+          narration_script?: string | null
           phase?: number
           progress_percent?: number
           slug?: string | null
@@ -1967,6 +2008,7 @@ export type Database = {
         Row: {
           badge_icon: string | null
           badge_name: string | null
+          course_id: string | null
           created_at: string
           description: string | null
           estimated_minutes: number
@@ -1984,6 +2026,7 @@ export type Database = {
         Insert: {
           badge_icon?: string | null
           badge_name?: string | null
+          course_id?: string | null
           created_at?: string
           description?: string | null
           estimated_minutes?: number
@@ -2001,6 +2044,7 @@ export type Database = {
         Update: {
           badge_icon?: string | null
           badge_name?: string | null
+          course_id?: string | null
           created_at?: string
           description?: string | null
           estimated_minutes?: number
@@ -2016,6 +2060,13 @@ export type Database = {
           xp_reward?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "v10_lessons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "v10_lessons_trail_id_fkey"
             columns: ["trail_id"]

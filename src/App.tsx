@@ -194,7 +194,7 @@ const App = () => (
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/gamification" element={<AchievementsPage />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
-                <Route path="/all-trails/:type" element={<AllTrails />} />
+                <Route path="/all-trails/:type?" element={<AllTrails />} />
                 <Route path="/trail/:id" element={
                   <SuspenseWithFallback fallback={<TrailDetailSkeleton />}>
                     <TrailDetail />

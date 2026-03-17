@@ -162,7 +162,7 @@ export const V8TrailCard = ({
 
             {/* Description - hidden on mobile */}
             {description && (
-              <p className="hidden sm:block text-xs text-gray-500 mt-1 leading-relaxed line-clamp-1">
+              <p className="hidden sm:line-clamp-1 text-xs text-gray-500 mt-1 leading-relaxed">
                 {description}
               </p>
             )}

@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { V10IntroSlide } from '../../../../types/v10.types';
 import { IntroSlides } from './IntroSlides';
 import { IntroAudioBar } from './IntroAudioBar';
+import { ExitButton } from '../shared/ExitButton';
 
 interface PartAScreenProps {
   slides: V10IntroSlide[];
   audioUrl: string;
   onComplete: () => void;
+  onExit?: () => void;
 }
 
 /**
@@ -22,6 +24,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
   slides,
   audioUrl,
   onComplete,
+  onExit,
 }) => {
   const hasAudio = !!audioUrl && audioUrl.length > 0;
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -32,6 +35,17 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
   const [duration, setDuration] = useState(0);
   const [audioEnded, setAudioEnded] = useState(false);
   const [showPlayOverlay, setShowPlayOverlay] = useState(false);
+
+  // ---------- Stop audio + complete ----------
+
+  const stopAndComplete = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    onComplete();
+  }, [onComplete]);
 
   // ---------- Audio callbacks ----------
 
@@ -98,9 +112,11 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
 
   return (
     <div
-      className="flex flex-col min-h-screen w-full max-w-[420px] mx-auto"
+      className="relative flex flex-col h-full w-full max-w-[420px] md:max-w-none mx-auto overflow-hidden"
       style={{ backgroundColor: '#0F0B1E' }}
     >
+      {/* Exit button */}
+      {onExit && <ExitButton onExit={onExit} />}
       {/* Hidden audio element */}
       {hasAudio && (
         <audio
@@ -154,7 +170,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         audioDuration={duration}
         hasAudio={hasAudio}
         onPlay={handlePlay}
-        onComplete={onComplete}
+        onComplete={stopAndComplete}
       />
 
       {/* Bottom controls */}
@@ -190,7 +206,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         {!hasAudio ? (
           <button
             type="button"
-            onClick={onComplete}
+            onClick={stopAndComplete}
             className="w-full min-h-[44px] py-3 rounded-xl text-white font-semibold text-base transition-transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-400"
             style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
           >
@@ -199,7 +215,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         ) : audioEnded ? (
           <button
             type="button"
-            onClick={onComplete}
+            onClick={stopAndComplete}
             className="w-full min-h-[44px] py-3 rounded-xl text-white font-semibold text-base transition-transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-400"
             style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
           >
@@ -208,7 +224,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         ) : isPlaying ? (
           <button
             type="button"
-            onClick={onComplete}
+            onClick={stopAndComplete}
             className="w-full min-h-[44px] py-3 rounded-xl text-white/60 font-medium text-sm bg-white/5 border border-white/10 transition-transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/20"
           >
             {'Pular introdução'}

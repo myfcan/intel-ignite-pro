@@ -16,9 +16,12 @@ interface PartBScreenProps {
   lessonTitle: string;
   onComplete: () => void;
   onBack: () => void;
+  onExit?: () => void;
   initialStep?: number;
   initialFrame?: number;
   onProgressUpdate?: (step: number, frame: number) => void;
+  /** Whether Part B is the currently visible part — gates autoplay */
+  isActive?: boolean;
 }
 
 const SPEED_CYCLE: Array<1 | 1.5 | 2> = [1, 1.5, 2];
@@ -48,9 +51,11 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   lessonTitle,
   onComplete,
   onBack,
+  onExit,
   initialStep = 0,
   initialFrame = 0,
   onProgressUpdate,
+  isActive = true,
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(initialStep);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(initialFrame);
@@ -97,7 +102,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     let cancelled = false;
 
     async function fetchAnchors() {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('v10_lesson_step_anchors')
         .select('*')
         .eq('step_id', currentStep.id)
@@ -150,7 +155,37 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     },
   }), [currentStep?.frames?.length]);
 
-  const { fireAllAnchors } = useAnchorEvents(audioRef, currentAnchors, anchorHandlers);
+  // Synthetic anchors: generate troca_frame anchors when data is insufficient
+  const effectiveAnchors = useMemo(() => {
+    const frameCount = currentStep?.frames?.length ?? 1;
+    if (frameCount <= 1) return currentAnchors;
+
+    const realFrameAnchors = currentAnchors.filter(a => a.anchor_type === 'troca_frame');
+    const needed = frameCount - 1;
+
+    if (realFrameAnchors.length >= needed) return currentAnchors;
+
+    // Generate proportionally distributed synthetic anchors
+    const duration = currentStep?.duration_seconds || 30;
+    const interval = duration / frameCount;
+    const syntheticAnchors: StepAnchor[] = [];
+
+    for (let i = realFrameAnchors.length; i < needed; i++) {
+      syntheticAnchors.push({
+        id: crypto.randomUUID(),
+        step_id: currentStep?.id ?? '',
+        anchor_type: 'troca_frame',
+        timestamp_seconds: interval * (i + 1),
+        match_phrase: '',
+        label: null,
+      });
+    }
+
+    return [...currentAnchors, ...syntheticAnchors]
+      .sort((a, b) => a.timestamp_seconds - b.timestamp_seconds);
+  }, [currentAnchors, currentStep?.frames?.length, currentStep?.duration_seconds, currentStep?.id]);
+
+  const { fireAllAnchors } = useAnchorEvents(audioRef, effectiveAnchors, anchorHandlers);
 
   // When audio is paused, enable continue (audio is invitation, not obligation)
   const handleAudioPauseForAnchors = useCallback(() => {
@@ -184,18 +219,23 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       audio.src = currentStep.audio_url;
       audio.playbackRate = playbackSpeed;
       audio.load();
-      audio.play().then(() => {
-        setIsPlaying(true);
-      }).catch(() => {
-        setIsPlaying(false);
-      });
+
+      // Only autoplay when Part B is the active/visible part
+      if (isActive) {
+        const onCanPlay = () => {
+          audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+          audio.removeEventListener('canplay', onCanPlay);
+        };
+        audio.addEventListener('canplay', onCanPlay);
+        return () => audio.removeEventListener('canplay', onCanPlay);
+      }
     } else {
       audio.pause();
       audio.removeAttribute('src');
       setIsPlaying(false);
       setCurrentTime(0);
     }
-  }, [currentStepIndex, currentStep?.audio_url]);
+  }, [currentStepIndex, currentStep?.audio_url, isActive]);
 
   // Preload next step audio & discard N-2
   useEffect(() => {
@@ -264,11 +304,17 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const handleContinue = useCallback(() => {
     if (!currentStep) return;
 
+    const audio = audioRef.current;
+
     if (currentFrameIndex < (currentStep.frames?.length ?? 1) - 1) {
       // Next frame
       setCurrentFrameIndex((prev) => prev + 1);
     } else if (currentStepIndex < steps.length - 1) {
-      // Next step, reset frame
+      // Next step — pause current audio before advancing
+      if (audio) {
+        audio.pause();
+        setIsPlaying(false);
+      }
       setCurrentStepIndex((prev) => prev + 1);
       setCurrentFrameIndex(0);
       setCurrentTime(0);
@@ -291,6 +337,18 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       onBack();
     }
   }, [currentFrameIndex, currentStepIndex, steps, onBack]);
+
+  // Replay current step from beginning
+  const handleReplayStep = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setCurrentFrameIndex(0);
+    setCurrentTime(0);
+    setIsPlaying(false);
+  }, []);
 
   // Frame change from StepContent dots
   const handleFrameChange = useCallback((frame: number) => {
@@ -366,6 +424,21 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     >
       {/* Main player column */}
       <div className="flex flex-col flex-1 min-w-0 h-full relative">
+        {/* Step-change flash overlay */}
+        <div
+          key={`flash-${currentStepIndex}`}
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            animation: 'partb-step-flash 0.5s ease-out forwards',
+          }}
+        />
+        <style>{`
+          @keyframes partb-step-flash {
+            0% { background: rgba(255,255,255,0); }
+            15% { background: rgba(255,255,255,0.07); }
+            100% { background: rgba(255,255,255,0); }
+          }
+        `}</style>
         {/* Header */}
         <PlayerHeader
           lessonTitle={lessonTitle}
@@ -373,6 +446,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           phases={phases}
           currentPhase={currentPhaseIndex}
           onBack={handleBack}
+          onExit={onExit}
         />
 
         {/* Scrollable content */}
@@ -387,7 +461,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         {/* LIV Fab */}
         <LIVFab
           hasWarnings={!!currentStep.warnings?.warn}
-          pulseMode={livPulseMode}
+          pulseMode={isPlaying || livPulseMode === 'intense' ? 'intense' : 'normal'}
           onClick={() => {
             audioRef.current?.pause();
             setIsPlaying(false);
@@ -412,6 +486,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           isLastFrame={isLastFrame}
           continueEnabled={continueEnabled}
           onSkipNarration={hasAudio ? handleSkipNarration : undefined}
+          onReplayStep={handleReplayStep}
         />
       </div>
 

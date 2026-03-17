@@ -113,3 +113,39 @@ verify_jwt = false
 
 [functions.v8-generate-variations]
 verify_jwt = false
+
+[functions.v10-process-anchors]
+verify_jwt = false
+
+[functions.v10-score-bpa]
+verify_jwt = false
+
+[functions.v10-generate-audio]
+verify_jwt = false
+
+[functions.v10-generate-steps]
+verify_jwt = false
+
+[functions.v10-generate-images]
+verify_jwt = false
+
+[functions.v10-assembly-check]
+verify_jwt = false
+
+[functions.v10-publish-lesson]
+verify_jwt = false
+
+[functions.v8-generate]
+verify_jwt = false
+
+[functions.v8-generate-section-audio]
+verify_jwt = false
+
+[functions.v8-reprocess-lesson-images]
+verify_jwt = false
+
+[functions.admin-reset-password]
+verify_jwt = false
+
+[functions.patch-lesson-content]
+verify_jwt = false

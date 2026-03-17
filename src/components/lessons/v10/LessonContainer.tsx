@@ -127,7 +127,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
           setUserProgress(prog);
           // Resume from saved part
           if (!prog.completed) {
-            setCurrentPart(prog.current_part);
+            setCurrentPart('A');
           }
         }
 
@@ -169,7 +169,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             user_id: user.id,
             lesson_id: lesson.id,
             current_part: 'A',
-            current_step: 0,
+            current_step: 1,
             current_frame: 0,
             completed: false,
             started_at: new Date().toISOString(),
@@ -233,7 +233,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
 
   const handlePartAComplete = useCallback(() => {
     setCurrentPart('B');
-    debouncedSave({ current_part: 'B', current_step: 0, current_frame: 0 });
+    debouncedSave({ current_part: 'B', current_step: 1, current_frame: 0 });
   }, [debouncedSave]);
 
   const handlePartBComplete = useCallback(async () => {
@@ -348,10 +348,21 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
     }
   }, [debouncedSave, lesson]);
 
+  const handleExit = useCallback(() => {
+    if (lesson?.course_id) {
+      navigate(`/course/${lesson.course_id}`);
+    } else if (lesson?.trail_id) {
+      navigate(`/trail/${lesson.trail_id}`);
+    } else {
+      navigate('/dashboard');
+    }
+  }, [lesson, navigate]);
+
   const handleNextLesson = useCallback(() => {
-    // Navigate to next lesson or dashboard
-    if (lesson?.trail_id) {
-      navigate(`/trilha/${lesson.trail_id}`);
+    if (lesson?.course_id) {
+      navigate(`/course/${lesson.course_id}`);
+    } else if (lesson?.trail_id) {
+      navigate(`/trail/${lesson.trail_id}`);
     } else {
       navigate('/dashboard');
     }
@@ -409,7 +420,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
       {/* Main content area: phone + optional sidebar */}
       <div className="flex items-start justify-center w-full min-h-screen gap-6 px-0 md:px-6">
         {/* Phone container */}
-        <div className="w-full max-w-[420px] h-dvh flex flex-col overflow-hidden md:rounded-2xl md:my-6 md:min-h-0 md:h-[calc(100vh-48px)] md:shadow-2xl"
+        <div className="w-full max-w-full md:max-w-[680px] lg:max-w-[960px] h-dvh flex flex-col overflow-hidden md:rounded-2xl md:my-6 md:min-h-0 md:h-[calc(100vh-48px)] md:shadow-2xl"
           style={{ backgroundColor: '#0F0B1E' }}
         >
           {/* Part A */}
@@ -421,6 +432,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               slides={introSlides}
               audioUrl={narrations.A?.audio_url ?? ''}
               onComplete={handlePartAComplete}
+              onExit={handleExit}
             />
           </div>
 
@@ -434,9 +446,11 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               lessonTitle={lesson.title}
               onComplete={handlePartBComplete}
               onBack={() => setCurrentPart('A')}
-              initialStep={Math.min((userProgress?.current_step ?? 1) - 1, Math.max(steps.length - 1, 0))}
+              onExit={handleExit}
+              initialStep={Math.max(0, Math.min((userProgress?.current_step ?? 1) - 1, steps.length - 1))}
               initialFrame={userProgress?.current_frame ?? 0}
               onProgressUpdate={handleProgressUpdate}
+              isActive={currentPart === 'B'}
             />
           </div>
 
@@ -450,6 +464,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               streak={userStreak}
               audioUrl={narrations.C?.audio_url ?? null}
               onNextLesson={handleNextLesson}
+              onExit={handleExit}
             />
           </div>
         </div>

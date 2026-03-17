@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2, Anchor, Play, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mic, CheckCircle2, Sparkles, Save, Volume2, FileText, AlertCircle, Loader2, Anchor, Play, ChevronDown, ChevronUp, Upload, Edit3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonNarration, V10LessonStep, StepAnchor } from '@/types/v10.types';
 import { AdminAnchorTimeline } from '../AdminAnchorTimeline';
+import { ImportFullScriptModal } from './ImportFullScriptModal';
 
 interface Stage5NarrationProps {
   pipeline: V10BpaPipeline;
@@ -147,6 +149,41 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const [editingScripts, setEditingScripts] = useState<Record<string, string>>({});
   const [savingScript, setSavingScript] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [reprocessExisting, setReprocessExisting] = useState(false);
+  const [editingPartA, setEditingPartA] = useState(false);
+  const [editingPartC, setEditingPartC] = useState(false);
+  const [partAText, setPartAText] = useState<string | undefined>(undefined);
+  const [partCText, setPartCText] = useState<string | undefined>(undefined);
+  const [savingPartNarration, setSavingPartNarration] = useState(false);
+  const [generatingPart, setGeneratingPart] = useState<string | null>(null);
+
+  const handleGeneratePartAudio = async (part: 'A' | 'C') => {
+    if (!pipeline.lesson_id) {
+      toast.error('Vincule uma aula primeiro');
+      return;
+    }
+    const target = part === 'A' ? 'part_a' : 'part_c';
+    setGeneratingPart(part);
+    try {
+      toast.info(`Gerando áudio Parte ${part}...`);
+      const { error } = await supabase.functions.invoke('v10-generate-audio', {
+        body: { pipeline_id: pipeline.id, target }
+      });
+      if (error) throw error;
+      toast.success(`Áudio da Parte ${part} gerado!`);
+      // Refresh narrations
+      const { data } = await supabase
+        .from('v10_lesson_narrations')
+        .select('*')
+        .eq('lesson_id', pipeline.lesson_id as string);
+      if (data) setNarrations(data as unknown as V10LessonNarration[]);
+    } catch (err) {
+      toast.error(`Erro ao gerar áudio Parte ${part}: ${err instanceof Error ? err.message : 'erro'}`);
+    } finally {
+      setGeneratingPart(null);
+    }
+  };
 
   // Fetch anchor counts per step
   useEffect(() => {
@@ -154,14 +191,14 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
     async function fetchAnchorStats() {
       const stepIds = steps.map(s => s.id);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('v10_lesson_step_anchors')
         .select('step_id')
         .in('step_id', stepIds);
 
       if (!error && data) {
         const counts: Record<string, number> = {};
-        for (const row of data) {
+        for (const row of data as any[]) {
           counts[row.step_id] = (counts[row.step_id] || 0) + 1;
         }
         setAnchorCounts(counts);
@@ -176,20 +213,24 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
     const script = editingScripts[stepId];
     if (script === undefined) return;
 
+    const nextScript = script || null;
+
     setSavingScript(stepId);
     try {
       const { error } = await supabase
         .from('v10_lesson_steps')
-        .update({ narration_script: script || null } as any)
+        .update({ narration_script: nextScript, audio_url: null, duration_seconds: 0 } as any)
         .eq('id', stepId);
 
       if (error) throw error;
 
       // Update local state
       setSteps(prev => prev.map(s =>
-        s.id === stepId ? { ...s, narration_script: script || null } : s
+        s.id === stepId
+          ? { ...s, narration_script: nextScript, audio_url: null, duration_seconds: 0 }
+          : s
       ));
-      toast.success('Script salvo');
+      toast.success('Script salvo (áudio marcado para reprocesso)');
     } catch (err: any) {
       toast.error(`Erro ao salvar script: ${err.message}`);
     } finally {
@@ -242,13 +283,13 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
       // Refresh anchor counts
       const stepIds = steps.map(s => s.id);
-      const { data: anchorData } = await supabase
+      const { data: anchorData } = await (supabase as any)
         .from('v10_lesson_step_anchors')
         .select('step_id')
         .in('step_id', stepIds);
       if (anchorData) {
         const counts: Record<string, number> = {};
-        for (const row of anchorData) {
+        for (const row of anchorData as any[]) {
           counts[row.step_id] = (counts[row.step_id] || 0) + 1;
         }
         setAnchorCounts(counts);
@@ -266,7 +307,7 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const handleProcessAll = useCallback(async () => {
     const stepsWithScript = steps.filter(s => {
       const script = editingScripts[s.id] ?? s.narration_script;
-      return script?.trim() && !s.audio_url;
+      return script?.trim() && (reprocessExisting || !s.audio_url);
     });
 
     if (stepsWithScript.length === 0) {
@@ -318,7 +359,7 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
       ]);
       if (stepsResult.data) setSteps(stepsResult.data as unknown as V10LessonStep[]);
     }
-  }, [steps, editingScripts, pipeline.id, pipeline.lesson_id]);
+  }, [steps, editingScripts, pipeline.id, pipeline.lesson_id, reprocessExisting]);
 
   const totalAnchors = Object.values(anchorCounts).reduce((sum, c) => sum + c, 0);
   const stepsWithAnchors = Object.keys(anchorCounts).length;
@@ -327,6 +368,52 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
   const partCNarration = narrations.find((n) => n.part === 'C');
   const stepsWithAudio = steps.filter((s) => s.audio_url !== null);
   const stepsWithoutAudio = steps.filter((s) => s.audio_url === null);
+  const hasManualScripts = steps.some((s) => !!s.narration_script);
+
+  // ── Refresh helper ──
+  const refreshAllData = useCallback(async () => {
+    if (!pipeline.lesson_id) return;
+    const [narrResult, stepsResult] = await Promise.all([
+      supabase.from('v10_lesson_narrations').select('*').eq('lesson_id', pipeline.lesson_id as string),
+      supabase.from('v10_lesson_steps').select('*').eq('lesson_id', pipeline.lesson_id as string).order('step_number', { ascending: true }),
+    ]);
+    if (narrResult.data) setNarrations(narrResult.data as unknown as V10LessonNarration[]);
+    if (stepsResult.data) setSteps(stepsResult.data as unknown as V10LessonStep[]);
+    setEditingScripts({});
+    setPartAText(undefined);
+    setPartCText(undefined);
+  }, [pipeline.lesson_id]);
+
+  // ── Save Part A/C narration script ──
+  const handleSavePartNarration = useCallback(async (part: 'A' | 'C') => {
+    const text = part === 'A' ? partAText : partCText;
+    if (text === undefined) return;
+    const existing = narrations.find((n) => n.part === part);
+
+    setSavingPartNarration(true);
+    try {
+      if (existing) {
+        const { error } = await supabase
+          .from('v10_lesson_narrations')
+          .update({ script_text: text || null, audio_url: null, duration_seconds: 0 } as any)
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else if (pipeline.lesson_id) {
+        const { error } = await supabase
+          .from('v10_lesson_narrations')
+          .insert({ lesson_id: pipeline.lesson_id, part, script_text: text || null, duration_seconds: 0 } as any);
+        if (error) throw error;
+      }
+      toast.success(`Script Parte ${part} salvo (áudio marcado para reprocesso)`);
+      await refreshAllData();
+      if (part === 'A') setEditingPartA(false);
+      else setEditingPartC(false);
+    } catch (err: any) {
+      toast.error(`Erro ao salvar Parte ${part}: ${err.message}`);
+    } finally {
+      setSavingPartNarration(false);
+    }
+  }, [partAText, partCText, narrations, pipeline.lesson_id, refreshAllData]);
 
   return (
     <Card>
@@ -410,9 +497,22 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Part A */}
                 <div className="rounded-lg border p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Volume2 className="h-4 w-4 text-indigo-500" />
-                    <span className="text-sm font-medium">Parte A — Introdução</span>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4 text-indigo-500" />
+                      <span className="text-sm font-medium">Parte A — Introdução</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => {
+                        setEditingPartA(!editingPartA);
+                        if (!editingPartA) setPartAText(partANarration?.script_text ?? '');
+                      }}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
                   </div>
                   {partANarration ? (
                     <div className="space-y-2">
@@ -422,19 +522,48 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
                             <CheckCircle2 className="h-3 w-3" /> Áudio disponível
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
-                            <AlertCircle className="h-3 w-3" /> Sem áudio
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
+                              <AlertCircle className="h-3 w-3" /> Sem áudio
+                            </span>
+                            {partANarration.script_text && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                disabled={generatingPart === 'A'}
+                                onClick={() => handleGeneratePartAudio('A')}
+                              >
+                                {generatingPart === 'A' ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Mic className="h-3 w-3 mr-1" />}
+                                Gerar Áudio
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
-                      {partANarration.script_text && (
+                      {editingPartA ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            className="min-h-[150px] font-mono text-xs"
+                            value={partAText ?? ''}
+                            onChange={(e) => setPartAText(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleSavePartNarration('A')} disabled={savingPartNarration}>
+                              {savingPartNarration ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                              Salvar
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingPartA(false)}>Cancelar</Button>
+                          </div>
+                        </div>
+                      ) : partANarration.script_text ? (
                         <div className="flex items-start gap-1">
                           <FileText className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                           <p className="line-clamp-3 text-xs text-muted-foreground">
                             {partANarration.script_text}
                           </p>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">Nenhuma narração cadastrada</p>
@@ -443,9 +572,22 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
                 {/* Part C */}
                 <div className="rounded-lg border p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Volume2 className="h-4 w-4 text-indigo-500" />
-                    <span className="text-sm font-medium">Parte C — Encerramento</span>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4 text-indigo-500" />
+                      <span className="text-sm font-medium">Parte C — Encerramento</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => {
+                        setEditingPartC(!editingPartC);
+                        if (!editingPartC) setPartCText(partCNarration?.script_text ?? '');
+                      }}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
                   </div>
                   {partCNarration ? (
                     <div className="space-y-2">
@@ -455,19 +597,48 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
                             <CheckCircle2 className="h-3 w-3" /> Áudio disponível
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
-                            <AlertCircle className="h-3 w-3" /> Sem áudio
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
+                              <AlertCircle className="h-3 w-3" /> Sem áudio
+                            </span>
+                            {partCNarration.script_text && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                disabled={generatingPart === 'C'}
+                                onClick={() => handleGeneratePartAudio('C')}
+                              >
+                                {generatingPart === 'C' ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Mic className="h-3 w-3 mr-1" />}
+                                Gerar Áudio
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
-                      {partCNarration.script_text && (
+                      {editingPartC ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            className="min-h-[150px] font-mono text-xs"
+                            value={partCText ?? ''}
+                            onChange={(e) => setPartCText(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleSavePartNarration('C')} disabled={savingPartNarration}>
+                              {savingPartNarration ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                              Salvar
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingPartC(false)}>Cancelar</Button>
+                          </div>
+                        </div>
+                      ) : partCNarration.script_text ? (
                         <div className="flex items-start gap-1">
                           <FileText className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                           <p className="line-clamp-3 text-xs text-muted-foreground">
                             {partCNarration.script_text}
                           </p>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">Nenhuma narração cadastrada</p>
@@ -515,22 +686,44 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
         {/* Narration Scripts per Step */}
         {!loadingData && steps.length > 0 && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4 text-indigo-500" />
                 Scripts de Narração (com [ANCHOR:*] tags)
               </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleProcessAll}
-                disabled={processingAll || !pipeline.lesson_id}
-              >
-                {processingAll
-                  ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Processando...</>
-                  : <><Sparkles className="h-3 w-3 mr-1" /> Processar Todos</>
-                }
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowImportModal(true)}
+                  disabled={!pipeline.lesson_id}
+                >
+                  <Upload className="h-3 w-3 mr-1" /> Importar Script Completo
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleProcessAll}
+                  disabled={processingAll || !pipeline.lesson_id}
+                >
+                  {processingAll
+                    ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Processando...</>
+                    : <><Sparkles className="h-3 w-3 mr-1" /> Processar Todos</>
+                  }
+                </Button>
+              </div>
+            </div>
+
+            {/* Reprocess checkbox */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="reprocess-existing"
+                checked={reprocessExisting}
+                onCheckedChange={(v) => setReprocessExisting(!!v)}
+              />
+              <label htmlFor="reprocess-existing" className="text-xs text-muted-foreground cursor-pointer">
+                Incluir steps já processados (reprocessar áudios existentes)
+              </label>
             </div>
 
             <div className="space-y-2">
@@ -702,11 +895,19 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
             variant="outline"
             className="min-h-[44px]"
             onClick={handleGenerate}
-            disabled={!pipeline.lesson_id || generating}
+            disabled={!pipeline.lesson_id || generating || hasManualScripts}
+            title={hasManualScripts ? 'Use "Processar Todos" para steps com script manual' : ''}
           >
             {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {generating ? 'Gerando áudios...' : 'Gerar Áudios'}
+            {generating ? 'Gerando áudios...' : 'Gerar Áudios (IA)'}
           </Button>
+
+          {hasManualScripts && (
+            <p className="flex items-center text-xs text-amber-600">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Scripts manuais detectados — use "Processar Todos" acima
+            </p>
+          )}
 
           <Button
             variant="outline"
@@ -727,6 +928,18 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
         </div>
+
+        {/* Import Full Script Modal */}
+        {pipeline.lesson_id && (
+          <ImportFullScriptModal
+            open={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            lessonId={pipeline.lesson_id}
+            steps={steps.map(s => ({ id: s.id, step_number: s.step_number, title: s.title }))}
+            narrations={narrations.map(n => ({ id: n.id, part: n.part, script_text: n.script_text }))}
+            onImportComplete={refreshAllData}
+          />
+        )}
       </CardContent>
     </Card>
   );
