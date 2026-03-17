@@ -233,7 +233,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
 
   const handlePartAComplete = useCallback(() => {
     setCurrentPart('B');
-    debouncedSave({ current_part: 'B', current_step: 0, current_frame: 0 });
+    debouncedSave({ current_part: 'B', current_step: 1, current_frame: 0 });
   }, [debouncedSave]);
 
   const handlePartBComplete = useCallback(async () => {
