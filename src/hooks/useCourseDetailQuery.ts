@@ -61,6 +61,11 @@ async function fetchCourseDetail(courseId: string): Promise<CourseDetailData> {
   ]);
 
   if (lessonsResult.error) throw lessonsResult.error;
+  if (v10LessonsResult.error) throw v10LessonsResult.error;
+  if (progressResult.error) throw progressResult.error;
+  if (v10ProgressResult.error) throw v10ProgressResult.error;
+  if (rolesResult.error) throw rolesResult.error;
+
   const roles = (rolesResult.data || []).map(r => r.role);
 
   // Merge legacy lessons + V10 lessons into a unified array
