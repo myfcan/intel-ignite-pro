@@ -96,9 +96,9 @@ const StepContent: React.FC<StepContentProps> = ({
           </div>
         )}
 
-        {/* Replay step button — only on last frame */}
-        {isLastFrame && onReplayStep && (
-          <div className="flex justify-center pt-1 pb-3">
+        {/* Replay step button — only on last frame AFTER audio ends */}
+        {isLastFrame && onReplayStep && showReplay && (
+          <div className="flex justify-center pt-1 pb-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
             <button
               type="button"
               onClick={onReplayStep}
