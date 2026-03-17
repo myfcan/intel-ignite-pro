@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { V10IntroSlide } from '../../../../types/v10.types';
 import { IntroSlides } from './IntroSlides';
 import { IntroAudioBar } from './IntroAudioBar';
+import { ExitButton } from '../shared/ExitButton';
 
 interface PartAScreenProps {
   slides: V10IntroSlide[];
   audioUrl: string;
   onComplete: () => void;
+  onExit?: () => void;
 }
 
 /**
@@ -22,6 +24,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
   slides,
   audioUrl,
   onComplete,
+  onExit,
 }) => {
   const hasAudio = !!audioUrl && audioUrl.length > 0;
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -98,9 +101,11 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
 
   return (
     <div
-      className="flex flex-col min-h-screen w-full max-w-[420px] mx-auto"
+      className="relative flex flex-col min-h-screen w-full max-w-[420px] mx-auto"
       style={{ backgroundColor: '#0F0B1E' }}
     >
+      {/* Exit button */}
+      {onExit && <ExitButton onExit={onExit} />}
       {/* Hidden audio element */}
       {hasAudio && (
         <audio

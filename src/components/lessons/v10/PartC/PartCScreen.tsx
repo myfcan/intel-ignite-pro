@@ -3,12 +3,14 @@ import type { V10Lesson, V10UserStreak } from '../../../../types/v10.types';
 import { RecapPage } from './RecapPage';
 import { EngagementPage } from './EngagementPage';
 import { GamificationPage } from './GamificationPage';
+import { ExitButton } from '../shared/ExitButton';
 
 interface PartCScreenProps {
   lesson: V10Lesson;
   streak: V10UserStreak | null;
   audioUrl: string | null;
   onNextLesson: () => void;
+  onExit?: () => void;
 }
 
 /**
@@ -26,6 +28,7 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
   streak,
   audioUrl,
   onNextLesson,
+  onExit,
 }) => {
   const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1);
 
@@ -54,9 +57,11 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
 
   return (
     <div
-      className="flex flex-col min-h-screen w-full max-w-[420px] mx-auto overflow-y-auto"
+      className="relative flex flex-col min-h-screen w-full max-w-[420px] mx-auto overflow-y-auto"
       style={{ backgroundColor: '#0F0B1E' }}
     >
+      {/* Exit button */}
+      {onExit && <ExitButton onExit={onExit} />}
       <RecapPage
         isActive={currentPage === 1}
         items={recapItems}

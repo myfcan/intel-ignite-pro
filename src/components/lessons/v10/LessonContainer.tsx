@@ -432,6 +432,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               slides={introSlides}
               audioUrl={narrations.A?.audio_url ?? ''}
               onComplete={handlePartAComplete}
+              onExit={handleExit}
             />
           </div>
 
@@ -462,6 +463,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               streak={userStreak}
               audioUrl={narrations.C?.audio_url ?? null}
               onNextLesson={handleNextLesson}
+              onExit={handleExit}
             />
           </div>
         </div>
