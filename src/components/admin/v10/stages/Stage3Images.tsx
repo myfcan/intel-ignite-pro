@@ -88,7 +88,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('v10-generate-images', {
-        body: { pipeline_id: pipeline.id, batch_size: 5, batch_index: nextBatchIndex }
+        body: { pipeline_id: pipeline.id, batch_size: 15, batch_index: nextBatchIndex }
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
