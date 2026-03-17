@@ -145,10 +145,16 @@ const Dashboard = () => {
   // All courses from all trails
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
   
-  // Split courses: "Caminho da Maestria" trail → "Suas Jornadas", others → "Renda Extra PRO"
+  // Split courses: "Caminho da Maestria" trail → "Suas Jornadas", others → section by trail name (N1)
   const maestriaTrailId = trails.find(t => t.order_index === 9)?.id;
   const maestriaCourses = v8Courses.filter(c => c.trail_id === maestriaTrailId);
   const rendaExtraCourses = v8Courses.filter(c => c.trail_id !== maestriaTrailId);
+
+  // Derive the section title from the first non-maestria trail that has courses
+  const rendaExtraTrail = rendaExtraCourses.length > 0
+    ? trails.find(t => t.id === rendaExtraCourses[0].trail_id)
+    : null;
+  const rendaExtraSectionTitle = rendaExtraTrail?.title || 'Renda Extra PRO';
   
   // Trilhas órfãs: sem courses (aulas diretas)
   const orphanTrails = trails.filter(t => !v8Courses.some(c => c.trail_id === t.id));
@@ -464,10 +470,12 @@ const Dashboard = () => {
   const fetchTrailsWithProgress = async (userId: string) => {
     try {
       // ══════ Fase 2: Parallel queries with Promise.all ══════
-      const [trailsResult, lessonsResult, progressResult] = await Promise.all([
+      const [trailsResult, lessonsResult, progressResult, v10LessonsResult, v10ProgressResult] = await Promise.all([
         supabase.from('trails').select('*').eq('is_active', true).order('order_index'),
         supabase.from('lessons').select('id, trail_id, course_id').eq('is_active', true),
         supabase.from('user_progress').select('lesson_id, status').eq('user_id', userId).eq('status', 'completed'),
+        (supabase as any).from('v10_lessons').select('id, trail_id, course_id, status').eq('status', 'published'),
+        (supabase as any).from('v10_user_lesson_progress').select('lesson_id, completed').eq('user_id', userId).eq('completed', true),
       ]);
 
       if (trailsResult.error) throw trailsResult.error;
@@ -475,15 +483,26 @@ const Dashboard = () => {
       const trailsData = trailsResult.data || [];
       const allLessons = lessonsResult.data || [];
       const allProgress = progressResult.data || [];
+      const v10LessonsData = (v10LessonsResult.data || []) as Array<{ id: string; trail_id: string | null; course_id: string | null; status: string }>;
+      const v10ProgressData = (v10ProgressResult.data || []) as Array<{ lesson_id: string; completed: boolean }>;
 
       setTrails(trailsData);
 
-      // Create a map of completed lesson IDs for fast lookup
-      const completedLessonIds = new Set(allProgress.map(p => p.lesson_id));
+      // Create a map of completed lesson IDs for fast lookup (V7/V8 + V10)
+      const completedLessonIds = new Set([
+        ...allProgress.map(p => p.lesson_id),
+        ...v10ProgressData.map(p => p.lesson_id),
+      ]);
+
+      // Merge V10 lessons into allLessons for unified trail/course progress
+      const allLessonsUnified = [
+        ...allLessons,
+        ...v10LessonsData.map(l => ({ id: l.id, trail_id: l.trail_id, course_id: l.course_id })),
+      ];
 
       // Group lessons by trail_id in memory
       const lessonsByTrail = new Map<string, string[]>();
-      allLessons.forEach(lesson => {
+      allLessonsUnified.forEach(lesson => {
         if (lesson.trail_id && !lessonsByTrail.has(lesson.trail_id)) {
           lessonsByTrail.set(lesson.trail_id, []);
         }
@@ -528,8 +547,8 @@ const Dashboard = () => {
 
         if (coursesData && coursesData.length > 0) {
           const allCoursesWithProgress: V8Course[] = coursesData.map(course => {
-            const lessons = allLessons.filter(l => l.course_id === course.id);
-            const completed = lessons.filter(l => completedLessonIds.has(l.id)).length;
+            const courseLessons = allLessonsUnified.filter(l => l.course_id === course.id);
+            const completed = courseLessons.filter(l => completedLessonIds.has(l.id)).length;
             return {
               id: course.id,
               title: course.title,
@@ -538,7 +557,7 @@ const Dashboard = () => {
               order_index: course.order_index,
               trail_id: course.trail_id,
               completedLessons: completed,
-              totalLessons: lessons.length,
+              totalLessons: courseLessons.length,
             };
           });
           setV8Courses(allCoursesWithProgress);
@@ -1139,7 +1158,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Rocket className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                  <h2 className="text-base sm:text-lg font-bold text-blue-800 tracking-tight whitespace-nowrap truncate">Renda Extra PRO</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-blue-800 tracking-tight whitespace-nowrap truncate">{rendaExtraSectionTitle}</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   <button

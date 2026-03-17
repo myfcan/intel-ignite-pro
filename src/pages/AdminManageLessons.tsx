@@ -47,6 +47,7 @@ interface V10Lesson {
   title: string;
   description: string | null;
   trail_id: string | null;
+  course_id: string | null;
   order_in_trail: number;
   total_steps: number;
   estimated_minutes: number;
@@ -108,6 +109,7 @@ export default function AdminManageLessons() {
   const [showV10MoveModal, setShowV10MoveModal] = useState(false);
   const [v10MoveTarget, setV10MoveTarget] = useState<string>('');
   const [v10TargetTrailId, setV10TargetTrailId] = useState<string>('');
+  const [v10TargetCourseId, setV10TargetCourseId] = useState<string>('');
   const [v10TargetOrder, setV10TargetOrder] = useState<number>(0);
   const [movingV10, setMovingV10] = useState(false);
 
@@ -128,7 +130,7 @@ export default function AdminManageLessons() {
         supabase.from('trails').select('id, title, order_index, trail_type').order('order_index'),
         supabase.from('courses').select('id, trail_id, title, order_index, is_active').order('order_index'),
         supabase.from('lessons').select('id, title, trail_id, course_id, order_index, is_active, created_at, estimated_time, model').order('order_index'),
-        supabase.from('v10_lessons').select('id, slug, title, description, trail_id, order_in_trail, total_steps, estimated_minutes, tools, badge_icon, status, created_at').order('order_in_trail'),
+        supabase.from('v10_lessons').select('id, slug, title, description, trail_id, course_id, order_in_trail, total_steps, estimated_minutes, tools, badge_icon, status, created_at').order('order_in_trail'),
       ]);
 
       if (trailsRes.data) setTrails(trailsRes.data);
@@ -148,13 +150,14 @@ export default function AdminManageLessons() {
         .map(course => ({
           ...course,
           lessons: lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_index - b.order_index),
+          v10Lessons: v10Lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_in_trail - b.order_in_trail),
         }));
 
       // Orphaned lessons: have trail_id but no course_id
       const orphanedLessons = lessons.filter(l => l.trail_id === trail.id && !l.course_id);
 
-      // V10 lessons linked to this trail
-      const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id);
+      // V10 lessons linked to this trail but NOT to any course (orphaned V10)
+      const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id && !l.course_id);
 
       return { ...trail, courses: trailCourses, orphanedLessons, v10Lessons: trailV10Lessons };
     });
@@ -163,7 +166,7 @@ export default function AdminManageLessons() {
     const fullyOrphaned = lessons.filter(l => !l.trail_id);
 
     // V10 orphaned: no trail_id
-    const v10Orphaned = v10Lessons.filter(l => !l.trail_id);
+    const v10Orphaned = v10Lessons.filter(l => !l.trail_id && !l.course_id);
 
     return { trails: trailMap, fullyOrphaned, v10Orphaned };
   }, [trails, courses, lessons, v10Lessons]);
@@ -287,15 +290,21 @@ export default function AdminManageLessons() {
     }
     setMovingV10(true);
     try {
+      const updatePayload: Record<string, unknown> = {
+        trail_id: v10TargetTrailId,
+        order_in_trail: v10TargetOrder,
+        course_id: v10TargetCourseId || null,
+      };
       const { error } = await (supabase as any)
         .from('v10_lessons')
-        .update({ trail_id: v10TargetTrailId, order_in_trail: v10TargetOrder })
+        .update(updatePayload)
         .eq('id', v10MoveTarget);
       if (error) throw error;
       const lesson = v10Lessons.find(l => l.id === v10MoveTarget);
-      toast({ title: 'Aula V10 movida', description: `"${lesson?.title}" atribuída à trilha` });
+      toast({ title: 'Aula V10 movida', description: `"${lesson?.title}" atribuída à jornada` });
       setShowV10MoveModal(false);
       setV10MoveTarget('');
+      setV10TargetCourseId('');
       await loadData();
     } catch (error: any) {
       toast({ title: 'Erro ao mover V10', description: error.message, variant: 'destructive' });
@@ -589,15 +598,18 @@ export default function AdminManageLessons() {
                               {expandedCourses.has(course.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                               <BookOpen className="w-4 h-4 text-blue-500" />
                               <span className="font-medium text-sm flex-1">{course.title}</span>
-                              <Badge variant="outline" className="text-xs">{course.lessons.length} aulas</Badge>
+                              <Badge variant="outline" className="text-xs">{course.lessons.length + (course.v10Lessons?.length || 0)} aulas</Badge>
                             </div>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="ml-10 space-y-1 mt-1">
-                              {course.lessons.length === 0 ? (
+                              {course.lessons.length === 0 && (!course.v10Lessons || course.v10Lessons.length === 0) ? (
                                 <p className="text-xs text-muted-foreground py-2">Nenhuma aula nesta jornada</p>
                               ) : (
-                                course.lessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)
+                                <>
+                                  {course.lessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
+                                  {course.v10Lessons?.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
+                                </>
                               )}
                             </div>
                           </CollapsibleContent>
@@ -607,9 +619,9 @@ export default function AdminManageLessons() {
                       {/* V10 lessons in this trail */}
                       {trail.v10Lessons.length > 0 && (
                         <div className="ml-4 mt-2">
-                          <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-md mb-1">
-                            <Layers className="w-4 h-4 text-emerald-500" />
-                            <span className="text-sm font-medium text-emerald-700">Aulas V10 ({trail.v10Lessons.length})</span>
+                          <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-md mb-1">
+                            <Layers className="w-4 h-4 text-amber-500" />
+                            <span className="text-sm font-medium text-amber-700">Aulas V10 sem jornada ({trail.v10Lessons.length})</span>
                           </div>
                           <div className="ml-6 space-y-1">
                             {trail.v10Lessons.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
@@ -885,14 +897,28 @@ export default function AdminManageLessons() {
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Trilha</label>
-                <Select value={v10TargetTrailId} onValueChange={setV10TargetTrailId}>
+                <label className="text-sm font-medium mb-2 block">Trilha (N1)</label>
+                <Select value={v10TargetTrailId} onValueChange={(val) => { setV10TargetTrailId(val); setV10TargetCourseId(''); }}>
                   <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
                   <SelectContent>
                     {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+              {v10TargetTrailId && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Jornada (N2)</label>
+                  <Select value={v10TargetCourseId} onValueChange={setV10TargetCourseId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione uma jornada" /></SelectTrigger>
+                    <SelectContent>
+                      {courses.filter(c => c.trail_id === v10TargetTrailId).map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Obrigatório para respeitar N1→N2→N3</p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium mb-2 block">Posição (order_in_trail)</label>
                 <Input type="number" min={0} value={v10TargetOrder} onChange={(e) => setV10TargetOrder(parseInt(e.target.value) || 0)} />
