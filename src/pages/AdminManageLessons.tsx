@@ -59,7 +59,7 @@ interface V10Lesson {
 
 interface Course {
   id: string;
-  trail_id: string;
+  trail_id: string | null;
   title: string;
   order_index: number;
   is_active: boolean;
@@ -70,6 +70,7 @@ interface Trail {
   title: string;
   order_index: number;
   trail_type: string | null;
+  is_active: boolean;
 }
 
 export default function AdminManageLessons() {
@@ -130,7 +131,7 @@ export default function AdminManageLessons() {
     setLoading(true);
     try {
       const [trailsRes, coursesRes, lessonsRes, v10Res] = await Promise.all([
-        supabase.from('trails').select('id, title, order_index, trail_type').order('order_index'),
+        supabase.from('trails').select('id, title, order_index, trail_type, is_active').eq('is_active', true).order('order_index'),
         supabase.from('courses').select('id, trail_id, title, order_index, is_active').order('order_index'),
         supabase.from('lessons').select('id, title, trail_id, course_id, order_index, is_active, created_at, estimated_time, model').order('order_index'),
         supabase.from('v10_lessons').select('id, slug, title, description, trail_id, course_id, order_in_trail, total_steps, estimated_minutes, tools, badge_icon, status, created_at').order('order_in_trail'),
@@ -147,6 +148,8 @@ export default function AdminManageLessons() {
 
   // Build hierarchy
   const hierarchy = useMemo(() => {
+    const activeTrailIds = new Set(trails.map(t => t.id));
+
     const trailMap = trails.map(trail => {
       const trailCourses = courses
         .filter(c => c.trail_id === trail.id)
@@ -156,22 +159,30 @@ export default function AdminManageLessons() {
           v10Lessons: v10Lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_in_trail - b.order_in_trail),
         }));
 
-      // Orphaned lessons: have trail_id but no course_id
       const orphanedLessons = lessons.filter(l => l.trail_id === trail.id && !l.course_id);
-
-      // V10 lessons linked to this trail but NOT to any course (orphaned V10)
       const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id && !l.course_id);
 
       return { ...trail, courses: trailCourses, orphanedLessons, v10Lessons: trailV10Lessons };
     });
 
-    // Fully orphaned: no trail_id at all
-    const fullyOrphaned = lessons.filter(l => !l.trail_id);
+    // Orphaned courses: trail_id is NULL or points to an inactive trail
+    const orphanedCourses = courses.filter(c => !c.trail_id || !activeTrailIds.has(c.trail_id));
 
-    // V10 orphaned: no trail_id
-    const v10Orphaned = v10Lessons.filter(l => !l.trail_id && !l.course_id);
+    // Fully orphaned lessons: no trail_id OR trail_id points to inactive trail (and no course_id in active)
+    const fullyOrphaned = lessons.filter(l => {
+      if (!l.trail_id) return true;
+      if (!activeTrailIds.has(l.trail_id) && !l.course_id) return true;
+      return false;
+    });
 
-    return { trails: trailMap, fullyOrphaned, v10Orphaned };
+    // V10 orphaned: no trail_id or trail points to inactive
+    const v10Orphaned = v10Lessons.filter(l => {
+      if (!l.trail_id && !l.course_id) return true;
+      if (l.trail_id && !activeTrailIds.has(l.trail_id) && !l.course_id) return true;
+      return false;
+    });
+
+    return { trails: trailMap, orphanedCourses, fullyOrphaned, v10Orphaned };
   }, [trails, courses, lessons, v10Lessons]);
 
   function toggleLesson(id: string) {
@@ -481,6 +492,16 @@ export default function AdminManageLessons() {
             <Power className="w-3 h-3 mr-1" />
             {activating === lesson.id ? '...' : lesson.is_active ? 'Off' : 'On'}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            setSelectedLessons(new Set([lesson.id]));
+            setTargetTrailId('');
+            setTargetCourseId('');
+            setTargetOrderIndex(lesson.order_index);
+            setShowMoveModal(true);
+          }}>
+            <FolderInput className="w-3 h-3 mr-1" />
+            Mover
+          </Button>
           <Button variant="outline" size="sm" onClick={() => navigate(lesson.model === 'v8' ? `/v8/${lesson.id}` : `/admin/v7/play/${lesson.id}`)}>
             <Play className="w-3 h-3 mr-1" />
             Assistir
@@ -654,7 +675,49 @@ export default function AdminManageLessons() {
               </Card>
             ))}
 
-            {/* Fully orphaned lessons */}
+            {/* Jornadas Órfãs (courses sem trilha ativa) */}
+            {hierarchy.orphanedCourses.length > 0 && (
+              <Card className="border-amber-400">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-base flex items-center gap-2 text-amber-600">
+                    <AlertTriangle className="w-5 h-5" />
+                    Jornadas Órfãs (sem trilha)
+                  </CardTitle>
+                  <CardDescription className="text-xs">{hierarchy.orphanedCourses.length} jornada(s) sem trilha ativa</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {hierarchy.orphanedCourses.map(course => {
+                    const courseLessons = lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_index - b.order_index);
+                    const courseV10 = v10Lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_in_trail - b.order_in_trail);
+                    return (
+                      <Collapsible key={course.id} open={expandedCourses.has(course.id)} onOpenChange={() => toggleCourse(course.id)}>
+                        <CollapsibleTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer">
+                            {expandedCourses.has(course.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            <BookOpen className="w-4 h-4 text-amber-500" />
+                            <span className="font-medium text-sm flex-1">{course.title}</span>
+                            <Badge variant="outline" className="text-xs">{courseLessons.length + courseV10.length} aulas</Badge>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="ml-10 space-y-1 mt-1">
+                            {courseLessons.length === 0 && courseV10.length === 0 ? (
+                              <p className="text-xs text-muted-foreground py-2">Nenhuma aula nesta jornada</p>
+                            ) : (
+                              <>
+                                {courseLessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
+                                {courseV10.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
+                              </>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
             {hierarchy.fullyOrphaned.length > 0 && (
               <Card className="border-red-300">
                 <CardHeader className="py-3 px-4">
