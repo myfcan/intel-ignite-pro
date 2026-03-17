@@ -867,6 +867,49 @@ export default function AdminManageLessons() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* V10 Move Modal */}
+        <Dialog open={showV10MoveModal} onOpenChange={setShowV10MoveModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderInput className="w-5 h-5 text-primary" />
+                Mover Aula V10
+              </DialogTitle>
+              <DialogDescription>Atribua uma trilha e posição para esta aula V10</DialogDescription>
+            </DialogHeader>
+
+            {v10MoveTarget && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Aula:</p>
+                <p className="text-sm text-muted-foreground">{v10Lessons.find(l => l.id === v10MoveTarget)?.title}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Trilha</label>
+                <Select value={v10TargetTrailId} onValueChange={setV10TargetTrailId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                  <SelectContent>
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title} {t.trail_type ? `(${t.trail_type})` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Posição (order_in_trail)</label>
+                <Input type="number" min={0} value={v10TargetOrder} onChange={(e) => setV10TargetOrder(parseInt(e.target.value) || 0)} />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowV10MoveModal(false)} disabled={movingV10}>Cancelar</Button>
+              <Button onClick={handleMoveV10Lesson} disabled={movingV10 || !v10TargetTrailId}>
+                {movingV10 ? 'Movendo...' : 'Confirmar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
