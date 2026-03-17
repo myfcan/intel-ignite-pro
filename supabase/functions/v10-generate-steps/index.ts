@@ -222,23 +222,100 @@ Regras:
       throw new Error(`Failed to update pipeline steps_generated: ${updateStepsError.message}`);
     }
 
-    // 10. Update v10_lessons with total_steps and estimated_minutes
+    // 10. Update v10_lessons with total_steps, estimated_minutes, description, and tools
     const totalDurationSeconds = steps.reduce(
       (sum: number, s: { duration_seconds: number }) => sum + (s.duration_seconds || 0),
       0
     );
     const estimatedMinutes = Math.ceil(totalDurationSeconds / 60);
 
+    // Extract unique tools from step app_name values
+    const toolsSet = new Set<string>();
+    for (const step of steps) {
+      if (step.app_name && typeof step.app_name === "string" && step.app_name.trim()) {
+        toolsSet.add(step.app_name.trim());
+      }
+    }
+    const tools = Array.from(toolsSet);
+
+    // Generate a description from pipeline data
+    const description = `Aula prática de ${pipeline.title} com ${steps.length} passos interativos. Ferramentas: ${tools.join(", ") || "diversas"}. Duração estimada: ${estimatedMinutes} minutos.`;
+
     const { error: updateLessonError } = await supabase
       .from("v10_lessons")
       .update({
         total_steps: steps.length,
         estimated_minutes: estimatedMinutes,
+        description,
+        tools,
       })
       .eq("id", lesson_id);
 
     if (updateLessonError) {
       throw new Error(`Failed to update lesson: ${updateLessonError.message}`);
+    }
+
+    // 10b. Auto-create intro slides based on tools
+    const introSlides = [];
+
+    // Slide 1: Welcome/title slide
+    introSlides.push({
+      lesson_id,
+      slide_order: 1,
+      icon: "BookOpen",
+      tool_name: null,
+      tool_color: "#6366f1",
+      title: pipeline.title,
+      subtitle: `${steps.length} passos | ${estimatedMinutes} min`,
+      description: `Bem-vindo! Nesta aula você vai aprender ${pipeline.title.toLowerCase()}.`,
+      label: "Introdução",
+      appear_at_seconds: 0,
+    });
+
+    // Slides for each tool
+    const toolColors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
+    tools.forEach((tool, idx) => {
+      introSlides.push({
+        lesson_id,
+        slide_order: idx + 2,
+        icon: "Wrench",
+        tool_name: tool,
+        tool_color: toolColors[idx % toolColors.length],
+        title: tool,
+        subtitle: "Ferramenta utilizada",
+        description: `Você vai usar ${tool} nesta aula.`,
+        label: "Ferramenta",
+        appear_at_seconds: (idx + 1) * 3,
+      });
+    });
+
+    // Final slide: "Vamos começar"
+    introSlides.push({
+      lesson_id,
+      slide_order: tools.length + 2,
+      icon: "Rocket",
+      tool_name: null,
+      tool_color: "#10B981",
+      title: "Vamos começar!",
+      subtitle: "Tudo pronto para iniciar",
+      description: "Clique em continuar para começar o tutorial.",
+      label: "Início",
+      appear_at_seconds: (tools.length + 1) * 3,
+    });
+
+    // Delete existing intro slides (idempotent)
+    await supabase
+      .from("v10_lesson_intro_slides")
+      .delete()
+      .eq("lesson_id", lesson_id);
+
+    // Insert new intro slides
+    const { error: introError } = await supabase
+      .from("v10_lesson_intro_slides")
+      .insert(introSlides);
+
+    if (introError) {
+      console.error("Failed to create intro slides:", introError.message);
     }
 
     // 11. Log to v10_bpa_pipeline_log
@@ -260,6 +337,8 @@ Regras:
         lesson_id,
         steps_count: steps.length,
         estimated_minutes: estimatedMinutes,
+        tools,
+        intro_slides_created: introSlides.length,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
