@@ -35,12 +35,12 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   { key: 'steps_have_frames', label: 'Todos os passos têm frames' },
   { key: 'steps_have_liv', label: 'Todos os passos têm dicas LIV (tip, analogy, sos)' },
   { key: 'intro_slides_ok', label: 'Slides de introdução configurados' },
-  { key: 'images_ok', label: 'Todas as imagens aprovadas' },
-  { key: 'mockups_ok', label: 'Todos os mockups aprovados' },
-  { key: 'audios_ok', label: 'Todos os áudios gerados' },
+  { key: 'images_ok', label: 'Todos os passos têm imagem (verificação real nos frames)' },
+  { key: 'mockups_ok', label: 'Todos os frames têm mockup_url (verificação real)' },
+  { key: 'audios_ok', label: 'Todos os passos têm audio_url (verificação real)' },
   { key: 'narration_a_ok', label: 'Narração Parte A configurada' },
   { key: 'narration_c_ok', label: 'Narração Parte C configurada' },
-  { key: 'metadata_ok', label: 'Metadados da aula completos (título, descrição, tools, badge)' },
+  { key: 'metadata_ok', label: 'Metadados da aula completos (título, descrição, tools)' },
 ];
 
 export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
@@ -187,7 +187,22 @@ export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
         }
       }
 
-      toast.success('Metadados e intro slides corrigidos! Execute a verificação novamente.');
+      toast.success('Metadados e intro slides corrigidos. Executando verificação...');
+
+      // Auto-run verification (no second click needed)
+      const { data: checkData, error: checkError } = await supabase.functions.invoke('v10-assembly-check', {
+        body: { pipeline_id: pipeline.id }
+      });
+
+      if (!checkError && checkData?.checklist) {
+        await onUpdate({
+          assembly_checklist: checkData.checklist,
+          assembly_passed: checkData.all_passed,
+        } as Partial<V10BpaPipeline>);
+
+        const passCount = Object.values(checkData.checklist as Record<string, boolean>).filter(Boolean).length;
+        toast.success(`Verificação concluída: ${passCount}/11 itens aprovados`);
+      }
     } catch (err: any) {
       toast.error(`Erro: ${err.message}`);
     } finally {
