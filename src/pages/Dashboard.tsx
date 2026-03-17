@@ -508,19 +508,18 @@ const Dashboard = () => {
 
       setTrailsProgress(progressData);
 
-      // Fetch V8 courses (conditional — only if v8 trails exist)
-      const v8TrailIds = trailsData.filter(t => t.trail_type === 'v8').map(t => t.id);
-      if (v8TrailIds.length > 0) {
+      // Fetch courses from ALL trails (system-agnostic)
+      const allTrailIds = trailsData.map(t => t.id);
+      if (allTrailIds.length > 0) {
         const { data: coursesData } = await supabase
           .from('courses')
           .select('*')
-          .in('trail_id', v8TrailIds)
+          .in('trail_id', allTrailIds)
           .eq('is_active', true)
           .order('order_index');
 
         if (coursesData && coursesData.length > 0) {
-          // We already have allLessons with course_id — no need for extra query!
-          const v8CoursesWithProgress: V8Course[] = coursesData.map(course => {
+          const allCoursesWithProgress: V8Course[] = coursesData.map(course => {
             const lessons = allLessons.filter(l => l.course_id === course.id);
             const completed = lessons.filter(l => completedLessonIds.has(l.id)).length;
             return {
@@ -534,7 +533,7 @@ const Dashboard = () => {
               totalLessons: lessons.length,
             };
           });
-          setV8Courses(v8CoursesWithProgress);
+          setV8Courses(allCoursesWithProgress);
         }
       }
     } catch (error: any) {
