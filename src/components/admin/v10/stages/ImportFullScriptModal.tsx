@@ -39,6 +39,17 @@ interface ImportFullScriptModalProps {
   onImportComplete: () => void;
 }
 
+// ── Markdown preprocessing ─────────────────────────────────────────────────────
+
+function preprocessMarkdown(text: string): string {
+  return text
+    .replace(/\*\*/g, '')                          // remove all bold markers
+    .replace(/^---+\s*$/gm, '')                    // remove horizontal rules
+    .replace(/^#{1,3}\s+FASE\s+\d+[^\n]*/gm, '')  // remove FASE headers
+    .replace(/^#{1,3}\s+/gm, '')                   // remove remaining markdown headers (##, ###)
+    .replace(/\n{3,}/g, '\n\n');                    // collapse excess blank lines
+}
+
 // ── Auto-tagging logic ─────────────────────────────────────────────────────────
 
 function autoTagScript(text: string): string {
@@ -46,7 +57,7 @@ function autoTagScript(text: string): string {
 
   // [ANCHOR:pontos_atencao] before "Agora, os pontos de atenção desse passo:"
   result = result.replace(
-    /^(Agora, os pontos de atenção desse passo:)/gm,
+    /^(Agora, os pontos de atenção)/gm,
     '[ANCHOR:pontos_atencao]\n$1'
   );
 
@@ -60,9 +71,11 @@ function autoTagScript(text: string): string {
   const trocaPattern = /^(Agora (?:mudamos de ferramenta|vamos pro|voltamos pro|volte pra|abra o)|Abra uma nova aba)/gim;
   result = result.replace(trocaPattern, '[ANCHOR:troca_ferramenta]\n$1');
 
-  // Deduplicate: remove double-inserted tags (if phrase already had a tag above it)
-  result = result.replace(/(\[ANCHOR:[^\]]+\]\n){2,}/g, (match) => {
-    const tags = match.trim().split('\n');
+  // Deduplicate: remove consecutive or near-consecutive duplicate tags
+  result = result.replace(/(\[ANCHOR:[^\]]+\])\s*\n\s*\1/g, '$1');
+  // Also collapse any run of ANCHOR tags to unique set
+  result = result.replace(/(\[ANCHOR:[^\]]+\]\n?){2,}/g, (match) => {
+    const tags = match.trim().split(/\n/).filter(t => t.trim().startsWith('[ANCHOR:'));
     return [...new Set(tags)].join('\n') + '\n';
   });
 
@@ -86,8 +99,10 @@ const METADATA_MARKERS = [
 function parseFullScript(rawText: string): ParseResult {
   const ignoredSections: string[] = [];
 
+  // Preprocess: strip markdown formatting
+  let text = preprocessMarkdown(rawText);
+
   // Strip metadata at the end
-  let text = rawText;
   for (const marker of METADATA_MARKERS) {
     const match = text.match(new RegExp(`\n(${marker.source}.*)`, 'is'));
     if (match && match.index !== undefined) {
@@ -102,7 +117,6 @@ function parseFullScript(rawText: string): ParseResult {
   const partAMatch = text.match(/PARTE\s+A[^\n]*\n([\s\S]*?)(?=PARTE\s+B|PASSO\s+1\s*[—–-])/i);
   if (partAMatch) {
     partA = partAMatch[1].trim();
-    // Remove header lines like "Sem alteração..."
     partA = partA.replace(/^Sem alteração[^\n]*\n?/gim, '').trim();
   }
 
@@ -165,10 +179,15 @@ export function ImportFullScriptModal({
   const [autoTag, setAutoTag] = useState(true);
   const [importing, setImporting] = useState(false);
 
+  const hasExistingTags = useMemo(() => rawText.includes('[ANCHOR:'), [rawText]);
+
   const parsed = useMemo(() => {
     if (!rawText.trim()) return null;
     return parseFullScript(rawText);
   }, [rawText]);
+
+  // Auto-disable auto-tag when script already has anchor tags
+  const effectiveAutoTag = autoTag && !hasExistingTags;
 
   const matchedSteps = useMemo(() => {
     if (!parsed) return [];
@@ -236,7 +255,7 @@ export function ImportFullScriptModal({
       // ── Save Step Scripts ──
       for (const step of matchedSteps) {
         if (!step.dbStepId) continue;
-        const script = autoTag ? autoTagScript(step.body) : step.body;
+        const script = effectiveAutoTag ? autoTagScript(step.body) : step.body;
         const { error } = await supabase
           .from('v10_lesson_steps')
           .update({ narration_script: script } as any)
@@ -250,7 +269,7 @@ export function ImportFullScriptModal({
 
       toast.success(
         `Importado: ${savedSteps} passos + ${savedParts} partes (A/C). ${
-          autoTag ? 'Tags [ANCHOR:*] inseridas automaticamente.' : ''
+          effectiveAutoTag ? 'Tags [ANCHOR:*] inseridas automaticamente.' : ''
         }`
       );
 
@@ -291,12 +310,18 @@ export function ImportFullScriptModal({
           <div className="flex items-center gap-2">
             <Checkbox
               id="auto-tag"
-              checked={autoTag}
+              checked={effectiveAutoTag}
+              disabled={hasExistingTags}
               onCheckedChange={(v) => setAutoTag(!!v)}
             />
             <label htmlFor="auto-tag" className="text-sm cursor-pointer">
               Inserir tags <code className="text-xs bg-muted px-1 rounded">[ANCHOR:*]</code> automaticamente
             </label>
+            {hasExistingTags && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] text-blue-700 font-medium">
+                <CheckCircle2 className="h-3 w-3" /> Tags já presentes no script
+              </span>
+            )}
           </div>
 
           {/* Preview */}
@@ -341,7 +366,7 @@ export function ImportFullScriptModal({
                 </div>
               )}
 
-              {autoTag && (
+              {effectiveAutoTag && (
                 <div className="flex items-start gap-2 rounded bg-blue-50 p-2 text-xs text-blue-800">
                   <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                   Tags <code>[ANCHOR:troca_frame]</code> não são detectáveis automaticamente — adicione manualmente após importação.
