@@ -471,6 +471,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           isLastFrame={isLastFrame}
           continueEnabled={continueEnabled}
           onSkipNarration={hasAudio ? handleSkipNarration : undefined}
+          onReplayStep={handleReplayStep}
         />
       </div>
 
