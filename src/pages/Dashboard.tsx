@@ -1113,8 +1113,8 @@ const Dashboard = () => {
               </AnimatePresence>
             </motion.div>
 
-            {/* ===== RENDA EXTRA PRO (V7) ===== */}
-            {v7Trails.length > 0 && (
+            {/* ===== TRILHAS DIRETAS (sem jornadas) ===== */}
+            {orphanTrails.length > 0 && (
             <motion.div
               id="suas-trilhas"
               initial={{ opacity: 0, y: 20 }}
