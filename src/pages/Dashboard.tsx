@@ -145,17 +145,16 @@ const Dashboard = () => {
   // V8 courses (jornadas dentro da trilha V8)
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
   
-  // Separar trilhas V7 e V8
-  const v7Trails = trails.filter(t => t.trail_type !== 'v8');
-  const v8Trails = trails.filter(t => t.trail_type === 'v8');
+  // Trilhas órfãs: sem courses (aulas diretas)
+  const orphanTrails = trails.filter(t => !v8Courses.some(c => c.trail_id === t.id));
 
-  // Paginação das trilhas V7 (3 por página = 1 linha de 3)
+  // Paginação das trilhas órfãs (3 por página = 1 linha de 3)
   const [trailPage, setTrailPage] = useState(0);
   const TRAILS_PER_PAGE = 3;
-  const totalTrailPages = Math.max(1, Math.ceil(v7Trails.length / TRAILS_PER_PAGE));
-  const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
+  const totalTrailPages = Math.max(1, Math.ceil(orphanTrails.length / TRAILS_PER_PAGE));
+  const visibleTrails = orphanTrails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
 
-  // Paginação das jornadas V8 (courses)
+  // Paginação das jornadas (courses de TODAS as trilhas)
   const [trailPageV8, setTrailPageV8] = useState(0);
   const totalTrailPagesV8 = Math.max(1, Math.ceil(v8Courses.length / TRAILS_PER_PAGE));
   const visibleV8Courses = v8Courses.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
