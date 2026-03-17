@@ -71,6 +71,24 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const [auditing, setAuditing] = useState(false);
   const [generating, setGenerating] = useState(false);
 
+  // Trail/Course selectors for lesson creation
+  const [trails, setTrails] = useState<Array<{ id: string; title: string }>>([]);
+  const [courses, setCourses] = useState<Array<{ id: string; trail_id: string; title: string }>>([]);
+  const [selectedTrailId, setSelectedTrailId] = useState<string>('');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+
+  useEffect(() => {
+    async function fetchTrailsCourses() {
+      const [t, c] = await Promise.all([
+        supabase.from('trails').select('id, title').eq('is_active', true).order('order_index'),
+        supabase.from('courses').select('id, trail_id, title').eq('is_active', true).order('order_index'),
+      ]);
+      if (t.data) setTrails(t.data);
+      if (c.data) setCourses(c.data);
+    }
+    if (!pipeline.lesson_id) fetchTrailsCourses();
+  }, [pipeline.lesson_id]);
+
   const fetchSteps = useCallback(async () => {
     if (!pipeline.lesson_id) return;
     setLoading(true);
