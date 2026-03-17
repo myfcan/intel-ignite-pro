@@ -142,22 +142,30 @@ const Dashboard = () => {
   const prevPatentLevelRef = useRef<number | null>(null);
   const [dashboardAccessCount, setDashboardAccessCount] = useState<number>(0);
   
-  // V8 courses (jornadas dentro da trilha V8)
+  // All courses from all trails
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
+  
+  // Split courses: "Caminho da Maestria" trail → "Suas Jornadas", others → "Renda Extra PRO"
+  const maestriaTrailId = trails.find(t => t.order_index === 9)?.id;
+  const maestriaCourses = v8Courses.filter(c => c.trail_id === maestriaTrailId);
+  const rendaExtraCourses = v8Courses.filter(c => c.trail_id !== maestriaTrailId);
   
   // Trilhas órfãs: sem courses (aulas diretas)
   const orphanTrails = trails.filter(t => !v8Courses.some(c => c.trail_id === t.id));
 
-  // Paginação das trilhas órfãs (3 por página = 1 linha de 3)
-  const [trailPage, setTrailPage] = useState(0);
-  const TRAILS_PER_PAGE = 3;
-  const totalTrailPages = Math.max(1, Math.ceil(orphanTrails.length / TRAILS_PER_PAGE));
-  const visibleTrails = orphanTrails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
+  // Renda Extra PRO: non-maestria courses + orphan trails combined count for pagination
+  const rendaExtraTotal = rendaExtraCourses.length + orphanTrails.length;
 
-  // Paginação das jornadas (courses de TODAS as trilhas)
+  const TRAILS_PER_PAGE = 3;
+
+  // Paginação Renda Extra PRO (courses + orphan trails)
+  const [trailPage, setTrailPage] = useState(0);
+  const totalTrailPages = Math.max(1, Math.ceil(rendaExtraTotal / TRAILS_PER_PAGE));
+
+  // Paginação das jornadas Maestria
   const [trailPageV8, setTrailPageV8] = useState(0);
-  const totalTrailPagesV8 = Math.max(1, Math.ceil(v8Courses.length / TRAILS_PER_PAGE));
-  const visibleV8Courses = v8Courses.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
+  const totalTrailPagesV8 = Math.max(1, Math.ceil(maestriaCourses.length / TRAILS_PER_PAGE));
+  const visibleV8Courses = maestriaCourses.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
 
   // Paginação dos desafios profissionais
   const [trailPagePro, setTrailPagePro] = useState(0);
@@ -813,12 +821,12 @@ const Dashboard = () => {
             </div>
 
             {/* ===== SECTION TITLE: TRILHAS ===== */}
-            {(v8Courses.length > 0 || orphanTrails.length > 0) && (
+            {(maestriaCourses.length > 0 || rendaExtraCourses.length > 0 || orphanTrails.length > 0) && (
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
             )}
 
-            {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
-            {v8Courses.length > 0 && (
+            {/* ===== SEU CAMINHO DE MAESTRIA - FIRST ===== */}
+            {maestriaCourses.length > 0 && (
             <motion.div
               id="tour-trilhas"
               initial={{ opacity: 0, y: 20 }}
@@ -886,7 +894,7 @@ const Dashboard = () => {
                   }}
                   aria-label="Carrossel de trilhas V8"
                 >
-                  {v8Courses.map((course, idx) => {
+                  {maestriaCourses.map((course, idx) => {
                     const isActive = idx === snapActiveIndexV8;
                     return (
                       <div
@@ -920,7 +928,7 @@ const Dashboard = () => {
                   })}
                 </div>
                 <div className="flex items-center justify-center gap-2 mt-2">
-                  {v8Courses.map((_, idx) => (
+                  {maestriaCourses.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -1113,8 +1121,8 @@ const Dashboard = () => {
               </AnimatePresence>
             </motion.div>
 
-            {/* ===== TRILHAS DIRETAS (sem jornadas) ===== */}
-            {orphanTrails.length > 0 && (
+            {/* ===== RENDA EXTRA PRO (non-maestria courses + orphan trails) ===== */}
+            {rendaExtraTotal > 0 && (
             <motion.div
               id="suas-trilhas"
               initial={{ opacity: 0, y: 20 }}
@@ -1134,7 +1142,6 @@ const Dashboard = () => {
                   <h2 className="text-base sm:text-lg font-bold text-blue-800 tracking-tight whitespace-nowrap truncate">Renda Extra PRO</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Ver todos pill */}
                   <button
                     onClick={() => navigate('/all-trails')}
                     className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
@@ -1142,7 +1149,6 @@ const Dashboard = () => {
                   >
                     Ver todos ›
                   </button>
-                  {/* Pagination arrows - hidden on mobile, visible on sm+ */}
                   <div className="hidden sm:flex items-center gap-2">
                     <button
                       onClick={() => setTrailPage(p => Math.max(0, p - 1))}
@@ -1167,7 +1173,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Mobile: Premium Snap Carousel */}
+              {/* Mobile: Snap Carousel with courses + orphan trails */}
               <div className="sm:hidden">
                 <style>{`
                   .snap-carousel { scrollbar-width: none; -ms-overflow-style: none; }
@@ -1188,16 +1194,51 @@ const Dashboard = () => {
                     overscrollBehaviorX: 'contain',
                     touchAction: 'pan-x',
                   }}
-                  aria-label="Carrossel de trilhas"
+                  aria-label="Carrossel Renda Extra PRO"
                 >
-                  {orphanTrails.map((trail, idx) => {
-                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                  {/* Render non-maestria courses first */}
+                  {rendaExtraCourses.map((course, idx) => {
                     const isActive = idx === snapActiveIndex;
                     return (
                       <div
-                        key={trail.id}
+                        key={course.id}
                         ref={(el) => { snapItemRefs.current[idx] = el; }}
                         data-snap-index={idx}
+                        className="snap-item relative flex-shrink-0"
+                        style={{
+                          scrollSnapAlign: 'center',
+                          scrollSnapStop: 'always',
+                          flex: '0 0 82%',
+                          maxWidth: 360,
+                          transform: isActive ? 'scale(1)' : 'scale(0.94)',
+                          filter: isActive ? 'saturate(1)' : 'saturate(0.92)',
+                          opacity: isActive ? 1 : 0.96,
+                          transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
+                        }}
+                      >
+                        <V8TrailCard
+                          trailId={course.trail_id}
+                          title={course.title}
+                          description={course.description || ''}
+                          icon={course.icon || '📘'}
+                          lessonCount={course.totalLessons}
+                          completedCount={course.completedLessons}
+                          orderIndex={course.order_index}
+                          navigateToId={course.id}
+                        />
+                      </div>
+                    );
+                  })}
+                  {/* Then orphan trails */}
+                  {orphanTrails.map((trail, idx) => {
+                    const globalIdx = rendaExtraCourses.length + idx;
+                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                    const isActive = globalIdx === snapActiveIndex;
+                    return (
+                      <div
+                        key={trail.id}
+                        ref={(el) => { snapItemRefs.current[globalIdx] = el; }}
+                        data-snap-index={globalIdx}
                         className="snap-item relative flex-shrink-0"
                         style={{
                           scrollSnapAlign: 'center',
@@ -1225,7 +1266,7 @@ const Dashboard = () => {
                 </div>
                 {/* Dots */}
                 <div className="flex items-center justify-center gap-2 mt-0">
-                  {orphanTrails.map((_, idx) => (
+                  {Array.from({ length: rendaExtraTotal }).map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -1239,7 +1280,7 @@ const Dashboard = () => {
                           : 'rgba(148,163,184,0.45)',
                         transform: idx === snapActiveIndex ? 'scale(1.15)' : 'scale(1)',
                       }}
-                      aria-label={`Ir para trilha ${idx + 1}`}
+                      aria-label={`Ir para item ${idx + 1}`}
                     />
                   ))}
                 </div>
@@ -1255,23 +1296,49 @@ const Dashboard = () => {
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                   className="hidden sm:grid sm:grid-cols-3 gap-4"
                 >
-              {visibleTrails.map((trail) => {
-                    const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-
-                      return (
-                        <div key={trail.id} className="flex-1 min-w-0">
-                          <TrailCard
-                            trail={trail}
-                            Icon={TRAIL_ICONS[trail.icon] || BookOpen}
-                            gradient="from-indigo-500 to-violet-500"
-                            progress={trailProgress?.progress || 0}
-                            completedLessons={trailProgress?.completedLessons || 0}
-                            totalLessons={trailProgress?.totalLessons || 0}
-                            status={trailProgress?.status || "locked"}
-                          />
-                        </div>
-                      );
-                  })}
+                  {(() => {
+                    // Combine courses + orphan trails into one array for pagination
+                    const allRendaItems = [
+                      ...rendaExtraCourses.map(c => ({ type: 'course' as const, data: c })),
+                      ...orphanTrails.map(t => ({ type: 'trail' as const, data: t })),
+                    ];
+                    const visibleItems = allRendaItems.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
+                    return visibleItems.map((item) => {
+                      if (item.type === 'course') {
+                        const course = item.data as V8Course;
+                        return (
+                          <div key={course.id} className="flex-1 min-w-0">
+                            <V8TrailCard
+                              trailId={course.trail_id}
+                              title={course.title}
+                              description={course.description || ''}
+                              icon={course.icon || '📘'}
+                              lessonCount={course.totalLessons}
+                              completedCount={course.completedLessons}
+                              orderIndex={course.order_index}
+                              navigateToId={course.id}
+                            />
+                          </div>
+                        );
+                      } else {
+                        const trail = item.data as Trail;
+                        const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                        return (
+                          <div key={trail.id} className="flex-1 min-w-0">
+                            <TrailCard
+                              trail={trail}
+                              Icon={TRAIL_ICONS[trail.icon] || BookOpen}
+                              gradient="from-indigo-500 to-violet-500"
+                              progress={trailProgress?.progress || 0}
+                              completedLessons={trailProgress?.completedLessons || 0}
+                              totalLessons={trailProgress?.totalLessons || 0}
+                              status={trailProgress?.status || "locked"}
+                            />
+                          </div>
+                        );
+                      }
+                    });
+                  })()}
                 </motion.div>
               </AnimatePresence>
             </motion.div>
