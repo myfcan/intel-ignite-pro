@@ -105,11 +105,11 @@ serve(async (req) => {
         body: JSON.stringify({
           text: cleanText,
           model_id: MODEL_ID,
-          language_code: 'pt',
           voice_settings: {
-            stability: 0.6,
-            similarity_boost: 0.8,
-            speed: 0.9,
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.3,
+            use_speaker_boost: true,
           },
         }),
       }
