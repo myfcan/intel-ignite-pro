@@ -10,18 +10,14 @@ interface OnboardingCTAProps {
   } | null;
   /** Whether user has started any lesson */
   hasProgress: boolean;
-  /** V8 trail ID — always the default destination */
-  v8TrailId?: string | null;
 }
 
-export function OnboardingCTA({ activeTrail, hasProgress, v8TrailId }: OnboardingCTAProps) {
+export function OnboardingCTA({ activeTrail, hasProgress }: OnboardingCTAProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
     if (hasProgress && activeTrail) {
       navigate(`/trail/${activeTrail.id}`);
-    } else if (v8TrailId) {
-      navigate(`/v8-trail/${v8TrailId}`);
     } else {
       // Fallback: scroll to trails
       const el = document.getElementById('tour-trilhas');

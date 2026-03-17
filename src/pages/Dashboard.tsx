@@ -145,17 +145,16 @@ const Dashboard = () => {
   // V8 courses (jornadas dentro da trilha V8)
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
   
-  // Separar trilhas V7 e V8
-  const v7Trails = trails.filter(t => t.trail_type !== 'v8');
-  const v8Trails = trails.filter(t => t.trail_type === 'v8');
+  // Trilhas órfãs: sem courses (aulas diretas)
+  const orphanTrails = trails.filter(t => !v8Courses.some(c => c.trail_id === t.id));
 
-  // Paginação das trilhas V7 (3 por página = 1 linha de 3)
+  // Paginação das trilhas órfãs (3 por página = 1 linha de 3)
   const [trailPage, setTrailPage] = useState(0);
   const TRAILS_PER_PAGE = 3;
-  const totalTrailPages = Math.max(1, Math.ceil(v7Trails.length / TRAILS_PER_PAGE));
-  const visibleTrails = v7Trails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
+  const totalTrailPages = Math.max(1, Math.ceil(orphanTrails.length / TRAILS_PER_PAGE));
+  const visibleTrails = orphanTrails.slice(trailPage * TRAILS_PER_PAGE, (trailPage + 1) * TRAILS_PER_PAGE);
 
-  // Paginação das jornadas V8 (courses)
+  // Paginação das jornadas (courses de TODAS as trilhas)
   const [trailPageV8, setTrailPageV8] = useState(0);
   const totalTrailPagesV8 = Math.max(1, Math.ceil(v8Courses.length / TRAILS_PER_PAGE));
   const visibleV8Courses = v8Courses.slice(trailPageV8 * TRAILS_PER_PAGE, (trailPageV8 + 1) * TRAILS_PER_PAGE);
@@ -183,7 +182,7 @@ const Dashboard = () => {
   // IntersectionObserver para detectar card ativo (>=60% visível)
   useEffect(() => {
     const root = snapScrollerRef.current;
-    if (!root || v7Trails.length === 0) return;
+    if (!root || orphanTrails.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -207,7 +206,7 @@ const Dashboard = () => {
 
     snapItemRefs.current.forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
-  }, [v7Trails]);
+  }, [orphanTrails]);
 
   const scrollToSnapIndex = (idx: number) => {
     const el = snapItemRefs.current[idx];
@@ -509,19 +508,18 @@ const Dashboard = () => {
 
       setTrailsProgress(progressData);
 
-      // Fetch V8 courses (conditional — only if v8 trails exist)
-      const v8TrailIds = trailsData.filter(t => t.trail_type === 'v8').map(t => t.id);
-      if (v8TrailIds.length > 0) {
+      // Fetch courses from ALL trails (system-agnostic)
+      const allTrailIds = trailsData.map(t => t.id);
+      if (allTrailIds.length > 0) {
         const { data: coursesData } = await supabase
           .from('courses')
           .select('*')
-          .in('trail_id', v8TrailIds)
+          .in('trail_id', allTrailIds)
           .eq('is_active', true)
           .order('order_index');
 
         if (coursesData && coursesData.length > 0) {
-          // We already have allLessons with course_id — no need for extra query!
-          const v8CoursesWithProgress: V8Course[] = coursesData.map(course => {
+          const allCoursesWithProgress: V8Course[] = coursesData.map(course => {
             const lessons = allLessons.filter(l => l.course_id === course.id);
             const completed = lessons.filter(l => completedLessonIds.has(l.id)).length;
             return {
@@ -535,7 +533,7 @@ const Dashboard = () => {
               totalLessons: lessons.length,
             };
           });
-          setV8Courses(v8CoursesWithProgress);
+          setV8Courses(allCoursesWithProgress);
         }
       }
     } catch (error: any) {
@@ -651,7 +649,7 @@ const Dashboard = () => {
               accessCount={dashboardAccessCount}
               activeTrail={activeTrail ? { id: activeTrail.id, title: activeTrail.title } : null}
               hasProgress={hasAnyProgress}
-              v8TrailId={v8Trails.length > 0 ? v8Trails[0].id : null}
+              
             />
 
             {/* ===== PURPLE HERO BANNER - Hidden on mobile ===== */}
@@ -815,7 +813,7 @@ const Dashboard = () => {
             </div>
 
             {/* ===== SECTION TITLE: TRILHAS ===== */}
-            {(v8Trails.length > 0 || v7Trails.length > 0) && (
+            {(v8Courses.length > 0 || orphanTrails.length > 0) && (
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
             )}
 
@@ -837,18 +835,12 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Crown className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  <h2 className="text-base sm:text-lg font-bold text-indigo-800 tracking-tight whitespace-nowrap truncate">Seu Caminho de Maestria</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-indigo-800 tracking-tight whitespace-nowrap truncate">Suas Jornadas</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
                   <button
-                    onClick={() => {
-                      if (v8Trails.length === 1) {
-                        navigate(`/v8-trail/${v8Trails[0].id}`);
-                      } else {
-                        navigate('/all-trails/v8');
-                      }
-                    }}
+                    onClick={() => navigate('/all-trails')}
                     className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
                     style={{ background: 'hsl(226 100% 97%)', color: 'hsl(239 84% 67%)', border: '1px solid hsl(224 76% 90%)' }}
                   >
@@ -1121,8 +1113,8 @@ const Dashboard = () => {
               </AnimatePresence>
             </motion.div>
 
-            {/* ===== RENDA EXTRA PRO (V7) ===== */}
-            {v7Trails.length > 0 && (
+            {/* ===== TRILHAS DIRETAS (sem jornadas) ===== */}
+            {orphanTrails.length > 0 && (
             <motion.div
               id="suas-trilhas"
               initial={{ opacity: 0, y: 20 }}
@@ -1144,13 +1136,7 @@ const Dashboard = () => {
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
                   <button
-                    onClick={() => {
-                      if (v7Trails.length === 1) {
-                        navigate(`/trail/${v7Trails[0].id}`);
-                      } else {
-                        navigate('/all-trails/v7');
-                      }
-                    }}
+                    onClick={() => navigate('/all-trails')}
                     className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
                     style={{ background: 'hsl(214 100% 97%)', color: 'hsl(217 91% 60%)', border: '1px solid hsl(214 76% 90%)' }}
                   >
@@ -1204,7 +1190,7 @@ const Dashboard = () => {
                   }}
                   aria-label="Carrossel de trilhas"
                 >
-                  {v7Trails.map((trail, idx) => {
+                  {orphanTrails.map((trail, idx) => {
                     const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                     const isActive = idx === snapActiveIndex;
                     return (
@@ -1239,7 +1225,7 @@ const Dashboard = () => {
                 </div>
                 {/* Dots */}
                 <div className="flex items-center justify-center gap-2 mt-0">
-                  {v7Trails.map((_, idx) => (
+                  {orphanTrails.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"

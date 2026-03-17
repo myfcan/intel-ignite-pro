@@ -321,10 +321,8 @@ export default function AdminManageLessons() {
       }
     }
 
-    // Determine if V8
-    const effectiveIsV8 = createNewTrail
-      ? newTrailType === 'v8'
-      : trails.find(t => t.id === trailId)?.trail_type === 'v8';
+    // All trail types support courses/jornadas
+    const effectiveIsV8 = true; // Legacy — all trails now treated uniformly
 
     if (!effectiveIsV8 && !newCourseTitle.trim()) {
       toast({ title: 'Nome da jornada obrigatório', variant: 'destructive' });
@@ -540,8 +538,7 @@ export default function AdminManageLessons() {
                         <div className="flex-1">
                           <CardTitle className="text-base flex items-center gap-2">
                             {trail.title}
-                            {trail.trail_type === 'v8' && <Badge className="text-xs bg-indigo-500/20 text-indigo-400 border-indigo-500/30">V8</Badge>}
-                            {trail.trail_type === 'v10' && <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">V10</Badge>}
+                            {trail.trail_type && <Badge variant="outline" className="text-xs">{trail.trail_type}</Badge>}
                           </CardTitle>
                           <CardDescription className="text-xs">
                             {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0) + trail.v10Lessons.length} aula(s)
@@ -892,7 +889,7 @@ export default function AdminManageLessons() {
                 <Select value={v10TargetTrailId} onValueChange={setV10TargetTrailId}>
                   <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
                   <SelectContent>
-                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title} {t.trail_type ? `(${t.trail_type})` : ''}</SelectItem>)}
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
