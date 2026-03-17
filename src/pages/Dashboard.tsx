@@ -464,10 +464,12 @@ const Dashboard = () => {
   const fetchTrailsWithProgress = async (userId: string) => {
     try {
       // ══════ Fase 2: Parallel queries with Promise.all ══════
-      const [trailsResult, lessonsResult, progressResult] = await Promise.all([
+      const [trailsResult, lessonsResult, progressResult, v10LessonsResult, v10ProgressResult] = await Promise.all([
         supabase.from('trails').select('*').eq('is_active', true).order('order_index'),
         supabase.from('lessons').select('id, trail_id, course_id').eq('is_active', true),
         supabase.from('user_progress').select('lesson_id, status').eq('user_id', userId).eq('status', 'completed'),
+        (supabase as any).from('v10_lessons').select('id, trail_id, course_id, status').eq('status', 'published'),
+        (supabase as any).from('v10_user_lesson_progress').select('lesson_id, completed').eq('user_id', userId).eq('completed', true),
       ]);
 
       if (trailsResult.error) throw trailsResult.error;
@@ -475,6 +477,8 @@ const Dashboard = () => {
       const trailsData = trailsResult.data || [];
       const allLessons = lessonsResult.data || [];
       const allProgress = progressResult.data || [];
+      const v10LessonsData = (v10LessonsResult.data || []) as Array<{ id: string; trail_id: string | null; course_id: string | null; status: string }>;
+      const v10ProgressData = (v10ProgressResult.data || []) as Array<{ lesson_id: string; completed: boolean }>;
 
       setTrails(trailsData);
 
