@@ -255,7 +255,7 @@ export function ImportFullScriptModal({
       // ── Save Step Scripts ──
       for (const step of matchedSteps) {
         if (!step.dbStepId) continue;
-        const script = autoTag ? autoTagScript(step.body) : step.body;
+        const script = effectiveAutoTag ? autoTagScript(step.body) : step.body;
         const { error } = await supabase
           .from('v10_lesson_steps')
           .update({ narration_script: script } as any)
