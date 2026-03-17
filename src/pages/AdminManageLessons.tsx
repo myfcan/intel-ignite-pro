@@ -117,7 +117,10 @@ export default function AdminManageLessons() {
   const [createNewTrail, setCreateNewTrail] = useState(false);
   const [newTrailTitle, setNewTrailTitle] = useState('');
   const [newTrailIcon, setNewTrailIcon] = useState('');
-  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8' | 'v10'>('v7');
+  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8' | 'v10'>('v8');
+  const [showCreateTrailModal, setShowCreateTrailModal] = useState(false);
+  const [soloTrailTitle, setSoloTrailTitle] = useState('');
+  const [soloTrailIcon, setSoloTrailIcon] = useState('');
 
   useEffect(() => {
     loadData();
@@ -512,6 +515,10 @@ export default function AdminManageLessons() {
               <Wrench className="w-4 h-4 mr-1" />
               Corrigir Exercícios
             </Button>
+            <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50" onClick={() => setShowCreateTrailModal(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Nova Trilha
+            </Button>
             <Button variant="outline" size="sm" className="border-green-500 text-green-600 hover:bg-green-50" onClick={() => setShowCreateCourseModal(true)}>
               <Plus className="w-4 h-4 mr-1" />
               Nova Jornada
@@ -839,17 +846,6 @@ export default function AdminManageLessons() {
                     <Input value={newTrailTitle} onChange={(e) => setNewTrailTitle(e.target.value)} placeholder="Ex: Dominando IA Generativa" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Tipo</label>
-                    <Select value={newTrailType} onValueChange={(v) => setNewTrailType(v as 'v7' | 'v8' | 'v10')}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="v7">V7 (Trilha → Jornada → Aula)</SelectItem>
-                        <SelectItem value="v8">V8 (Trilha → Jornada → Aula)</SelectItem>
-                        <SelectItem value="v10">V10 (BPA Step-by-Step)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
                     <label className="text-sm font-medium mb-1 block">Ícone da Trilha (opcional)</label>
                     <Input value={newTrailIcon} onChange={(e) => setNewTrailIcon(e.target.value)} placeholder="Ex: 🚀 ou Brain" />
                   </div>
@@ -927,8 +923,58 @@ export default function AdminManageLessons() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowV10MoveModal(false)} disabled={movingV10}>Cancelar</Button>
-              <Button onClick={handleMoveV10Lesson} disabled={movingV10 || !v10TargetTrailId}>
+              <Button onClick={handleMoveV10Lesson} disabled={movingV10 || !v10TargetTrailId || !v10TargetCourseId}>
                 {movingV10 ? 'Movendo...' : 'Confirmar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Trail Modal (standalone) */}
+        <Dialog open={showCreateTrailModal} onOpenChange={setShowCreateTrailModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="w-5 h-5 text-blue-500" />
+                Criar Nova Trilha
+              </DialogTitle>
+              <DialogDescription>Uma trilha é a seção principal (N1) que agrupa jornadas</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Nome da Trilha</label>
+                <Input value={soloTrailTitle} onChange={(e) => setSoloTrailTitle(e.target.value)} placeholder="Ex: Renda Extra PRO" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
+                <Input value={soloTrailIcon} onChange={(e) => setSoloTrailIcon(e.target.value)} placeholder="Ex: 🚀 ou Brain" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateTrailModal(false)}>Cancelar</Button>
+              <Button
+                disabled={!soloTrailTitle.trim()}
+                onClick={async () => {
+                  const maxOrder = trails.length > 0 ? Math.max(...trails.map(t => t.order_index)) + 1 : 1;
+                  const { error } = await supabase.from('trails').insert({
+                    title: soloTrailTitle.trim(),
+                    icon: soloTrailIcon.trim() || null,
+                    order_index: maxOrder,
+                    is_active: true,
+                    trail_type: 'v8',
+                  });
+                  if (error) {
+                    toast({ title: 'Erro ao criar trilha', description: error.message, variant: 'destructive' });
+                  } else {
+                    toast({ title: 'Trilha criada', description: `"${soloTrailTitle.trim()}"` });
+                    setShowCreateTrailModal(false);
+                    setSoloTrailTitle('');
+                    setSoloTrailIcon('');
+                    await loadData();
+                  }
+                }}
+              >
+                Criar Trilha
               </Button>
             </DialogFooter>
           </DialogContent>
