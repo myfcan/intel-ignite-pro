@@ -463,6 +463,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               streak={userStreak}
               audioUrl={narrations.C?.audio_url ?? null}
               onNextLesson={handleNextLesson}
+              onExit={handleExit}
             />
           </div>
         </div>
