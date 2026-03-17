@@ -35,7 +35,7 @@ serve(async (req) => {
     const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2';
     
     // Model ID padrão: eleven_v3 (previne accent drift para PT-PT)
-    const modelId = model_id || 'eleven_v3';
+    const modelId = model_id || 'eleven_multilingual_v2';
 
     console.log('Gerando áudio com ElevenLabs (com timestamps)...');
     console.log('Voice ID:', voiceId);
@@ -58,9 +58,9 @@ serve(async (req) => {
           model_id: modelId,
           language_code: 'pt',
           voice_settings: {
-            stability: 0.75,
+            stability: 0.5,
             similarity_boost: 0.75,
-            style: 0.0,
+            style: 0.3,
             use_speaker_boost: true
           }
         }),

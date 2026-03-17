@@ -313,7 +313,7 @@ async function generateNarrationScript(
   let userMessage: string;
 
   if (part === 'A') {
-    systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração de aproximadamente 30 segundos (cerca de 80 palavras) para a introdução de uma aula de tecnologia. O script deve:
+    systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração de aproximadamente 30 segundos (cerca de 80 palavras) para a introdução de uma aula de tecnologia. O script deve:
 - Cumprimentar o aluno de forma calorosa
 - Apresentar brevemente o tema da aula
 - Despertar curiosidade sobre o que será aprendido
@@ -322,7 +322,7 @@ async function generateNarrationScript(
 Retorne APENAS o texto do script, sem aspas, sem markdown, sem instruções.`;
     userMessage = `Tema da aula: ${title}\nContexto: ${topic}`;
   } else {
-    systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração de aproximadamente 20 segundos (cerca de 55 palavras) para o encerramento de uma aula de tecnologia. O script deve:
+    systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração de aproximadamente 20 segundos (cerca de 55 palavras) para o encerramento de uma aula de tecnologia. O script deve:
 - Parabenizar o aluno pela conclusão da aula
 - Fazer um breve recap do que foi aprendido
 - Encorajar o aluno a praticar
@@ -342,7 +342,7 @@ async function generateStepScript(
   const description = step.description || '';
   const frameContent = step.frame_content || step.content || '';
 
-  const systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração curto e claro para um passo de uma aula prática de tecnologia. O script deve:
+  const systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração curto e claro para um passo de uma aula prática de tecnologia. O script deve:
 - Explicar o que o aluno precisa fazer neste passo
 - Ser direto e objetivo, mas amigável
 - Contextualizar o passo dentro do aprendizado

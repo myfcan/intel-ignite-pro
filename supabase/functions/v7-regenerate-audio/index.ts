@@ -187,8 +187,8 @@ async function generateAudioWithElevenLabs(
   // ✅ FIX: Clean text before sending to TTS
   const cleanedText = cleanTextForTTS(text);
   
-  const voice = voiceId || 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR
-  const modelId = 'eleven_v3';
+  const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice — padrão global
+  const modelId = 'eleven_multilingual_v2';
   
   console.log('[V7RegenerateAudio:Audio] Generating audio...');
   console.log('[V7RegenerateAudio:Audio] Voice ID:', voice);
