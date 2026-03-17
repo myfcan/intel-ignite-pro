@@ -359,7 +359,7 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
       ]);
       if (stepsResult.data) setSteps(stepsResult.data as unknown as V10LessonStep[]);
     }
-  }, [steps, editingScripts, pipeline.id, pipeline.lesson_id]);
+  }, [steps, editingScripts, pipeline.id, pipeline.lesson_id, reprocessExisting]);
 
   const totalAnchors = Object.values(anchorCounts).reduce((sum, c) => sum + c, 0);
   const stepsWithAnchors = Object.keys(anchorCounts).length;
