@@ -359,7 +359,7 @@ export default function AdminManageLessons() {
     }
   }
 
-  
+  async function handleCreateCourse() {
     let trailId = newCourseTrailId;
 
     // If creating a new trail first
