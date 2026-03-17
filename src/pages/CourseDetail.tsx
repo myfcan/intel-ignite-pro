@@ -42,6 +42,10 @@ const CourseDetail = () => {
       toast({ title: "Aula bloqueada", description: "Complete a aula anterior para desbloquear.", variant: "destructive" });
       return;
     }
+    if (lesson.model === 'v10') {
+      navigate(`/v10/${(lesson as any).slug || lesson.id}`);
+      return;
+    }
     if (lesson.model === 'v8') {
       navigate(`/v8/${lesson.id}`);
       return;
