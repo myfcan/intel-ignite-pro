@@ -122,9 +122,9 @@ export function usePrefetchCourseDetailData() {
 
   return useCallback((courseId: string) => {
     queryClient.prefetchQuery({
-      queryKey: ['course-detail', courseId],
+      queryKey: ['course-detail-v2', courseId],
       queryFn: () => fetchCourseDetail(courseId),
-      staleTime: 5 * 60 * 1000,
+      staleTime: 0,
     });
   }, [queryClient]);
 }
