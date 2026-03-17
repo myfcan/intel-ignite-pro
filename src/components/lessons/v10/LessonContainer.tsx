@@ -432,6 +432,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               slides={introSlides}
               audioUrl={narrations.A?.audio_url ?? ''}
               onComplete={handlePartAComplete}
+              onExit={handleExit}
             />
           </div>
 
