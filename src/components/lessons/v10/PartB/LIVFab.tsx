@@ -24,11 +24,11 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
             <>
               <span
                 className="absolute -inset-1 rounded-full pointer-events-none"
-                style={{ animation: 'liv-speak-ring 1.9s ease-out infinite', border: '2px solid rgba(99, 102, 241, 0.42)' }}
+                style={{ animation: 'liv-speak-ring 2.8s ease-out infinite', border: '2px solid rgba(99, 102, 241, 0.35)' }}
               />
               <span
                 className="absolute -inset-1 rounded-full pointer-events-none"
-                style={{ animation: 'liv-speak-ring 1.9s ease-out 0.7s infinite', border: '2px solid rgba(99, 102, 241, 0.24)' }}
+                style={{ animation: 'liv-speak-ring 2.8s ease-out 1s infinite', border: '2px solid rgba(99, 102, 241, 0.2)' }}
               />
             </>
           )}
