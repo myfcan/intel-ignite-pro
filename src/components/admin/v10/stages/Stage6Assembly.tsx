@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Loader2, ClipboardCheck, Save } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ClipboardCheck, Save, Wrench } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { V10BpaPipeline } from '@/types/v10.types';
@@ -46,6 +46,7 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
 export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fixing, setFixing] = useState(false);
   const checklist = pipeline.assembly_checklist as Record<string, boolean>;
 
   const passedCount = CHECKLIST_ITEMS.filter((item) => checklist[item.key] === true).length;
@@ -81,6 +82,116 @@ export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
       toast.error(`Erro na verificação: ${message}`);
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function handleFixMissing() {
+    if (!pipeline.lesson_id) {
+      toast.error('Nenhuma aula vinculada');
+      return;
+    }
+
+    setFixing(true);
+    try {
+      // Fetch steps to extract tools
+      const { data: steps } = await supabase
+        .from('v10_lesson_steps')
+        .select('app_name, duration_seconds')
+        .eq('lesson_id', pipeline.lesson_id as string);
+
+      const stepsData = steps || [];
+
+      // Extract unique tools
+      const toolsSet = new Set<string>();
+      for (const step of stepsData) {
+        if (step.app_name?.trim()) toolsSet.add(step.app_name.trim());
+      }
+      const tools = Array.from(toolsSet);
+
+      // Calculate duration
+      const totalSeconds = stepsData.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+      const estimatedMinutes = Math.ceil(totalSeconds / 60);
+
+      // Update lesson metadata
+      const description = `Aula prática de ${pipeline.title} com ${stepsData.length} passos interativos. Ferramentas: ${tools.join(', ') || 'diversas'}. Duração estimada: ${estimatedMinutes} minutos.`;
+
+      const { error: lessonError } = await supabase
+        .from('v10_lessons')
+        .update({ description, tools } as any)
+        .eq('id', pipeline.lesson_id as string);
+
+      if (lessonError) throw lessonError;
+
+      // Check if intro slides exist
+      const { count: slidesCount } = await supabase
+        .from('v10_lesson_intro_slides')
+        .select('id', { count: 'exact', head: true })
+        .eq('lesson_id', pipeline.lesson_id as string);
+
+      if (!slidesCount || slidesCount === 0) {
+        // Create intro slides
+        const lessonId = pipeline.lesson_id as string;
+        const toolColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+        const introSlides: any[] = [
+          {
+            lesson_id: lessonId,
+            slide_order: 1,
+            icon: 'BookOpen',
+            tool_name: null,
+            tool_color: '#6366f1',
+            title: pipeline.title,
+            subtitle: `${stepsData.length} passos | ${estimatedMinutes} min`,
+            description: `Bem-vindo! Nesta aula você vai aprender ${pipeline.title.toLowerCase()}.`,
+            label: 'Introdução',
+            appear_at_seconds: 0,
+          },
+        ];
+
+        tools.forEach((tool, idx) => {
+          introSlides.push({
+            lesson_id: lessonId,
+            slide_order: idx + 2,
+            icon: 'Wrench',
+            tool_name: tool,
+            tool_color: toolColors[idx % toolColors.length],
+            title: tool,
+            subtitle: 'Ferramenta utilizada',
+            description: `Você vai usar ${tool} nesta aula.`,
+            label: 'Ferramenta',
+            appear_at_seconds: (idx + 1) * 3,
+          });
+        });
+
+        introSlides.push({
+          lesson_id: lessonId,
+          slide_order: tools.length + 2,
+          icon: 'Rocket',
+          tool_name: null,
+          tool_color: '#10B981',
+          title: 'Vamos começar!',
+          subtitle: 'Tudo pronto para iniciar',
+          description: 'Clique em continuar para começar o tutorial.',
+          label: 'Início',
+          appear_at_seconds: (tools.length + 1) * 3,
+        });
+
+        const { error: slidesError } = await supabase
+          .from('v10_lesson_intro_slides')
+          .insert(introSlides);
+
+        if (slidesError) {
+          console.error('Intro slides error:', slidesError);
+          toast.error(`Intro slides: ${slidesError.message}`);
+        } else {
+          toast.success(`${introSlides.length} intro slides criados`);
+        }
+      }
+
+      toast.success('Metadados e intro slides corrigidos! Execute a verificação novamente.');
+    } catch (err: any) {
+      toast.error(`Erro: ${err.message}`);
+    } finally {
+      setFixing(false);
     }
   }
 
@@ -175,6 +286,23 @@ export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
             )}
             Salvar Checklist
           </Button>
+
+          {/* Fix missing metadata/intro slides */}
+          {(!checklist.intro_slides_ok || !checklist.metadata_ok) && (
+            <Button
+              variant="outline"
+              onClick={handleFixMissing}
+              disabled={fixing || !pipeline.lesson_id}
+              className="min-h-[44px] border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              {fixing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Wrench className="mr-2 h-4 w-4" />
+              )}
+              {fixing ? 'Corrigindo...' : 'Corrigir Pendências (Metadados + Intro Slides)'}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
