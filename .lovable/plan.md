@@ -1,157 +1,173 @@
 
 
-# Auditoria Forense do Plano — Com Dados Reais do Código
+# Plano Completo: Trilhas e Jornadas Agnósticas de Sistema
+
+## Problema
+A coluna `trail_type` na tabela `trails` força separação rígida no frontend: trilhas "v8" são exibidas em seção separada do Dashboard, usam layout diferente no `CourseDetail`, e filtram por tipo no `AllTrails`. Na realidade, qualquer trilha/jornada já contém aulas de qualquer modelo (V5, V7, V8, V10). O tipo do sistema é da **aula**, não da trilha.
 
 ---
 
-## 1. CONFIRMADO: A raiz do problema está no template e no refine
+## Dados Reais do Banco (Confirmados por Query)
 
-**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
-```markdown
-### Seção 3 (índice 2) — Ponte para primeiro exercício
-**Objetivo:** Frase curta de transição para o primeiro exercício.
+```text
+trails (is_active=true):
+┌─────────────────────────────────────────────┬────────────┬─────────────┐
+│ title                                       │ trail_type │ order_index │
+├─────────────────────────────────────────────┼────────────┼─────────────┤
+│ Tudo que voce precisa saber                 │ v7         │ 1           │
+│ IA para Profissionais                       │ v7         │ 2           │
+│ Dominando as IAs Avançado                   │ v7         │ 3           │
+│ Vibe Code: Criando Apps com IA              │ v7         │ 4           │
+│ Dominando Copyright Com IA                  │ v7         │ 5           │
+│ Renda Extra com IA                          │ v7         │ 6           │
+│ Domando as IAs nos Negócios                 │ v7         │ 7           │
+│ Expert em vendas com IA                     │ v7         │ 8           │
+│ Caminho da Maestria                         │ v8         │ 9           │
+│ SDR & Automação com IA                      │ v10        │ 100         │
+└─────────────────────────────────────────────┴────────────┴─────────────┘
 
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+courses: 5 jornadas em trilhas v7 + 7 jornadas na trilha v8
+lessons: Trilha V8 "Caminho da Maestria" contém 10 aulas model=v5 + 1 aula model=v8
+3 trilhas V7 possuem APENAS aulas diretas (sem courses/jornadas)
 ```
-```
-
-E o exercício associado (linha 89):
-```json
-"title": "Teste rápido: respostas genéricas",
-```
-
-Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
-
-**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
-```
-11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
-
-13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
-```
-
-A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
 
 ---
 
-## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
+## Efeito Sistêmico Completo (10 Arquivos)
 
-**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
+| Componente | Referências a `trail_type` | Impacto |
+|---|---|---|
+| `Dashboard.tsx` | linhas 42, 149, 150, 513, 654 | Separação V7/V8 no fetch e render |
+| `CourseDetail.tsx` | linhas 31, 62, 90 | Layout bifurcado + handleBack |
+| `AllTrails.tsx` | linhas 12, 14, 22, 69, 79, 87, 102 | Filtro query + título + ícone |
+| `AdminManageLessons.tsx` | linhas 71, 128, 325-327, 344, 543-544, 895 | Badge, filtro, lógica criação |
+| `AdminV8Create.tsx` | linhas 192, 202 | Fetch trilhas com trail_type |
+| `useCourseDetailQuery.ts` | linhas 50, 63 | Fetch trail_type para layout |
+| `V8TrailCard.tsx` | linha 52 | Navegação para `/v8-trail/` ou `/course/` |
+| `OnboardingCTA.tsx` | linhas 14, 17, 23-24 | Navegação hardcoded V8 |
+| `MobileQuickStats.tsx` | linhas 17, 34, 126 | Prop v8TrailId |
+| `App.tsx` | linhas 197, 284 | Rotas `/all-trails/:type`, `/v8-trail/:trailId` |
+
+---
+
+## 5 Falhas Preditivas Identificadas e Corrigidas
+
+### FALHA 1 (CRÍTICA): Trilhas V7 sem courses ficam invisíveis
+
+**Evidência — `Dashboard.tsx` linhas 512-539:**
 ```typescript
-if (refineResponse.ok) {
-  const refineResult = await refineResponse.json();
-  if (refineResult.sections && Array.isArray(refineResult.sections)) {
-    // Replace section content with refined versions — protect Section 0 (Abertura)
-    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
-      parsed.sections[i].content = refineResult.sections[refIdx].content;
-    }
-  }
+const v8TrailIds = trailsData.filter(t => t.trail_type === 'v8').map(t => t.id);
+if (v8TrailIds.length > 0) {
+  const { data: coursesData } = await supabase
+    .from('courses')
+    .select('*')
+    .in('trail_id', v8TrailIds)
+    .eq('is_active', true)
+    .order('order_index');
+```
+
+Se apenas mudarmos para buscar courses de todas as trilhas, 3 trilhas V7 que possuem APENAS aulas diretas (sem courses) desaparecem do Dashboard.
+
+**Correção:** Manter seção fallback para trilhas sem courses, usando `TrailCard`. Filtro: `trails.filter(t => !allCourses.some(c => c.trail_id === t.id))`.
+
+### FALHA 2 (MÉDIA): `TrailCard` vs `V8TrailCard` — navegação diferente
+
+- `TrailCard.tsx` linha 53: `navigate(/trail/${trail.id})`
+- `V8TrailCard.tsx` linha 52: destino `/course/${id}` ou `/v8-trail/${trailId}`
+
+**Correção:** Trilhas com courses → `V8TrailCard`. Trilhas sem courses (aulas diretas) → `TrailCard` navegando para `/trail/{id}`.
+
+### FALHA 3 (MÉDIA): `handleBack` em `CourseDetail.tsx`
+
+```typescript
+if (trailType === 'v8') {
+  navigate('/dashboard');
+} else if (trailId) {
+  navigate(`/trail/${trailId}`);
 }
 ```
 
-O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
+**Correção:** Simplificar para `navigate('/dashboard')` sempre. Seguro e consistente.
+
+### FALHA 4 (BAIXA — FORA DE SCOPE): 12+ componentes hardcodam `/trail/{id}` pós-aula
+
+`GuidedLessonV4.tsx`, `GuidedLessonV5.tsx`, `GuidedLessonV3.tsx`, `V7PostLessonFlow.tsx`, `Lesson.tsx` — todos usam `navigate(/trail/${trail_id})` ignorando `course_id`.
+
+**Decisão:** Bug pré-existente. Tratar em task separada para evitar scope creep.
+
+### FALHA 5 (BAIXA): Rota `/all-trails/:type` — links existentes quebram
+
+Dashboard usa `navigate('/all-trails/v8')` (linha 849) e `navigate('/all-trails/v7')` (linha 1151).
+
+**Correção:** Tornar `:type` opcional → `/all-trails/:type?`. Se presente, filtra (backward compatible). Se ausente, mostra todas.
 
 ---
 
-## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
+## Alterações por Arquivo
 
-**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
-```typescript
-const finalData: V8LessonData = {
-  contentVersion: "v8",
-  title: parsed.title,
-  // ...
-};
-```
+### 1. `Dashboard.tsx` (maior impacto)
+- **Linha 513:** Remover filtro `trail_type === 'v8'` — buscar courses de TODAS as trilhas
+- **Linhas 149-150:** Remover separação `v7Trails` / `v8Trails`
+- **Seção "Seu Caminho de Maestria":** Renomear para "Suas Jornadas" — exibe TODOS os courses com `V8TrailCard`
+- **Seção "Renda Extra PRO":** Manter para trilhas órfãs (sem courses, com aulas diretas)
+- **Remover prop `v8TrailId`** de `MobileQuickStats` — substituir por primeiro course disponível
+- **Linhas 849, 1151:** Atualizar `navigate('/all-trails/v8')` → `navigate('/all-trails')`
 
-O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+### 2. `CourseDetail.tsx`
+- **Linha 90:** Remover `const isV8 = trailType === 'v8'`
+- **Linhas 94-178:** Remover bifurcação `if (isV8)` / `else` — usar layout V8 (Certificate + SkillTree) para TODAS as jornadas
+- **Linhas 61-69:** `handleBack` → sempre `navigate('/dashboard')`
 
----
+### 3. `AllTrails.tsx`
+- **Linha 22:** Remover `.eq("trail_type", type)` — se `type` presente, filtrar; se ausente, mostrar todas
+- **Linhas 69-102:** Remover bifurcação visual V8/V7 — layout unificado usando `V8TrailCard` para todas
 
-## 4. CONFIRMADO: `v8-generate-raw-content` não existe
+### 4. `App.tsx`
+- **Linha 197:** Rota `/all-trails/:type` → `/all-trails/:type?` (parâmetro opcional)
 
-```
-code--search_files: No matches found for pattern 'v8-generate-raw-content'
-```
+### 5. `OnboardingCTA.tsx`
+- **Linhas 14, 17:** Remover prop `v8TrailId`
+- **Linhas 23-24:** Navegar para primeiro course disponível ao invés de hardcodar `/v8-trail/`
 
-A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
+### 6. `MobileQuickStats.tsx`
+- **Linha 17:** Remover prop `v8TrailId`
+- **Linha 34, 126:** Remover lógica que usa `v8TrailId`
 
----
+### 7. `AdminManageLessons.tsx`
+- **Linhas 325-327:** Remover `effectiveIsV8` — toda trilha pode ter courses
+- **Linhas 543-544, 895:** Remover badges condicionais V8/V10
+- **Linha 344:** Remover condição que exige jornada apenas para não-V8
 
-## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+### 8. `AdminV8Create.tsx`
+- **Linhas 192, 202:** Remover filtro `trail_type` no seletor de trilhas
 
-**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
-
-Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
-
----
-
-## 6. GAPS NO PLANO PROPOSTO
-
-### Gap A: O plano NÃO endereça o `contractPattern` não salvo
-O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
-
-**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
-
-### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
-Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
-
-**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
-
-### Gap C: Parser compatibility com output da IA
-O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
-
-**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
-
-### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
-A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+### 9. `useCourseDetailQuery.ts`
+- Sem mudança funcional. `trail_type` permanece como metadado inerte (já é fetchado, não causa dano).
 
 ---
 
-## 7. PLANO REVISADO FINAL
+## Sem Migration SQL
+A coluna `trail_type` permanece no banco como metadado legado. Nenhuma alteração de schema necessária.
 
-### Arquivos a criar/modificar
+## Fora de Scope (Task Separada)
+- 12 componentes com `/trail/{id}` hardcoded pós-aula (bug pré-existente)
+- `V8TrailDetail.tsx` — funciona para qualquer trilha, sem mudança
+- `TrailDetail.tsx` — continua necessário para trilhas sem courses
 
-| Arquivo | Ação | O que muda |
-|---------|------|------------|
-| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
-| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
-| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
-| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
-| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
+## Critérios de Sucesso (Zero Regressão)
 
-### Detalhes por arquivo
+| Critério | Verificação |
+|---|---|
+| Acessibilidade de conteúdo | Nenhuma trilha/aula fica invisível |
+| Integridade de navegação | Todos os links/botões levam a páginas funcionais |
+| Paridade admin | Criação de trilhas/jornadas funciona sem restrição de tipo |
+| Backward compatibility | URLs existentes (`/all-trails/v8`) não retornam 404 |
 
-**1. `v8-generate-raw-content/index.ts` (NOVO)**
-- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
-- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
-- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
-- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
-- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
-- Modelo: `google/gemini-2.5-flash`
-
-**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
-- Adicionar após Regra 13:
-  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
-  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
-
-**3. `AdminV8Create.tsx` (EDITAR)**
-- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
-- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
-- Função `sectionsToMarkdown()` para converter output da function em markdown
-- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
-
-**4. `v8Lesson.ts` (EDITAR linha ~136)**
-- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
-
-### Riscos residuais
+## Riscos Residuais
 
 | Risco | Severidade | Mitigação |
-|-------|-----------|-----------|
-| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
-| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
-| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
+|---|---|---|
+| Trilhas sem courses ficam em seção secundária | Baixo | Fallback com `TrailCard` mantém acesso |
+| V10 trail usa `v10_lessons` separado | Médio | Não impactado — V10 tem lógica própria de fetch |
+| `TrailDetail.tsx` fica "órfão" para trilhas com courses | Baixo | Ainda funcional, apenas redundante |
 
