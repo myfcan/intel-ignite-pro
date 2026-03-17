@@ -258,7 +258,7 @@ export function ImportFullScriptModal({
         const script = effectiveAutoTag ? autoTagScript(step.body) : step.body;
         const { error } = await supabase
           .from('v10_lesson_steps')
-          .update({ narration_script: script } as any)
+          .update({ narration_script: script, audio_url: null, duration_seconds: 0 } as any)
           .eq('id', step.dbStepId);
         if (error) {
           console.error(`Step ${step.stepNumber} save error:`, error);

@@ -213,20 +213,24 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
     const script = editingScripts[stepId];
     if (script === undefined) return;
 
+    const nextScript = script || null;
+
     setSavingScript(stepId);
     try {
       const { error } = await supabase
         .from('v10_lesson_steps')
-        .update({ narration_script: script || null } as any)
+        .update({ narration_script: nextScript, audio_url: null, duration_seconds: 0 } as any)
         .eq('id', stepId);
 
       if (error) throw error;
 
       // Update local state
       setSteps(prev => prev.map(s =>
-        s.id === stepId ? { ...s, narration_script: script || null } : s
+        s.id === stepId
+          ? { ...s, narration_script: nextScript, audio_url: null, duration_seconds: 0 }
+          : s
       ));
-      toast.success('Script salvo');
+      toast.success('Script salvo (áudio marcado para reprocesso)');
     } catch (err: any) {
       toast.error(`Erro ao salvar script: ${err.message}`);
     } finally {
@@ -391,16 +395,16 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
       if (existing) {
         const { error } = await supabase
           .from('v10_lesson_narrations')
-          .update({ script_text: text || null } as any)
+          .update({ script_text: text || null, audio_url: null, duration_seconds: 0 } as any)
           .eq('id', existing.id);
         if (error) throw error;
       } else if (pipeline.lesson_id) {
         const { error } = await supabase
           .from('v10_lesson_narrations')
-          .insert({ lesson_id: pipeline.lesson_id, part, script_text: text || null } as any);
+          .insert({ lesson_id: pipeline.lesson_id, part, script_text: text || null, duration_seconds: 0 } as any);
         if (error) throw error;
       }
-      toast.success(`Script Parte ${part} salvo`);
+      toast.success(`Script Parte ${part} salvo (áudio marcado para reprocesso)`);
       await refreshAllData();
       if (part === 'A') setEditingPartA(false);
       else setEditingPartC(false);
