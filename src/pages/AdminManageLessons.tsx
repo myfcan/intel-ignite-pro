@@ -420,6 +420,15 @@ export default function AdminManageLessons() {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          <Button variant="outline" size="sm" onClick={() => {
+            setV10MoveTarget(lesson.id);
+            setV10TargetTrailId(lesson.trail_id || '');
+            setV10TargetOrder(lesson.order_in_trail);
+            setShowV10MoveModal(true);
+          }}>
+            <FolderInput className="w-3 h-3 mr-1" />
+            Mover
+          </Button>
           <Button variant="outline" size="sm" onClick={() => navigate(`/v10/${lesson.slug}`)}>
             <Play className="w-3 h-3 mr-1" />
             Assistir
