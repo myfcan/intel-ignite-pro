@@ -14,7 +14,6 @@ interface MobileQuickStatsProps {
   accessCount?: number;
   activeTrail?: { id: string; title: string } | null;
   hasProgress?: boolean;
-  v8TrailId?: string | null;
 }
 
 const getGreeting = () => {
