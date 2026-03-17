@@ -441,8 +441,6 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           totalSteps={steps.length}
           onFrameChange={handleFrameChange}
           accentColor={currentStep.accent_color}
-          onReplayStep={handleReplayStep}
-          showReplay={continueEnabled}
         />
 
         {/* LIV Fab */}
@@ -473,6 +471,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           isLastFrame={isLastFrame}
           continueEnabled={continueEnabled}
           onSkipNarration={hasAudio ? handleSkipNarration : undefined}
+          onReplayStep={handleReplayStep}
         />
       </div>
 
