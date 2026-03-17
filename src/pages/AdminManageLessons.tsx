@@ -619,9 +619,9 @@ export default function AdminManageLessons() {
                       {/* V10 lessons in this trail */}
                       {trail.v10Lessons.length > 0 && (
                         <div className="ml-4 mt-2">
-                          <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-md mb-1">
-                            <Layers className="w-4 h-4 text-emerald-500" />
-                            <span className="text-sm font-medium text-emerald-700">Aulas V10 ({trail.v10Lessons.length})</span>
+                          <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-md mb-1">
+                            <Layers className="w-4 h-4 text-amber-500" />
+                            <span className="text-sm font-medium text-amber-700">Aulas V10 sem jornada ({trail.v10Lessons.length})</span>
                           </div>
                           <div className="ml-6 space-y-1">
                             {trail.v10Lessons.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
