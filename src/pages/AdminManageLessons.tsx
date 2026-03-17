@@ -515,6 +515,10 @@ export default function AdminManageLessons() {
               <Wrench className="w-4 h-4 mr-1" />
               Corrigir Exercícios
             </Button>
+            <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50" onClick={() => setShowCreateTrailModal(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Nova Trilha
+            </Button>
             <Button variant="outline" size="sm" className="border-green-500 text-green-600 hover:bg-green-50" onClick={() => setShowCreateCourseModal(true)}>
               <Plus className="w-4 h-4 mr-1" />
               Nova Jornada
