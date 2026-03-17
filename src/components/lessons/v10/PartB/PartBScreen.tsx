@@ -55,6 +55,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   initialStep = 0,
   initialFrame = 0,
   onProgressUpdate,
+  isActive = true,
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(initialStep);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(initialFrame);
