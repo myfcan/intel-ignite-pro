@@ -2008,6 +2008,7 @@ export type Database = {
         Row: {
           badge_icon: string | null
           badge_name: string | null
+          course_id: string | null
           created_at: string
           description: string | null
           estimated_minutes: number
@@ -2025,6 +2026,7 @@ export type Database = {
         Insert: {
           badge_icon?: string | null
           badge_name?: string | null
+          course_id?: string | null
           created_at?: string
           description?: string | null
           estimated_minutes?: number
@@ -2042,6 +2044,7 @@ export type Database = {
         Update: {
           badge_icon?: string | null
           badge_name?: string | null
+          course_id?: string | null
           created_at?: string
           description?: string | null
           estimated_minutes?: number
@@ -2057,6 +2060,13 @@ export type Database = {
           xp_reward?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "v10_lessons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "v10_lessons_trail_id_fkey"
             columns: ["trail_id"]
