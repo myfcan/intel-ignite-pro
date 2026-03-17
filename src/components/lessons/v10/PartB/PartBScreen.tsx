@@ -446,7 +446,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
         {/* LIV Fab */}
         <LIVFab
           hasWarnings={!!currentStep.warnings?.warn}
-          pulseMode={livPulseMode}
+          pulseMode={isPlaying || livPulseMode === 'intense' ? 'intense' : 'normal'}
           onClick={() => {
             audioRef.current?.pause();
             setIsPlaying(false);
