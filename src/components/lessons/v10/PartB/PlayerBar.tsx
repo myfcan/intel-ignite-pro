@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { RotateCcw } from 'lucide-react';
 
 interface PlayerBarProps {
   stepNumber: number;
@@ -14,6 +15,7 @@ interface PlayerBarProps {
   isLastFrame: boolean;
   continueEnabled?: boolean;
   onSkipNarration?: () => void;
+  onReplayStep?: () => void;
 }
 
 const GRADIENT = 'linear-gradient(135deg, #6366F1, #8B5CF6)';
@@ -40,6 +42,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   isLastFrame,
   continueEnabled = true,
   onSkipNarration,
+  onReplayStep,
 }) => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const isComplete = isLastStep && isLastFrame;
@@ -86,7 +89,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         </span>
       </div>
 
-      {/* Bottom row: play, speed, continue */}
+      {/* Bottom row: play, speed, replay, continue */}
       <div className="flex items-center gap-3">
         {/* Play/Pause button */}
         <button
@@ -127,6 +130,18 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             aria-label="Pular narração"
           >
             Pular
+          </button>
+        )}
+
+        {/* Replay step button — only when continue is enabled (audio finished) */}
+        {continueEnabled && onReplayStep && !isComplete && (
+          <button
+            type="button"
+            onClick={onReplayStep}
+            className="shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-white/70 bg-white/10 hover:bg-white/15 transition-colors"
+            aria-label="Rever este passo"
+          >
+            <RotateCcw size={16} />
           </button>
         )}
 
