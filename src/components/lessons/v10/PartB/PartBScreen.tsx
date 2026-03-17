@@ -16,6 +16,7 @@ interface PartBScreenProps {
   lessonTitle: string;
   onComplete: () => void;
   onBack: () => void;
+  onExit?: () => void;
   initialStep?: number;
   initialFrame?: number;
   onProgressUpdate?: (step: number, frame: number) => void;
