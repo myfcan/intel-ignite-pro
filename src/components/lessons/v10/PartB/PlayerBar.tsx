@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface PlayerBarProps {
   stepNumber: number;
@@ -17,6 +17,7 @@ interface PlayerBarProps {
 }
 
 const GRADIENT = 'linear-gradient(135deg, #6366F1, #8B5CF6)';
+const ONBOARDING_KEY = 'v10-onboarding-seen';
 
 function formatTime(seconds: number): string {
   if (!seconds || !isFinite(seconds)) return '0:00';
@@ -42,6 +43,22 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 }) => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const isComplete = isLastStep && isLastFrame;
+
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem(ONBOARDING_KEY)) {
+      setShowTooltip(true);
+    }
+  }, []);
+
+  const handleContinueClick = () => {
+    if (showTooltip) {
+      localStorage.setItem(ONBOARDING_KEY, 'true');
+      setShowTooltip(false);
+    }
+    onContinue();
+  };
 
   return (
     <div
@@ -113,27 +130,41 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           </button>
         )}
 
-        {/* Continue button */}
-        <button
-          type="button"
-          onClick={onContinue}
-          disabled={!continueEnabled}
-          className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97]"
-          style={{
-            background: continueEnabled ? GRADIENT : 'rgba(255,255,255,0.15)',
-            opacity: continueEnabled ? 1 : 0.5,
-            cursor: continueEnabled ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {isComplete ? (
-            <span className="flex items-center gap-1.5">
-              <span>&#x1F389;</span>
-              <span>Completo!</span>
-            </span>
-          ) : (
-            'Continuar'
+        {/* Continue button with optional onboarding tooltip */}
+        <div className="relative flex-1">
+          {showTooltip && continueEnabled && (
+            <div
+              className="absolute -top-14 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg text-xs font-medium text-white whitespace-nowrap animate-in fade-in-0 slide-in-from-bottom-2 z-10"
+              style={{ backgroundColor: '#2D2640', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
+            >
+              Toque aqui para avançar →
+              <div
+                className="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 rotate-45"
+                style={{ backgroundColor: '#2D2640' }}
+              />
+            </div>
           )}
-        </button>
+          <button
+            type="button"
+            onClick={handleContinueClick}
+            disabled={!continueEnabled}
+            className="w-full min-h-[44px] flex items-center justify-center rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97]"
+            style={{
+              background: continueEnabled ? GRADIENT : 'rgba(255,255,255,0.15)',
+              opacity: continueEnabled ? 1 : 0.5,
+              cursor: continueEnabled ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {isComplete ? (
+              <span className="flex items-center gap-1.5">
+                <span>&#x1F389;</span>
+                <span>Completo!</span>
+              </span>
+            ) : (
+              'Continuar'
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

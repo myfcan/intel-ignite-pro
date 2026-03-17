@@ -1,132 +1,157 @@
 
 
-## Auditoria: Plano "Rever este passo" + Tooltip — Análise de Gaps e Efeitos Sistêmicos
+# Auditoria Forense do Plano — Com Dados Reais do Código
 
 ---
 
-### 1. O que o plano propõe (resumo)
+## 1. CONFIRMADO: A raiz do problema está no template e no refine
 
-- Adicionar botão **"🔄 Rever este passo"** inline no `StepContent.tsx`, após o último frame
-- Adicionar **tooltip de onboarding** apontando para o "Continuar" do `PlayerBar.tsx` apenas na primeira aula
+**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
+```markdown
+### Seção 3 (índice 2) — Ponte para primeiro exercício
+**Objetivo:** Frase curta de transição para o primeiro exercício.
 
----
-
-### 2. GAPS IDENTIFICADOS
-
-#### Gap A — Não existe callback `onReplayStep` no pipeline
-
-**Evidência real — `PartBScreen.tsx` linhas 304-325:**
-```typescript
-const handleContinue = useCallback(() => {
-    if (!currentStep) return;
-    if (currentFrameIndex < (currentStep.frames?.length ?? 1) - 1) {
-      setCurrentFrameIndex((prev) => prev + 1);
-    } else if (currentStepIndex < steps.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      setCurrentFrameIndex(0);
-      setCurrentTime(0);
-    } else {
-      onComplete();
-    }
-  }, [...]);
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+```
 ```
 
-Existe `handleBack` (linha 328) mas **NÃO existe `handleReplayStep`**. O "Rever este passo" precisa de uma função nova que:
-1. Resete `currentFrameIndex` para `0`
-2. Resete `currentTime` para `0`
-3. Faça `audio.currentTime = 0` e reinicie playback
+E o exercício associado (linha 89):
+```json
+"title": "Teste rápido: respostas genéricas",
+```
 
-**Se esquecermos o reset do áudio**, o usuário vê o frame 0 mas ouve o áudio do frame onde parou. Isso é um bug silencioso.
+Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
 
-#### Gap B — `StepContent` não recebe nenhum callback de ação
+**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
+```
+11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
 
-**Evidência real — `StepContent.tsx` linhas 5-11:**
+13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
+```
+
+A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
+
+---
+
+## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
+
+**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
 ```typescript
-interface StepContentProps {
-  step: V10LessonStep;
-  currentFrame: number;
-  totalSteps: number;
-  onFrameChange: (frame: number) => void;
-  accentColor: string;
+if (refineResponse.ok) {
+  const refineResult = await refineResponse.json();
+  if (refineResult.sections && Array.isArray(refineResult.sections)) {
+    // Replace section content with refined versions — protect Section 0 (Abertura)
+    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
+      parsed.sections[i].content = refineResult.sections[refIdx].content;
+    }
+  }
 }
 ```
 
-Para adicionar "Rever este passo", precisamos de uma nova prop `onReplayStep: () => void`. Isso altera a interface do componente e o ponto de chamada em `PartBScreen.tsx` (linha 426-432).
-
-#### Gap C — Condição de exibição do botão "Rever"
-
-O plano diz "no final do conteúdo do step" mas não especifica **quando** ele aparece. Se aparece sempre, é inútil no frame 0 (o usuário já está no início). Condição correta: **só exibir quando `currentFrame === lastFrame`** (último frame do step), que é quando o "Continuar" avança para o próximo step.
-
-**Evidência real — `StepContent.tsx` linha 67:**
-```typescript
-{step.frames?.length > 1 && (
-```
-O botão "Rever" deve aparecer **após os frame dots**, condicionado a `currentFrame === (step.frames?.length ?? 1) - 1`.
-
-#### Gap D — Tooltip de onboarding: onde persistir "já viu"?
-
-O plano diz "tooltip apenas na primeira aula" mas não especifica **onde armazenar** que o usuário já viu. Opções:
-- `localStorage` — simples, mas perde no clear/outro browser
-- Tabela no banco — over-engineering para um tooltip
-
-**Recomendação:** `localStorage` com key `v10-onboarding-seen`. É suficiente e não adiciona complexidade ao banco.
-
-#### Gap E — Tooltip no PlayerBar: conflito com layout dark
-
-O `PlayerBar` tem `backgroundColor: '#1A1625'` (linha 49). Um tooltip padrão (branco com border) ficará visualmente desconectado. Precisa de estilo customizado com fundo escuro/gradiente para manter coerência visual.
+O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
 
 ---
 
-### 3. EFEITO SISTÊMICO
+## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
 
-| Componente | Impacto | Risco |
-|---|---|---|
-| `StepContent.tsx` | Nova prop `onReplayStep` + botão condicional | Baixo — aditivo |
-| `PartBScreen.tsx` | Nova função `handleReplayStep` + passar prop | Baixo — aditivo |
-| `PlayerBar.tsx` | Tooltip condicional no "Continuar" | Baixo — visual only |
-| `LIVFab.tsx` | **Nenhum** | Zero |
-| `PartCScreen.tsx` | **Nenhum** | Zero |
-| Banco de dados | **Nenhum** (localStorage para tooltip) | Zero |
+**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
+```typescript
+const finalData: V8LessonData = {
+  contentVersion: "v8",
+  title: parsed.title,
+  // ...
+};
+```
 
-**Sem efeito colateral destrutivo.** Todas as mudanças são aditivas. Nenhum fluxo existente é alterado — `handleContinue`, `handleBack`, e o pipeline de áudio permanecem intactos.
+O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
 
 ---
 
-### 4. PLANO REVISADO COM GAPS CORRIGIDOS
+## 4. CONFIRMADO: `v8-generate-raw-content` não existe
 
-#### Arquivos a modificar
-
-| Arquivo | Mudança |
-|---|---|
-| `src/components/lessons/v10/PartB/PartBScreen.tsx` | Criar `handleReplayStep` (reset frame + audio) e passar como prop para `StepContent` |
-| `src/components/lessons/v10/PartB/StepContent.tsx` | Nova prop `onReplayStep`, botão "Rever este passo" condicional (só no último frame) |
-| `src/components/lessons/v10/PartB/PlayerBar.tsx` | Tooltip de onboarding no "Continuar" (só se `!localStorage.getItem('v10-onboarding-seen')`) |
-
-#### Detalhes
-
-**1. `PartBScreen.tsx` — nova função `handleReplayStep`**
-```typescript
-const handleReplayStep = useCallback(() => {
-  const audio = audioRef.current;
-  if (audio) {
-    audio.pause();
-    audio.currentTime = 0;
-  }
-  setCurrentFrameIndex(0);
-  setCurrentTime(0);
-  setIsPlaying(false);
-}, []);
 ```
-Passar para `StepContent`: `onReplayStep={handleReplayStep}`
+code--search_files: No matches found for pattern 'v8-generate-raw-content'
+```
 
-**2. `StepContent.tsx` — botão condicional**
-- Nova prop: `onReplayStep?: () => void`
-- Exibir após os frame dots, **apenas quando** `currentFrame === (step.frames?.length ?? 1) - 1`
-- Design: botão ghost/outline com ícone `RotateCcw` do lucide, texto "Rever este passo", cores `text-indigo-500` com `border-indigo-200`
+A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
 
-**3. `PlayerBar.tsx` — tooltip first-time**
-- Verificar `localStorage.getItem('v10-onboarding-seen')`
-- Se `null`: mostrar tooltip sobre o botão "Continuar" com texto "Toque aqui para avançar ao próximo passo"
-- Ao clicar "Continuar" pela primeira vez: `localStorage.setItem('v10-onboarding-seen', 'true')` e remover tooltip
-- Estilo: fundo escuro (`#2D2640`), texto branco, seta apontando para baixo, consistente com a paleta dark do PlayerBar
+---
+
+## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+
+**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+```
+
+Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+
+---
+
+## 6. GAPS NO PLANO PROPOSTO
+
+### Gap A: O plano NÃO endereça o `contractPattern` não salvo
+O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
+
+**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
+
+### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
+Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
+
+**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
+
+### Gap C: Parser compatibility com output da IA
+O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
+
+**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
+
+### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
+A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+
+---
+
+## 7. PLANO REVISADO FINAL
+
+### Arquivos a criar/modificar
+
+| Arquivo | Ação | O que muda |
+|---------|------|------------|
+| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
+| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
+| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
+| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
+| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
+
+### Detalhes por arquivo
+
+**1. `v8-generate-raw-content/index.ts` (NOVO)**
+- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
+- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
+- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
+- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
+- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
+- Modelo: `google/gemini-2.5-flash`
+
+**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
+- Adicionar após Regra 13:
+  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
+  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
+
+**3. `AdminV8Create.tsx` (EDITAR)**
+- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
+- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
+- Função `sectionsToMarkdown()` para converter output da function em markdown
+- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
+
+**4. `v8Lesson.ts` (EDITAR linha ~136)**
+- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
+
+### Riscos residuais
+
+| Risco | Severidade | Mitigação |
+|-------|-----------|-----------|
+| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
+| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
+| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
 

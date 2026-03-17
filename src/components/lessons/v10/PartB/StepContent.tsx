@@ -1,4 +1,5 @@
 import React from 'react';
+import { RotateCcw } from 'lucide-react';
 import type { V10LessonStep } from '../../../../types/v10.types';
 import FrameRenderer from './FrameRenderer';
 
@@ -8,6 +9,7 @@ interface StepContentProps {
   totalSteps: number;
   onFrameChange: (frame: number) => void;
   accentColor: string;
+  onReplayStep?: () => void;
 }
 
 const StepContent: React.FC<StepContentProps> = ({
@@ -16,8 +18,10 @@ const StepContent: React.FC<StepContentProps> = ({
   totalSteps,
   onFrameChange,
   accentColor,
+  onReplayStep,
 }) => {
   const frame = step.frames?.[currentFrame];
+  const isLastFrame = currentFrame === (step.frames?.length ?? 1) - 1;
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3">
@@ -87,6 +91,25 @@ const StepContent: React.FC<StepContentProps> = ({
                 />
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Replay step button — only on last frame */}
+        {isLastFrame && onReplayStep && (
+          <div className="flex justify-center pt-1 pb-3">
+            <button
+              type="button"
+              onClick={onReplayStep}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97] border"
+              style={{
+                color: accentColor,
+                borderColor: `${accentColor}33`,
+                backgroundColor: `${accentColor}08`,
+              }}
+            >
+              <RotateCcw size={15} />
+              <span>Rever este passo</span>
+            </button>
           </div>
         )}
       </div>
