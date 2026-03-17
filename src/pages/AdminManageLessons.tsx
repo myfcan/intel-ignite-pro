@@ -166,7 +166,7 @@ export default function AdminManageLessons() {
     const fullyOrphaned = lessons.filter(l => !l.trail_id);
 
     // V10 orphaned: no trail_id
-    const v10Orphaned = v10Lessons.filter(l => !l.trail_id);
+    const v10Orphaned = v10Lessons.filter(l => !l.trail_id && !l.course_id);
 
     return { trails: trailMap, fullyOrphaned, v10Orphaned };
   }, [trails, courses, lessons, v10Lessons]);
