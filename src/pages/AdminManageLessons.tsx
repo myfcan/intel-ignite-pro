@@ -150,13 +150,14 @@ export default function AdminManageLessons() {
         .map(course => ({
           ...course,
           lessons: lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_index - b.order_index),
+          v10Lessons: v10Lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_in_trail - b.order_in_trail),
         }));
 
       // Orphaned lessons: have trail_id but no course_id
       const orphanedLessons = lessons.filter(l => l.trail_id === trail.id && !l.course_id);
 
-      // V10 lessons linked to this trail
-      const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id);
+      // V10 lessons linked to this trail but NOT to any course (orphaned V10)
+      const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id && !l.course_id);
 
       return { ...trail, courses: trailCourses, orphanedLessons, v10Lessons: trailV10Lessons };
     });
