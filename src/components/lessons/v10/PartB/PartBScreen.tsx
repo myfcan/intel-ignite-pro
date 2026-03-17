@@ -150,7 +150,37 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     },
   }), [currentStep?.frames?.length]);
 
-  const { fireAllAnchors } = useAnchorEvents(audioRef, currentAnchors, anchorHandlers);
+  // Synthetic anchors: generate troca_frame anchors when data is insufficient
+  const effectiveAnchors = useMemo(() => {
+    const frameCount = currentStep?.frames?.length ?? 1;
+    if (frameCount <= 1) return currentAnchors;
+
+    const realFrameAnchors = currentAnchors.filter(a => a.anchor_type === 'troca_frame');
+    const needed = frameCount - 1;
+
+    if (realFrameAnchors.length >= needed) return currentAnchors;
+
+    // Generate proportionally distributed synthetic anchors
+    const duration = currentStep?.duration_seconds || 30;
+    const interval = duration / frameCount;
+    const syntheticAnchors: StepAnchor[] = [];
+
+    for (let i = realFrameAnchors.length; i < needed; i++) {
+      syntheticAnchors.push({
+        id: crypto.randomUUID(),
+        step_id: currentStep?.id ?? '',
+        anchor_type: 'troca_frame',
+        timestamp_seconds: interval * (i + 1),
+        match_phrase: '',
+        label: null,
+      });
+    }
+
+    return [...currentAnchors, ...syntheticAnchors]
+      .sort((a, b) => a.timestamp_seconds - b.timestamp_seconds);
+  }, [currentAnchors, currentStep?.frames?.length, currentStep?.duration_seconds, currentStep?.id]);
+
+  const { fireAllAnchors } = useAnchorEvents(audioRef, effectiveAnchors, anchorHandlers);
 
   // When audio is paused, enable continue (audio is invitation, not obligation)
   const handleAudioPauseForAnchors = useCallback(() => {
@@ -184,11 +214,13 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       audio.src = currentStep.audio_url;
       audio.playbackRate = playbackSpeed;
       audio.load();
-      audio.play().then(() => {
-        setIsPlaying(true);
-      }).catch(() => {
-        setIsPlaying(false);
-      });
+
+      const onCanPlay = () => {
+        audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        audio.removeEventListener('canplay', onCanPlay);
+      };
+      audio.addEventListener('canplay', onCanPlay);
+      return () => audio.removeEventListener('canplay', onCanPlay);
     } else {
       audio.pause();
       audio.removeAttribute('src');
@@ -264,11 +296,17 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const handleContinue = useCallback(() => {
     if (!currentStep) return;
 
+    const audio = audioRef.current;
+
     if (currentFrameIndex < (currentStep.frames?.length ?? 1) - 1) {
       // Next frame
       setCurrentFrameIndex((prev) => prev + 1);
     } else if (currentStepIndex < steps.length - 1) {
-      // Next step, reset frame
+      // Next step — pause current audio before advancing
+      if (audio) {
+        audio.pause();
+        setIsPlaying(false);
+      }
       setCurrentStepIndex((prev) => prev + 1);
       setCurrentFrameIndex(0);
       setCurrentTime(0);
