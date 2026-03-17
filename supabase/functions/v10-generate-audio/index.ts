@@ -434,7 +434,7 @@ async function uploadAudio(
   const uint8 = new Uint8Array(audioBuffer);
 
   const { error: uploadError } = await supabase.storage
-    .from('lesson-audio')
+    .from('lesson-audios')
     .upload(storagePath, uint8.buffer as ArrayBuffer, {
       contentType: 'audio/mpeg',
       upsert: true,
@@ -445,7 +445,7 @@ async function uploadAudio(
   }
 
   const { data: urlData } = supabase.storage
-    .from('lesson-audio')
+    .from('lesson-audios')
     .getPublicUrl(storagePath);
 
   return urlData.publicUrl;
