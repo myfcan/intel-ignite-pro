@@ -114,6 +114,12 @@ export default function AdminManageLessons() {
   const [v10TargetOrder, setV10TargetOrder] = useState<number>(0);
   const [movingV10, setMovingV10] = useState(false);
 
+  // Move course (jornada) modal
+  const [showMoveCourseModal, setShowMoveCourseModal] = useState(false);
+  const [moveCourseTarget, setMoveCourseTarget] = useState<string>('');
+  const [moveCourseTrailId, setMoveCourseTrailId] = useState<string>('');
+  const [movingCourse, setMovingCourse] = useState(false);
+
   // Create trail inline
   const [createNewTrail, setCreateNewTrail] = useState(false);
   const [newTrailTitle, setNewTrailTitle] = useState('');
@@ -327,7 +333,32 @@ export default function AdminManageLessons() {
     }
   }
 
-  
+  // Move course (jornada) to a trail
+  async function handleMoveCourse() {
+    if (!moveCourseTarget || !moveCourseTrailId) {
+      toast({ title: 'Selecione uma trilha', variant: 'destructive' });
+      return;
+    }
+    setMovingCourse(true);
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ trail_id: moveCourseTrailId })
+        .eq('id', moveCourseTarget);
+      if (error) throw error;
+      const course = courses.find(c => c.id === moveCourseTarget);
+      toast({ title: 'Jornada movida', description: `"${course?.title}" vinculada à trilha` });
+      setShowMoveCourseModal(false);
+      setMoveCourseTarget('');
+      setMoveCourseTrailId('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao mover jornada', description: error.message, variant: 'destructive' });
+    } finally {
+      setMovingCourse(false);
+    }
+  }
+
   async function handleCreateCourse() {
     let trailId = newCourseTrailId;
 
@@ -697,6 +728,15 @@ export default function AdminManageLessons() {
                             <BookOpen className="w-4 h-4 text-amber-500" />
                             <span className="font-medium text-sm flex-1">{course.title}</span>
                             <Badge variant="outline" className="text-xs">{courseLessons.length + courseV10.length} aulas</Badge>
+                            <Button variant="outline" size="sm" onClick={(e) => {
+                              e.stopPropagation();
+                              setMoveCourseTarget(course.id);
+                              setMoveCourseTrailId('');
+                              setShowMoveCourseModal(true);
+                            }}>
+                              <FolderInput className="w-3 h-3 mr-1" />
+                              Mover
+                            </Button>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -1038,6 +1078,45 @@ export default function AdminManageLessons() {
                 }}
               >
                 Criar Trilha
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Move Course (Jornada) Modal */}
+        <Dialog open={showMoveCourseModal} onOpenChange={setShowMoveCourseModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderInput className="w-5 h-5 text-primary" />
+                Mover Jornada
+              </DialogTitle>
+              <DialogDescription>Selecione a trilha destino para esta jornada</DialogDescription>
+            </DialogHeader>
+
+            {moveCourseTarget && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Jornada:</p>
+                <p className="text-sm text-muted-foreground">{courses.find(c => c.id === moveCourseTarget)?.title}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Trilha destino (N1)</label>
+                <Select value={moveCourseTrailId} onValueChange={setMoveCourseTrailId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                  <SelectContent>
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowMoveCourseModal(false)} disabled={movingCourse}>Cancelar</Button>
+              <Button onClick={handleMoveCourse} disabled={movingCourse || !moveCourseTrailId}>
+                {movingCourse ? 'Movendo...' : 'Confirmar'}
               </Button>
             </DialogFooter>
           </DialogContent>
