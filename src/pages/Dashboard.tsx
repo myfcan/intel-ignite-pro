@@ -821,12 +821,12 @@ const Dashboard = () => {
             </div>
 
             {/* ===== SECTION TITLE: TRILHAS ===== */}
-            {(v8Courses.length > 0 || orphanTrails.length > 0) && (
+            {(maestriaCourses.length > 0 || rendaExtraCourses.length > 0 || orphanTrails.length > 0) && (
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
             )}
 
-            {/* ===== SEU CAMINHO DE MAESTRIA (V8) - FIRST ===== */}
-            {v8Courses.length > 0 && (
+            {/* ===== SEU CAMINHO DE MAESTRIA - FIRST ===== */}
+            {maestriaCourses.length > 0 && (
             <motion.div
               id="tour-trilhas"
               initial={{ opacity: 0, y: 20 }}
