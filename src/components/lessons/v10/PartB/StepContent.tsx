@@ -89,8 +89,6 @@ const StepContent: React.FC<StepContentProps> = ({
             ))}
           </div>
         )}
-
-        )}
       </div>
     </div>
   );
