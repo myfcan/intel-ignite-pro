@@ -482,12 +482,21 @@ const Dashboard = () => {
 
       setTrails(trailsData);
 
-      // Create a map of completed lesson IDs for fast lookup
-      const completedLessonIds = new Set(allProgress.map(p => p.lesson_id));
+      // Create a map of completed lesson IDs for fast lookup (V7/V8 + V10)
+      const completedLessonIds = new Set([
+        ...allProgress.map(p => p.lesson_id),
+        ...v10ProgressData.map(p => p.lesson_id),
+      ]);
+
+      // Merge V10 lessons into allLessons for unified trail/course progress
+      const allLessonsUnified = [
+        ...allLessons,
+        ...v10LessonsData.map(l => ({ id: l.id, trail_id: l.trail_id, course_id: l.course_id })),
+      ];
 
       // Group lessons by trail_id in memory
       const lessonsByTrail = new Map<string, string[]>();
-      allLessons.forEach(lesson => {
+      allLessonsUnified.forEach(lesson => {
         if (lesson.trail_id && !lessonsByTrail.has(lesson.trail_id)) {
           lessonsByTrail.set(lesson.trail_id, []);
         }
