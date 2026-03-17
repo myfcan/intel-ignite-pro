@@ -1,142 +1,157 @@
 
 
-## Auditoria do Plano — Gaps Encontrados com Dados Reais
+# Auditoria Forense do Plano — Com Dados Reais do Código
 
 ---
 
-### GAP CRÍTICO: `v10-score-bpa` NÃO ESTÁ NO `config.toml`
+## 1. CONFIRMADO: A raiz do problema está no template e no refine
 
-**Evidência real — `supabase/config.toml`**: O arquivo termina na linha 118 com `[functions.v10-process-anchors]`. Não existe entrada para `v10-score-bpa`.
+**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
+```markdown
+### Seção 3 (índice 2) — Ponte para primeiro exercício
+**Objetivo:** Frase curta de transição para o primeiro exercício.
 
-**Impacto sistêmico**: A função **não será deployada**. O botão "IA Sugerir Score" no `Stage1Score.tsx` (linha 74) chama `supabase.functions.invoke('v10-score-bpa', ...)` mas a função não existe no runtime. Isso explica por que o pipeline "Automação com Calendly e GPT" ficou em 0/100 — além de não haver auto-score, o botão manual também pode falhar se a função nunca foi deployada.
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+```
+```
 
-**Correção**: Adicionar `[functions.v10-score-bpa]` + `verify_jwt = false` ao `config.toml`.
+E o exercício associado (linha 89):
+```json
+"title": "Teste rápido: respostas genéricas",
+```
 
----
+Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
 
-### GAP CRÍTICO: 10 Outras Edge Functions Existem no Disco mas NÃO Estão no `config.toml`
+**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
+```
+11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
 
-Cruzamento entre `supabase/functions/` (diretórios) e `config.toml` (entradas):
+13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
+```
 
-| Função no disco | No config.toml? |
-|---|---|
-| `v10-score-bpa` | **NÃO** |
-| `v10-generate-audio` | **NÃO** |
-| `v10-generate-steps` | **NÃO** |
-| `v10-generate-images` | **NÃO** |
-| `v10-assembly-check` | **NÃO** |
-| `v10-publish-lesson` | **NÃO** |
-| `v8-generate` | **NÃO** |
-| `v8-generate-section-audio` | **NÃO** |
-| `v8-reprocess-lesson-images` | **NÃO** |
-| `admin-reset-password` | **NÃO** |
-| `patch-lesson-content` | **NÃO** |
-
-**Impacto sistêmico**: TODAS as 6 funções do pipeline V10 (`v10-score-bpa`, `v10-generate-steps`, `v10-generate-audio`, `v10-generate-images`, `v10-assembly-check`, `v10-publish-lesson`) estão fora do config.toml. Isso significa que **o pipeline V10 inteiro pode não estar deployado**.
+A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
 
 ---
 
-### GAP 2: Prompt Pobre no `v10-score-bpa` — Contexto Insuficiente
+## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
 
-**Evidência real — `v10-score-bpa/index.ts` linha 61:**
+**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
 ```typescript
-const systemPrompt = `Você é um especialista em design instrucional para aulas de tecnologia. Analise o tema proposto e retorne um JSON com 5 scores (0-20 cada): score_refero (disponibilidade de screenshots/referências visuais), score_docs (qualidade da documentação oficial), score_pedagogy (valor pedagógico e aplicabilidade), score_difficulty (invertido: mais fácil = mais pontos), score_relevance (relevância no mercado atual). Retorne APENAS o JSON, sem markdown.`;
+if (refineResponse.ok) {
+  const refineResult = await refineResponse.json();
+  if (refineResult.sections && Array.isArray(refineResult.sections)) {
+    // Replace section content with refined versions — protect Section 0 (Abertura)
+    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
+      parsed.sections[i].content = refineResult.sections[refIdx].content;
+    }
+  }
+}
 ```
 
-**Evidência real — linha 63:**
-```typescript
-const userMessage = `Tema: ${title}\nSlug: ${slug}\nNotas: ${docs_manual_input || 'nenhuma'}`;
-```
-
-O prompt não instrui a IA a usar seu conhecimento geral sobre ferramentas populares. Para "Automação com Calendly e GPT", a IA recebe apenas `Tema: Automação com Calendly e GPT / Notas: nenhuma` — sem contexto sobre o ecossistema MCP, API pública, documentação oficial, integrações etc.
-
-**Correção**: Enriquecer o system prompt com instrução para usar conhecimento geral + adicionar heurísticas de scoring.
+O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
 
 ---
 
-### GAP 3: Pipeline Nasce com Score 0/100 "Inviável" sem Avaliação Real
+## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
 
-**Evidência real — `CreateBpaModal.tsx` linhas 76-82:**
+**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
 ```typescript
-score_total: 0,
-score_refero: 0,
-score_docs: 0,
-score_pedagogy: 0,
-score_difficulty: 0,
-score_relevance: 0,
-score_semaphore: 'red' as const,
+const finalData: V8LessonData = {
+  contentVersion: "v8",
+  title: parsed.title,
+  // ...
+};
 ```
 
-O pipeline é inserido com semáforo vermelho hardcoded. Não há chamada automática ao `v10-score-bpa` após criação.
-
-**Correção**: Após insert bem-sucedido, disparar `v10-score-bpa` em background.
+O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
 
 ---
 
-## Plano de Correção (3 frentes)
+## 4. CONFIRMADO: `v8-generate-raw-content` não existe
 
-### 1. Adicionar TODAS as funções V10 + faltantes ao `config.toml`
-
-Adicionar 11 entradas faltantes:
-```toml
-[functions.v10-score-bpa]
-verify_jwt = false
-
-[functions.v10-generate-audio]
-verify_jwt = false
-
-[functions.v10-generate-steps]
-verify_jwt = false
-
-[functions.v10-generate-images]
-verify_jwt = false
-
-[functions.v10-assembly-check]
-verify_jwt = false
-
-[functions.v10-publish-lesson]
-verify_jwt = false
-
-[functions.v8-generate]
-verify_jwt = false
-
-[functions.v8-generate-section-audio]
-verify_jwt = false
-
-[functions.v8-reprocess-lesson-images]
-verify_jwt = false
-
-[functions.admin-reset-password]
-verify_jwt = false
-
-[functions.patch-lesson-content]
-verify_jwt = false
+```
+code--search_files: No matches found for pattern 'v8-generate-raw-content'
 ```
 
-### 2. Enriquecer prompt do `v10-score-bpa/index.ts`
+A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
 
-Substituir o system prompt (linha 61) por versão que instrua a IA a:
-- Usar seu conhecimento geral sobre ferramentas populares (Calendly, Notion, Canva, ChatGPT etc.)
-- Considerar ecossistema de integrações, API pública, documentação oficial conhecida
-- Justificar brevemente cada score (para log)
-- Manter output JSON com os mesmos 5 campos
+---
 
-### 3. Auto-score na criação do pipeline (`CreateBpaModal.tsx`)
+## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
 
-Após o `insert().select().single()` com sucesso (linha 101-105), disparar em background:
-```typescript
-supabase.functions.invoke('v10-score-bpa', {
-  body: { pipeline_id: pipeline.id },
-});
+**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
 ```
 
-O `onCreated(pipeline)` retorna o pipeline com score 0, mas a UI será atualizada quando o usuário entrar na Stage 1 e os dados recarregarem com o score calculado.
+Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
 
-### Arquivos a editar
+---
 
-| Arquivo | Alteração |
-|---|---|
-| `supabase/config.toml` | Adicionar 11 funções faltantes |
-| `supabase/functions/v10-score-bpa/index.ts` | Enriquecer system prompt |
-| `src/components/admin/v10/CreateBpaModal.tsx` | Auto-score após criação |
+## 6. GAPS NO PLANO PROPOSTO
+
+### Gap A: O plano NÃO endereça o `contractPattern` não salvo
+O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
+
+**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
+
+### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
+Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
+
+**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
+
+### Gap C: Parser compatibility com output da IA
+O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
+
+**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
+
+### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
+A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+
+---
+
+## 7. PLANO REVISADO FINAL
+
+### Arquivos a criar/modificar
+
+| Arquivo | Ação | O que muda |
+|---------|------|------------|
+| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
+| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
+| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
+| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
+| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
+
+### Detalhes por arquivo
+
+**1. `v8-generate-raw-content/index.ts` (NOVO)**
+- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
+- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
+- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
+- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
+- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
+- Modelo: `google/gemini-2.5-flash`
+
+**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
+- Adicionar após Regra 13:
+  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
+  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
+
+**3. `AdminV8Create.tsx` (EDITAR)**
+- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
+- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
+- Função `sectionsToMarkdown()` para converter output da function em markdown
+- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
+
+**4. `v8Lesson.ts` (EDITAR linha ~136)**
+- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
+
+### Riscos residuais
+
+| Risco | Severidade | Mitigação |
+|-------|-----------|-----------|
+| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
+| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
+| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
 

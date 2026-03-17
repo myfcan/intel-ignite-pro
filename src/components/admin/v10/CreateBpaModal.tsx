@@ -116,6 +116,15 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
     resetForm();
     onOpenChange(false);
     onCreated(pipeline);
+
+    // Auto-score: disparar avaliação IA em background
+    supabase.functions.invoke('v10-score-bpa', {
+      body: { pipeline_id: pipeline.id },
+    }).then(() => {
+      toast.info('Score de viabilidade calculado pela IA.');
+    }).catch(() => {
+      // Silencioso — usuário pode recalcular manualmente na Stage 1
+    });
   }
 
   return (

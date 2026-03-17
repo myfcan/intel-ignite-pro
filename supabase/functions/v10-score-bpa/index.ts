@@ -58,9 +58,37 @@ serve(async (req) => {
     const { title, slug, docs_manual_input } = pipeline;
 
     // 3. Call Lovable AI Gateway
-    const systemPrompt = `Você é um especialista em design instrucional para aulas de tecnologia. Analise o tema proposto e retorne um JSON com 5 scores (0-20 cada): score_refero (disponibilidade de screenshots/referências visuais), score_docs (qualidade da documentação oficial), score_pedagogy (valor pedagógico e aplicabilidade), score_difficulty (invertido: mais fácil = mais pontos), score_relevance (relevância no mercado atual). Retorne APENAS o JSON, sem markdown.`;
+    const systemPrompt = `Você é um especialista sênior em design instrucional para aulas de tecnologia, com profundo conhecimento do ecossistema de ferramentas digitais populares (Canva, Notion, ChatGPT, Calendly, Google Workspace, Figma, Midjourney, etc.).
 
-    const userMessage = `Tema: ${title}\nSlug: ${slug}\nNotas: ${docs_manual_input || 'nenhuma'}`;
+TAREFA: Analise o tema proposto para uma aula prática e retorne um JSON com 5 scores (0-20 cada):
+
+1. **score_refero** (0-20): Disponibilidade de screenshots e referências visuais. 
+   - USE SEU CONHECIMENTO: ferramentas com interface gráfica (Canva, Calendly, Notion) = 14-18. Conceitos abstratos sem UI = 4-8.
+   - Considere: a ferramenta tem UI pública? Existem tutoriais visuais abundantes na web?
+
+2. **score_docs** (0-20): Qualidade da documentação oficial e recursos de aprendizado.
+   - USE SEU CONHECIMENTO: ferramentas com docs oficiais, API pública, help center = 14-18. Ferramentas obscuras sem docs = 2-6.
+   - Considere: existe documentação oficial? Blog posts? Comunidade ativa?
+
+3. **score_pedagogy** (0-20): Valor pedagógico e aplicabilidade prática para renda extra.
+   - Temas que ensinam habilidades monetizáveis (automação, criação de conteúdo, produtividade) = 14-18.
+   - Temas puramente teóricos sem aplicação prática = 4-8.
+
+4. **score_difficulty** (0-20): Facilidade de ensino (INVERTIDO: mais fácil = mais pontos).
+   - Ferramentas com UI intuitiva e fluxos claros = 14-18. Ferramentas complexas com curva íngreme = 4-8.
+
+5. **score_relevance** (0-20): Relevância no mercado atual e demanda.
+   - USE SEU CONHECIMENTO sobre tendências 2024-2025: IA generativa, automação, no-code = 15-19. Tecnologias obsoletas = 2-6.
+
+REGRAS:
+- Use seu conhecimento geral sobre o ecossistema da ferramenta/tema mencionado
+- NÃO penalize por falta de "notas do usuário" — avalie pelo TEMA em si
+- Ferramentas populares e bem documentadas (Calendly, Canva, ChatGPT, Notion, etc.) devem receber scores altos por padrão
+- Retorne APENAS o JSON com os 5 scores + um campo "justificativa" (objeto com 5 strings curtas, uma por score)
+- Formato: { "score_refero": N, "score_docs": N, "score_pedagogy": N, "score_difficulty": N, "score_relevance": N, "justificativa": { "refero": "...", "docs": "...", "pedagogy": "...", "difficulty": "...", "relevance": "..." } }
+- Sem markdown, sem code blocks, apenas JSON puro.`;
+
+    const userMessage = `Tema da aula: ${title}\nSlug: ${slug}\nNotas adicionais do criador: ${docs_manual_input || 'Nenhuma nota fornecida — avalie com base no seu conhecimento sobre o tema.'}`;
 
     console.log('Calling Lovable AI Gateway for pipeline:', pipeline_id);
 
