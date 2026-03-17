@@ -348,6 +348,14 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
     }
   }, [debouncedSave, lesson]);
 
+  const handleExit = useCallback(() => {
+    if (lesson?.trail_id) {
+      navigate(`/trilha/${lesson.trail_id}`);
+    } else {
+      navigate('/dashboard');
+    }
+  }, [lesson, navigate]);
+
   const handleNextLesson = useCallback(() => {
     // Navigate to next lesson or dashboard
     if (lesson?.trail_id) {
@@ -434,6 +442,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               lessonTitle={lesson.title}
               onComplete={handlePartBComplete}
               onBack={() => setCurrentPart('A')}
+              onExit={handleExit}
               initialStep={Math.min((userProgress?.current_step ?? 1) - 1, Math.max(steps.length - 1, 0))}
               initialFrame={userProgress?.current_frame ?? 0}
               onProgressUpdate={handleProgressUpdate}

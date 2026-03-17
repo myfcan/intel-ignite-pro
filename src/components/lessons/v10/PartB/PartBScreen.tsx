@@ -16,6 +16,7 @@ interface PartBScreenProps {
   lessonTitle: string;
   onComplete: () => void;
   onBack: () => void;
+  onExit?: () => void;
   initialStep?: number;
   initialFrame?: number;
   onProgressUpdate?: (step: number, frame: number) => void;
@@ -48,6 +49,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   lessonTitle,
   onComplete,
   onBack,
+  onExit,
   initialStep = 0,
   initialFrame = 0,
   onProgressUpdate,
@@ -411,6 +413,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           phases={phases}
           currentPhase={currentPhaseIndex}
           onBack={handleBack}
+          onExit={onExit}
         />
 
         {/* Scrollable content */}
