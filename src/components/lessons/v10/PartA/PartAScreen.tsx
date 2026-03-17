@@ -224,7 +224,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
         ) : isPlaying ? (
           <button
             type="button"
-            onClick={onComplete}
+            onClick={stopAndComplete}
             className="w-full min-h-[44px] py-3 rounded-xl text-white/60 font-medium text-sm bg-white/5 border border-white/10 transition-transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/20"
           >
             {'Pular introdução'}
