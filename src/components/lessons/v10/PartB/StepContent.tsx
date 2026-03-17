@@ -90,23 +90,6 @@ const StepContent: React.FC<StepContentProps> = ({
           </div>
         )}
 
-        {/* Replay step button — only on last frame AFTER audio ends */}
-        {isLastFrame && onReplayStep && showReplay && (
-          <div className="flex justify-center pt-1 pb-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-            <button
-              type="button"
-              onClick={onReplayStep}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97] border"
-              style={{
-                color: accentColor,
-                borderColor: `${accentColor}33`,
-                backgroundColor: `${accentColor}08`,
-              }}
-            >
-              <RotateCcw size={15} />
-              <span>Rever este passo</span>
-            </button>
-          </div>
         )}
       </div>
     </div>
