@@ -59,13 +59,7 @@ const CourseDetail = () => {
   };
 
   const handleBack = () => {
-    if (trailType === 'v8') {
-      navigate('/dashboard');
-    } else if (trailId) {
-      navigate(`/trail/${trailId}`);
-    } else {
-      navigate('/dashboard');
-    }
+    navigate('/dashboard');
   };
 
   if (isLoading) {
