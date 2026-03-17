@@ -179,10 +179,15 @@ export function ImportFullScriptModal({
   const [autoTag, setAutoTag] = useState(true);
   const [importing, setImporting] = useState(false);
 
+  const hasExistingTags = useMemo(() => rawText.includes('[ANCHOR:'), [rawText]);
+
   const parsed = useMemo(() => {
     if (!rawText.trim()) return null;
     return parseFullScript(rawText);
   }, [rawText]);
+
+  // Auto-disable auto-tag when script already has anchor tags
+  const effectiveAutoTag = autoTag && !hasExistingTags;
 
   const matchedSteps = useMemo(() => {
     if (!parsed) return [];
