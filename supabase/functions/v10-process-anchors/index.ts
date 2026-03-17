@@ -25,7 +25,7 @@ const corsHeaders = {
  * the function still generates audio but creates no anchors.
  */
 
-const VOICE_ID_DEFAULT = 'oqUwsXKac3MSo4E51ySV'; // Taciana - PT-BR
+const VOICE_ID_DEFAULT = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - PT-BR (padrão V8)
 const MODEL_ID = 'eleven_multilingual_v2';
 
 serve(async (req) => {
@@ -105,11 +105,11 @@ serve(async (req) => {
         body: JSON.stringify({
           text: cleanText,
           model_id: MODEL_ID,
-          language_code: 'pt',
           voice_settings: {
-            stability: 0.6,
-            similarity_boost: 0.8,
-            speed: 0.9,
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.3,
+            use_speaker_boost: true,
           },
         }),
       }
