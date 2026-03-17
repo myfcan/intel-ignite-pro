@@ -16,21 +16,23 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
 
   return (
     <>
-      {/* FAB stack — avatar + menu button, vertically grouped with proper spacing */}
-      <div className="absolute z-50 right-4 bottom-[5.5rem] flex flex-col items-center gap-2">
+      <div className="absolute z-50 right-4 bottom-[5.5rem] flex flex-col items-center gap-3">
         {/* LivAvatar — pulsing indicator */}
         <button
           type="button"
           onClick={onClick}
-          className="w-14 h-14 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-full transition-transform active:scale-90"
+          className="w-12 h-12 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-transform active:scale-90 shadow-md"
           style={{
             animation: isIntense
-              ? 'liv-pulse-intense 0.6s ease-in-out infinite'
-              : 'liv-pulse 2s ease-in-out infinite',
+              ? 'liv-fab-pulse-intense 0.6s ease-in-out infinite'
+              : 'liv-fab-pulse 2s ease-in-out infinite',
+            boxShadow: isIntense
+              ? '0 0 16px rgba(16, 185, 129, 0.4), 0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              : '0 0 12px rgba(139, 92, 246, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.1)',
           }}
           aria-label="Abrir assistente LIV"
         >
-          <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} className="pt-0 scale-[0.72]" />
+          <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} className="pt-0 scale-[0.65]" />
         </button>
 
         {/* Gradient menu button — opens LIVSheet */}
@@ -66,9 +68,13 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
           0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
           50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
         }
-        @keyframes liv-pulse-intense {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); transform: scale(1); }
-          50% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); transform: scale(1.08); }
+        @keyframes liv-fab-pulse {
+          0%, 100% { box-shadow: 0 0 12px rgba(139, 92, 246, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.1); transform: scale(1); }
+          50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 4px 6px -1px rgba(0, 0, 0, 0.1); transform: scale(1.04); }
+        }
+        @keyframes liv-fab-pulse-intense {
+          0%, 100% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.4), 0 4px 6px -1px rgba(0, 0, 0, 0.1); transform: scale(1); }
+          50% { box-shadow: 0 0 24px rgba(16, 185, 129, 0.6), 0 4px 6px -1px rgba(0, 0, 0, 0.1); transform: scale(1.08); }
         }
       `}</style>
     </>
