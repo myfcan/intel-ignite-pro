@@ -116,7 +116,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const handleCreateLesson = async () => {
     setCreatingLesson(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         slug: pipeline.slug,
         title: pipeline.title,
         status: 'draft' as const,
@@ -125,6 +125,8 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         tools: [] as string[],
         xp_reward: 0,
         order_in_trail: 0,
+        ...(selectedTrailId ? { trail_id: selectedTrailId } : {}),
+        ...(selectedCourseId ? { course_id: selectedCourseId } : {}),
       };
 
       const { data, error } = await supabase
