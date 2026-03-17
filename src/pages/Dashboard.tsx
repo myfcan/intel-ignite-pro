@@ -182,7 +182,7 @@ const Dashboard = () => {
   // IntersectionObserver para detectar card ativo (>=60% visível)
   useEffect(() => {
     const root = snapScrollerRef.current;
-    if (!root || v7Trails.length === 0) return;
+    if (!root || orphanTrails.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
