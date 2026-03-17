@@ -929,6 +929,56 @@ export default function AdminManageLessons() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Create Trail Modal (standalone) */}
+        <Dialog open={showCreateTrailModal} onOpenChange={setShowCreateTrailModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="w-5 h-5 text-blue-500" />
+                Criar Nova Trilha
+              </DialogTitle>
+              <DialogDescription>Uma trilha é a seção principal (N1) que agrupa jornadas</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Nome da Trilha</label>
+                <Input value={soloTrailTitle} onChange={(e) => setSoloTrailTitle(e.target.value)} placeholder="Ex: Renda Extra PRO" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Ícone (opcional)</label>
+                <Input value={soloTrailIcon} onChange={(e) => setSoloTrailIcon(e.target.value)} placeholder="Ex: 🚀 ou Brain" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateTrailModal(false)}>Cancelar</Button>
+              <Button
+                disabled={!soloTrailTitle.trim()}
+                onClick={async () => {
+                  const maxOrder = trails.length > 0 ? Math.max(...trails.map(t => t.order_index)) + 1 : 1;
+                  const { error } = await supabase.from('trails').insert({
+                    title: soloTrailTitle.trim(),
+                    icon: soloTrailIcon.trim() || null,
+                    order_index: maxOrder,
+                    is_active: true,
+                    trail_type: 'v8',
+                  });
+                  if (error) {
+                    toast({ title: 'Erro ao criar trilha', description: error.message, variant: 'destructive' });
+                  } else {
+                    toast({ title: 'Trilha criada', description: `"${soloTrailTitle.trim()}"` });
+                    setShowCreateTrailModal(false);
+                    setSoloTrailTitle('');
+                    setSoloTrailIcon('');
+                    await loadData();
+                  }
+                }}
+              >
+                Criar Trilha
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
