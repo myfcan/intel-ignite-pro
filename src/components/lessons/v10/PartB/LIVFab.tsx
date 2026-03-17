@@ -90,7 +90,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
         }
         @keyframes liv-fab-pulse-intense {
           0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.45), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1); }
-          50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.65), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1.08); }
+          50% { box-shadow: 0 0 26px rgba(16, 185, 129, 0.55), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1.04); }
         }
         @keyframes liv-speak-ring {
           0% { transform: scale(1); opacity: 0.75; }
