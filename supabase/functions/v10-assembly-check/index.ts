@@ -133,9 +133,11 @@ serve(async (req) => {
       pipeline.mockups_total > 0 &&
       pipeline.mockups_approved >= pipeline.mockups_total;
 
-    const audios_ok =
-      pipeline.audios_total > 0 &&
-      pipeline.audios_generated >= pipeline.audios_total;
+    // Count actual steps with audio_url instead of relying on pipeline counter
+    const stepsWithAudio = steps.filter(
+      (s: Record<string, unknown>) => s.audio_url != null && (s.audio_url as string).length > 0
+    ).length;
+    const audios_ok = steps.length > 0 && stepsWithAudio >= steps.length;
 
     const narration_a_ok = narrations.some(
       (n: Record<string, unknown>) =>
