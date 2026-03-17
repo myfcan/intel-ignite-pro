@@ -104,6 +104,13 @@ export default function AdminManageLessons() {
   const [newCourseIcon, setNewCourseIcon] = useState('');
   const [creatingCourse, setCreatingCourse] = useState(false);
 
+  // V10 Move modal
+  const [showV10MoveModal, setShowV10MoveModal] = useState(false);
+  const [v10MoveTarget, setV10MoveTarget] = useState<string>('');
+  const [v10TargetTrailId, setV10TargetTrailId] = useState<string>('');
+  const [v10TargetOrder, setV10TargetOrder] = useState<number>(0);
+  const [movingV10, setMovingV10] = useState(false);
+
   // Create trail inline
   const [createNewTrail, setCreateNewTrail] = useState(false);
   const [newTrailTitle, setNewTrailTitle] = useState('');
