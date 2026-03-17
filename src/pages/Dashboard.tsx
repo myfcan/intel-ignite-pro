@@ -145,10 +145,16 @@ const Dashboard = () => {
   // All courses from all trails
   const [v8Courses, setV8Courses] = useState<V8Course[]>([]);
   
-  // Split courses: "Caminho da Maestria" trail → "Suas Jornadas", others → "Renda Extra PRO"
+  // Split courses: "Caminho da Maestria" trail → "Suas Jornadas", others → section by trail name (N1)
   const maestriaTrailId = trails.find(t => t.order_index === 9)?.id;
   const maestriaCourses = v8Courses.filter(c => c.trail_id === maestriaTrailId);
   const rendaExtraCourses = v8Courses.filter(c => c.trail_id !== maestriaTrailId);
+
+  // Derive the section title from the first non-maestria trail that has courses
+  const rendaExtraTrail = rendaExtraCourses.length > 0
+    ? trails.find(t => t.id === rendaExtraCourses[0].trail_id)
+    : null;
+  const rendaExtraSectionTitle = rendaExtraTrail?.title || 'Renda Extra PRO';
   
   // Trilhas órfãs: sem courses (aulas diretas)
   const orphanTrails = trails.filter(t => !v8Courses.some(c => c.trail_id === t.id));
