@@ -598,15 +598,18 @@ export default function AdminManageLessons() {
                               {expandedCourses.has(course.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                               <BookOpen className="w-4 h-4 text-blue-500" />
                               <span className="font-medium text-sm flex-1">{course.title}</span>
-                              <Badge variant="outline" className="text-xs">{course.lessons.length} aulas</Badge>
+                              <Badge variant="outline" className="text-xs">{course.lessons.length + (course.v10Lessons?.length || 0)} aulas</Badge>
                             </div>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="ml-10 space-y-1 mt-1">
-                              {course.lessons.length === 0 ? (
+                              {course.lessons.length === 0 && (!course.v10Lessons || course.v10Lessons.length === 0) ? (
                                 <p className="text-xs text-muted-foreground py-2">Nenhuma aula nesta jornada</p>
                               ) : (
-                                course.lessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)
+                                <>
+                                  {course.lessons.map(lesson => <LessonRow key={lesson.id} lesson={lesson} />)}
+                                  {course.v10Lessons?.map(lesson => <V10LessonRow key={lesson.id} lesson={lesson} />)}
+                                </>
                               )}
                             </div>
                           </CollapsibleContent>
