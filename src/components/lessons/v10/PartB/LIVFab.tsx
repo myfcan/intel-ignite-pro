@@ -1,6 +1,6 @@
 import React from 'react';
 import { List } from 'lucide-react';
-import { LivAvatar } from '@/components/LivAvatar';
+import livAvatarImg from '@/assets/liv-avatar.png';
 
 export type LivPulseMode = 'normal' | 'intense';
 
@@ -16,12 +16,12 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
 
   return (
     <>
-      <div className="absolute z-50 right-4 bottom-[5.5rem] flex flex-col items-center gap-3">
+      <div className="absolute z-50 right-4 bottom-[8.5rem] flex flex-col items-center gap-3">
         {/* LivAvatar — pulsing indicator */}
         <button
           type="button"
           onClick={onClick}
-          className="w-16 h-16 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-transform active:scale-90"
+          className="w-16 h-16 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-transform active:scale-90"
           style={{
             animation: isIntense
               ? 'liv-fab-pulse-intense 0.6s ease-in-out infinite'
@@ -32,7 +32,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
           }}
           aria-label="Abrir assistente LIV"
         >
-          <LivAvatar size="small" showHalo={false} enableHover={false} animate={false} className="pt-0 scale-[0.82]" />
+          <img src={livAvatarImg} alt="Liv" className="w-full h-full object-cover" />
         </button>
 
         {/* Gradient menu button — opens LIVSheet */}
