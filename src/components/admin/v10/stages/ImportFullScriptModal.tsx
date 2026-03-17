@@ -366,7 +366,7 @@ export function ImportFullScriptModal({
                 </div>
               )}
 
-              {autoTag && (
+              {effectiveAutoTag && (
                 <div className="flex items-start gap-2 rounded bg-blue-50 p-2 text-xs text-blue-800">
                   <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                   Tags <code>[ANCHOR:troca_frame]</code> não são detectáveis automaticamente — adicione manualmente após importação.
