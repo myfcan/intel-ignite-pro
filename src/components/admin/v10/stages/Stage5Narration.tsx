@@ -593,9 +593,23 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
                             <CheckCircle2 className="h-3 w-3" /> Áudio disponível
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
-                            <AlertCircle className="h-3 w-3" /> Sem áudio
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
+                              <AlertCircle className="h-3 w-3" /> Sem áudio
+                            </span>
+                            {partCNarration.script_text && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                disabled={generatingPart === 'C'}
+                                onClick={() => handleGeneratePartAudio('C')}
+                              >
+                                {generatingPart === 'C' ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Mic className="h-3 w-3 mr-1" />}
+                                Gerar Áudio
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                       {editingPartC ? (
