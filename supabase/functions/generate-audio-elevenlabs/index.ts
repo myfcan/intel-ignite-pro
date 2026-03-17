@@ -34,7 +34,7 @@ serve(async (req) => {
     // Voice ID padrão: Alice (Xb7hH8MSUJpSbSDYk0k2)
     const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2';
     
-    // Model ID padrão: eleven_v3 (previne accent drift para PT-PT)
+    // Model ID padrão: eleven_multilingual_v2 (padrão Alice global)
     const modelId = model_id || 'eleven_multilingual_v2';
 
     console.log('Gerando áudio com ElevenLabs (com timestamps)...');

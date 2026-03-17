@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 // ─── ElevenLabs config ───
-// CRITICAL: eleven_v3 prevents accent drift to PT-PT on sequential requests
-// See memory: elevenlabs-model-and-sanitization-standard-v2
+// Padrão Alice: eleven_multilingual_v2 + voice settings padronizados
+// See memory: infrastructure/eleven-labs-voice-standard-alice
 const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice — padrão global
 const MODEL_ID = 'eleven_multilingual_v2';
 const VOICE_SETTINGS = {
