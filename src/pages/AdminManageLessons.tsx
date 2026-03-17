@@ -117,7 +117,10 @@ export default function AdminManageLessons() {
   const [createNewTrail, setCreateNewTrail] = useState(false);
   const [newTrailTitle, setNewTrailTitle] = useState('');
   const [newTrailIcon, setNewTrailIcon] = useState('');
-  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8' | 'v10'>('v7');
+  const [newTrailType, setNewTrailType] = useState<'v7' | 'v8' | 'v10'>('v8');
+  const [showCreateTrailModal, setShowCreateTrailModal] = useState(false);
+  const [soloTrailTitle, setSoloTrailTitle] = useState('');
+  const [soloTrailIcon, setSoloTrailIcon] = useState('');
 
   useEffect(() => {
     loadData();
