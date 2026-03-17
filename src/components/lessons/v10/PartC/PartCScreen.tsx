@@ -28,6 +28,7 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
   streak,
   audioUrl,
   onNextLesson,
+  onExit,
 }) => {
   const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1);
 
