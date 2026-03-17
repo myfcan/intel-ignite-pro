@@ -1,6 +1,6 @@
 import React from 'react';
 import { List } from 'lucide-react';
-import { LivAvatar } from '@/components/LivAvatar';
+import livAvatarImg from '@/assets/liv-avatar.png';
 
 export type LivPulseMode = 'normal' | 'intense';
 
