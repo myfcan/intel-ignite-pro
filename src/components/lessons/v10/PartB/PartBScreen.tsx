@@ -413,6 +413,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           phases={phases}
           currentPhase={currentPhaseIndex}
           onBack={handleBack}
+          onExit={onExit}
         />
 
         {/* Scrollable content */}
