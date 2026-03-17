@@ -295,7 +295,7 @@ const LIVSheet: React.FC<LIVSheetProps> = ({
   return (
     <Drawer open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
       <DrawerContent
-        className="border-t border-indigo-500/30 max-h-[80vh] mx-auto max-w-[420px]"
+        className="border-t border-indigo-500/30 max-h-[80vh] mx-auto max-w-[420px] md:max-w-[680px]"
         style={{ backgroundColor: '#1E1B2E' }}
       >
         {/* Title row */}

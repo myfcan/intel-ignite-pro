@@ -21,7 +21,7 @@ const StepContent: React.FC<StepContentProps> = ({
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3">
-      <div className="flex flex-col gap-1.5 max-w-[420px] mx-auto">
+      <div className="flex flex-col gap-1.5 max-w-[420px] md:max-w-[680px] mx-auto">
         {/* Step number label */}
         <span
           className="text-xs font-bold uppercase tracking-wider"
