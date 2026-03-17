@@ -279,7 +279,32 @@ export default function AdminManageLessons() {
     }
   }
 
-  // Create course (jornada)
+  // Move V10 lesson
+  async function handleMoveV10Lesson() {
+    if (!v10MoveTarget || !v10TargetTrailId) {
+      toast({ title: 'Selecione uma trilha', variant: 'destructive' });
+      return;
+    }
+    setMovingV10(true);
+    try {
+      const { error } = await (supabase as any)
+        .from('v10_lessons')
+        .update({ trail_id: v10TargetTrailId, order_in_trail: v10TargetOrder })
+        .eq('id', v10MoveTarget);
+      if (error) throw error;
+      const lesson = v10Lessons.find(l => l.id === v10MoveTarget);
+      toast({ title: 'Aula V10 movida', description: `"${lesson?.title}" atribuída à trilha` });
+      setShowV10MoveModal(false);
+      setV10MoveTarget('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao mover V10', description: error.message, variant: 'destructive' });
+    } finally {
+      setMovingV10(false);
+    }
+  }
+
+  
   async function handleCreateCourse() {
     let trailId = newCourseTrailId;
 
