@@ -3,12 +3,14 @@ import type { V10Lesson, V10UserStreak } from '../../../../types/v10.types';
 import { RecapPage } from './RecapPage';
 import { EngagementPage } from './EngagementPage';
 import { GamificationPage } from './GamificationPage';
+import { ExitButton } from '../shared/ExitButton';
 
 interface PartCScreenProps {
   lesson: V10Lesson;
   streak: V10UserStreak | null;
   audioUrl: string | null;
   onNextLesson: () => void;
+  onExit?: () => void;
 }
 
 /**
