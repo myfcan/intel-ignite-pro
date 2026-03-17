@@ -728,6 +728,15 @@ export default function AdminManageLessons() {
                             <BookOpen className="w-4 h-4 text-amber-500" />
                             <span className="font-medium text-sm flex-1">{course.title}</span>
                             <Badge variant="outline" className="text-xs">{courseLessons.length + courseV10.length} aulas</Badge>
+                            <Button variant="outline" size="sm" onClick={(e) => {
+                              e.stopPropagation();
+                              setMoveCourseTarget(course.id);
+                              setMoveCourseTrailId('');
+                              setShowMoveCourseModal(true);
+                            }}>
+                              <FolderInput className="w-3 h-3 mr-1" />
+                              Mover
+                            </Button>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
