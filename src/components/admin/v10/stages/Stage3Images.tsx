@@ -88,7 +88,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('v10-generate-images', {
-        body: { pipeline_id: pipeline.id, api: 'openai', batch_size: 2, batch_index: 0 }
+        body: { pipeline_id: pipeline.id, batch_size: 5, batch_index: nextBatchIndex }
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -101,7 +101,13 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
         if (totalNeeded > 0 && imagesNeeded === 0) {
           setImagesNeeded(totalNeeded);
         }
-        toast.success(`${successCount} imagens geradas! ${hasMore ? 'Clique novamente para o próximo lote.' : 'Todos os lotes concluídos.'}`);
+        if (hasMore) {
+          setNextBatchIndex(prev => prev + 1);
+          toast.success(`${successCount} imagens geradas! Clique novamente para o próximo lote (batch ${nextBatchIndex + 2}).`);
+        } else {
+          setNextBatchIndex(0);
+          toast.success(`${successCount} imagens geradas! Todos os lotes concluídos.`);
+        }
       }
     } catch (err) {
       toast.error(`Erro ao gerar imagens: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
