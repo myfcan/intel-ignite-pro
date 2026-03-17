@@ -338,6 +338,18 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     }
   }, [currentFrameIndex, currentStepIndex, steps, onBack]);
 
+  // Replay current step from beginning
+  const handleReplayStep = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setCurrentFrameIndex(0);
+    setCurrentTime(0);
+    setIsPlaying(false);
+  }, []);
+
   // Frame change from StepContent dots
   const handleFrameChange = useCallback((frame: number) => {
     setCurrentFrameIndex(frame);
