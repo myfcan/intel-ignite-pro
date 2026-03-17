@@ -348,6 +348,14 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
     }
   }, [debouncedSave, lesson]);
 
+  const handleExit = useCallback(() => {
+    if (lesson?.trail_id) {
+      navigate(`/trilha/${lesson.trail_id}`);
+    } else {
+      navigate('/dashboard');
+    }
+  }, [lesson, navigate]);
+
   const handleNextLesson = useCallback(() => {
     // Navigate to next lesson or dashboard
     if (lesson?.trail_id) {
