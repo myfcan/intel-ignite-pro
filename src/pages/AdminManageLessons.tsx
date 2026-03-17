@@ -288,15 +288,21 @@ export default function AdminManageLessons() {
     }
     setMovingV10(true);
     try {
+      const updatePayload: Record<string, unknown> = {
+        trail_id: v10TargetTrailId,
+        order_in_trail: v10TargetOrder,
+        course_id: v10TargetCourseId || null,
+      };
       const { error } = await (supabase as any)
         .from('v10_lessons')
-        .update({ trail_id: v10TargetTrailId, order_in_trail: v10TargetOrder })
+        .update(updatePayload)
         .eq('id', v10MoveTarget);
       if (error) throw error;
       const lesson = v10Lessons.find(l => l.id === v10MoveTarget);
-      toast({ title: 'Aula V10 movida', description: `"${lesson?.title}" atribuída à trilha` });
+      toast({ title: 'Aula V10 movida', description: `"${lesson?.title}" atribuída à jornada` });
       setShowV10MoveModal(false);
       setV10MoveTarget('');
+      setV10TargetCourseId('');
       await loadData();
     } catch (error: any) {
       toast({ title: 'Erro ao mover V10', description: error.message, variant: 'destructive' });
