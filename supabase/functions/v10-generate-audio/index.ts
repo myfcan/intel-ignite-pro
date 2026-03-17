@@ -445,7 +445,7 @@ async function uploadAudio(
   }
 
   const { data: urlData } = supabase.storage
-    .from('lesson-audio')
+    .from('lesson-audios')
     .getPublicUrl(storagePath);
 
   return urlData.publicUrl;
