@@ -1,96 +1,157 @@
 
 
-## Auditoria Completa — Zero Imagens no Pipeline V10
-
-### Dados Reais Coletados
-
-**Pipeline**: `39febcac-2ddf-44b3-a7ac-2be0b0d50c60`
-**lesson_id**: `a94d1012-1f49-409d-a905-b72afb07a372`
-**Status atual**: `images_needed: 0`, `images_generated: 0`, `images_approved: 0`
-
-**Steps existentes no DB** (5 steps confirmados):
-```
-step 1: "Introdução ao Calendly MCP" — elements: [text, text]
-step 2: "Compatibilidade e Pré-requisitos" — elements: [text, text]
-step 3: "Exemplos de Comandos para IA" — elements: [text, text, text]
-step 4: "Conectando Calendly ao ChatGPT: Passo 1" — elements: [text, chrome_header, text]
-step 5: "Conectando Calendly ao ChatGPT: Passo 2" — elements: [text, text, text]
-```
-
-Nenhum step tem `type: "image"` nos elements. Pelo filtro da linha 215-236, **todos os 5 deveriam ser marcados como "needing images"**.
-
-**Logs reais do pipeline_log (5 execuções):**
-```
-"Batch 0: 0 succeeded, 0 failed out of 0 steps (total needing images: 0)"
-```
+# Auditoria Forense do Plano — Com Dados Reais do Código
 
 ---
 
-### 3 Bugs Confirmados com Evidência
+## 1. CONFIRMADO: A raiz do problema está no template e no refine
 
-#### BUG 1 — Bucket `lesson-images` NÃO EXISTE
+**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
+```markdown
+### Seção 3 (índice 2) — Ponte para primeiro exercício
+**Objetivo:** Frase curta de transição para o primeiro exercício.
 
-Código real — `v10-generate-images/index.ts` linhas 321-323:
-```typescript
-const { error: uploadError } = await supabase.storage
-  .from("lesson-images")
-  .upload(storagePath, bytes, {
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+```
 ```
 
-Buckets existentes no Storage (query real):
-```
-lesson-audios, avatars, tts-cache, image-lab
-```
-
-**NÃO EXISTE `lesson-images`**. Mesmo que uma imagem fosse gerada, o upload falharia com erro de bucket não encontrado.
-
-O V8 usa `lesson-audios` com path `v8-images/...` (confirmado em `v8-generate-section-image/index.ts` linha 135).
-
-#### BUG 2 — Usa `dall-e-2` via OpenAI em vez do Lovable AI Gateway
-
-Código real — linhas 29-41:
-```typescript
-const response = await fetch("https://api.openai.com/v1/images/generations", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${apiKey}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    model: "dall-e-2",
-    prompt,
-    n: 1,
-    size: "1024x1024",
-    response_format: "b64_json",
-  }),
-});
+E o exercício associado (linha 89):
+```json
+"title": "Teste rápido: respostas genéricas",
 ```
 
-O V8 já migrou para Gemini via `https://ai.gateway.lovable.dev/v1/chat/completions` com modelo `google/gemini-2.5-flash-image`. O V10 ainda usa a API legada.
+Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
 
-#### BUG 3 — Sem Logging Diagnóstico
+**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
+```
+11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
 
-A função não loga `steps.length` nem `stepsNeedingImages.length` antes de aplicar o filtro. Os logs de edge function mostram APENAS boot/shutdown — nenhum log de execução. Isso impede diagnóstico de por que o filtro retornou 0 quando 5 steps existem no DB.
+13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
+```
+
+A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
 
 ---
 
-### Plano de Correção (3 frentes)
+## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
 
-**1. Trocar bucket para `lesson-audios` (existente e público)**
+**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
+```typescript
+if (refineResponse.ok) {
+  const refineResult = await refineResponse.json();
+  if (refineResult.sections && Array.isArray(refineResult.sections)) {
+    // Replace section content with refined versions — protect Section 0 (Abertura)
+    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
+      parsed.sections[i].content = refineResult.sections[refIdx].content;
+    }
+  }
+}
+```
 
-Alterar linhas 320-335 para usar `lesson-audios` com path `v10-images/...`, igual ao padrão V8.
+O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
 
-**2. Migrar geração de imagens para Lovable AI Gateway (Gemini)**
+---
 
-Substituir `generateImageOpenAI` (dall-e-2) por função que usa `https://ai.gateway.lovable.dev/v1/chat/completions` com modelo `google/gemini-2.5-flash-image`, idêntico ao padrão já implementado em `v8-generate-section-image`. Remover dependência de `OPENAI_API_KEY` e `LEONARDO_API_KEY`.
+## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
 
-**3. Adicionar logging diagnóstico**
+**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
+```typescript
+const finalData: V8LessonData = {
+  contentVersion: "v8",
+  title: parsed.title,
+  // ...
+};
+```
 
-Após a query de steps (linha 203) e após o filtro (linha 237), adicionar `console.log` com contagens reais para que futuros problemas sejam visíveis nos logs de edge function.
+O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
 
-### Arquivos a editar
+---
 
-| Arquivo | Alteração |
-|---|---|
-| `supabase/functions/v10-generate-images/index.ts` | Migrar para Gemini, trocar bucket, adicionar logs |
+## 4. CONFIRMADO: `v8-generate-raw-content` não existe
+
+```
+code--search_files: No matches found for pattern 'v8-generate-raw-content'
+```
+
+A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
+
+---
+
+## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+
+**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+```
+
+Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+
+---
+
+## 6. GAPS NO PLANO PROPOSTO
+
+### Gap A: O plano NÃO endereça o `contractPattern` não salvo
+O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
+
+**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
+
+### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
+Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
+
+**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
+
+### Gap C: Parser compatibility com output da IA
+O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
+
+**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
+
+### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
+A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+
+---
+
+## 7. PLANO REVISADO FINAL
+
+### Arquivos a criar/modificar
+
+| Arquivo | Ação | O que muda |
+|---------|------|------------|
+| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
+| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
+| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
+| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
+| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
+
+### Detalhes por arquivo
+
+**1. `v8-generate-raw-content/index.ts` (NOVO)**
+- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
+- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
+- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
+- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
+- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
+- Modelo: `google/gemini-2.5-flash`
+
+**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
+- Adicionar após Regra 13:
+  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
+  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
+
+**3. `AdminV8Create.tsx` (EDITAR)**
+- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
+- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
+- Função `sectionsToMarkdown()` para converter output da function em markdown
+- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
+
+**4. `v8Lesson.ts` (EDITAR linha ~136)**
+- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
+
+### Riscos residuais
+
+| Risco | Severidade | Mitigação |
+|-------|-----------|-----------|
+| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
+| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
+| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
 

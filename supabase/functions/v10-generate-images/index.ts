@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 function delay(ms: number): Promise<void> {
@@ -19,119 +19,96 @@ function buildImagePrompt(
   const context = [stepTitle, stepDescription, altText]
     .filter(Boolean)
     .join(". ");
-  return `Modern flat vector illustration for a tech learning platform: ${context}. Style: flat vector, clean bold shapes, vibrant colors (blues, violets, warm yellows), no text, no letters, professional editorial quality, 16:9 landscape`;
+  return `Create a modern flat vector illustration for a tech learning platform about: ${context}.
+
+Style requirements:
+- Modern flat vector illustration with clean bold shapes, thin defined outlines, and vibrant harmonious color palette (blues, violets, warm yellows, soft pinks, greens)
+- Character style: stylized human figures with simplified proportions, expressive poses, minimal facial detail but clear emotion — when relevant to the concept
+- Objects: everyday items (laptops, tablets, documents, folders, charts, calendars) rendered in flat geometric shapes with NO realistic shadows — only subtle flat color shadows for depth
+- Single cohesive scene, centered, 1 to 3 visual elements max, tightly composed as ONE unit
+- The main illustration must fill 85-95% of the frame — almost NO padding around it
+- CLEAN SOLID WHITE BACKGROUND (#FFFFFF)
+- NO 3D rendering, NO gradients, NO realistic textures, NO photorealism
+- Professional editorial illustration quality — clean, polished, modern
+- ABSOLUTELY NO TEXT of any kind inside the image. No words, no letters, no labels, no numbers, no banners, no captions, no typography.
+- CRITICAL: NEVER use brains, lightbulbs, gears, cogs, neural networks, circuit boards, or generic AI/technology symbols.
+- NEVER create infographic-style, diagram-style, or flowchart-style compositions
+- NEVER scatter many small objects — always ONE cohesive central composition
+- IMPORTANT: Compose the image in a 16:9 LANDSCAPE orientation
+- OUTPUT SIZE: Generate the image at exactly 1024x576 pixels (16:9 landscape)
+- The composition must be centered and fill the frame`;
 }
 
-async function generateImageOpenAI(prompt: string): Promise<string> {
-  const apiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
-
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "dall-e-2",
-      prompt,
-      n: 1,
-      size: "1024x1024",
-      response_format: "b64_json",
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`OpenAI API error (${response.status}): ${err}`);
+function base64UrlToBytes(dataUrl: string): Uint8Array {
+  const base64Data = dataUrl.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "");
+  const binaryString = atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
   }
-
-  const data = await response.json();
-  return data.data[0].b64_json;
+  return bytes;
 }
 
-async function generateImageLeonardo(prompt: string): Promise<string> {
-  const apiKey = Deno.env.get("LEONARDO_API_KEY");
-  if (!apiKey) throw new Error("LEONARDO_API_KEY not configured");
+async function generateImageGemini(prompt: string): Promise<Uint8Array> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-  const headers = {
-    Authorization: `Bearer ${apiKey}`,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+  const MAX_RETRIES = 3;
+  let lastError = "";
 
-  // Start generation
-  const genResponse = await fetch(
-    "https://cloud.leonardo.ai/api/rest/v1/generations",
-    {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    console.log(`[v10-generate-images] Gemini attempt ${attempt + 1}/${MAX_RETRIES}`);
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers,
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        prompt,
-        num_images: 1,
-        width: 1024,
-        height: 576,
+        model: "google/gemini-2.5-flash-image",
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["image", "text"],
       }),
-    }
-  );
+    });
 
-  if (!genResponse.ok) {
-    const err = await genResponse.text();
-    throw new Error(`Leonardo API error (${genResponse.status}): ${err}`);
-  }
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[v10-generate-images] Gemini error: ${response.status}`, errText);
 
-  const genData = await genResponse.json();
-  const generationId =
-    genData.sdGenerationJob?.generationId ?? genData.generationId;
-
-  if (!generationId) {
-    throw new Error("Leonardo did not return a generation ID");
-  }
-
-  // Poll for completion
-  const maxAttempts = 30;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    await delay(2000);
-
-    const pollResponse = await fetch(
-      `https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`,
-      { headers }
-    );
-
-    if (!pollResponse.ok) {
-      const err = await pollResponse.text();
-      throw new Error(
-        `Leonardo poll error (${pollResponse.status}): ${err}`
-      );
-    }
-
-    const pollData = await pollResponse.json();
-    const generation =
-      pollData.generations_by_pk ?? pollData.generation_by_pk ?? pollData;
-
-    if (generation.status === "COMPLETE") {
-      const imageUrl = generation.generated_images?.[0]?.url;
-      if (!imageUrl) throw new Error("Leonardo returned no image URL");
-
-      // Download image and convert to base64
-      const imgResponse = await fetch(imageUrl);
-      if (!imgResponse.ok) throw new Error("Failed to download Leonardo image");
-
-      const arrayBuffer = await imgResponse.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      if (response.status === 429) {
+        if (attempt < MAX_RETRIES - 1) {
+          console.log(`[v10-generate-images] Rate limited, waiting 5s...`);
+          await delay(5000);
+          continue;
+        }
+        throw new Error("Rate limit exceeded. Try again in a few seconds.");
       }
-      return btoa(binary);
+      if (response.status === 402) {
+        throw new Error("Credits exhausted. Add funds in Settings → Workspace → Usage.");
+      }
+      throw new Error(`Gemini returned ${response.status}`);
     }
 
-    if (generation.status === "FAILED") {
-      throw new Error("Leonardo generation failed");
+    const data = await response.json();
+    const base64Url = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+    if (base64Url) {
+      console.log(`[v10-generate-images] Gemini returned image on attempt ${attempt + 1}`);
+      return base64UrlToBytes(base64Url);
+    }
+
+    // Text-only response
+    const textContent = data.choices?.[0]?.message?.content?.slice(0, 200) || "empty";
+    lastError = `Gemini returned text-only: "${textContent}"`;
+    console.warn(`[v10-generate-images] Attempt ${attempt + 1}: ${lastError}`);
+
+    if (attempt < MAX_RETRIES - 1) {
+      await delay(2000);
     }
   }
 
-  throw new Error("Leonardo generation timed out");
+  throw new Error(`No image returned from Gemini after ${MAX_RETRIES} attempts. Last: ${lastError}`);
 }
 
 serve(async (req: Request) => {
@@ -159,7 +136,6 @@ serve(async (req: Request) => {
 
     const {
       pipeline_id,
-      api = "openai",
       batch_size = 2,
       batch_index = 0,
     } = await req.json();
@@ -208,10 +184,15 @@ serve(async (req: Request) => {
       );
     }
 
+    // DIAGNOSTIC LOG: steps fetched from DB
+    console.log(`[v10-generate-images] lesson_id=${lessonId} | steps fetched from DB: ${steps.length}`);
+    for (const s of steps) {
+      const frames = (s as any).frames || [];
+      const elementTypes = frames.flatMap((f: any) => (f.elements || []).map((e: any) => e.type));
+      console.log(`[v10-generate-images]   step ${(s as any).step_number} "${(s as any).title}" | elements: [${elementTypes.join(", ")}]`);
+    }
+
     // 4. Filter steps that need images
-    // A step needs an image if:
-    //   (a) it has an image element with empty/placeholder src, OR
-    //   (b) it has no image element at all in any frame
     const stepsNeedingImages = steps.filter((step: any) => {
       const frames = step.frames;
       if (!frames || !Array.isArray(frames) || frames.length === 0) return true;
@@ -232,16 +213,20 @@ serve(async (req: Request) => {
         }
       }
 
-      // Needs image if no image element exists OR has empty image element
       return !hasImageElement || hasEmptyImage;
     });
 
     const total = stepsNeedingImages.length;
 
+    // DIAGNOSTIC LOG: filter result
+    console.log(`[v10-generate-images] stepsNeedingImages: ${total} out of ${steps.length} total steps`);
+
     // 5. Apply batching
     const startIdx = batch_index * batch_size;
     const batchSteps = stepsNeedingImages.slice(startIdx, startIdx + batch_size);
     const hasMoreBatches = startIdx + batch_size < total;
+
+    console.log(`[v10-generate-images] Batch ${batch_index}: processing ${batchSteps.length} steps (startIdx=${startIdx}, batch_size=${batch_size})`);
 
     let success = 0;
     let failed = 0;
@@ -263,7 +248,6 @@ serve(async (req: Request) => {
       // If no image element exists, inject one into the first frame
       if (!hasExistingImage && frames.length > 0) {
         if (!frames[0].elements) frames[0].elements = [];
-        // Check if there's already an empty image element
         const existingEmpty = frames[0].elements.find((el: any) => el.type === "image" && (!el.src || el.src === ""));
         if (!existingEmpty) {
           frames[0].elements.unshift({
@@ -278,11 +262,7 @@ serve(async (req: Request) => {
         const frame = frames[frameIdx];
         if (!frame.elements || !Array.isArray(frame.elements)) continue;
 
-        for (
-          let elementIdx = 0;
-          elementIdx < frame.elements.length;
-          elementIdx++
-        ) {
+        for (let elementIdx = 0; elementIdx < frame.elements.length; elementIdx++) {
           const element = frame.elements[elementIdx];
           if (
             element.type !== "image" ||
@@ -294,33 +274,22 @@ serve(async (req: Request) => {
           }
 
           try {
-            // Build prompt
             const prompt = buildImagePrompt(
               step.title || "",
               step.description || "",
               element.alt || ""
             );
 
-            // Generate image based on selected API
-            let b64Image: string;
-            if (api === "leonardo") {
-              b64Image = await generateImageLeonardo(prompt);
-            } else {
-              b64Image = await generateImageOpenAI(prompt);
-            }
+            console.log(`[v10-generate-images] Generating image for step ${step.step_number}, element ${elementIdx}...`);
 
-            // Decode base64 to bytes
-            const binaryStr = atob(b64Image);
-            const bytes = new Uint8Array(binaryStr.length);
-            for (let i = 0; i < binaryStr.length; i++) {
-              bytes[i] = binaryStr.charCodeAt(i);
-            }
+            // Generate image via Gemini (Lovable AI Gateway)
+            const imageBytes = await generateImageGemini(prompt);
 
-            // 7. Upload to Supabase Storage
-            const storagePath = `v10/${lessonId}/${step.step_number}_${elementIdx}.png`;
+            // Upload to Supabase Storage (bucket: lesson-audios, path: v10-images/...)
+            const storagePath = `v10-images/${lessonId}/${step.step_number}_${elementIdx}.png`;
             const { error: uploadError } = await supabase.storage
-              .from("lesson-images")
-              .upload(storagePath, bytes, {
+              .from("lesson-audios")
+              .upload(storagePath, imageBytes.buffer as ArrayBuffer, {
                 contentType: "image/png",
                 upsert: true,
               });
@@ -331,26 +300,26 @@ serve(async (req: Request) => {
 
             // Get public URL
             const { data: publicUrlData } = supabase.storage
-              .from("lesson-images")
+              .from("lesson-audios")
               .getPublicUrl(storagePath);
 
             const publicUrl = publicUrlData.publicUrl;
+            console.log(`[v10-generate-images] Uploaded: ${publicUrl}`);
 
-            // 8. Update element src in frames
+            // Update element src in frames
             frames[frameIdx].elements[elementIdx].src = publicUrl;
             stepUpdated = true;
             success++;
 
-            // Add delay between images to avoid rate limits
-            await delay(1000);
+            // Delay between images to avoid rate limits
+            await delay(2000);
           } catch (err) {
             console.error(
-              `Failed to generate image for step ${step.step_number}, element ${elementIdx}:`,
+              `[v10-generate-images] Failed step ${step.step_number}, element ${elementIdx}:`,
               err
             );
             failed++;
 
-            // Log the failure
             await supabase.from("v10_bpa_pipeline_log").insert({
               pipeline_id,
               stage: 3,
@@ -371,24 +340,27 @@ serve(async (req: Request) => {
           .eq("id", step.id);
 
         if (updateStepError) {
-          console.error(
-            `Failed to update step ${step.step_number}:`,
-            updateStepError
-          );
+          console.error(`[v10-generate-images] Failed to update step ${step.step_number}:`, updateStepError);
         }
       }
     }
 
     // 9. Update pipeline images_generated count
+    const newImagesGenerated = (pipeline.images_generated || 0) + success;
+    const updatePayload: any = { images_generated: newImagesGenerated };
+    
+    // Also update images_needed if it was 0 (first run)
+    if (pipeline.images_needed === 0 && total > 0) {
+      updatePayload.images_needed = total;
+    }
+
     const { error: pipelineUpdateError } = await supabase
       .from("v10_bpa_pipeline")
-      .update({
-        images_generated: (pipeline.images_generated || 0) + success,
-      })
+      .update(updatePayload)
       .eq("id", pipeline_id);
 
     if (pipelineUpdateError) {
-      console.error("Failed to update pipeline:", pipelineUpdateError);
+      console.error("[v10-generate-images] Failed to update pipeline:", pipelineUpdateError);
     }
 
     // 10. Log completion
@@ -396,7 +368,11 @@ serve(async (req: Request) => {
       pipeline_id,
       stage: 3,
       action: "generate-images:completed",
-      details: { message: `Batch ${batch_index}: ${success} succeeded, ${failed} failed out of ${batchSteps.length} steps (total needing images: ${total})` },
+      details: {
+        message: `Batch ${batch_index}: ${success} succeeded, ${failed} failed out of ${batchSteps.length} steps (total needing images: ${total})`,
+        steps_in_db: steps.length,
+        steps_needing_images: total,
+      },
     });
 
     // 11. Return stats
@@ -408,11 +384,13 @@ serve(async (req: Request) => {
       hasMoreBatches,
     };
 
+    console.log(`[v10-generate-images] Done: ${JSON.stringify(stats)}`);
+
     return new Response(JSON.stringify(stats), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("Unhandled error:", err);
+    console.error("[v10-generate-images] Unhandled error:", err);
     return new Response(
       JSON.stringify({ error: (err as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
