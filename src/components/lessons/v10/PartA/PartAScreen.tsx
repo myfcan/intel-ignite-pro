@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { V10IntroSlide } from '../../../../types/v10.types';
 import { IntroSlides } from './IntroSlides';
 import { IntroAudioBar } from './IntroAudioBar';
+import { ExitButton } from '../shared/ExitButton';
 
 interface PartAScreenProps {
   slides: V10IntroSlide[];
   audioUrl: string;
   onComplete: () => void;
+  onExit?: () => void;
 }
 
 /**
