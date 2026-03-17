@@ -813,7 +813,7 @@ const Dashboard = () => {
             </div>
 
             {/* ===== SECTION TITLE: TRILHAS ===== */}
-            {(v8Trails.length > 0 || v7Trails.length > 0) && (
+            {(v8Courses.length > 0 || orphanTrails.length > 0) && (
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">Trilhas</h2>
             )}
 
