@@ -125,19 +125,30 @@ serve(async (req) => {
 
     const intro_slides_ok = slidesCount > 0;
 
-    const images_ok =
-      pipeline.images_needed > 0 &&
-      pipeline.images_approved >= pipeline.images_needed;
+    // Images: pass if approved >= needed (when needed > 0), or if all steps have image elements with src
+    const images_ok = pipeline.images_needed > 0
+      ? pipeline.images_approved >= pipeline.images_needed
+      : steps.length > 0 && steps.every((s: Record<string, unknown>) => {
+          const frames = s.frames as any[];
+          if (!frames || !Array.isArray(frames)) return false;
+          return frames.some((f: any) =>
+            f.elements?.some((el: any) => el.type === "image" && el.src && el.src !== "")
+          );
+        });
 
-    const mockups_ok =
-      pipeline.mockups_total > 0 &&
-      pipeline.mockups_approved >= pipeline.mockups_total;
+    // Mockups: pass if approved >= total (when total > 0), or if all step frames have mockup_url
+    const mockups_ok = pipeline.mockups_total > 0
+      ? pipeline.mockups_approved >= pipeline.mockups_total
+      : steps.length > 0 && steps.every((s: Record<string, unknown>) => {
+          const frames = s.frames as any[];
+          if (!frames || !Array.isArray(frames)) return false;
+          return frames.every((f: any) => f.mockup_url);
+        });
 
-    // Count actual steps with audio_url instead of relying on pipeline counter
-    const stepsWithAudio = steps.filter(
-      (s: Record<string, unknown>) => s.audio_url != null && (s.audio_url as string).length > 0
-    ).length;
-    const audios_ok = steps.length > 0 && stepsWithAudio >= steps.length;
+    // Audios: pass if generated >= total (when total > 0), or if all steps have audio_url
+    const audios_ok = pipeline.audios_total > 0
+      ? pipeline.audios_generated >= pipeline.audios_total
+      : steps.length > 0 && steps.every((s: Record<string, unknown>) => !!s.audio_url);
 
     const narration_a_ok = narrations.some(
       (n: Record<string, unknown>) =>

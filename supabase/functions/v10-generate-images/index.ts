@@ -209,18 +209,31 @@ serve(async (req: Request) => {
     }
 
     // 4. Filter steps that need images
+    // A step needs an image if:
+    //   (a) it has an image element with empty/placeholder src, OR
+    //   (b) it has no image element at all in any frame
     const stepsNeedingImages = steps.filter((step: any) => {
       const frames = step.frames;
-      if (!frames || !Array.isArray(frames)) return false;
-      return frames.some((frame: any) => {
+      if (!frames || !Array.isArray(frames) || frames.length === 0) return true;
+
+      let hasImageElement = false;
+      let hasEmptyImage = false;
+
+      for (const frame of frames) {
         const elements = frame.elements;
-        if (!elements || !Array.isArray(elements)) return false;
-        return elements.some(
-          (el: any) =>
-            el.type === "image" &&
-            (!el.src || el.src === "" || el.src.startsWith("placeholder"))
-        );
-      });
+        if (!elements || !Array.isArray(elements)) continue;
+        for (const el of elements) {
+          if (el.type === "image") {
+            hasImageElement = true;
+            if (!el.src || el.src === "" || el.src.startsWith("placeholder")) {
+              hasEmptyImage = true;
+            }
+          }
+        }
+      }
+
+      // Needs image if no image element exists OR has empty image element
+      return !hasImageElement || hasEmptyImage;
     });
 
     const total = stepsNeedingImages.length;
@@ -235,8 +248,31 @@ serve(async (req: Request) => {
 
     // 6. Process each step sequentially
     for (const step of batchSteps) {
-      const frames = step.frames as any[];
+      const frames = (step.frames as any[]) || [];
       let stepUpdated = false;
+
+      // Check if step already has an image element somewhere
+      let hasExistingImage = false;
+      for (const frame of frames) {
+        if (frame.elements?.some((el: any) => el.type === "image" && el.src && el.src !== "" && !el.src.startsWith("placeholder"))) {
+          hasExistingImage = true;
+          break;
+        }
+      }
+
+      // If no image element exists, inject one into the first frame
+      if (!hasExistingImage && frames.length > 0) {
+        if (!frames[0].elements) frames[0].elements = [];
+        // Check if there's already an empty image element
+        const existingEmpty = frames[0].elements.find((el: any) => el.type === "image" && (!el.src || el.src === ""));
+        if (!existingEmpty) {
+          frames[0].elements.unshift({
+            type: "image",
+            src: "",
+            alt: `Ilustração: ${step.title || "passo da aula"}`,
+          });
+        }
+      }
 
       for (let frameIdx = 0; frameIdx < frames.length; frameIdx++) {
         const frame = frames[frameIdx];

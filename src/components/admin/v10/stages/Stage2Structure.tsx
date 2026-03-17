@@ -220,18 +220,31 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
         body: { pipeline_id: pipeline.id, num_steps: 10 },
       });
+
       if (error) {
-        toast.error('Erro ao gerar passos com IA');
+        toast.error(`Erro ao gerar passos: ${error.message || 'erro desconhecido'}`);
         return;
       }
-      const result = data as { steps_count: number; lesson_id?: string };
-      toast.success(`${result.steps_count} passos gerados pela IA!`);
-      await fetchSteps();
-      if (result.lesson_id && !pipeline.lesson_id) {
-        await onUpdate({ lesson_id: result.lesson_id });
+
+      if (data?.error) {
+        toast.error(`Erro: ${data.error}`);
+        return;
       }
-    } catch {
-      toast.error('Erro ao gerar passos com IA');
+
+      const result = data as { steps_count: number; lesson_id?: string; estimated_minutes?: number };
+      toast.success(`${result.steps_count} passos gerados pela IA!`);
+
+      // Update pipeline with lesson_id and steps count
+      const updates: Partial<V10BpaPipeline> = {
+        steps_generated: result.steps_count,
+      };
+      if (result.lesson_id) {
+        updates.lesson_id = result.lesson_id;
+      }
+      await onUpdate(updates);
+      await fetchSteps();
+    } catch (err) {
+      toast.error(`Erro ao gerar passos: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
     } finally {
       setGenerating(false);
     }

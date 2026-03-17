@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Layout, CheckCircle2, Save } from 'lucide-react';
-import type { V10BpaPipeline } from '@/types/v10.types';
+import { Layout, CheckCircle2, Save, Calculator, Upload, ChevronDown, ChevronUp, ImageIcon, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
 
 interface Stage4MockupsProps {
   pipeline: V10BpaPipeline;
@@ -18,6 +19,11 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
   const [mockupsApproved, setMockupsApproved] = useState(pipeline.mockups_approved);
   const [saving, setSaving] = useState(false);
 
+  const [steps, setSteps] = useState<V10LessonStep[]>([]);
+  const [loadingSteps, setLoadingSteps] = useState(false);
+  const [expandedStep, setExpandedStep] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
+
   const progressPercent = mockupsTotal > 0
     ? Math.round((mockupsApproved / mockupsTotal) * 100)
     : 0;
@@ -27,6 +33,29 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
     : progressPercent >= 100
       ? 'bg-green-500'
       : 'bg-yellow-500';
+
+  // Fetch steps
+  useEffect(() => {
+    if (!pipeline.lesson_id) return;
+    setLoadingSteps(true);
+    supabase
+      .from('v10_lesson_steps')
+      .select('*')
+      .eq('lesson_id', pipeline.lesson_id as string)
+      .order('step_number', { ascending: true })
+      .then(({ data }) => {
+        if (data) setSteps(data as unknown as V10LessonStep[]);
+        setLoadingSteps(false);
+      });
+  }, [pipeline.lesson_id]);
+
+  // Count frames across all steps (= mockups needed)
+  const totalFrames = steps.reduce((sum, s) => sum + (s.frames?.length || 0), 0);
+
+  const handleAutoCalc = () => {
+    setMockupsTotal(totalFrames);
+    toast.info(`Total atualizado para ${totalFrames} (frames totais). Clique em Salvar.`);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -50,6 +79,55 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
     toast.info('Todos os mockups foram marcados como aprovados. Clique em Salvar para confirmar.');
   };
 
+  // Upload a mockup screenshot for a specific step frame
+  const handleUploadMockup = useCallback(async (step: V10LessonStep, frameIndex: number, file: File) => {
+    if (!pipeline.lesson_id) return;
+
+    setUploading(`${step.id}-${frameIndex}`);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const storagePath = `v10/${pipeline.lesson_id}/mockups/step_${step.step_number}_frame_${frameIndex}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-images')
+        .upload(storagePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('lesson-images')
+        .getPublicUrl(storagePath);
+
+      // Update the frame's mockup_url in the step's frames array
+      const updatedFrames = [...step.frames];
+      if (updatedFrames[frameIndex]) {
+        (updatedFrames[frameIndex] as any).mockup_url = urlData.publicUrl;
+      }
+
+      const { error: updateError } = await supabase
+        .from('v10_lesson_steps')
+        .update({ frames: updatedFrames as any })
+        .eq('id', step.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setSteps(prev => prev.map(s =>
+        s.id === step.id ? { ...s, frames: updatedFrames } : s
+      ));
+
+      setMockupsFromRefero(prev => prev + 1);
+      toast.success(`Mockup enviado: Passo ${step.step_number}, Frame ${frameIndex + 1}`);
+    } catch (err: any) {
+      toast.error(`Erro no upload: ${err.message}`);
+    } finally {
+      setUploading(null);
+    }
+  }, [pipeline.lesson_id]);
+
   return (
     <Card>
       <CardHeader>
@@ -59,6 +137,14 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Warning if no lesson linked */}
+        {!pipeline.lesson_id && (
+          <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            Vincule uma aula primeiro (Etapa 2)
+          </div>
+        )}
+
         {/* Progress bar */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-sm font-medium">
@@ -83,65 +169,114 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
 
         {/* Metric cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Total */}
           <div className="rounded-lg border bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
-            <label className="mb-1 block text-xs font-medium text-indigo-700">
-              Total
-            </label>
-            <Input
-              type="number"
-              min={0}
-              value={mockupsTotal}
-              onChange={(e) => setMockupsTotal(Number(e.target.value))}
-              className="bg-white"
-            />
+            <label className="mb-1 block text-xs font-medium text-indigo-700">Total</label>
+            <Input type="number" min={0} value={mockupsTotal} onChange={(e) => setMockupsTotal(Number(e.target.value))} className="bg-white" />
           </div>
-
-          {/* Via Refero */}
           <div className="rounded-lg border bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
-            <label className="mb-1 block text-xs font-medium text-indigo-700">
-              Via Refero
-            </label>
-            <Input
-              type="number"
-              min={0}
-              value={mockupsFromRefero}
-              onChange={(e) => setMockupsFromRefero(Number(e.target.value))}
-              className="bg-white"
-            />
+            <label className="mb-1 block text-xs font-medium text-indigo-700">Via Refero</label>
+            <Input type="number" min={0} value={mockupsFromRefero} onChange={(e) => setMockupsFromRefero(Number(e.target.value))} className="bg-white" />
           </div>
-
-          {/* Genéricos */}
           <div className="rounded-lg border bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
-            <label className="mb-1 block text-xs font-medium text-indigo-700">
-              Genéricos
-            </label>
-            <Input
-              type="number"
-              min={0}
-              value={mockupsGeneric}
-              onChange={(e) => setMockupsGeneric(Number(e.target.value))}
-              className="bg-white"
-            />
+            <label className="mb-1 block text-xs font-medium text-indigo-700">Genéricos</label>
+            <Input type="number" min={0} value={mockupsGeneric} onChange={(e) => setMockupsGeneric(Number(e.target.value))} className="bg-white" />
           </div>
-
-          {/* Aprovados */}
           <div className="rounded-lg border bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
-            <label className="mb-1 block text-xs font-medium text-indigo-700">
-              Aprovados
-            </label>
-            <Input
-              type="number"
-              min={0}
-              value={mockupsApproved}
-              onChange={(e) => setMockupsApproved(Number(e.target.value))}
-              className="bg-white"
-            />
+            <label className="mb-1 block text-xs font-medium text-indigo-700">Aprovados</label>
+            <Input type="number" min={0} value={mockupsApproved} onChange={(e) => setMockupsApproved(Number(e.target.value))} className="bg-white" />
           </div>
         </div>
 
+        {/* Per-step mockup management */}
+        {!loadingSteps && steps.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-indigo-500" />
+              Mockups por Passo ({totalFrames} frames)
+            </h3>
+
+            <div className="space-y-2">
+              {steps.map((step) => {
+                const isExpanded = expandedStep === step.id;
+                const frameCount = step.frames?.length || 0;
+                const mockupCount = step.frames?.filter((f: any) => f.mockup_url).length || 0;
+
+                return (
+                  <div key={step.id} className="rounded-lg border">
+                    <button
+                      type="button"
+                      className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-muted/50 ${isExpanded ? 'border-b' : ''}`}
+                      onClick={() => setExpandedStep(isExpanded ? null : step.id)}
+                    >
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded text-xs font-bold bg-indigo-100 text-indigo-700">
+                        {step.step_number}
+                      </span>
+                      <span className="flex-1 text-sm font-medium truncate">{step.title}</span>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{mockupCount}/{frameCount} mockups</span>
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="p-3 space-y-3">
+                        {step.frames?.map((frame: any, fi: number) => (
+                          <div key={fi} className="flex items-center gap-3 rounded border p-2">
+                            <div className="flex-1">
+                              <p className="text-xs font-medium">Frame {fi + 1}: {frame.bar_text || 'Sem título'}</p>
+                              {frame.mockup_url ? (
+                                <div className="mt-2">
+                                  <img
+                                    src={frame.mockup_url}
+                                    alt={`Mockup frame ${fi + 1}`}
+                                    className="h-20 rounded border object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground mt-1">Sem mockup</p>
+                              )}
+                            </div>
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleUploadMockup(step, fi, file);
+                                }}
+                              />
+                              <div className={`inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors hover:bg-muted ${
+                                uploading === `${step.id}-${fi}` ? 'opacity-50' : ''
+                              }`}>
+                                <Upload className="h-3 w-3" />
+                                {frame.mockup_url ? 'Trocar' : 'Upload'}
+                              </div>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex flex-wrap gap-3">
+          {totalFrames > 0 && (
+            <Button
+              variant="outline"
+              className="min-h-[44px]"
+              onClick={handleAutoCalc}
+            >
+              <Calculator className="mr-2 h-4 w-4" />
+              Calcular ({totalFrames} frames)
+            </Button>
+          )}
+
           <Button
             variant="outline"
             className="min-h-[44px]"
