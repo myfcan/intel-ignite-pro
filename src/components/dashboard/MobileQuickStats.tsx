@@ -122,7 +122,7 @@ export const MobileQuickStats = ({ streakDays, userName, isLoading = false, miss
 
           {/* Dynamic CTA for first 5 accesses */}
           {accessCount < 5 && (
-            <OnboardingCTA activeTrail={activeTrail} hasProgress={hasProgress} v8TrailId={v8TrailId} />
+            <OnboardingCTA activeTrail={activeTrail} hasProgress={hasProgress} />
           )}
 
           {/* Quick action pills — hidden during first 5 accesses */}

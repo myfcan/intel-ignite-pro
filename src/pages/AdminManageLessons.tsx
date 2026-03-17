@@ -889,7 +889,7 @@ export default function AdminManageLessons() {
                 <Select value={v10TargetTrailId} onValueChange={setV10TargetTrailId}>
                   <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
                   <SelectContent>
-                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title} {t.trail_type ? `(${t.trail_type})` : ''}</SelectItem>)}
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

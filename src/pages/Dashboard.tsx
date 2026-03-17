@@ -1225,7 +1225,7 @@ const Dashboard = () => {
                 </div>
                 {/* Dots */}
                 <div className="flex items-center justify-center gap-2 mt-0">
-                  {v7Trails.map((_, idx) => (
+                  {orphanTrails.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
