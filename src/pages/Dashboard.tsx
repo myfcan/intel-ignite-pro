@@ -1251,14 +1251,14 @@ const Dashboard = () => {
                           transition: 'transform 220ms ease, filter 220ms ease, opacity 220ms ease',
                         }}
                       >
-                        <TrailCard
-                          trail={trail}
-                          Icon={TRAIL_ICONS[trail.icon] || BookOpen}
-                          gradient="from-indigo-500 to-violet-500"
-                          progress={trailProgress?.progress || 0}
-                          completedLessons={trailProgress?.completedLessons || 0}
-                          totalLessons={trailProgress?.totalLessons || 0}
-                          status={trailProgress?.status || "locked"}
+                        <V8TrailCard
+                          trailId={trail.id}
+                          title={trail.title}
+                          description={trail.description || ''}
+                          icon={trail.icon || '📘'}
+                          lessonCount={trailProgress?.totalLessons || 0}
+                          completedCount={trailProgress?.completedLessons || 0}
+                          orderIndex={trail.order_index}
                         />
                       </div>
                     );
@@ -1325,14 +1325,14 @@ const Dashboard = () => {
                         const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                         return (
                           <div key={trail.id} className="flex-1 min-w-0">
-                            <TrailCard
-                              trail={trail}
-                              Icon={TRAIL_ICONS[trail.icon] || BookOpen}
-                              gradient="from-indigo-500 to-violet-500"
-                              progress={trailProgress?.progress || 0}
-                              completedLessons={trailProgress?.completedLessons || 0}
-                              totalLessons={trailProgress?.totalLessons || 0}
-                              status={trailProgress?.status || "locked"}
+                            <V8TrailCard
+                              trailId={trail.id}
+                              title={trail.title}
+                              description={trail.description || ''}
+                              icon={trail.icon || '📘'}
+                              lessonCount={trailProgress?.totalLessons || 0}
+                              completedCount={trailProgress?.completedLessons || 0}
+                              orderIndex={trail.order_index}
                             />
                           </div>
                         );
