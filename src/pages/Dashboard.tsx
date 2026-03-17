@@ -928,7 +928,7 @@ const Dashboard = () => {
                   })}
                 </div>
                 <div className="flex items-center justify-center gap-2 mt-2">
-                  {v8Courses.map((_, idx) => (
+                  {maestriaCourses.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
