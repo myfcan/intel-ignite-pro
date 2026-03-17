@@ -169,7 +169,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             user_id: user.id,
             lesson_id: lesson.id,
             current_part: 'A',
-            current_step: 0,
+            current_step: 1,
             current_frame: 0,
             completed: false,
             started_at: new Date().toISOString(),
