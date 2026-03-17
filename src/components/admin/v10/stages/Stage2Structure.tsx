@@ -129,7 +129,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         ...(selectedCourseId ? { course_id: selectedCourseId } : {}),
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('v10_lessons')
         .insert(payload)
         .select('id')
