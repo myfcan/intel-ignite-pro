@@ -846,16 +846,7 @@ export default function AdminManageLessons() {
                     <Input value={newTrailTitle} onChange={(e) => setNewTrailTitle(e.target.value)} placeholder="Ex: Dominando IA Generativa" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Tipo</label>
-                    <Select value={newTrailType} onValueChange={(v) => setNewTrailType(v as 'v7' | 'v8' | 'v10')}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="v7">V7 (Trilha → Jornada → Aula)</SelectItem>
-                        <SelectItem value="v8">V8 (Trilha → Jornada → Aula)</SelectItem>
-                        <SelectItem value="v10">V10 (BPA Step-by-Step)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  
                   <div>
                     <label className="text-sm font-medium mb-1 block">Ícone da Trilha (opcional)</label>
                     <Input value={newTrailIcon} onChange={(e) => setNewTrailIcon(e.target.value)} placeholder="Ex: 🚀 ou Brain" />
