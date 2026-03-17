@@ -441,6 +441,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
           totalSteps={steps.length}
           onFrameChange={handleFrameChange}
           accentColor={currentStep.accent_color}
+          onReplayStep={handleReplayStep}
         />
 
         {/* LIV Fab */}
