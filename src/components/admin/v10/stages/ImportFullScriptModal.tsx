@@ -310,12 +310,18 @@ export function ImportFullScriptModal({
           <div className="flex items-center gap-2">
             <Checkbox
               id="auto-tag"
-              checked={autoTag}
+              checked={effectiveAutoTag}
+              disabled={hasExistingTags}
               onCheckedChange={(v) => setAutoTag(!!v)}
             />
             <label htmlFor="auto-tag" className="text-sm cursor-pointer">
               Inserir tags <code className="text-xs bg-muted px-1 rounded">[ANCHOR:*]</code> automaticamente
             </label>
+            {hasExistingTags && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] text-blue-700 font-medium">
+                <CheckCircle2 className="h-3 w-3" /> Tags já presentes no script
+              </span>
+            )}
           </div>
 
           {/* Preview */}
