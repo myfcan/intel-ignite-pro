@@ -148,6 +148,8 @@ export default function AdminManageLessons() {
 
   // Build hierarchy
   const hierarchy = useMemo(() => {
+    const activeTrailIds = new Set(trails.map(t => t.id));
+
     const trailMap = trails.map(trail => {
       const trailCourses = courses
         .filter(c => c.trail_id === trail.id)
@@ -157,22 +159,30 @@ export default function AdminManageLessons() {
           v10Lessons: v10Lessons.filter(l => l.course_id === course.id).sort((a, b) => a.order_in_trail - b.order_in_trail),
         }));
 
-      // Orphaned lessons: have trail_id but no course_id
       const orphanedLessons = lessons.filter(l => l.trail_id === trail.id && !l.course_id);
-
-      // V10 lessons linked to this trail but NOT to any course (orphaned V10)
       const trailV10Lessons = v10Lessons.filter(l => l.trail_id === trail.id && !l.course_id);
 
       return { ...trail, courses: trailCourses, orphanedLessons, v10Lessons: trailV10Lessons };
     });
 
-    // Fully orphaned: no trail_id at all
-    const fullyOrphaned = lessons.filter(l => !l.trail_id);
+    // Orphaned courses: trail_id is NULL or points to an inactive trail
+    const orphanedCourses = courses.filter(c => !c.trail_id || !activeTrailIds.has(c.trail_id));
 
-    // V10 orphaned: no trail_id
-    const v10Orphaned = v10Lessons.filter(l => !l.trail_id && !l.course_id);
+    // Fully orphaned lessons: no trail_id OR trail_id points to inactive trail (and no course_id in active)
+    const fullyOrphaned = lessons.filter(l => {
+      if (!l.trail_id) return true;
+      if (!activeTrailIds.has(l.trail_id) && !l.course_id) return true;
+      return false;
+    });
 
-    return { trails: trailMap, fullyOrphaned, v10Orphaned };
+    // V10 orphaned: no trail_id or trail points to inactive
+    const v10Orphaned = v10Lessons.filter(l => {
+      if (!l.trail_id && !l.course_id) return true;
+      if (l.trail_id && !activeTrailIds.has(l.trail_id) && !l.course_id) return true;
+      return false;
+    });
+
+    return { trails: trailMap, orphanedCourses, fullyOrphaned, v10Orphaned };
   }, [trails, courses, lessons, v10Lessons]);
 
   function toggleLesson(id: string) {
