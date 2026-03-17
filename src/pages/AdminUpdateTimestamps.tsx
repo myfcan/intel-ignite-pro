@@ -83,7 +83,7 @@ O futuro já começou, e você está pronto pra aproveitar!`.trim();
         {
           body: {
             text: lessonText,
-            voice_id: 'oqUwsXKac3MSo4E51ySV',
+            voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice — padrão global
             model_id: 'eleven_multilingual_v2',
             section_markers: sectionMarkers
           }
