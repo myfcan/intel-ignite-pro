@@ -446,7 +446,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               onComplete={handlePartBComplete}
               onBack={() => setCurrentPart('A')}
               onExit={handleExit}
-              initialStep={Math.min((userProgress?.current_step ?? 1) - 1, Math.max(steps.length - 1, 0))}
+              initialStep={Math.max(0, Math.min((userProgress?.current_step ?? 1) - 1, steps.length - 1))}
               initialFrame={userProgress?.current_frame ?? 0}
               onProgressUpdate={handleProgressUpdate}
             />
