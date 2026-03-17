@@ -265,6 +265,33 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
               Nenhuma aula vinculada ao pipeline
             </p>
           </div>
+
+          {/* Trail/Course selectors */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Trilha (N1)</Label>
+              <Select value={selectedTrailId} onValueChange={(val) => { setSelectedTrailId(val); setSelectedCourseId(''); }}>
+                <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                <SelectContent>
+                  {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedTrailId && (
+              <div className="space-y-2">
+                <Label>Jornada (N2)</Label>
+                <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma jornada" /></SelectTrigger>
+                  <SelectContent>
+                    {courses.filter(c => c.trail_id === selectedTrailId).map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <Button
               onClick={handleCreateLesson}
