@@ -894,7 +894,7 @@ const Dashboard = () => {
                   }}
                   aria-label="Carrossel de trilhas V8"
                 >
-                  {v8Courses.map((course, idx) => {
+                  {maestriaCourses.map((course, idx) => {
                     const isActive = idx === snapActiveIndexV8;
                     return (
                       <div
