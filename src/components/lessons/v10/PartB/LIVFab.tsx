@@ -17,11 +17,25 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
   return (
     <>
       <div className="absolute z-50 right-4 bottom-[8.5rem] flex flex-col items-center gap-3">
+        {/* Speaking ripple rings */}
+        {isIntense && (
+          <div className="absolute inset-0 w-16 h-16 pointer-events-none">
+            <span
+              className="absolute inset-0 rounded-full"
+              style={{ animation: 'liv-speak-ring 1.8s ease-out infinite', border: '1.5px solid rgba(139, 92, 246, 0.35)' }}
+            />
+            <span
+              className="absolute inset-0 rounded-full"
+              style={{ animation: 'liv-speak-ring 1.8s ease-out 0.6s infinite', border: '1.5px solid rgba(139, 92, 246, 0.25)' }}
+            />
+          </div>
+        )}
+
         {/* LivAvatar — pulsing indicator */}
         <button
           type="button"
           onClick={onClick}
-          className="w-16 h-16 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-transform active:scale-90"
+          className="relative w-16 h-16 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-transform active:scale-90"
           style={{
             animation: isIntense
               ? 'liv-fab-pulse-intense 0.6s ease-in-out infinite'
@@ -76,6 +90,10 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
         @keyframes liv-fab-pulse-intense {
           0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.45), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1); }
           50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.65), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1.08); }
+        }
+        @keyframes liv-speak-ring {
+          0% { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(1.5); opacity: 0; }
         }
       `}</style>
     </>
