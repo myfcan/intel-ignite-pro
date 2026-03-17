@@ -131,7 +131,7 @@ export default function AdminManageLessons() {
     setLoading(true);
     try {
       const [trailsRes, coursesRes, lessonsRes, v10Res] = await Promise.all([
-        supabase.from('trails').select('id, title, order_index, trail_type').order('order_index'),
+        supabase.from('trails').select('id, title, order_index, trail_type, is_active').eq('is_active', true).order('order_index'),
         supabase.from('courses').select('id, trail_id, title, order_index, is_active').order('order_index'),
         supabase.from('lessons').select('id, title, trail_id, course_id, order_index, is_active, created_at, estimated_time, model').order('order_index'),
         supabase.from('v10_lessons').select('id, slug, title, description, trail_id, course_id, order_in_trail, total_steps, estimated_minutes, tools, badge_icon, status, created_at').order('order_in_trail'),
