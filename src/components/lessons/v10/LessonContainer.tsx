@@ -169,7 +169,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
             user_id: user.id,
             lesson_id: lesson.id,
             current_part: 'A',
-            current_step: 0,
+            current_step: 1,
             current_frame: 0,
             completed: false,
             started_at: new Date().toISOString(),
@@ -446,7 +446,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               onComplete={handlePartBComplete}
               onBack={() => setCurrentPart('A')}
               onExit={handleExit}
-              initialStep={Math.min((userProgress?.current_step ?? 1) - 1, Math.max(steps.length - 1, 0))}
+              initialStep={Math.max(0, Math.min((userProgress?.current_step ?? 1) - 1, steps.length - 1))}
               initialFrame={userProgress?.current_frame ?? 0}
               onProgressUpdate={handleProgressUpdate}
             />

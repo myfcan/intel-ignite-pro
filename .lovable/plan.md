@@ -1,90 +1,157 @@
 
 
-# Diagnóstico: Aula "SDR de Voz com IA" — Tela Escura / Parcial
+# Auditoria Forense do Plano — Com Dados Reais do Código
 
-## Bug Confirmado com Dados Reais
+---
 
-**Registro de progresso no banco:**
+## 1. CONFIRMADO: A raiz do problema está no template e no refine
+
+**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
+```markdown
+### Seção 3 (índice 2) — Ponte para primeiro exercício
+**Objetivo:** Frase curta de transição para o primeiro exercício.
+
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
 ```
-current_part: B
-current_step: 0    ← CAUSA RAIZ
-current_frame: 0
-completed: false
-user_id: 4c59eb45-5d48-4c17-a5f2-40d1b472c0dd
-```
-
-## Cadeia de Falha (com linhas reais)
-
-**1. LessonContainer.tsx, linha 449** — calcula `initialStep`:
-```tsx
-initialStep={Math.min((userProgress?.current_step ?? 1) - 1, Math.max(steps.length - 1, 0))}
-```
-Com `current_step = 0`: `Math.min((0 - 1), 26)` = **`-1`**
-
-**2. PartBScreen.tsx, linha 57** — inicializa com -1:
-```tsx
-const [currentStepIndex, setCurrentStepIndex] = useState(initialStep); // useState(-1)
 ```
 
-**3. PartBScreen.tsx, linhas 73-74** — índice inválido:
-```tsx
-const currentStep = steps[-1];       // → undefined
-const currentFrame = currentStep?.frames?.[0]; // → undefined
+E o exercício associado (linha 89):
+```json
+"title": "Teste rápido: respostas genéricas",
 ```
 
-**4. PartBScreen.tsx, linhas 396-398** — retorna null:
-```tsx
-if (!currentStep || !currentFrame) {
-    return null;  // ← TELA VAZIA
+Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
+
+**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
+```
+11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
+
+13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
+```
+
+A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
+
+---
+
+## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
+
+**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
+```typescript
+if (refineResponse.ok) {
+  const refineResult = await refineResponse.json();
+  if (refineResult.sections && Array.isArray(refineResult.sections)) {
+    // Replace section content with refined versions — protect Section 0 (Abertura)
+    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
+      parsed.sections[i].content = refineResult.sections[refIdx].content;
+    }
+  }
 }
 ```
 
-**Resultado:** Part B renderiza `null`. No desktop, só a sidebar lateral aparece (visível a partir de `lg:flex` / 1024px). No mobile, tudo fica escuro.
+O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
 
-## Origem do `current_step: 0`
+---
 
-LessonContainer.tsx, linhas 168-174 — o insert inicial grava `current_step: 0`:
-```tsx
-const newProgress = {
-    user_id: user.id,
-    lesson_id: lesson.id,
-    current_part: 'A',
-    current_step: 0,   // ← default errado (0-based), mas consumido como 1-based
-    current_frame: 0,
-    ...
+## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
+
+**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
+```typescript
+const finalData: V8LessonData = {
+  contentVersion: "v8",
+  title: parsed.title,
+  // ...
 };
 ```
 
-Porém, ao avançar passos (linha 231), salva como 1-based:
-```tsx
-debouncedSave({ current_step: step + 1, current_frame: frame });
+O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+
+---
+
+## 4. CONFIRMADO: `v8-generate-raw-content` não existe
+
+```
+code--search_files: No matches found for pattern 'v8-generate-raw-content'
 ```
 
-O valor 0 é um estado intermediário que ocorre quando o progresso é criado mas o usuário ainda não avançou nenhum passo da Part B. Quando a Part B inicia, esse 0 é transformado em -1 pelo cálculo `(current_step - 1)`.
+A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
 
-## Correção
+---
 
-Dois pontos, ambos em **`src/components/lessons/v10/LessonContainer.tsx`**:
+## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
 
-**Fix 1 — Linha 449:** Proteger contra valores ≤ 0:
-```tsx
-initialStep={Math.max(0, Math.min((userProgress?.current_step ?? 1) - 1, steps.length - 1))}
+**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
+```markdown
+Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
 ```
 
-**Fix 2 — Linha 174:** Corrigir default para 1 (consistente com a convenção 1-based):
-```tsx
-current_step: 1,
-```
+Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
 
-## Análise de Efeito Sistêmico
+---
 
-| Impacto | Risco |
-|---|---|
-| Outros usuários com `current_step: 0` | Mesmo bug se abrirem a aula. Fix 1 resolve retroativamente. |
-| `handleProgressUpdate` (linha 231) | Já salva 1-based (`step + 1`). Sem conflito. |
-| `initialFrame` (linha 450) | Usa `current_frame ?? 0`. Sem risco — 0 é válido como índice. |
-| Part A / Part C | Não consomem `current_step`. Sem impacto. |
-| Dashboard / progresso | Lê `completed` e `current_part`, não `current_step` diretamente. Sem impacto. |
+## 6. GAPS NO PLANO PROPOSTO
 
-**Conclusão:** Correção cirúrgica de 2 linhas, sem efeitos colaterais.
+### Gap A: O plano NÃO endereça o `contractPattern` não salvo
+O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
+
+**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
+
+### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
+Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
+
+**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
+
+### Gap C: Parser compatibility com output da IA
+O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
+
+**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
+
+### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
+A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+
+---
+
+## 7. PLANO REVISADO FINAL
+
+### Arquivos a criar/modificar
+
+| Arquivo | Ação | O que muda |
+|---------|------|------------|
+| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
+| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
+| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
+| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
+| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
+
+### Detalhes por arquivo
+
+**1. `v8-generate-raw-content/index.ts` (NOVO)**
+- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
+- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
+- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
+- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
+- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
+- Modelo: `google/gemini-2.5-flash`
+
+**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
+- Adicionar após Regra 13:
+  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
+  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
+
+**3. `AdminV8Create.tsx` (EDITAR)**
+- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
+- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
+- Função `sectionsToMarkdown()` para converter output da function em markdown
+- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
+
+**4. `v8Lesson.ts` (EDITAR linha ~136)**
+- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
+
+### Riscos residuais
+
+| Risco | Severidade | Mitigação |
+|-------|-----------|-----------|
+| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
+| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
+| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
 
