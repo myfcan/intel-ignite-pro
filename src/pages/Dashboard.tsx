@@ -683,7 +683,7 @@ const Dashboard = () => {
                 {trailSections.map((section, idx) => (
                   <TrailSection
                     key={section.trail.id}
-                    trailTitle={section.trail.id === maestriaTrailId ? 'Suas Jornadas' : section.trail.title}
+                    trailTitle={section.trail.id === maestriaTrailId ? 'Seu caminho para Maestria' : section.trail.title}
                     courses={section.courses}
                     sectionId={idx === 0 ? 'tour-trilhas' : undefined}
                     isMaestria={section.trail.id === maestriaTrailId}
