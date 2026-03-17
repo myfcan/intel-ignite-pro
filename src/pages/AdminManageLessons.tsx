@@ -1082,6 +1082,45 @@ export default function AdminManageLessons() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Move Course (Jornada) Modal */}
+        <Dialog open={showMoveCourseModal} onOpenChange={setShowMoveCourseModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderInput className="w-5 h-5 text-primary" />
+                Mover Jornada
+              </DialogTitle>
+              <DialogDescription>Selecione a trilha destino para esta jornada</DialogDescription>
+            </DialogHeader>
+
+            {moveCourseTarget && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Jornada:</p>
+                <p className="text-sm text-muted-foreground">{courses.find(c => c.id === moveCourseTarget)?.title}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Trilha destino (N1)</label>
+                <Select value={moveCourseTrailId} onValueChange={setMoveCourseTrailId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                  <SelectContent>
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowMoveCourseModal(false)} disabled={movingCourse}>Cancelar</Button>
+              <Button onClick={handleMoveCourse} disabled={movingCourse || !moveCourseTrailId}>
+                {movingCourse ? 'Movendo...' : 'Confirmar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
