@@ -125,30 +125,34 @@ serve(async (req) => {
 
     const intro_slides_ok = slidesCount > 0;
 
-    // Images: pass if approved >= needed (when needed > 0), or if all steps have image elements with src
-    const images_ok = pipeline.images_needed > 0
-      ? pipeline.images_approved >= pipeline.images_needed
-      : steps.length > 0 && steps.every((s: Record<string, unknown>) => {
-          const frames = s.frames as any[];
-          if (!frames || !Array.isArray(frames)) return false;
-          return frames.some((f: any) =>
-            f.elements?.some((el: any) => el.type === "image" && el.src && el.src !== "")
-          );
-        });
+    // Images: ALWAYS verify real data in frames — never trust pipeline counters alone
+    const images_ok =
+      steps.length > 0 &&
+      steps.every((s: Record<string, unknown>) => {
+        const frames = s.frames as any[];
+        if (!frames || !Array.isArray(frames)) return false;
+        return frames.some((f: any) =>
+          f.elements?.some(
+            (el: any) => el.type === "image" && el.src && el.src !== "" && !el.src.startsWith("placeholder")
+          )
+        );
+      });
 
-    // Mockups: pass if approved >= total (when total > 0), or if all step frames have mockup_url
-    const mockups_ok = pipeline.mockups_total > 0
-      ? pipeline.mockups_approved >= pipeline.mockups_total
-      : steps.length > 0 && steps.every((s: Record<string, unknown>) => {
-          const frames = s.frames as any[];
-          if (!frames || !Array.isArray(frames)) return false;
-          return frames.every((f: any) => f.mockup_url);
-        });
+    // Mockups: ALWAYS verify real mockup_url on every frame — never trust counters
+    const mockups_ok =
+      steps.length > 0 &&
+      steps.every((s: Record<string, unknown>) => {
+        const frames = s.frames as any[];
+        if (!frames || !Array.isArray(frames) || frames.length === 0) return false;
+        return frames.every((f: any) => f.mockup_url && f.mockup_url !== "");
+      });
 
-    // Audios: pass if generated >= total (when total > 0), or if all steps have audio_url
-    const audios_ok = pipeline.audios_total > 0
-      ? pipeline.audios_generated >= pipeline.audios_total
-      : steps.length > 0 && steps.every((s: Record<string, unknown>) => !!s.audio_url);
+    // Audios: ALWAYS verify real audio_url on every step — never trust counters
+    const audios_ok =
+      steps.length > 0 &&
+      steps.every((s: Record<string, unknown>) =>
+        typeof s.audio_url === "string" && s.audio_url.trim().length > 0
+      );
 
     const narration_a_ok = narrations.some(
       (n: Record<string, unknown>) =>
