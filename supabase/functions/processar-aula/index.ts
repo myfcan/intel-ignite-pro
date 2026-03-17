@@ -211,12 +211,13 @@ async function chamarElevenLabs(texto: string): Promise<Response> {
       },
       body: JSON.stringify({
         text: texto,
-        model_id: 'eleven_v3',
+        model_id: 'eleven_multilingual_v2',
         language_code: 'pt',
         voice_settings: {
-          stability: 0.75,
+          stability: 0.5,
           similarity_boost: 0.75,
-          speed: 1.1
+          style: 0.3,
+          use_speaker_boost: true
         }
       })
     }

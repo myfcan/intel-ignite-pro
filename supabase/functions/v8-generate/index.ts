@@ -9,11 +9,13 @@ const corsHeaders = {
 // ─── ElevenLabs config ───
 // CRITICAL: eleven_v3 prevents accent drift to PT-PT on sequential requests
 // See memory: elevenlabs-model-and-sanitization-standard-v2
-const VOICE_ID = 'oqUwsXKac3MSo4E51ySV'; // Taciana PT-BR nativa (professional)
-const MODEL_ID = 'eleven_v3';
+const VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2'; // Alice — padrão global
+const MODEL_ID = 'eleven_multilingual_v2';
 const VOICE_SETTINGS = {
-  stability: 0.75,
+  stability: 0.5,
   similarity_boost: 0.75,
+  style: 0.3,
+  use_speaker_boost: true,
 };
 
 interface V8Section {

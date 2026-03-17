@@ -342,7 +342,7 @@ async function generateStepScript(
   const description = step.description || '';
   const frameContent = step.frame_content || step.content || '';
 
-  const systemPrompt = `Você é uma narradora brasileira chamada Taciana, com voz amigável e envolvente. Gere um script de narração curto e claro para um passo de uma aula prática de tecnologia. O script deve:
+  const systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração curto e claro para um passo de uma aula prática de tecnologia. O script deve:
 - Explicar o que o aluno precisa fazer neste passo
 - Ser direto e objetivo, mas amigável
 - Contextualizar o passo dentro do aprendizado
