@@ -538,8 +538,7 @@ export default function AdminManageLessons() {
                         <div className="flex-1">
                           <CardTitle className="text-base flex items-center gap-2">
                             {trail.title}
-                            {trail.trail_type === 'v8' && <Badge className="text-xs bg-indigo-500/20 text-indigo-400 border-indigo-500/30">V8</Badge>}
-                            {trail.trail_type === 'v10' && <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">V10</Badge>}
+                            {trail.trail_type && <Badge variant="outline" className="text-xs">{trail.trail_type}</Badge>}
                           </CardTitle>
                           <CardDescription className="text-xs">
                             {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0) + trail.v10Lessons.length} aula(s)
