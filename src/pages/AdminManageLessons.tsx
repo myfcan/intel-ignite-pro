@@ -333,8 +333,33 @@ export default function AdminManageLessons() {
     }
   }
 
+  // Move course (jornada) to a trail
+  async function handleMoveCourse() {
+    if (!moveCourseTarget || !moveCourseTrailId) {
+      toast({ title: 'Selecione uma trilha', variant: 'destructive' });
+      return;
+    }
+    setMovingCourse(true);
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ trail_id: moveCourseTrailId })
+        .eq('id', moveCourseTarget);
+      if (error) throw error;
+      const course = courses.find(c => c.id === moveCourseTarget);
+      toast({ title: 'Jornada movida', description: `"${course?.title}" vinculada à trilha` });
+      setShowMoveCourseModal(false);
+      setMoveCourseTarget('');
+      setMoveCourseTrailId('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao mover jornada', description: error.message, variant: 'destructive' });
+    } finally {
+      setMovingCourse(false);
+    }
+  }
+
   
-  async function handleCreateCourse() {
     let trailId = newCourseTrailId;
 
     // If creating a new trail first
