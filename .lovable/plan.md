@@ -1,157 +1,119 @@
 
 
-# Auditoria Forense do Plano — Com Dados Reais do Código
+# Diagnóstico e Plano — LIV FAB posicionamento + Audio overlap A/B
 
 ---
 
-## 1. CONFIRMADO: A raiz do problema está no template e no refine
+## Bug 1: LIV e menu flutuantes no canto da tela (desktop)
 
-**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
-```markdown
-### Seção 3 (índice 2) — Ponte para primeiro exercício
-**Objetivo:** Frase curta de transição para o primeiro exercício.
+### Causa raiz real
 
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
-```
+`LIVFab.tsx` usa `position: fixed` com valores `right` em pixels (linhas 48-51, 65-68):
 
-E o exercício associado (linha 89):
-```json
-"title": "Teste rápido: respostas genéricas",
+```tsx
+// linha 48-51:
+className="fixed z-[9999] w-14 h-14 ..."
+style={{
+  right: pos.avatarRight,   // 80px no desktop
+  bottom: pos.avatarBottom,  // 185px no desktop
+}}
 ```
 
-Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
+Com `position: fixed`, o FAB se posiciona relativo ao **viewport**, não ao container da aula. Agora que o container usa `max-w-[960px]` centralizado, o FAB flutua no canto direito da tela, fora da área visual da aula.
 
-**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
-```
-11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
+### Correção
 
-13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
-```
+Mudar de `fixed` para `absolute` e posicionar dentro do container `relative` já existente em `PartBScreen.tsx` (linha 408: `<div className="flex flex-col flex-1 min-w-0 h-full relative">`).
 
-A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
+**`LIVFab.tsx`:**
+- Trocar `fixed` por `absolute` nos dois botões (linhas 48 e 65)
+- Remover `useResponsivePosition()` — os valores fixos de `right/bottom` em pixels ficam desnecessários
+- Usar classes Tailwind com valores fixos: `right-4 bottom-28` (avatar) e `right-5 bottom-16` (menu button)
+- Mobile não é afetado — o container `relative` ocupa 100% da tela, `absolute` se comporta identicamente a `fixed`
+
+### Efeito sistêmico
+- O parent `relative` já existe (`PartBScreen.tsx` linha 408). Sem mudança necessária.
+- `z-[9999]` pode ser reduzido para `z-50` já que `absolute` opera dentro do stacking context do container.
+- `LIVSheet` (Drawer) usa portal do Radix — não é afetado pela mudança de posicionamento do FAB.
 
 ---
 
-## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
+## Bug 2: Áudios de Part A e Part B tocam simultaneamente
 
-**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
-```typescript
-if (refineResponse.ok) {
-  const refineResult = await refineResponse.json();
-  if (refineResult.sections && Array.isArray(refineResult.sections)) {
-    // Replace section content with refined versions — protect Section 0 (Abertura)
-    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
-      parsed.sections[i].content = refineResult.sections[refIdx].content;
-    }
-  }
-}
+### Causa raiz real
+
+`LessonContainer.tsx` usa `display: none/flex` para alternar partes (linhas 427-454):
+
+```tsx
+// linha 429:
+style={{ display: currentPart === 'A' ? 'flex' : 'none' }}
+// linha 442:
+style={{ display: currentPart === 'B' ? 'flex' : 'none' }}
 ```
 
-O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
+Quando `handlePartAComplete` é chamado (linha 234), `setCurrentPart('B')` muda o display de Part A para `none` — **mas o componente NÃO é desmontado**. O `<audio>` de Part A continua tocando em background.
 
----
+Simultaneamente, `PartBScreen.tsx` auto-inicia o áudio do step 1 via listener `canplay` (linhas 220-224):
 
-## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
-
-**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
-```typescript
-const finalData: V8LessonData = {
-  contentVersion: "v8",
-  title: parsed.title,
-  // ...
+```tsx
+const onCanPlay = () => {
+  audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+  audio.removeEventListener('canplay', onCanPlay);
 };
+audio.addEventListener('canplay', onCanPlay);
 ```
 
-O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+Resultado: **dois áudios tocando ao mesmo tempo**.
+
+O cleanup em `PartAScreen.tsx` (linhas 90-98) só executa no **unmount**, que nunca acontece:
+
+```tsx
+useEffect(() => {
+  return () => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  };
+}, []);
+```
+
+### Correção
+
+Parar o áudio de Part A **antes** de chamar `onComplete`. Nos 3 pontos de `PartAScreen.tsx` onde `onComplete` é chamado (linhas 162, 198, 210), adicionar `audioRef.current?.pause()` antes:
+
+```tsx
+// Padrão: parar áudio, depois chamar onComplete
+const stopAndComplete = useCallback(() => {
+  const audio = audioRef.current;
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+  }
+  onComplete();
+}, [onComplete]);
+```
+
+Substituir todas as chamadas `onComplete()` por `stopAndComplete()` nos 3 pontos:
+- Linha 162: `onComplete={onComplete}` no `IntroSlides` → `onComplete={stopAndComplete}`
+- Linha 198: botão "Começar aula" (sem áudio) → `onClick={stopAndComplete}`
+- Linha 210: botão "Começar aula" (áudio ended) → `onClick={stopAndComplete}`
+- Linha 218: botão "Pular introdução" → `onClick={stopAndComplete}`
+
+### Efeito sistêmico
+- Part C (`PartCScreen`) não tem auto-play de áudio no mount — sem risco de overlap B→C.
+- O `currentTime = 0` garante que ao retornar a Part A (via botão "Voltar" em Part B), o áudio recomeça do início.
+- O display:none já impede interação visual — esta correção alinha o comportamento de áudio.
 
 ---
 
-## 4. CONFIRMADO: `v8-generate-raw-content` não existe
+## Resumo
 
-```
-code--search_files: No matches found for pattern 'v8-generate-raw-content'
-```
+| Arquivo | Mudança |
+|---|---|
+| `LIVFab.tsx` | `fixed` → `absolute`, remover `useResponsivePosition`, usar classes Tailwind estáticas |
+| `PartAScreen.tsx` | Criar `stopAndComplete` que para áudio antes de chamar `onComplete`; substituir em 4 pontos |
 
-A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
-
----
-
-## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
-
-**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
-
-Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
-
----
-
-## 6. GAPS NO PLANO PROPOSTO
-
-### Gap A: O plano NÃO endereça o `contractPattern` não salvo
-O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
-
-**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
-
-### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
-Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
-
-**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
-
-### Gap C: Parser compatibility com output da IA
-O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
-
-**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
-
-### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
-A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
-
----
-
-## 7. PLANO REVISADO FINAL
-
-### Arquivos a criar/modificar
-
-| Arquivo | Ação | O que muda |
-|---------|------|------------|
-| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
-| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
-| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
-| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
-| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
-
-### Detalhes por arquivo
-
-**1. `v8-generate-raw-content/index.ts` (NOVO)**
-- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
-- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
-- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
-- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
-- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
-- Modelo: `google/gemini-2.5-flash`
-
-**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
-- Adicionar após Regra 13:
-  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
-  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
-
-**3. `AdminV8Create.tsx` (EDITAR)**
-- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
-- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
-- Função `sectionsToMarkdown()` para converter output da function em markdown
-- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
-
-**4. `v8Lesson.ts` (EDITAR linha ~136)**
-- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
-
-### Riscos residuais
-
-| Risco | Severidade | Mitigação |
-|-------|-----------|-----------|
-| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
-| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
-| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
+Total: 2 arquivos. Zero risco em mobile (absolute dentro de container fullscreen = mesmo resultado que fixed). Zero impacto no banco de dados.
 
