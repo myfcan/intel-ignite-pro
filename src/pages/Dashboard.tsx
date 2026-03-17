@@ -142,9 +142,10 @@ const Dashboard = () => {
       }
     }
 
-    // Then other trails sorted by order_index
+    // Then other ALLOWED trails sorted by order_index (only N1: Maestria=9, IA Profissionais=2, Renda Extra PRO=3)
+    const allowedOrderIndexes = new Set([9, 2, 3]);
     const otherTrails = trails
-      .filter(t => t.id !== maestriaTrailId && grouped.has(t.id))
+      .filter(t => t.id !== maestriaTrailId && grouped.has(t.id) && allowedOrderIndexes.has(t.order_index))
       .sort((a, b) => a.order_index - b.order_index);
 
     for (const trail of otherTrails) {
@@ -682,7 +683,7 @@ const Dashboard = () => {
                 {trailSections.map((section, idx) => (
                   <TrailSection
                     key={section.trail.id}
-                    trailTitle={section.trail.id === maestriaTrailId ? 'Suas Jornadas' : section.trail.title}
+                    trailTitle={section.trail.id === maestriaTrailId ? 'Seu caminho para Maestria' : section.trail.title}
                     courses={section.courses}
                     sectionId={idx === 0 ? 'tour-trilhas' : undefined}
                     isMaestria={section.trail.id === maestriaTrailId}
