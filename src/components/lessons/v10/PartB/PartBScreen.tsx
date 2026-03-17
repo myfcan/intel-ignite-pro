@@ -296,11 +296,17 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   const handleContinue = useCallback(() => {
     if (!currentStep) return;
 
+    const audio = audioRef.current;
+
     if (currentFrameIndex < (currentStep.frames?.length ?? 1) - 1) {
       // Next frame
       setCurrentFrameIndex((prev) => prev + 1);
     } else if (currentStepIndex < steps.length - 1) {
-      // Next step, reset frame
+      // Next step — pause current audio before advancing
+      if (audio) {
+        audio.pause();
+        setIsPlaying(false);
+      }
       setCurrentStepIndex((prev) => prev + 1);
       setCurrentFrameIndex(0);
       setCurrentTime(0);
