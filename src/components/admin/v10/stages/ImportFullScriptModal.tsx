@@ -99,8 +99,10 @@ const METADATA_MARKERS = [
 function parseFullScript(rawText: string): ParseResult {
   const ignoredSections: string[] = [];
 
+  // Preprocess: strip markdown formatting
+  let text = preprocessMarkdown(rawText);
+
   // Strip metadata at the end
-  let text = rawText;
   for (const marker of METADATA_MARKERS) {
     const match = text.match(new RegExp(`\n(${marker.source}.*)`, 'is'));
     if (match && match.index !== undefined) {
@@ -115,7 +117,6 @@ function parseFullScript(rawText: string): ParseResult {
   const partAMatch = text.match(/PARTE\s+A[^\n]*\n([\s\S]*?)(?=PARTE\s+B|PASSO\s+1\s*[—–-])/i);
   if (partAMatch) {
     partA = partAMatch[1].trim();
-    // Remove header lines like "Sem alteração..."
     partA = partA.replace(/^Sem alteração[^\n]*\n?/gim, '').trim();
   }
 
