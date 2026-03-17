@@ -112,7 +112,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
 
   return (
     <div
-      className="relative flex flex-col min-h-screen w-full max-w-[420px] md:max-w-none mx-auto"
+      className="relative flex flex-col h-full w-full max-w-[420px] md:max-w-none mx-auto overflow-hidden"
       style={{ backgroundColor: '#0F0B1E' }}
     >
       {/* Exit button */}
