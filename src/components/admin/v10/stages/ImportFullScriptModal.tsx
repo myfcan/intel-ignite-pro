@@ -39,6 +39,17 @@ interface ImportFullScriptModalProps {
   onImportComplete: () => void;
 }
 
+// ── Markdown preprocessing ─────────────────────────────────────────────────────
+
+function preprocessMarkdown(text: string): string {
+  return text
+    .replace(/\*\*/g, '')                          // remove all bold markers
+    .replace(/^---+\s*$/gm, '')                    // remove horizontal rules
+    .replace(/^#{1,3}\s+FASE\s+\d+[^\n]*/gm, '')  // remove FASE headers
+    .replace(/^#{1,3}\s+/gm, '')                   // remove remaining markdown headers (##, ###)
+    .replace(/\n{3,}/g, '\n\n');                    // collapse excess blank lines
+}
+
 // ── Auto-tagging logic ─────────────────────────────────────────────────────────
 
 function autoTagScript(text: string): string {
@@ -46,7 +57,7 @@ function autoTagScript(text: string): string {
 
   // [ANCHOR:pontos_atencao] before "Agora, os pontos de atenção desse passo:"
   result = result.replace(
-    /^(Agora, os pontos de atenção desse passo:)/gm,
+    /^(Agora, os pontos de atenção)/gm,
     '[ANCHOR:pontos_atencao]\n$1'
   );
 
@@ -60,9 +71,11 @@ function autoTagScript(text: string): string {
   const trocaPattern = /^(Agora (?:mudamos de ferramenta|vamos pro|voltamos pro|volte pra|abra o)|Abra uma nova aba)/gim;
   result = result.replace(trocaPattern, '[ANCHOR:troca_ferramenta]\n$1');
 
-  // Deduplicate: remove double-inserted tags (if phrase already had a tag above it)
-  result = result.replace(/(\[ANCHOR:[^\]]+\]\n){2,}/g, (match) => {
-    const tags = match.trim().split('\n');
+  // Deduplicate: remove consecutive or near-consecutive duplicate tags
+  result = result.replace(/(\[ANCHOR:[^\]]+\])\s*\n\s*\1/g, '$1');
+  // Also collapse any run of ANCHOR tags to unique set
+  result = result.replace(/(\[ANCHOR:[^\]]+\]\n?){2,}/g, (match) => {
+    const tags = match.trim().split(/\n/).filter(t => t.trim().startsWith('[ANCHOR:'));
     return [...new Set(tags)].join('\n') + '\n';
   });
 
