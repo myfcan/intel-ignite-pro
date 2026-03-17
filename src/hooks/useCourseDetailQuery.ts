@@ -103,12 +103,13 @@ async function fetchCourseDetail(courseId: string): Promise<CourseDetailData> {
 
 export function useCourseDetailQuery(courseId: string | undefined) {
   return useQuery<CourseDetailData>({
-    queryKey: ['course-detail', courseId],
+    queryKey: ['course-detail-v2', courseId],
     queryFn: () => fetchCourseDetail(courseId!),
     enabled: !!courseId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
   });
 }
 
