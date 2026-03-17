@@ -57,9 +57,11 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
 
   return (
     <div
-      className="flex flex-col min-h-screen w-full max-w-[420px] mx-auto overflow-y-auto"
+      className="relative flex flex-col min-h-screen w-full max-w-[420px] mx-auto overflow-y-auto"
       style={{ backgroundColor: '#0F0B1E' }}
     >
+      {/* Exit button */}
+      {onExit && <ExitButton onExit={onExit} />}
       <RecapPage
         isActive={currentPage === 1}
         items={recapItems}
