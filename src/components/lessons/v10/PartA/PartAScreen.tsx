@@ -24,6 +24,7 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
   slides,
   audioUrl,
   onComplete,
+  onExit,
 }) => {
   const hasAudio = !!audioUrl && audioUrl.length > 0;
   const audioRef = useRef<HTMLAudioElement>(null);
