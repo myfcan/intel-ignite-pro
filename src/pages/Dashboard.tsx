@@ -206,7 +206,7 @@ const Dashboard = () => {
 
     snapItemRefs.current.forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
-  }, [v7Trails]);
+  }, [orphanTrails]);
 
   const scrollToSnapIndex = (idx: number) => {
     const el = snapItemRefs.current[idx];
