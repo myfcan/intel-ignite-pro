@@ -20,6 +20,7 @@ const StepContent: React.FC<StepContentProps> = ({
   onFrameChange,
   accentColor,
   onReplayStep,
+  showReplay = false,
 }) => {
   const frame = step.frames?.[currentFrame];
   const isLastFrame = currentFrame === (step.frames?.length ?? 1) - 1;
