@@ -840,13 +840,7 @@ const Dashboard = () => {
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
                   <button
-                    onClick={() => {
-                      if (v8Trails.length === 1) {
-                        navigate(`/v8-trail/${v8Trails[0].id}`);
-                      } else {
-                        navigate('/all-trails/v8');
-                      }
-                    }}
+                    onClick={() => navigate('/all-trails')}
                     className="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 whitespace-nowrap flex-shrink-0"
                     style={{ background: 'hsl(226 100% 97%)', color: 'hsl(239 84% 67%)', border: '1px solid hsl(224 76% 90%)' }}
                   >
