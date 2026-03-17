@@ -424,6 +424,21 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
     >
       {/* Main player column */}
       <div className="flex flex-col flex-1 min-w-0 h-full relative">
+        {/* Step-change flash overlay */}
+        <div
+          key={`flash-${currentStepIndex}`}
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            animation: 'partb-step-flash 0.5s ease-out forwards',
+          }}
+        />
+        <style>{`
+          @keyframes partb-step-flash {
+            0% { background: rgba(255,255,255,0); }
+            15% { background: rgba(255,255,255,0.07); }
+            100% { background: rgba(255,255,255,0); }
+          }
+        `}</style>
         {/* Header */}
         <PlayerHeader
           lessonTitle={lessonTitle}
