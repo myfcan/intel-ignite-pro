@@ -214,11 +214,13 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       audio.src = currentStep.audio_url;
       audio.playbackRate = playbackSpeed;
       audio.load();
-      audio.play().then(() => {
-        setIsPlaying(true);
-      }).catch(() => {
-        setIsPlaying(false);
-      });
+
+      const onCanPlay = () => {
+        audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        audio.removeEventListener('canplay', onCanPlay);
+      };
+      audio.addEventListener('canplay', onCanPlay);
+      return () => audio.removeEventListener('canplay', onCanPlay);
     } else {
       audio.pause();
       audio.removeAttribute('src');
