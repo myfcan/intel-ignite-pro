@@ -235,7 +235,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       setIsPlaying(false);
       setCurrentTime(0);
     }
-  }, [currentStepIndex, currentStep?.audio_url]);
+  }, [currentStepIndex, currentStep?.audio_url, isActive]);
 
   // Preload next step audio & discard N-2
   useEffect(() => {
