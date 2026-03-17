@@ -835,7 +835,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Crown className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  <h2 className="text-base sm:text-lg font-bold text-indigo-800 tracking-tight whitespace-nowrap truncate">Seu Caminho de Maestria</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-indigo-800 tracking-tight whitespace-nowrap truncate">Suas Jornadas</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Ver todos pill */}
