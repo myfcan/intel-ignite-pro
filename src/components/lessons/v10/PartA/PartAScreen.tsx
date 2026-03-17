@@ -36,6 +36,17 @@ export const PartAScreen: React.FC<PartAScreenProps> = ({
   const [audioEnded, setAudioEnded] = useState(false);
   const [showPlayOverlay, setShowPlayOverlay] = useState(false);
 
+  // ---------- Stop audio + complete ----------
+
+  const stopAndComplete = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    onComplete();
+  }, [onComplete]);
+
   // ---------- Audio callbacks ----------
 
   const handleTimeUpdate = useCallback(() => {
