@@ -20,6 +20,8 @@ interface PartBScreenProps {
   initialStep?: number;
   initialFrame?: number;
   onProgressUpdate?: (step: number, frame: number) => void;
+  /** Whether Part B is the currently visible part — gates autoplay */
+  isActive?: boolean;
 }
 
 const SPEED_CYCLE: Array<1 | 1.5 | 2> = [1, 1.5, 2];
@@ -53,6 +55,7 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
   initialStep = 0,
   initialFrame = 0,
   onProgressUpdate,
+  isActive = true,
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(initialStep);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(initialFrame);
@@ -217,19 +220,22 @@ const PartBScreen: React.FC<PartBScreenProps> = ({
       audio.playbackRate = playbackSpeed;
       audio.load();
 
-      const onCanPlay = () => {
-        audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-        audio.removeEventListener('canplay', onCanPlay);
-      };
-      audio.addEventListener('canplay', onCanPlay);
-      return () => audio.removeEventListener('canplay', onCanPlay);
+      // Only autoplay when Part B is the active/visible part
+      if (isActive) {
+        const onCanPlay = () => {
+          audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+          audio.removeEventListener('canplay', onCanPlay);
+        };
+        audio.addEventListener('canplay', onCanPlay);
+        return () => audio.removeEventListener('canplay', onCanPlay);
+      }
     } else {
       audio.pause();
       audio.removeAttribute('src');
       setIsPlaying(false);
       setCurrentTime(0);
     }
-  }, [currentStepIndex, currentStep?.audio_url]);
+  }, [currentStepIndex, currentStep?.audio_url, isActive]);
 
   // Preload next step audio & discard N-2
   useEffect(() => {

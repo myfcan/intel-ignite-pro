@@ -450,6 +450,7 @@ const LessonContainer: React.FC<LessonContainerProps> = ({ lessonSlug }) => {
               initialStep={Math.max(0, Math.min((userProgress?.current_step ?? 1) - 1, steps.length - 1))}
               initialFrame={userProgress?.current_frame ?? 0}
               onProgressUpdate={handleProgressUpdate}
+              isActive={currentPart === 'B'}
             />
           </div>
 
