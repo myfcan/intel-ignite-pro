@@ -47,6 +47,7 @@ interface V10Lesson {
   title: string;
   description: string | null;
   trail_id: string | null;
+  course_id: string | null;
   order_in_trail: number;
   total_steps: number;
   estimated_minutes: number;
