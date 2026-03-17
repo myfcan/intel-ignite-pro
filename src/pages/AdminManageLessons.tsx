@@ -321,10 +321,8 @@ export default function AdminManageLessons() {
       }
     }
 
-    // Determine if V8
-    const effectiveIsV8 = createNewTrail
-      ? newTrailType === 'v8'
-      : trails.find(t => t.id === trailId)?.trail_type === 'v8';
+    // All trail types support courses/jornadas
+    const effectiveIsV8 = true; // Legacy — all trails now treated uniformly
 
     if (!effectiveIsV8 && !newCourseTitle.trim()) {
       toast({ title: 'Nome da jornada obrigatório', variant: 'destructive' });
