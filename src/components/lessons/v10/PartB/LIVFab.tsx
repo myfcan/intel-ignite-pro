@@ -23,12 +23,12 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
           {isIntense && (
             <>
               <span
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{ animation: 'liv-speak-ring 2s ease-out infinite', border: '1.5px solid rgba(139, 92, 246, 0.4)' }}
+                className="absolute -inset-1 rounded-full pointer-events-none"
+                style={{ animation: 'liv-speak-ring 1.9s ease-out infinite', border: '2px solid rgba(99, 102, 241, 0.42)' }}
               />
               <span
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{ animation: 'liv-speak-ring 2s ease-out 0.7s infinite', border: '1.5px solid rgba(139, 92, 246, 0.25)' }}
+                className="absolute -inset-1 rounded-full pointer-events-none"
+                style={{ animation: 'liv-speak-ring 1.9s ease-out 0.7s infinite', border: '2px solid rgba(99, 102, 241, 0.24)' }}
               />
             </>
           )}
@@ -93,8 +93,8 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
           50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.65), 0 6px 12px -2px rgba(0, 0, 0, 0.15); transform: scale(1.08); }
         }
         @keyframes liv-speak-ring {
-          0% { transform: scale(1); opacity: 0.6; }
-          100% { transform: scale(1.5); opacity: 0; }
+          0% { transform: scale(1); opacity: 0.75; }
+          100% { transform: scale(1.9); opacity: 0; }
         }
       `}</style>
     </>
