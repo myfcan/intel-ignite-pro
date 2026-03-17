@@ -20,6 +20,8 @@ interface PartBScreenProps {
   initialStep?: number;
   initialFrame?: number;
   onProgressUpdate?: (step: number, frame: number) => void;
+  /** Whether Part B is the currently visible part — gates autoplay */
+  isActive?: boolean;
 }
 
 const SPEED_CYCLE: Array<1 | 1.5 | 2> = [1, 1.5, 2];
