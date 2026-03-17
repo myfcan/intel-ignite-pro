@@ -240,7 +240,7 @@ export function ImportFullScriptModal({
         if (existingC) {
           const { error } = await supabase
             .from('v10_lesson_narrations')
-            .update({ script_text: parsed.partC } as any)
+            .update({ script_text: parsed.partC, audio_url: null, duration_seconds: 0 } as any)
             .eq('id', existingC.id);
           if (error) throw error;
         } else {
