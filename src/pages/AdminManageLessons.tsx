@@ -825,6 +825,21 @@ export default function AdminManageLessons() {
                             <BookOpen className="w-4 h-4 text-amber-500" />
                             <span className="font-medium text-sm flex-1">{course.title}</span>
                             <Badge variant="outline" className="text-xs">{courseLessons.length + courseV10.length} aulas</Badge>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
+                              e.stopPropagation();
+                              setRenameCourseId(course.id);
+                              setRenameCourseTitle(course.title);
+                              setShowRenameCourseModal(true);
+                            }}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteCourseId(course.id);
+                              setShowDeleteCourseModal(true);
+                            }}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                             <Button variant="outline" size="sm" onClick={(e) => {
                               e.stopPropagation();
                               setMoveCourseTarget(course.id);
