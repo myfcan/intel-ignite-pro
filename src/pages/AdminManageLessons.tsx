@@ -82,6 +82,7 @@ export default function AdminManageLessons() {
   const [trails, setTrails] = useState<Trail[]>([]);
   const [v10Lessons, setV10Lessons] = useState<V10Lesson[]>([]);
   const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set());
+  const [selectedV10Lessons, setSelectedV10Lessons] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
