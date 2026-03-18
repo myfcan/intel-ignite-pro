@@ -1,157 +1,184 @@
 
 
-# Auditoria Forense do Plano — Com Dados Reais do Código
+# Plano Consolidado: Correção dos Gaps 1, 2 e 3 do PR#240
+
+## Resumo Executivo
+3 gaps sistêmicos a corrigir em 4 arquivos. Gap 6 descartado (já funcional).
 
 ---
 
-## 1. CONFIRMADO: A raiz do problema está no template e no refine
+## Ação 1 — Migration: Nova coluna `image_statuses`
 
-**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
-```markdown
-### Seção 3 (índice 2) — Ponte para primeiro exercício
-**Objetivo:** Frase curta de transição para o primeiro exercício.
-
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
+```sql
+ALTER TABLE v10_bpa_pipeline 
+ADD COLUMN image_statuses jsonb NOT NULL DEFAULT '{}'::jsonb;
 ```
 
-E o exercício associado (linha 89):
-```json
-"title": "Teste rápido: respostas genéricas",
-```
-
-Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
-
-**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
-```
-11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
-
-13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
-```
-
-A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
+**Justificativa:** A coluna não existe no DB (confirmado via schema — 36 colunas, nenhuma `image_statuses`). Default `{}` garante compatibilidade com pipelines existentes e com `CreateBpaModal` (que não precisa enviar o campo).
 
 ---
 
-## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
+## Ação 2 — Tipo TypeScript: `src/types/v10.types.ts`
 
-**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
+Após linha 342 (`images_approved: number;`), adicionar:
+
 ```typescript
-if (refineResponse.ok) {
-  const refineResult = await refineResponse.json();
-  if (refineResult.sections && Array.isArray(refineResult.sections)) {
-    // Replace section content with refined versions — protect Section 0 (Abertura)
-    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
-      parsed.sections[i].content = refineResult.sections[refIdx].content;
+image_statuses: Record<string, string> | null;
+```
+
+Nullable para compatibilidade com dados antigos.
+
+---
+
+## Ação 3 — Frontend: `src/components/admin/v10/stages/Stage3Images.tsx`
+
+### 3a. Inicializar estado do DB (linha 37)
+**De:**
+```typescript
+const [imageStatuses, setImageStatuses] = useState<Record<string, ImageStatus>>({});
+```
+**Para:**
+```typescript
+const [imageStatuses, setImageStatuses] = useState<Record<string, ImageStatus>>(
+  (pipeline.image_statuses as Record<string, ImageStatus>) || {}
+);
+```
+
+### 3b. handleSave incluir `image_statuses` (linhas 131-135)
+**De:**
+```typescript
+await onUpdate({
+  images_needed: imagesNeeded,
+  images_generated: imagesGenerated,
+  images_approved: imagesApproved,
+});
+```
+**Para:**
+```typescript
+await onUpdate({
+  images_needed: imagesNeeded,
+  images_generated: imagesGenerated,
+  images_approved: imagesApproved,
+  image_statuses: imageStatuses,
+});
+```
+
+### 3c. handleApproveAll auto-persistir sem race condition (linhas 144-154)
+**De:**
+```typescript
+const handleApproveAll = () => {
+  setImageStatuses(prev => {
+    const next = { ...prev };
+    for (const key of Object.keys(next)) {
+      if (next[key] === 'generated') next[key] = 'approved';
     }
-  }
-}
+    recalcCounters(next);
+    return next;
+  });
+  toast.info('Todas as imagens marcadas como aprovadas. Salve para confirmar.');
+};
 ```
-
-O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
-
----
-
-## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
-
-**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
+**Para:**
 ```typescript
-const finalData: V8LessonData = {
-  contentVersion: "v8",
-  title: parsed.title,
-  // ...
+const handleApproveAll = async () => {
+  const newStatuses = { ...imageStatuses };
+  for (const key of Object.keys(newStatuses)) {
+    if (newStatuses[key] === 'generated') newStatuses[key] = 'approved';
+  }
+  const generated = Object.values(newStatuses).filter(s => s === 'generated' || s === 'approved').length;
+  const approved = Object.values(newStatuses).filter(s => s === 'approved').length;
+
+  setImageStatuses(newStatuses);
+  setImagesGenerated(generated);
+  setImagesApproved(approved);
+
+  setSaving(true);
+  try {
+    await onUpdate({
+      images_needed: imagesNeeded,
+      images_generated: generated,
+      images_approved: approved,
+      image_statuses: newStatuses,
+    });
+    toast.success('Todas as imagens aprovadas e salvas.');
+  } catch {
+    toast.error('Erro ao salvar aprovações.');
+  } finally {
+    setSaving(false);
+  }
 };
 ```
 
-O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+Computa valores inline e chama `onUpdate()` direto — sem depender de `setState` assíncrono.
 
 ---
 
-## 4. CONFIRMADO: `v8-generate-raw-content` não existe
+## Ação 4 — Edge Function: `supabase/functions/v10-generate-images/index.ts`
 
+### Recalcular contadores reais (linhas 377-393)
+**De:**
+```typescript
+const newImagesGenerated = (pipeline.images_generated || 0) + success;
+const updatePayload: any = { images_generated: newImagesGenerated };
+
+if (pipeline.images_needed === 0 && total > 0) {
+  updatePayload.images_needed = total;
+}
+
+const { error: pipelineUpdateError } = await supabase
+  .from("v10_bpa_pipeline")
+  .update(updatePayload)
+  .eq("id", pipeline_id);
 ```
-code--search_files: No matches found for pattern 'v8-generate-raw-content'
+**Para:**
+```typescript
+// Recalculate from real DB data instead of incrementing
+const { data: allStepsForCount } = await supabase
+  .from("v10_lesson_steps")
+  .select("frames")
+  .eq("lesson_id", lessonId);
+
+let realImageCount = 0;
+for (const s of (allStepsForCount || [])) {
+  const sFrames = (s as any).frames;
+  if (!Array.isArray(sFrames)) continue;
+  for (const f of sFrames) {
+    for (const el of (f.elements || [])) {
+      if (el.type === "image" && el.src && el.src !== "" && !el.src.startsWith("placeholder")) {
+        realImageCount++;
+      }
+    }
+  }
+}
+
+const updatePayload: any = { images_generated: realImageCount };
+if (pipeline.images_needed === 0 && total > 0) {
+  updatePayload.images_needed = total;
+}
+
+const { error: pipelineUpdateError } = await supabase
+  .from("v10_bpa_pipeline")
+  .update(updatePayload)
+  .eq("id", pipeline_id);
 ```
 
-A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
+Adiciona 1 query leve (~50KB para 15 steps). Elimina inflação de contadores permanentemente.
 
 ---
 
-## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+## Resumo de Alterações
 
-**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
+| Arquivo | Tipo | Linhas Afetadas |
+|---------|------|----------------|
+| `v10_bpa_pipeline` (migration) | +1 coluna JSONB | N/A |
+| `src/types/v10.types.ts` | +1 campo | Após L342 |
+| `src/components/admin/v10/stages/Stage3Images.tsx` | 3 trechos | L37, L131-135, L144-154 |
+| `supabase/functions/v10-generate-images/index.ts` | 1 trecho | L377-393 |
 
-Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+## Efeitos Sistêmicos Verificados
 
----
-
-## 6. GAPS NO PLANO PROPOSTO
-
-### Gap A: O plano NÃO endereça o `contractPattern` não salvo
-O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
-
-**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
-
-### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
-Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
-
-**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
-
-### Gap C: Parser compatibility com output da IA
-O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
-
-**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
-
-### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
-A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
-
----
-
-## 7. PLANO REVISADO FINAL
-
-### Arquivos a criar/modificar
-
-| Arquivo | Ação | O que muda |
-|---------|------|------------|
-| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
-| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
-| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
-| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
-| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
-
-### Detalhes por arquivo
-
-**1. `v8-generate-raw-content/index.ts` (NOVO)**
-- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
-- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
-- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
-- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
-- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
-- Modelo: `google/gemini-2.5-flash`
-
-**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
-- Adicionar após Regra 13:
-  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
-  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
-
-**3. `AdminV8Create.tsx` (EDITAR)**
-- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
-- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
-- Função `sectionsToMarkdown()` para converter output da function em markdown
-- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
-
-**4. `v8Lesson.ts` (EDITAR linha ~136)**
-- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
-
-### Riscos residuais
-
-| Risco | Severidade | Mitigação |
-|-------|-----------|-----------|
-| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
-| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
-| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
+- `handlePipelineUpdate` aceita qualquer campo via `as Record<string, unknown>` — sem risco
+- `fetchImagePreviews` preserva statuses existentes via `!next[key]` — sem conflito
+- `CreateBpaModal` não precisa de mudança — DB default `{}` resolve
+- `v10-assembly-check` não é afetado — verifica frames, não statuses
 
