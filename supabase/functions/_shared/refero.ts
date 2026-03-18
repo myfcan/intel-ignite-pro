@@ -227,7 +227,7 @@ export async function searchFlows(
   const result = await callTool("refero_search_flows", { query, limit });
   const parsed = parseToolContent(result) as any;
 
-  if (!parsed || result?.isError) {
+  if (!parsed) {
     return { flows: [], total: 0, query };
   }
 
