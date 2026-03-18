@@ -66,6 +66,17 @@ async function initSession(): Promise<string | null> {
   }
 
   try {
+    const body = JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2024-11-05",
+        capabilities: {},
+        clientInfo: { name: "intel-ignite-pro", version: "1.0.0" },
+      },
+    });
+    console.log("[Refero] initSession request:", body);
     const response = await fetch(REFERO_MCP_URL, {
       method: "POST",
       headers: {
@@ -73,22 +84,16 @@ async function initSession(): Promise<string | null> {
         "Accept": "application/json, text/event-stream",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "initialize",
-        params: {
-          protocolVersion: "2024-11-05",
-          capabilities: {},
-          clientInfo: { name: "intel-ignite-pro", version: "1.0.0" },
-        },
-      }),
+      body,
     });
 
+    const responseText = await response.text();
+    console.log("[Refero] initSession status:", response.status, "body:", responseText.substring(0, 500));
     _sessionId = response.headers.get("mcp-session-id");
+    console.log("[Refero] sessionId:", _sessionId);
     return _sessionId;
   } catch (err) {
-    console.error("Refero MCP init failed:", err);
+    console.error("[Refero] MCP init failed:", err);
     return null;
   }
 }
