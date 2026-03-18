@@ -145,28 +145,6 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
     }
   };
 
-  const handleDocsSearch = async () => {
-    setSearchingDocs(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('v10-reftools-search', {
-        body: { action: 'search_docs', query: pipeline.title, limit: 10 },
-      });
-      if (error) {
-        toast.error('Erro ao buscar docs no Ref.tools');
-        return;
-      }
-      const result = data as { results: Array<{ title?: string }>; total: number };
-      setDocsData({
-        total: result.total ?? 0,
-        titles: (result.results ?? []).map((r) => r.title || '').filter(Boolean).slice(0, 5),
-      });
-      toast.success(`Ref.tools: ${result.total ?? 0} docs encontrados para "${pipeline.title}"`);
-    } catch {
-      toast.error('Erro ao buscar docs no Ref.tools');
-    } finally {
-      setSearchingDocs(false);
-    }
-  };
 
   const handleSave = async () => {
     setSaving(true);
