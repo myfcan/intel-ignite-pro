@@ -208,11 +208,13 @@ export async function searchScreens(
     ? parsed
     : Array.isArray(parsed?.screens)
       ? parsed.screens
-      : [];
+      : Array.isArray(parsed?.records)
+        ? parsed.records
+        : [];
 
   return {
     screens: screens.slice(0, limit),
-    total: parsed?.total ?? screens.length,
+    total: parsed?.total_count ?? parsed?.total ?? screens.length,
     query,
   };
 }
