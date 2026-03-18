@@ -219,10 +219,19 @@ export default function AdminManageLessons() {
     if (!confirmDelete) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.from('lessons').delete().in('id', Array.from(selectedLessons));
-      if (error) throw error;
-      toast({ title: `${selectedLessons.size} lição(ões) deletada(s)` });
+      // Delete V7/V8 lessons
+      if (selectedLessons.size > 0) {
+        const { error } = await supabase.from('lessons').delete().in('id', Array.from(selectedLessons));
+        if (error) throw error;
+      }
+      // Delete V10 lessons
+      if (selectedV10Lessons.size > 0) {
+        const { error } = await (supabase as any).from('v10_lessons').delete().in('id', Array.from(selectedV10Lessons));
+        if (error) throw error;
+      }
+      toast({ title: `${totalSelected} lição(ões) deletada(s)` });
       setSelectedLessons(new Set());
+      setSelectedV10Lessons(new Set());
       setShowDeleteModal(false);
       await loadData();
     } catch (error: any) {
