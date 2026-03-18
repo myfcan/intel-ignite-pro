@@ -1,157 +1,94 @@
 
 
-# Auditoria Forense do Plano — Com Dados Reais do Código
+# Auditoria Forense PR#244 — Dados Reais
 
 ---
 
-## 1. CONFIRMADO: A raiz do problema está no template e no refine
+## 1. VEREDICTO: O auto-fix C2/C3 EXISTE no código mas NÃO FOI EXECUTADO
 
-**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
-```markdown
-### Seção 3 (índice 2) — Ponte para primeiro exercício
-**Objetivo:** Frase curta de transição para o primeiro exercício.
+### Evidência 1 — Código existe (CONFIRMADO)
 
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
-```
+O bloco 7c de post-processing está em `supabase/functions/v10-generate-steps/index.ts` linhas 386-564:
 
-E o exercício associado (linha 89):
-```json
-"title": "Teste rápido: respostas genéricas",
-```
-
-Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
-
-**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
-```
-11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
-
-13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
-```
-
-A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
-
----
-
-## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
-
-**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
 ```typescript
-if (refineResponse.ok) {
-  const refineResult = await refineResponse.json();
-  if (refineResult.sections && Array.isArray(refineResult.sections)) {
-    // Replace section content with refined versions — protect Section 0 (Abertura)
-    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
-      parsed.sections[i].content = refineResult.sections[refIdx].content;
-    }
-  }
-}
-```
-
-O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
-
----
-
-## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
-
-**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
-```typescript
-const finalData: V8LessonData = {
-  contentVersion: "v8",
-  title: parsed.title,
+// 7c. POST-PROCESSING: Auto-inject tooltip_term (C2) and nav_breadcrumb (C3)
+const TECH_TERMS: Record<string, string> = {
+  "api": "Interface que permite dois softwares se comunicarem automaticamente",
+  "webhook": "URL que recebe dados automaticamente quando um evento acontece",
+  // ... 80+ termos
+  "calendly": "Ferramenta de agendamento online que sincroniza com seu calendario",
   // ...
 };
 ```
 
-O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+O fix C2 (linhas 486-528) busca termos no dicionário e injeta `tooltip_term`.
+O fix C3 (linhas 536-563) detecta `bar_sub` diferente e injeta `nav_breadcrumb`.
 
----
+### Evidência 2 — Dados no banco NÃO possuem os fixes (CONFIRMADO)
 
-## 4. CONFIRMADO: `v8-generate-raw-content` não existe
+Query real contra `v10_lesson_steps` para lesson_id `dcefa80b-29a9-4ef6-9fea-38b31b3c7f7a`:
+
+| Step | tooltip_count | breadcrumb_count | description length |
+|------|-------------|-----------------|-------------------|
+| Criar conta no Calendly | **0** | 0 | 176 chars |
+| Criar tipo de evento no Calendly | 1 | 0 | 157 chars |
+| Configurar perguntas personalizadas | **0** | 1 | 152 chars |
+| Criar conta no OpenAI e API Key | **0** | 1 | 195 chars |
+| Criar conta no Make.com | **0** | 0 | 187 chars |
+| Adicionar o gatilho do Calendly | **0** | 0 | 142 chars |
+| Adicionar o modulo OpenAI (ChatGPT) | **0** | 0 | 161 chars |
+| Configurar o prompt do ChatGPT | **0** | 0 | 177 chars |
+| Adicionar modulo de Email (Gmail) | **0** | 0 | 176 chars |
+| Configurar o Email de Follow-up | **0** | 0 | 117 chars |
+| Testar e Ativar o Cenário | **0** | 0 | 153 chars |
+| Verificar a automacao | **0** | 1 | 123 chars |
+| Desativar ou Excluir o Cenário | **0** | 1 | 172 chars |
+| Revisao e próximos passos | **0** | 0 | 162 chars |
+
+**13 de 15 steps têm 0 tooltip_term. 10 de 15 têm 0 nav_breadcrumb.** Todos com description > 50 chars.
+
+### Evidência 3 — Logs da edge function: VAZIOS
 
 ```
-code--search_files: No matches found for pattern 'v8-generate-raw-content'
+supabase--edge_function_logs("v10-generate-steps", "C2 fix") → No logs found
+supabase--edge_function_logs("v10-generate-steps", "post-processing") → No logs found
+supabase--edge_function_logs("v10-generate-steps", "") → No logs found
 ```
 
-A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
+Nenhum log da edge function foi encontrado. Isso indica que **a versão deployada da função NÃO contém o bloco 7c**, ou os logs expiraram.
 
 ---
 
-## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+## 2. DIAGNÓSTICO ROOT-CAUSE
 
-**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
+O código do auto-fix está no repositório, mas **a edge function precisa ser re-deployada** para que a versão com o bloco 7c entre em produção. Os steps que existem no banco foram gerados por uma versão anterior da function (sem o auto-fix).
 
-Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+**Prova:** Se o auto-fix tivesse rodado, o step "Criar conta no Calendly" (description: 176 chars, contém "Calendly") teria pelo menos 1 `tooltip_term` com `term: "Calendly"` — que está no dicionário TECH_TERMS na linha 459. O banco mostra `tooltip_count: 0`. Logo, o auto-fix **não executou**.
 
 ---
 
-## 6. GAPS NO PLANO PROPOSTO
+## 3. PRECISA DE MIGRATION?
 
-### Gap A: O plano NÃO endereça o `contractPattern` não salvo
-O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
-
-**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
-
-### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
-Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
-
-**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
-
-### Gap C: Parser compatibility com output da IA
-O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
-
-**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
-
-### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
-A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+**NÃO.** Nenhuma tabela ou coluna nova é necessária. O fix é puramente lógico na edge function.
 
 ---
 
-## 7. PLANO REVISADO FINAL
+## 4. AÇÃO NECESSÁRIA
 
-### Arquivos a criar/modificar
+1. **Re-deploy da edge function** `v10-generate-steps` para que o bloco 7c (linhas 386-564) entre em produção
+2. **Re-gerar os steps** da lição `dcefa80b-29a9-4ef6-9fea-38b31b3c7f7a` (deletar steps existentes e gerar novamente)
 
-| Arquivo | Ação | O que muda |
-|---------|------|------------|
-| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
-| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
-| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
-| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
-| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
+---
 
-### Detalhes por arquivo
+## 5. GAPS SISTÊMICOS IDENTIFICADOS
 
-**1. `v8-generate-raw-content/index.ts` (NOVO)**
-- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
-- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
-- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
-- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
-- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
-- Modelo: `google/gemini-2.5-flash`
+### Gap A: Os steps existentes NO BANCO não serão corrigidos automaticamente
+O auto-fix só roda no momento da **geração** (dentro do `v10-generate-steps`). Steps já inseridos no banco permanecem sem `tooltip_term`/`nav_breadcrumb`. Não existe um mecanismo de "re-fix" retroativo.
 
-**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
-- Adicionar após Regra 13:
-  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
-  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
+**Solução proposta:** Adicionar um botão "Corrigir C2/C3" no Stage2Structure que aplica a mesma lógica de auto-fix nos steps existentes via UPDATE direto no banco, sem precisar re-gerar tudo.
 
-**3. `AdminV8Create.tsx` (EDITAR)**
-- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
-- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
-- Função `sectionsToMarkdown()` para converter output da function em markdown
-- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
+### Gap B: A auditoria roda client-side mas o fix roda server-side
+Se a edge function falhar silenciosamente no auto-fix (ex: crash antes da linha 386), os steps são inseridos sem fixes e a auditoria reprova. Não há feedback ao admin sobre se o auto-fix rodou ou não.
 
-**4. `v8Lesson.ts` (EDITAR linha ~136)**
-- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
-
-### Riscos residuais
-
-| Risco | Severidade | Mitigação |
-|-------|-----------|-----------|
-| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
-| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
-| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
+**Solução proposta:** Incluir `c2_fixes` e `c3_fixes` nos details do log `steps_generated` para que o admin veja quantos fixes foram aplicados.
 
