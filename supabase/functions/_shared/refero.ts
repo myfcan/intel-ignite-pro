@@ -118,30 +118,35 @@ async function callTool(
   if (sessionId) headers["mcp-session-id"] = sessionId;
 
   try {
+    const body = JSON.stringify({
+      jsonrpc: "2.0",
+      id: Date.now(),
+      method: "tools/call",
+      params: {
+        name: toolName,
+        arguments: args,
+      },
+    });
+    console.log("[Refero] callTool request:", toolName, JSON.stringify(args));
     const response = await fetch(REFERO_MCP_URL, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: Date.now(),
-        method: "tools/call",
-        params: {
-          name: toolName,
-          arguments: args,
-        },
-      }),
+      body,
     });
 
+    const responseText = await response.text();
+    console.log("[Refero] callTool status:", response.status, "body:", responseText.substring(0, 1000));
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Refero MCP error (${response.status}):`, errorText);
+      console.error(`[Refero] MCP error (${response.status}):`, responseText);
       return null;
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
+    console.log("[Refero] callTool result keys:", data.result ? Object.keys(data.result) : "null");
     return data.result ?? null;
   } catch (err) {
-    console.error(`Refero MCP call '${toolName}' failed:`, err);
+    console.error(`[Refero] MCP call '${toolName}' failed:`, err);
     return null;
   }
 }
