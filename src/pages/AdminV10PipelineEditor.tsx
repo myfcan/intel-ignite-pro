@@ -164,18 +164,20 @@ export default function AdminV10PipelineEditor() {
   );
 
   // ---- Advance stage ----------------------------------------------------
-  async function handleAdvanceStage() {
+  const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
+
+  function handleAdvanceStage() {
     if (!pipeline) return;
     if (pipeline.current_stage >= 7) {
       toast.info('Já está na última etapa.');
       return;
     }
+    setShowAdvanceDialog(true);
+  }
 
-    const confirmed = window.confirm(
-      `Avançar de "${STAGES[pipeline.current_stage - 1].label}" para "${STAGES[pipeline.current_stage].label}"?`,
-    );
-    if (!confirmed) return;
-
+  async function confirmAdvanceStage() {
+    if (!pipeline) return;
+    setShowAdvanceDialog(false);
     setAdvancing(true);
 
     const nextStage = (pipeline.current_stage + 1) as V10PipelineStage;
