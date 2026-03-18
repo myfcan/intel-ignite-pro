@@ -600,10 +600,10 @@ export default function AdminManageLessons() {
                 Mover
               </Button>
             )}
-            {selectedLessons.size > 0 && (
+            {totalSelected > 0 && (
               <Button variant="destructive" size="sm" onClick={openDeleteModal}>
                 <Trash2 className="w-4 h-4 mr-1" />
-                Deletar ({selectedLessons.size})
+                Deletar ({totalSelected})
               </Button>
             )}
           </div>
