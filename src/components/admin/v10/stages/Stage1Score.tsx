@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { Save, Sparkles, Search, Monitor, Loader2, BookOpen } from 'lucide-react';
+import { Save, Sparkles, Search, Monitor, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10ScoreSemaphore } from '@/types/v10.types';
