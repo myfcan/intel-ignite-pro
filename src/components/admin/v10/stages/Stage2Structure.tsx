@@ -822,6 +822,19 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
           </div>
         )}
 
+        {/* Fix C2/C3 retroactive button */}
+        {steps.length > 0 && !pipeline.audit_passed && (
+          <Button
+            onClick={handleFixC2C3}
+            disabled={fixingC2C3}
+            variant="outline"
+            className="min-h-[44px] w-full"
+          >
+            {fixingC2C3 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {fixingC2C3 ? 'Corrigindo C2/C3...' : 'Corrigir C2/C3 (tooltip + breadcrumb)'}
+          </Button>
+        )}
+
         {/* Audit button */}
         {steps.length > 0 && (
           <Button
