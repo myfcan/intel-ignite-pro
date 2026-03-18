@@ -265,48 +265,6 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
           )}
         </div>
 
-        {/* Ref.tools documentation panel */}
-        <div className="rounded-lg border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              Ref.tools — Documentação Técnica
-            </h4>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDocsSearch}
-              disabled={searchingDocs}
-              className="h-8"
-            >
-              {searchingDocs ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Search className="mr-1 h-3 w-3" />}
-              {searchingDocs ? 'Buscando...' : 'Buscar Docs'}
-            </Button>
-          </div>
-          {docsData ? (
-            <div className="space-y-1">
-              <p className="text-sm text-emerald-700">
-                <span className="font-semibold">{docsData.total}</span> documentos encontrados
-              </p>
-              {docsData.titles.length > 0 && (
-                <p className="text-xs text-emerald-600">
-                  Exemplos: {docsData.titles.join(', ')}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                {docsData.total > 5
-                  ? 'Boa cobertura documental — score_docs recomendado: 70-90'
-                  : docsData.total > 0
-                    ? 'Cobertura parcial — score_docs recomendado: 40-65'
-                    : 'Sem docs — score_docs recomendado: 10-30'}
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Clique "Buscar Docs" para verificar documentação técnica disponível no Ref.tools.
-            </p>
-          )}
-        </div>
 
         {/* Documentation notes */}
         <div className="space-y-2">

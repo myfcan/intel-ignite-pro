@@ -153,5 +153,3 @@ verify_jwt = false
 [functions.v10-refero-search]
 verify_jwt = false
 
-[functions.v10-reftools-search]
-verify_jwt = false
