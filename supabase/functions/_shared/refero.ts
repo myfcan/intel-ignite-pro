@@ -55,6 +55,7 @@ export interface ReferoFlowResult {
 }
 
 let _sessionId: string | null = null;
+let _toolsListed = false;
 
 async function initSession(): Promise<string | null> {
   if (_sessionId) return _sessionId;
