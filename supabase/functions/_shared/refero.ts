@@ -198,7 +198,8 @@ export async function searchScreens(
   const result = await callTool("refero_search_screens", { query, limit, platform: "web" });
   const parsed = parseToolContent(result) as any;
 
-  if (!parsed || result?.isError) {
+  if (!parsed) {
+    console.warn("[Refero] searchScreens: no parsed content, isError:", result?.isError);
     return { screens: [], total: 0, query };
   }
 
