@@ -383,6 +383,187 @@ Passos que falharem na auditoria precisarao ser REGENERADOS. Gere corretamente d
       console.warn(`[v10-generate-steps] WARNING: Low frame average ${avgFrames.toFixed(2)} (expected >= 1.3). Steps may need more frames for multi-screen navigation.`);
     }
 
+    // 7c. POST-PROCESSING: Auto-inject tooltip_term (C2) and nav_breadcrumb (C3)
+    // The AI consistently ignores instructions to generate these elements,
+    // so we inject them deterministically after generation.
+    const TECH_TERMS: Record<string, string> = {
+      "api": "Interface que permite dois softwares se comunicarem automaticamente",
+      "webhook": "URL que recebe dados automaticamente quando um evento acontece",
+      "endpoint": "Endereco (URL) especifico onde uma API recebe requisicoes",
+      "sdk": "Kit de ferramentas de desenvolvimento para integrar com um servico",
+      "oauth": "Protocolo de autorizacao que permite login seguro sem compartilhar senha",
+      "token": "Codigo temporario usado para autenticar acessos a um servico",
+      "dashboard": "Painel de controle visual com metricas e acoes principais",
+      "workflow": "Sequencia automatizada de tarefas que executa em ordem",
+      "trigger": "Evento que dispara uma automacao automaticamente",
+      "integration": "Conexao entre dois apps que permite troca de dados",
+      "pipeline": "Sequencia de etapas de processamento de dados em ordem",
+      "deploy": "Processo de publicar e disponibilizar um app ou atualizacao",
+      "slug": "Versao simplificada de um texto usada em URLs (sem espacos ou acentos)",
+      "json": "Formato padrao de troca de dados entre sistemas (chave: valor)",
+      "http": "Protocolo de comunicacao usado na web para enviar e receber dados",
+      "url": "Endereco unico que identifica uma pagina ou recurso na internet",
+      "script": "Codigo que executa uma sequencia de comandos automaticamente",
+      "template": "Modelo pre-pronto que serve como base para criar algo novo",
+      "scenario": "Automacao no Make.com que conecta apps com regras definidas",
+      "module": "Bloco funcional dentro de uma automacao que executa uma tarefa",
+      "node": "Ponto de processamento em um fluxo de automacao",
+      "zap": "Automacao no Zapier que conecta dois ou mais apps",
+      "prompt": "Instrucao de texto enviada para uma IA gerar uma resposta",
+      "model": "Versao treinada de uma IA (ex: GPT-4, Claude, Gemini)",
+      "fine-tuning": "Processo de treinar uma IA com dados especificos para melhorar resultados",
+      "embedding": "Representacao numerica de texto usada para busca semantica",
+      "vector": "Conjunto de numeros que representa dados para processamento por IA",
+      "database": "Sistema organizado para armazenar e consultar dados",
+      "query": "Consulta feita a um banco de dados ou API para buscar informacoes",
+      "automation": "Processo que executa tarefas sem intervencao humana",
+      "crm": "Sistema para gerenciar relacionamento com clientes",
+      "lead": "Potencial cliente que demonstrou interesse no produto/servico",
+      "funnel": "Sequencia de etapas que guia um lead ate a conversao",
+      "conversion": "Momento em que um lead realiza a acao desejada (compra, cadastro)",
+      "saas": "Software acessado pela internet via assinatura (Software as a Service)",
+      "hosting": "Servico que armazena e disponibiliza um site/app na internet",
+      "domain": "Nome unico que identifica um site na internet (ex: google.com)",
+      "ssl": "Certificado de seguranca que criptografa dados entre navegador e servidor",
+      "dns": "Sistema que traduz nomes de dominio em enderecos IP",
+      "cdn": "Rede de servidores distribuidos que acelera a entrega de conteudo",
+      "cache": "Armazenamento temporario de dados para acesso mais rapido",
+      "cookies": "Pequenos arquivos que sites salvam no navegador para lembrar preferencias",
+      "header": "Informacoes extras enviadas junto com requisicoes HTTP",
+      "payload": "Dados enviados no corpo de uma requisicao HTTP",
+      "response": "Dados retornados por um servidor apos receber uma requisicao",
+      "status code": "Numero que indica o resultado de uma requisicao HTTP (ex: 200=OK, 404=nao encontrado)",
+      "rate limit": "Limite de requisicoes permitidas em um periodo de tempo",
+      "api key": "Chave secreta usada para autenticar acessos a uma API",
+      "secret key": "Chave privada que nunca deve ser compartilhada publicamente",
+      "environment variable": "Variavel de configuracao armazenada fora do codigo",
+      "env": "Abreviacao de environment variable — configuracao externa ao codigo",
+      "regex": "Padrao de texto usado para buscar e validar strings",
+      "cron": "Sistema de agendamento que executa tarefas em horarios definidos",
+      "csv": "Formato de arquivo com dados separados por virgula",
+      "spreadsheet": "Planilha digital para organizar dados em linhas e colunas",
+      "form": "Formulario digital para coletar dados de usuarios",
+      "iframe": "Elemento HTML que incorpora uma pagina dentro de outra",
+      "widget": "Componente visual reutilizavel em uma interface",
+      "plugin": "Extensao que adiciona funcionalidades a um software existente",
+      "extension": "Programa que adiciona recursos extras ao navegador",
+      "bot": "Programa automatizado que executa tarefas repetitivas",
+      "chatbot": "Bot conversacional que responde perguntas automaticamente",
+      "ai": "Inteligencia Artificial — sistema que simula raciocinio humano",
+      "gpt": "Modelo de linguagem da OpenAI usado para gerar texto",
+      "llm": "Modelo de linguagem grande — IA treinada em enormes volumes de texto",
+      "airtable": "Plataforma que combina planilha com banco de dados visual",
+      "notion": "Ferramenta all-in-one para notas, docs, projetos e banco de dados",
+      "slack": "Plataforma de comunicacao para equipes com canais e integracoes",
+      "stripe": "Plataforma de pagamentos online para cobrar clientes",
+      "calendly": "Ferramenta de agendamento online que sincroniza com seu calendario",
+      "hubspot": "Plataforma de CRM, marketing e vendas",
+      "mailchimp": "Plataforma de email marketing para enviar campanhas",
+      "twilio": "Plataforma para enviar SMS, WhatsApp e fazer chamadas por API",
+      "bland ai": "Plataforma de IA para ligacoes telefonicas automatizadas",
+      "make": "Plataforma de automacao visual que conecta apps (antigo Integromat)",
+      "zapier": "Plataforma de automacao que conecta apps sem codigo",
+      "n8n": "Plataforma open-source de automacao de workflows",
+      "supabase": "Plataforma open-source alternativa ao Firebase com banco Postgres",
+      "firebase": "Plataforma Google para backend de apps (auth, database, hosting)",
+      "vercel": "Plataforma de deploy para apps frontend e serverless",
+      "render": "Plataforma de deploy para apps web e APIs",
+      "google sheets": "Planilha online do Google com colaboracao em tempo real",
+      "google forms": "Ferramenta do Google para criar formularios online",
+    };
+
+    let c2Fixes = 0;
+    let c3Fixes = 0;
+
+    for (const step of steps) {
+      const desc = (step.description || "").toLowerCase();
+      const title = (step.title || "").toLowerCase();
+      const combinedText = `${title} ${desc}`;
+      const frames = step.frames || [];
+      const allElements = frames.flatMap((f: any) => f.elements || []);
+
+      // C2 FIX: If description > 50 chars and no tooltip_term, find tech terms and inject
+      const hasTooltipTerm = allElements.some((el: any) => el.type === "tooltip_term");
+      if (!hasTooltipTerm && (step.description || "").length > 50) {
+        // Find matching tech terms in the step text
+        const matchedTerms: Array<{ term: string; definition: string }> = [];
+        for (const [term, definition] of Object.entries(TECH_TERMS)) {
+          // Match whole word (with word boundaries via regex)
+          const termRegex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, "i");
+          if (termRegex.test(combinedText)) {
+            matchedTerms.push({ term: term.charAt(0).toUpperCase() + term.slice(1), definition });
+          }
+          if (matchedTerms.length >= 2) break; // Max 2 tooltips per step
+        }
+
+        // If no dictionary match, extract the first capitalized technical-looking word
+        if (matchedTerms.length === 0) {
+          const capitalWords = (step.description || "").match(/\b[A-Z][a-zA-Z]{2,}\b/g);
+          const commonWords = new Set(["Voce", "Esse", "Este", "Esta", "Essa", "Aqui", "Agora", "Depois", "Antes", "Clique", "Acesse", "Configure", "Crie", "Abra", "Vamos", "Nesse", "Nesta", "Para", "Como", "Quando", "Onde", "Qual", "Cada", "Todo", "Toda", "Todos"]);
+          if (capitalWords) {
+            for (const w of capitalWords) {
+              if (!commonWords.has(w) && w.length >= 3) {
+                matchedTerms.push({
+                  term: w,
+                  definition: `Funcionalidade ou conceito utilizado neste passo da aula`,
+                });
+                break;
+              }
+            }
+          }
+        }
+
+        // Inject tooltip_term into first frame
+        if (matchedTerms.length > 0 && frames.length > 0) {
+          if (!frames[0].elements) frames[0].elements = [];
+          for (const mt of matchedTerms) {
+            frames[0].elements.push({
+              type: "tooltip_term",
+              term: mt.term,
+              tip: mt.definition,
+            });
+          }
+          c2Fixes++;
+          console.log(`[v10-generate-steps] C2 fix: injected ${matchedTerms.length} tooltip_term(s) into "${step.title}": ${matchedTerms.map(t => t.term).join(", ")}`);
+        }
+      }
+
+      // C3 FIX: If bar_sub changes between frames and no nav_breadcrumb, inject one
+      const hasNavBreadcrumb = allElements.some((el: any) => el.type === "nav_breadcrumb");
+      const barSubValues = frames.map((f: any) => f.bar_sub).filter(Boolean);
+      const barSubChanges = new Set(barSubValues).size > 1;
+
+      if (barSubChanges && !hasNavBreadcrumb) {
+        // Add nav_breadcrumb to each frame (after the first) where bar_sub differs from previous
+        for (let fi = 1; fi < frames.length; fi++) {
+          const prevSub = frames[fi - 1].bar_sub;
+          const currSub = frames[fi].bar_sub;
+          if (currSub && prevSub && currSub !== prevSub) {
+            if (!frames[fi].elements) frames[fi].elements = [];
+            // Build path from all unique bar_sub values up to this frame
+            const pathSoFar = [];
+            const seen = new Set<string>();
+            for (let pi = 0; pi <= fi; pi++) {
+              const sub = frames[pi].bar_sub;
+              if (sub && !seen.has(sub)) {
+                seen.add(sub);
+                pathSoFar.push(sub);
+              }
+            }
+            frames[fi].elements.unshift({
+              type: "nav_breadcrumb",
+              from: prevSub,
+              to: currSub,
+              how: pathSoFar.join(" → "),
+            });
+          }
+        }
+        c3Fixes++;
+        console.log(`[v10-generate-steps] C3 fix: injected nav_breadcrumb into "${step.title}" (bar_sub changes: ${barSubValues.join(" → ")})`);
+      }
+    }
+    console.log(`[v10-generate-steps] Post-processing complete: ${c2Fixes} C2 fixes, ${c3Fixes} C3 fixes`);
+
     // 8. Insert each step into v10_lesson_steps
     const insertedSteps = [];
     for (let i = 0; i < steps.length; i++) {
