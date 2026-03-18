@@ -82,6 +82,7 @@ export default function AdminManageLessons() {
   const [trails, setTrails] = useState<Trail[]>([]);
   const [v10Lessons, setV10Lessons] = useState<V10Lesson[]>([]);
   const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set());
+  const [selectedV10Lessons, setSelectedV10Lessons] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -197,8 +198,14 @@ export default function AdminManageLessons() {
     setSelectedLessons(s);
   }
 
+  function toggleV10Lesson(id: string) {
+    const s = new Set(selectedV10Lessons);
+    s.has(id) ? s.delete(id) : s.add(id);
+    setSelectedV10Lessons(s);
+  }
+
   function openDeleteModal() {
-    if (selectedLessons.size === 0) {
+    if (selectedLessons.size === 0 && selectedV10Lessons.size === 0) {
       toast({ title: 'Nenhuma lição selecionada', variant: 'destructive' });
       return;
     }
@@ -206,14 +213,25 @@ export default function AdminManageLessons() {
     setConfirmDelete(false);
   }
 
+  const totalSelected = selectedLessons.size + selectedV10Lessons.size;
+
   async function handleDelete() {
     if (!confirmDelete) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.from('lessons').delete().in('id', Array.from(selectedLessons));
-      if (error) throw error;
-      toast({ title: `${selectedLessons.size} lição(ões) deletada(s)` });
+      // Delete V7/V8 lessons
+      if (selectedLessons.size > 0) {
+        const { error } = await supabase.from('lessons').delete().in('id', Array.from(selectedLessons));
+        if (error) throw error;
+      }
+      // Delete V10 lessons
+      if (selectedV10Lessons.size > 0) {
+        const { error } = await (supabase as any).from('v10_lessons').delete().in('id', Array.from(selectedV10Lessons));
+        if (error) throw error;
+      }
+      toast({ title: `${totalSelected} lição(ões) deletada(s)` });
       setSelectedLessons(new Set());
+      setSelectedV10Lessons(new Set());
       setShowDeleteModal(false);
       await loadData();
     } catch (error: any) {
@@ -455,7 +473,8 @@ export default function AdminManageLessons() {
   // V10 Lesson row component
   function V10LessonRow({ lesson }: { lesson: V10Lesson }) {
     return (
-      <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+      <div className={`flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors ${selectedV10Lessons.has(lesson.id) ? 'bg-accent border-primary' : ''}`}>
+        <Checkbox checked={selectedV10Lessons.has(lesson.id)} onCheckedChange={() => toggleV10Lesson(lesson.id)} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <h4 className="font-medium text-sm truncate">{lesson.badge_icon} {lesson.title}</h4>
@@ -581,10 +600,10 @@ export default function AdminManageLessons() {
                 Mover
               </Button>
             )}
-            {selectedLessons.size > 0 && (
+            {totalSelected > 0 && (
               <Button variant="destructive" size="sm" onClick={openDeleteModal}>
                 <Trash2 className="w-4 h-4 mr-1" />
-                Deletar ({selectedLessons.size})
+                Deletar ({totalSelected})
               </Button>
             )}
           </div>
@@ -800,13 +819,19 @@ export default function AdminManageLessons() {
                 Confirmar Exclusão
               </DialogTitle>
               <DialogDescription>
-                Deletar <strong>{selectedLessons.size} lição(ões)</strong>. Ação irreversível.
+                Deletar <strong>{totalSelected} lição(ões)</strong>. Ação irreversível.
               </DialogDescription>
             </DialogHeader>
             <div className="my-4 max-h-60 overflow-y-auto space-y-2">
               {selectedLessonsData.map(lesson => (
                 <div key={lesson.id} className="flex items-center gap-2 p-2 border rounded text-sm">
                   <Badge variant={lesson.is_active ? 'default' : 'secondary'}>{lesson.is_active ? '🟢' : '🟡'}</Badge>
+                  {lesson.title}
+                </div>
+              ))}
+              {v10Lessons.filter(l => selectedV10Lessons.has(l.id)).map(lesson => (
+                <div key={lesson.id} className="flex items-center gap-2 p-2 border rounded text-sm">
+                  <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">v10</Badge>
                   {lesson.title}
                 </div>
               ))}
