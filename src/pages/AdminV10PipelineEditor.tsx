@@ -32,8 +32,8 @@ import { Stage7Publish } from '@/components/admin/v10/stages/Stage7Publish';
 const STAGES: { num: V10PipelineStage; label: string; icon: string }[] = [
   { num: 1, label: 'Score', icon: '\u{1F4CA}' },
   { num: 2, label: 'Estrutura', icon: '\u{1F4DD}' },
-  { num: 3, label: 'Imagens', icon: '\u{1F5BC}\uFE0F' },
-  { num: 4, label: 'Mockups', icon: '\u{1F4F8}' },
+  { num: 3, label: 'Mockups', icon: '\u{1F4F8}' },
+  { num: 4, label: 'Imagens', icon: '\u{1F5BC}\uFE0F' },
   { num: 5, label: 'Narração', icon: '\u{1F399}\uFE0F' },
   { num: 6, label: 'Montagem', icon: '\u{1F527}' },
   { num: 7, label: 'Publicar', icon: '\u{1F680}' },
@@ -343,8 +343,8 @@ export default function AdminV10PipelineEditor() {
       <section>
         {activeStage === 1 && <Stage1Score pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
         {activeStage === 2 && <Stage2Structure pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
-        {activeStage === 3 && <Stage3Images pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
-        {activeStage === 4 && <Stage4Mockups pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
+        {activeStage === 3 && <Stage4Mockups pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
+        {activeStage === 4 && <Stage3Images pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
         {activeStage === 5 && <Stage5Narration pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
         {activeStage === 6 && <Stage6Assembly pipeline={pipeline} onUpdate={handlePipelineUpdate} onNavigateStage={(s) => setActiveStage(s as V10PipelineStage)} />}
         {activeStage === 7 && <Stage7Publish pipeline={pipeline} onUpdate={handlePipelineUpdate} />}

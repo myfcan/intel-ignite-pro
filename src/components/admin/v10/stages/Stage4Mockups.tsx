@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Layout, CheckCircle2, Save, Calculator, Upload, ChevronDown, ChevronUp, ImageIcon, AlertTriangle, Trash2, Search, Monitor, Loader2 } from 'lucide-react';
+import { Layout, CheckCircle2, Save, Calculator, Upload, ChevronDown, ChevronUp, ImageIcon, AlertTriangle, Trash2, Search, Monitor, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
 
@@ -26,6 +26,8 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
   const [searchingRefero, setSearchingRefero] = useState(false);
   const [referoScreens, setReferoScreens] = useState<Array<{ id: string; screen_name?: string; app_name?: string; thumbnail_url?: string; url?: string }>>([]);
   const [showReferoResults, setShowReferoResults] = useState(false);
+  const [generatingMockups, setGeneratingMockups] = useState(false);
+  const [nextBatchIndex, setNextBatchIndex] = useState(0);
 
   const progressPercent = mockupsTotal > 0
     ? Math.round((mockupsApproved / mockupsTotal) * 100)
@@ -201,12 +203,53 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
     toast.success(`Screenshot do Refero importado para Passo ${step.step_number}, Frame ${frameIndex + 1}`);
   }, []);
 
+  // Generate mockups via AI (v10-generate-mockups edge function)
+  const handleGenerateMockups = async () => {
+    if (!pipeline.lesson_id) {
+      toast.error('Vincule uma aula primeiro (Etapa 2)');
+      return;
+    }
+    setGeneratingMockups(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('v10-generate-mockups', {
+        body: { pipeline_id: pipeline.id, batch_size: 3, batch_index: nextBatchIndex },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data) {
+        const successCount = data.success ?? 0;
+        const hasMore = data.hasMoreBatches ?? false;
+
+        if (hasMore) {
+          setNextBatchIndex(prev => prev + 1);
+          toast.success(`${successCount} mockups gerados! Clique novamente para o próximo lote (batch ${nextBatchIndex + 2}).`);
+        } else {
+          setNextBatchIndex(0);
+          toast.success(`${successCount} mockups gerados! Todos os lotes concluídos.`);
+        }
+
+        // Refresh steps to show new mockup_urls
+        const { data: freshSteps } = await supabase
+          .from('v10_lesson_steps')
+          .select('*')
+          .eq('lesson_id', pipeline.lesson_id as string)
+          .order('step_number', { ascending: true });
+        if (freshSteps) setSteps(freshSteps as unknown as V10LessonStep[]);
+      }
+    } catch (err) {
+      toast.error(`Erro ao gerar mockups: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+    } finally {
+      setGeneratingMockups(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Layout className="h-5 w-5 text-indigo-500" />
-          Etapa 4 — Mockups
+          Etapa 3 — Mockups
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -417,6 +460,22 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-3">
+          {pipeline.lesson_id && totalFrames > 0 && (
+            <Button
+              variant="outline"
+              className="min-h-[44px] bg-gradient-to-r from-violet-50 to-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+              onClick={handleGenerateMockups}
+              disabled={generatingMockups}
+            >
+              {generatingMockups ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              {generatingMockups ? 'Gerando Mockups...' : `Gerar Mockups com IA (${totalFrames} frames)`}
+            </Button>
+          )}
+
           {totalFrames > 0 && (
             <Button
               variant="outline"

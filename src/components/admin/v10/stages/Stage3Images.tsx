@@ -18,6 +18,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   const [imagesApproved, setImagesApproved] = useState(pipeline.images_approved);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [nextBatchIndex, setNextBatchIndex] = useState(0);
   const [stepsCount, setStepsCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [stepImages, setStepImages] = useState<Array<{ stepNumber: number; title: string; src: string; alt: string; stepId: string }>>([]);
@@ -158,7 +159,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Image className="h-5 w-5 text-indigo-500" />
-          Etapa 3 — Imagens
+          Etapa 4 — Imagens
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

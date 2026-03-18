@@ -88,13 +88,6 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
         toast.error('Erro ao sugerir score via IA');
         return;
       }
-      const suggestedScores = data as {
-        score_refero: number;
-        score_docs: number;
-        score_pedagogy: number;
-        score_difficulty: number;
-        score_relevance: number;
-      };
       const responseData = data as Record<string, unknown>;
       setScores({
         score_refero: (responseData.score_refero as number) ?? 0,

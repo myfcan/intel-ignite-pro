@@ -267,7 +267,14 @@ TODOS os 3 campos sao OBRIGATORIOS em cada step.
 
 1. Cada frame DEVE simular a interface REAL do app — use chrome_header + inputs + buttons + tabelas etc.
 2. NUNCA gere frames so com texto generico. Cada frame deve parecer uma tela real do app.
-3. Cada step deve ter 1-3 frames. Frames representam telas/etapas DENTRO do mesmo passo.
+3. REGRA DE FRAMES POR PASSO (OBRIGATORIA — analise a complexidade da navegacao):
+   1 frame = Acao simples numa unica tela (ex: "Crie uma planilha nova" → 1 tela so)
+   2 frames = Acao com navegacao entre telas (ex: "Va em Settings, depois API Keys" → Dashboard → API Keys = 2 telas)
+   3 frames = Acao complexa com multiplas telas (ex: "Crie conta, pule onboarding, chegue no Dashboard" → Signup → Onboarding → Dashboard = 3 telas)
+   Cada frame = 1 mockup que sera gerado na Etapa 3. Total de frames = total de mockups.
+   Media esperada: ~1.5 frames/passo. Minimo absoluto: 1 frame por passo.
+   Cada frame DEVE ter bar_text preenchido (dominio/URL do app da tela).
+   JUSTIFIQUE o numero de frames baseado na complexidade da navegacao no passo.
 4. action deve ser FRASE DESCRITIVA (ex: "Acesse make.com e clique em Sign up"), NUNCA codigos como "click_button".
 5. check deve descrever O QUE O ALUNO VE NA TELA (ex: "Voce ve o Dashboard com o botao Create"), NUNCA codigos como "file_exists".
 6. warnings e OBRIGATORIO quando ha armadilhas ou situacoes condicionais. Use null se nao ha.
@@ -332,6 +339,33 @@ Lembre-se:
 
     if (!Array.isArray(steps)) {
       throw new Error("AI response is not a JSON array");
+    }
+
+    // 7b. Validate and fix frames
+    let totalFrames = 0;
+    for (const step of steps) {
+      if (!step.frames || !Array.isArray(step.frames) || step.frames.length === 0) {
+        // Auto-fix: create a default frame if none exist
+        step.frames = [{
+          bar_text: step.app_name || "app",
+          bar_sub: step.title || "Tela principal",
+          bar_color: step.accent_color || "#6366F1",
+          elements: [],
+        }];
+        console.warn(`[v10-generate-steps] Step "${step.title}" had 0 frames — auto-created 1 default frame`);
+      }
+      for (const frame of step.frames) {
+        if (!frame.bar_text) {
+          frame.bar_text = step.app_name || "app";
+          console.warn(`[v10-generate-steps] Frame in "${step.title}" had empty bar_text — auto-filled with "${frame.bar_text}"`);
+        }
+      }
+      totalFrames += step.frames.length;
+    }
+    const avgFrames = steps.length > 0 ? totalFrames / steps.length : 0;
+    console.log(`[v10-generate-steps] Frame validation: ${totalFrames} total frames across ${steps.length} steps (avg: ${avgFrames.toFixed(2)})`);
+    if (avgFrames < 1.3) {
+      console.warn(`[v10-generate-steps] WARNING: Low frame average ${avgFrames.toFixed(2)} (expected >= 1.3). Steps may need more frames for multi-screen navigation.`);
     }
 
     // 8. Insert each step into v10_lesson_steps
