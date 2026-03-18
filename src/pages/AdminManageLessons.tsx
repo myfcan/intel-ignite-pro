@@ -388,6 +388,58 @@ export default function AdminManageLessons() {
     }
   }
 
+  // Rename course (jornada)
+  async function handleRenameCourse() {
+    if (!renameCourseId || !renameCourseTitle.trim()) {
+      toast({ title: 'Nome obrigatório', variant: 'destructive' });
+      return;
+    }
+    setRenamingCourse(true);
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ title: renameCourseTitle.trim() })
+        .eq('id', renameCourseId);
+      if (error) throw error;
+      toast({ title: 'Jornada renomeada', description: `Novo nome: "${renameCourseTitle.trim()}"` });
+      setShowRenameCourseModal(false);
+      setRenameCourseId('');
+      setRenameCourseTitle('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao renomear', description: error.message, variant: 'destructive' });
+    } finally {
+      setRenamingCourse(false);
+    }
+  }
+
+  // Delete course (jornada) — only if empty
+  async function handleDeleteCourse() {
+    if (!deleteCourseId) return;
+    const courseLessons = lessons.filter(l => l.course_id === deleteCourseId);
+    const courseV10 = v10Lessons.filter(l => l.course_id === deleteCourseId);
+    if (courseLessons.length > 0 || courseV10.length > 0) {
+      toast({ title: 'Jornada não está vazia', description: 'Mova ou delete as aulas antes.', variant: 'destructive' });
+      return;
+    }
+    setDeletingCourse(true);
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', deleteCourseId);
+      if (error) throw error;
+      toast({ title: 'Jornada deletada' });
+      setShowDeleteCourseModal(false);
+      setDeleteCourseId('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao deletar', description: error.message, variant: 'destructive' });
+    } finally {
+      setDeletingCourse(false);
+    }
+  }
+
   async function handleCreateCourse() {
     let trailId = newCourseTrailId;
 
