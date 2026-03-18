@@ -149,3 +149,6 @@ verify_jwt = false
 
 [functions.patch-lesson-content]
 verify_jwt = false
+
+[functions.v10-refero-search]
+verify_jwt = false
