@@ -198,6 +198,12 @@ export default function AdminManageLessons() {
     setSelectedLessons(s);
   }
 
+  function toggleV10Lesson(id: string) {
+    const s = new Set(selectedV10Lessons);
+    s.has(id) ? s.delete(id) : s.add(id);
+    setSelectedV10Lessons(s);
+  }
+
   function openDeleteModal() {
     if (selectedLessons.size === 0) {
       toast({ title: 'Nenhuma lição selecionada', variant: 'destructive' });
