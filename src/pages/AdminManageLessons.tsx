@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Trash2, AlertTriangle, Bug, Wrench, FolderInput, Plus, Power, ChevronDown, ChevronRight, BookOpen, Layers, GraduationCap, Play } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, Bug, Wrench, FolderInput, Plus, Power, ChevronDown, ChevronRight, BookOpen, Layers, GraduationCap, Play, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -129,6 +129,17 @@ export default function AdminManageLessons() {
   const [showCreateTrailModal, setShowCreateTrailModal] = useState(false);
   const [soloTrailTitle, setSoloTrailTitle] = useState('');
   const [soloTrailIcon, setSoloTrailIcon] = useState('');
+
+  // Rename course modal
+  const [showRenameCourseModal, setShowRenameCourseModal] = useState(false);
+  const [renameCourseId, setRenameCourseId] = useState<string>('');
+  const [renameCourseTitle, setRenameCourseTitle] = useState('');
+  const [renamingCourse, setRenamingCourse] = useState(false);
+
+  // Delete course modal
+  const [showDeleteCourseModal, setShowDeleteCourseModal] = useState(false);
+  const [deleteCourseId, setDeleteCourseId] = useState<string>('');
+  const [deletingCourse, setDeletingCourse] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -374,6 +385,58 @@ export default function AdminManageLessons() {
       toast({ title: 'Erro ao mover jornada', description: error.message, variant: 'destructive' });
     } finally {
       setMovingCourse(false);
+    }
+  }
+
+  // Rename course (jornada)
+  async function handleRenameCourse() {
+    if (!renameCourseId || !renameCourseTitle.trim()) {
+      toast({ title: 'Nome obrigatório', variant: 'destructive' });
+      return;
+    }
+    setRenamingCourse(true);
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ title: renameCourseTitle.trim() })
+        .eq('id', renameCourseId);
+      if (error) throw error;
+      toast({ title: 'Jornada renomeada', description: `Novo nome: "${renameCourseTitle.trim()}"` });
+      setShowRenameCourseModal(false);
+      setRenameCourseId('');
+      setRenameCourseTitle('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao renomear', description: error.message, variant: 'destructive' });
+    } finally {
+      setRenamingCourse(false);
+    }
+  }
+
+  // Delete course (jornada) — only if empty
+  async function handleDeleteCourse() {
+    if (!deleteCourseId) return;
+    const courseLessons = lessons.filter(l => l.course_id === deleteCourseId);
+    const courseV10 = v10Lessons.filter(l => l.course_id === deleteCourseId);
+    if (courseLessons.length > 0 || courseV10.length > 0) {
+      toast({ title: 'Jornada não está vazia', description: 'Mova ou delete as aulas antes.', variant: 'destructive' });
+      return;
+    }
+    setDeletingCourse(true);
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', deleteCourseId);
+      if (error) throw error;
+      toast({ title: 'Jornada deletada' });
+      setShowDeleteCourseModal(false);
+      setDeleteCourseId('');
+      await loadData();
+    } catch (error: any) {
+      toast({ title: 'Erro ao deletar', description: error.message, variant: 'destructive' });
+    } finally {
+      setDeletingCourse(false);
     }
   }
 
@@ -677,6 +740,21 @@ export default function AdminManageLessons() {
                               <BookOpen className="w-4 h-4 text-blue-500" />
                               <span className="font-medium text-sm flex-1">{course.title}</span>
                               <Badge variant="outline" className="text-xs">{course.lessons.length + (course.v10Lessons?.length || 0)} aulas</Badge>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
+                                e.stopPropagation();
+                                setRenameCourseId(course.id);
+                                setRenameCourseTitle(course.title);
+                                setShowRenameCourseModal(true);
+                              }}>
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteCourseId(course.id);
+                                setShowDeleteCourseModal(true);
+                              }}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
                             </div>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
@@ -747,6 +825,21 @@ export default function AdminManageLessons() {
                             <BookOpen className="w-4 h-4 text-amber-500" />
                             <span className="font-medium text-sm flex-1">{course.title}</span>
                             <Badge variant="outline" className="text-xs">{courseLessons.length + courseV10.length} aulas</Badge>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
+                              e.stopPropagation();
+                              setRenameCourseId(course.id);
+                              setRenameCourseTitle(course.title);
+                              setShowRenameCourseModal(true);
+                            }}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteCourseId(course.id);
+                              setShowDeleteCourseModal(true);
+                            }}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                             <Button variant="outline" size="sm" onClick={(e) => {
                               e.stopPropagation();
                               setMoveCourseTarget(course.id);
@@ -1142,6 +1235,73 @@ export default function AdminManageLessons() {
               <Button variant="outline" onClick={() => setShowMoveCourseModal(false)} disabled={movingCourse}>Cancelar</Button>
               <Button onClick={handleMoveCourse} disabled={movingCourse || !moveCourseTrailId}>
                 {movingCourse ? 'Movendo...' : 'Confirmar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rename Course Modal */}
+        <Dialog open={showRenameCourseModal} onOpenChange={setShowRenameCourseModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-primary" />
+                Renomear Jornada
+              </DialogTitle>
+              <DialogDescription>Altere o título da jornada</DialogDescription>
+            </DialogHeader>
+            <Input
+              value={renameCourseTitle}
+              onChange={(e) => setRenameCourseTitle(e.target.value)}
+              placeholder="Novo nome da jornada"
+              onKeyDown={(e) => e.key === 'Enter' && handleRenameCourse()}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRenameCourseModal(false)} disabled={renamingCourse}>Cancelar</Button>
+              <Button onClick={handleRenameCourse} disabled={renamingCourse || !renameCourseTitle.trim()}>
+                {renamingCourse ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Course Modal */}
+        <Dialog open={showDeleteCourseModal} onOpenChange={setShowDeleteCourseModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="w-5 h-5" />
+                Deletar Jornada
+              </DialogTitle>
+              <DialogDescription>
+                {(() => {
+                  const totalLessons = lessons.filter(l => l.course_id === deleteCourseId).length +
+                    v10Lessons.filter(l => l.course_id === deleteCourseId).length;
+                  if (totalLessons > 0) {
+                    return `Esta jornada possui ${totalLessons} aula(s). Mova ou delete as aulas antes de remover a jornada.`;
+                  }
+                  return 'Esta jornada está vazia e pode ser deletada com segurança.';
+                })()}
+              </DialogDescription>
+            </DialogHeader>
+            {deleteCourseId && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Jornada:</p>
+                <p className="text-sm text-muted-foreground">{courses.find(c => c.id === deleteCourseId)?.title}</p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteCourseModal(false)} disabled={deletingCourse}>Cancelar</Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteCourse}
+                disabled={
+                  deletingCourse ||
+                  lessons.filter(l => l.course_id === deleteCourseId).length > 0 ||
+                  v10Lessons.filter(l => l.course_id === deleteCourseId).length > 0
+                }
+              >
+                {deletingCourse ? 'Deletando...' : 'Deletar'}
               </Button>
             </DialogFooter>
           </DialogContent>
