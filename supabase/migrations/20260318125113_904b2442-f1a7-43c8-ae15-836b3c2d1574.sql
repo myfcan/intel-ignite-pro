@@ -1,0 +1,1 @@
+ALTER TABLE v10_bpa_pipeline ADD COLUMN image_statuses jsonb NOT NULL DEFAULT '{}'::jsonb;

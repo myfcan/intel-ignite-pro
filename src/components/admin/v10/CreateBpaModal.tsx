@@ -30,12 +30,10 @@ interface Suggestion {
 interface PreviewScore {
   score_total: number;
   score_semaphore: 'green' | 'yellow' | 'red';
-  score_refero: number;
   score_docs: number;
   score_pedagogy: number;
   score_difficulty: number;
   score_relevance: number;
-  refero_screens: number;
   justificativa?: Record<string, string>;
 }
 
@@ -172,7 +170,6 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
     const initialScores = previewData
       ? {
           score_total: previewData.score_total,
-          score_refero: previewData.score_refero,
           score_docs: previewData.score_docs,
           score_pedagogy: previewData.score_pedagogy,
           score_difficulty: previewData.score_difficulty,
@@ -181,7 +178,6 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
         }
       : {
           score_total: 0,
-          score_refero: 0,
           score_docs: 0,
           score_pedagogy: 0,
           score_difficulty: 0,
@@ -383,11 +379,7 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
                   </div>
 
                   {/* Score breakdown */}
-                  <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-                    <div className="rounded bg-white px-2 py-1">
-                      <span className="text-muted-foreground">Refero</span>
-                      <span className="ml-1 font-semibold">{previewData.score_refero}</span>
-                    </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                     <div className="rounded bg-white px-2 py-1">
                       <span className="text-muted-foreground">Docs</span>
                       <span className="ml-1 font-semibold">{previewData.score_docs}</span>
@@ -403,10 +395,6 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
                     <div className="rounded bg-white px-2 py-1">
                       <span className="text-muted-foreground">Relev.</span>
                       <span className="ml-1 font-semibold">{previewData.score_relevance}</span>
-                    </div>
-                    <div className="rounded bg-white px-2 py-1">
-                      <span className="text-muted-foreground">Refero</span>
-                      <span className="ml-1 font-semibold">{previewData.refero_screens} telas</span>
                     </div>
                   </div>
                 </div>
