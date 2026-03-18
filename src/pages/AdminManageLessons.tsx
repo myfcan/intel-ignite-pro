@@ -205,13 +205,15 @@ export default function AdminManageLessons() {
   }
 
   function openDeleteModal() {
-    if (selectedLessons.size === 0) {
+    if (selectedLessons.size === 0 && selectedV10Lessons.size === 0) {
       toast({ title: 'Nenhuma lição selecionada', variant: 'destructive' });
       return;
     }
     setShowDeleteModal(true);
     setConfirmDelete(false);
   }
+
+  const totalSelected = selectedLessons.size + selectedV10Lessons.size;
 
   async function handleDelete() {
     if (!confirmDelete) return;
