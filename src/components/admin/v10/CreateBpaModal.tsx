@@ -30,12 +30,10 @@ interface Suggestion {
 interface PreviewScore {
   score_total: number;
   score_semaphore: 'green' | 'yellow' | 'red';
-  score_refero: number;
   score_docs: number;
   score_pedagogy: number;
   score_difficulty: number;
   score_relevance: number;
-  refero_screens: number;
   justificativa?: Record<string, string>;
 }
 
