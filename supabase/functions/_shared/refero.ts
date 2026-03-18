@@ -70,6 +70,7 @@ async function initSession(): Promise<string | null> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({

@@ -254,11 +254,116 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const handleAudit = async () => {
     setAuditing(true);
     try {
+      interface AuditResult {
+        c1: boolean; // description > 30 chars
+        c2: boolean; // tooltip_term exists when description is substantial
+        c3: boolean; // nav_breadcrumb exists when bar_sub changes between frames
+        c4: boolean; // at least 1 frame per step
+        c5: boolean; // narration_script not empty
+        c6: boolean; // duration_seconds > 0
+        c7: boolean; // title not empty and > 5 chars
+        c8: boolean; // phase is valid (1-5)
+        c9: boolean; // liv fields present (tip, analogy, sos)
+        details: string[];
+      }
+
+      const auditResults: Record<string, AuditResult> = {};
+      let allPassed = true;
+
+      for (const step of steps) {
+        const details: string[] = [];
+        const desc = step.description || '';
+        const frames = step.frames || [];
+        const allElements = frames.flatMap((f: any) => f.elements || []);
+
+        // C1: description > 30 chars
+        const c1 = desc.length > 30;
+        if (!c1) details.push(`C1: description tem ${desc.length} chars (mín: 30)`);
+
+        // C2: tooltip_term exists when description mentions technical concepts (>50 chars = likely has terms)
+        const tooltipTerms = allElements.filter((el: any) => el.type === 'tooltip_term');
+        const c2 = tooltipTerms.length > 0 || desc.length < 50;
+        if (!c2) details.push(`C2: description substancial sem tooltip_term nos frames`);
+
+        // C3: if bar_sub changes between frames, nav_breadcrumb must exist
+        const barSubValues = frames.map((f: any) => f.bar_sub).filter(Boolean);
+        const barSubChanges = new Set(barSubValues).size > 1;
+        const hasNavBreadcrumb = allElements.some((el: any) => el.type === 'nav_breadcrumb');
+        const c3 = !barSubChanges || hasNavBreadcrumb;
+        if (!c3) details.push(`C3: bar_sub muda entre frames mas falta nav_breadcrumb`);
+
+        // C4: at least 1 frame per step
+        const c4 = frames.length > 0;
+        if (!c4) details.push(`C4: passo sem frames (${frames.length})`);
+
+        // C5: narration_script not empty
+        const c5 = (step.narration_script || '').trim().length > 10;
+        if (!c5) details.push(`C5: narration_script vazio ou muito curto`);
+
+        // C6: duration > 0
+        const c6 = step.duration_seconds > 0;
+        if (!c6) details.push(`C6: duration_seconds = ${step.duration_seconds}`);
+
+        // C7: title meaningful (> 5 chars)
+        const c7 = (step.title || '').trim().length > 5;
+        if (!c7) details.push(`C7: título muito curto (${step.title?.length || 0} chars)`);
+
+        // C8: phase valid (1-5)
+        const c8 = step.phase >= 1 && step.phase <= 5;
+        if (!c8) details.push(`C8: phase inválida (${step.phase})`);
+
+        // C9: LIV fields present
+        const liv = step.liv as Record<string, string> | null;
+        const c9 = !!(liv && (liv.tip || liv.analogy || liv.sos));
+        if (!c9) details.push(`C9: campos LIV vazios (tip/analogy/sos)`);
+
+        auditResults[step.id] = { c1, c2, c3, c4, c5, c6, c7, c8, c9, details };
+        if (details.length > 0) allPassed = false;
+      }
+
+      // Count failures per clause
+      const clauseCounts: Record<string, number> = {};
+      Object.values(auditResults).forEach(r => {
+        r.details.forEach(d => {
+          const clause = d.substring(0, 2);
+          clauseCounts[clause] = (clauseCounts[clause] || 0) + 1;
+        });
+      });
+
       await onUpdate({
         steps_audited: steps.length,
-        audit_passed: true,
+        audit_passed: allPassed,
       });
-      toast.success('Estrutura auditada com sucesso!');
+
+      // Log audit results
+      await supabase.from('v10_bpa_pipeline_log').insert({
+        pipeline_id: pipeline.id,
+        stage: 2,
+        action: 'audit_c1_c9',
+        details: {
+          total_steps: steps.length,
+          all_passed: allPassed,
+          clause_failures: clauseCounts,
+          per_step: Object.fromEntries(
+            Object.entries(auditResults)
+              .filter(([_, r]) => r.details.length > 0)
+              .map(([id, r]) => [id, r.details])
+          ),
+        },
+      });
+
+      if (allPassed) {
+        toast.success(`Auditoria C1-C9 completa: ${steps.length}/${steps.length} passos aprovados ✅`);
+      } else {
+        const failedSteps = Object.values(auditResults).filter(r => r.details.length > 0).length;
+        const clauseSummary = Object.entries(clauseCounts)
+          .map(([c, n]) => `${c}:${n}`)
+          .join(', ');
+        toast.warning(
+          `Auditoria: ${steps.length - failedSteps}/${steps.length} aprovados. Falhas: ${clauseSummary}`,
+          { duration: 8000 }
+        );
+      }
     } catch {
       toast.error('Erro ao auditar estrutura');
     } finally {
