@@ -313,7 +313,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         if (!c8) details.push(`C8: phase inválida (${step.phase})`);
 
         // C9: LIV fields present
-        const liv = step.liv as Record<string, string> | null;
+        const liv = step.liv as unknown as Record<string, string> | null;
         const c9 = !!(liv && (liv.tip || liv.analogy || liv.sos));
         if (!c9) details.push(`C9: campos LIV vazios (tip/analogy/sos)`);
 
