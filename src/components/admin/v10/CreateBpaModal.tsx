@@ -379,11 +379,7 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
                   </div>
 
                   {/* Score breakdown */}
-                  <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-                    <div className="rounded bg-white px-2 py-1">
-                      <span className="text-muted-foreground">Refero</span>
-                      <span className="ml-1 font-semibold">{previewData.score_refero}</span>
-                    </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                     <div className="rounded bg-white px-2 py-1">
                       <span className="text-muted-foreground">Docs</span>
                       <span className="ml-1 font-semibold">{previewData.score_docs}</span>
@@ -399,10 +395,6 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
                     <div className="rounded bg-white px-2 py-1">
                       <span className="text-muted-foreground">Relev.</span>
                       <span className="ml-1 font-semibold">{previewData.score_relevance}</span>
-                    </div>
-                    <div className="rounded bg-white px-2 py-1">
-                      <span className="text-muted-foreground">Refero</span>
-                      <span className="ml-1 font-semibold">{previewData.refero_screens} telas</span>
                     </div>
                   </div>
                 </div>
