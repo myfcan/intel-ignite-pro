@@ -85,13 +85,13 @@ ${tool_name ? `Ferramenta: ${tool_name.trim()}` : ""}`;
     const cleaned = rawContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const scores = JSON.parse(cleaned);
 
-    // 3. Calculate weighted average
+    // 3. Calculate weighted average (4 dimensions, no Refero)
+    // Weights: Docs 30%, Pedagogy 30%, Difficulty 20%, Relevance 20%
     const score_total = Math.round(
-      (scores.score_refero ?? 0) * 0.2 +
-      (scores.score_docs ?? 0) * 0.25 +
-      (scores.score_pedagogy ?? 0) * 0.25 +
-      (scores.score_difficulty ?? 0) * 0.15 +
-      (scores.score_relevance ?? 0) * 0.15
+      (scores.score_docs ?? 0) * 0.30 +
+      (scores.score_pedagogy ?? 0) * 0.30 +
+      (scores.score_difficulty ?? 0) * 0.20 +
+      (scores.score_relevance ?? 0) * 0.20
     );
 
     const score_semaphore =
@@ -101,12 +101,10 @@ ${tool_name ? `Ferramenta: ${tool_name.trim()}` : ""}`;
       JSON.stringify({
         score_total,
         score_semaphore,
-        score_refero: scores.score_refero,
         score_docs: scores.score_docs,
         score_pedagogy: scores.score_pedagogy,
         score_difficulty: scores.score_difficulty,
         score_relevance: scores.score_relevance,
-        refero_screens: referoScreenCount,
         justificativa: scores.justificativa,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

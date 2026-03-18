@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { Save, Sparkles, Search, Monitor, Loader2 } from 'lucide-react';
+import { Save, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10ScoreSemaphore } from '@/types/v10.types';
@@ -15,17 +15,16 @@ interface Stage1ScoreProps {
 }
 
 interface ScoreField {
-  key: 'score_refero' | 'score_docs' | 'score_pedagogy' | 'score_difficulty' | 'score_relevance';
+  key: 'score_docs' | 'score_pedagogy' | 'score_difficulty' | 'score_relevance';
   label: string;
   weight: number;
 }
 
 const SCORE_FIELDS: ScoreField[] = [
-  { key: 'score_refero', label: 'Refero (screenshots disponíveis)', weight: 0.20 },
-  { key: 'score_docs', label: 'Documentação oficial', weight: 0.25 },
-  { key: 'score_pedagogy', label: 'Valor pedagógico', weight: 0.25 },
-  { key: 'score_difficulty', label: 'Dificuldade (inverso: fácil = mais pontos)', weight: 0.15 },
-  { key: 'score_relevance', label: 'Relevância mercado', weight: 0.15 },
+  { key: 'score_docs', label: 'Documentação oficial', weight: 0.30 },
+  { key: 'score_pedagogy', label: 'Valor pedagógico', weight: 0.30 },
+  { key: 'score_difficulty', label: 'Dificuldade (inverso: fácil = mais pontos)', weight: 0.20 },
+  { key: 'score_relevance', label: 'Relevância mercado', weight: 0.20 },
 ];
 
 function computeSemaphore(total: number): V10ScoreSemaphore {
@@ -52,7 +51,6 @@ function semaphoreColor(semaphore: V10ScoreSemaphore): string {
 
 export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
   const [scores, setScores] = useState<Record<ScoreField['key'], number>>({
-    score_refero: pipeline.score_refero,
     score_docs: pipeline.score_docs,
     score_pedagogy: pipeline.score_pedagogy,
     score_difficulty: pipeline.score_difficulty,
@@ -61,14 +59,7 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
   const [docsManualInput, setDocsManualInput] = useState(pipeline.docs_manual_input ?? '');
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
-  const [searchingRefero, setSearchingRefero] = useState(false);
-  const [referoData, setReferoData] = useState<{
-    screens: number;
-    flows: number;
-    screenNames: string[];
-  } | null>(null);
 
-  // Weighted average: (Refero×20% + Docs×25% + Pedagogia×25% + Dificuldade×15% + Relevância×15%)
   const scoreTotal = Math.round(
     SCORE_FIELDS.reduce((sum, field) => sum + scores[field.key] * field.weight, 0)
   );
@@ -88,32 +79,15 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
         toast.error('Erro ao sugerir score via IA');
         return;
       }
-      const suggestedScores = data as {
-        score_refero: number;
-        score_docs: number;
-        score_pedagogy: number;
-        score_difficulty: number;
-        score_relevance: number;
-      };
       const responseData = data as Record<string, unknown>;
       setScores({
-        score_refero: (responseData.score_refero as number) ?? 0,
         score_docs: (responseData.score_docs as number) ?? 0,
         score_pedagogy: (responseData.score_pedagogy as number) ?? 0,
         score_difficulty: (responseData.score_difficulty as number) ?? 0,
         score_relevance: (responseData.score_relevance as number) ?? 0,
       });
 
-      // Update Refero data if returned
-      if (responseData.refero_screens != null) {
-        setReferoData({
-          screens: responseData.refero_screens as number,
-          flows: responseData.refero_flows as number,
-          screenNames: [],
-        });
-      }
-
-      toast.success('Score sugerido pela IA (com dados do Refero)!');
+      toast.success('Score sugerido pela IA!');
     } catch {
       toast.error('Erro ao sugerir score via IA');
     } finally {
@@ -121,36 +95,10 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
     }
   };
 
-  const handleReferoSearch = async () => {
-    setSearchingRefero(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('v10-refero-search', {
-        body: { action: 'search_screens', query: pipeline.title, limit: 10 },
-      });
-      if (error) {
-        toast.error('Erro ao buscar no Refero');
-        return;
-      }
-      const result = data as { screens: Array<{ screen_name?: string; app_name?: string }>; total: number };
-      setReferoData({
-        screens: result.total ?? 0,
-        flows: 0,
-        screenNames: (result.screens ?? []).map((s) => s.screen_name || s.app_name || '').filter(Boolean).slice(0, 5),
-      });
-      toast.success(`Refero: ${result.total ?? 0} telas encontradas para "${pipeline.title}"`);
-    } catch {
-      toast.error('Erro ao buscar no Refero');
-    } finally {
-      setSearchingRefero(false);
-    }
-  };
-
-
   const handleSave = async () => {
     setSaving(true);
     try {
       await onUpdate({
-        score_refero: scores.score_refero,
         score_docs: scores.score_docs,
         score_pedagogy: scores.score_pedagogy,
         score_difficulty: scores.score_difficulty,
@@ -220,51 +168,6 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
             </div>
           ))}
         </div>
-
-        {/* Refero data panel */}
-        <div className="rounded-lg border bg-gradient-to-r from-violet-50 to-indigo-50 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-indigo-800 flex items-center gap-2">
-              <Monitor className="h-4 w-4" />
-              Refero — Screenshots Reais
-            </h4>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReferoSearch}
-              disabled={searchingRefero}
-              className="h-8"
-            >
-              {searchingRefero ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Search className="mr-1 h-3 w-3" />}
-              {searchingRefero ? 'Buscando...' : 'Buscar no Refero'}
-            </Button>
-          </div>
-          {referoData ? (
-            <div className="space-y-1">
-              <p className="text-sm text-indigo-700">
-                <span className="font-semibold">{referoData.screens}</span> telas encontradas
-                {referoData.flows > 0 && <> | <span className="font-semibold">{referoData.flows}</span> fluxos</>}
-              </p>
-              {referoData.screenNames.length > 0 && (
-                <p className="text-xs text-indigo-600">
-                  Exemplos: {referoData.screenNames.join(', ')}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                {referoData.screens > 10
-                  ? 'Muitas referências — score_refero recomendado: 80-95'
-                  : referoData.screens > 0
-                    ? 'Algumas referências — score_refero recomendado: 50-75'
-                    : 'Sem referências — score_refero recomendado: 10-35'}
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Clique "Buscar no Refero" para verificar screenshots disponíveis no banco de 126.000+ telas, ou use "IA Sugerir Score" que busca automaticamente.
-            </p>
-          )}
-        </div>
-
 
         {/* Documentation notes */}
         <div className="space-y-2">
