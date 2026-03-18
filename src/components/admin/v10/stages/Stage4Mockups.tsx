@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Layout, CheckCircle2, Save, Calculator, Upload, ChevronDown, ChevronUp, ImageIcon, AlertTriangle, Trash2 } from 'lucide-react';
+import { Layout, CheckCircle2, Save, Calculator, Upload, ChevronDown, ChevronUp, ImageIcon, AlertTriangle, Trash2, Search, Monitor, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
 
@@ -23,6 +23,9 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
   const [loadingSteps, setLoadingSteps] = useState(false);
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [searchingRefero, setSearchingRefero] = useState(false);
+  const [referoScreens, setReferoScreens] = useState<Array<{ id: string; screen_name?: string; app_name?: string; thumbnail_url?: string; url?: string }>>([]);
+  const [showReferoResults, setShowReferoResults] = useState(false);
 
   const progressPercent = mockupsTotal > 0
     ? Math.round((mockupsApproved / mockupsTotal) * 100)
@@ -155,6 +158,49 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
     toast.success('Mockup removido');
   }, []);
 
+  // Search Refero for reference screenshots
+  const handleReferoSearch = useCallback(async () => {
+    setSearchingRefero(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('v10-refero-search', {
+        body: { action: 'search_screens', query: pipeline.title, limit: 20 },
+      });
+      if (error) throw error;
+      const result = data as { screens: typeof referoScreens; total: number };
+      setReferoScreens(result.screens ?? []);
+      setShowReferoResults(true);
+      toast.success(`Refero: ${result.total ?? 0} telas encontradas`);
+    } catch {
+      toast.error('Erro ao buscar no Refero');
+    } finally {
+      setSearchingRefero(false);
+    }
+  }, [pipeline.title]);
+
+  // Import a Refero screenshot as mockup_url for a frame
+  const handleImportReferoScreen = useCallback(async (step: V10LessonStep, frameIndex: number, screenUrl: string) => {
+    const updatedFrames = [...step.frames];
+    if (updatedFrames[frameIndex]) {
+      (updatedFrames[frameIndex] as any).mockup_url = screenUrl;
+    }
+
+    const { error } = await supabase
+      .from('v10_lesson_steps')
+      .update({ frames: updatedFrames as any })
+      .eq('id', step.id);
+
+    if (error) {
+      toast.error('Erro ao importar screenshot do Refero');
+      return;
+    }
+
+    setSteps(prev => prev.map(s =>
+      s.id === step.id ? { ...s, frames: updatedFrames } : s
+    ));
+    setMockupsFromRefero(prev => prev + 1);
+    toast.success(`Screenshot do Refero importado para Passo ${step.step_number}, Frame ${frameIndex + 1}`);
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -212,6 +258,54 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
             <label className="mb-1 block text-xs font-medium text-indigo-700">Aprovados</label>
             <Input type="number" min={0} value={mockupsApproved} onChange={(e) => setMockupsApproved(Number(e.target.value))} className="bg-white" />
           </div>
+        </div>
+
+        {/* Refero screenshot search */}
+        <div className="rounded-lg border bg-gradient-to-r from-violet-50 to-indigo-50 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-indigo-800 flex items-center gap-2">
+              <Monitor className="h-4 w-4" />
+              Refero — Screenshots Reais (126k+ telas)
+            </h4>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReferoSearch}
+              disabled={searchingRefero}
+              className="h-8"
+            >
+              {searchingRefero ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Search className="mr-1 h-3 w-3" />}
+              {searchingRefero ? 'Buscando...' : 'Buscar Referências'}
+            </Button>
+          </div>
+          {showReferoResults && (
+            referoScreens.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs text-indigo-600">{referoScreens.length} screenshots encontrados. Clique em um frame expandido para importar.</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto">
+                  {referoScreens.map((screen, idx) => (
+                    <div key={screen.id || idx} className="rounded border bg-white p-1 text-center">
+                      {screen.thumbnail_url ? (
+                        <img src={screen.thumbnail_url} alt={screen.screen_name || ''} className="h-16 w-full object-cover rounded" />
+                      ) : (
+                        <div className="h-16 w-full bg-gray-100 rounded flex items-center justify-center">
+                          <ImageIcon className="h-4 w-4 text-gray-400" />
+                        </div>
+                      )}
+                      <p className="text-[9px] text-gray-600 truncate mt-1">{screen.screen_name || screen.app_name || 'Screen'}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Nenhum screenshot encontrado para "{pipeline.title}".</p>
+            )
+          )}
+          {!showReferoResults && (
+            <p className="text-xs text-muted-foreground">
+              Busque screenshots reais de interfaces no banco Refero para usar como referência nos mockups.
+            </p>
+          )}
         </div>
 
         {/* Per-step mockup management */}
@@ -281,6 +375,25 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
                                   {frame.mockup_url ? 'Trocar' : 'Upload'}
                                 </div>
                               </label>
+                              {referoScreens.length > 0 && !frame.mockup_url && (
+                                <select
+                                  className="rounded-md border px-2 py-1 text-xs max-w-[140px]"
+                                  defaultValue=""
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      handleImportReferoScreen(step, fi, e.target.value);
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                >
+                                  <option value="" disabled>Refero...</option>
+                                  {referoScreens.filter(s => s.thumbnail_url || s.url).map((s, si) => (
+                                    <option key={s.id || si} value={s.thumbnail_url || s.url || ''}>
+                                      {s.screen_name || s.app_name || `Screen ${si + 1}`}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
                               {frame.mockup_url && (
                                 <button
                                   className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
