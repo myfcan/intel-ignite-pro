@@ -420,6 +420,26 @@ export default function AdminV10PipelineEditor() {
           )}
         </CardContent>
       </Card>
+
+      {/* Advance stage confirmation dialog */}
+      <AlertDialog open={showAdvanceDialog} onOpenChange={setShowAdvanceDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Avançar Etapa</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pipeline && pipeline.current_stage < 7
+                ? `Deseja avançar de "${STAGES[pipeline.current_stage - 1].label}" para "${STAGES[pipeline.current_stage].label}"?`
+                : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAdvanceStage}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
