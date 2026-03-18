@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   ArrowLeft,
   ChevronRight,
@@ -154,18 +164,20 @@ export default function AdminV10PipelineEditor() {
   );
 
   // ---- Advance stage ----------------------------------------------------
-  async function handleAdvanceStage() {
+  const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
+
+  function handleAdvanceStage() {
     if (!pipeline) return;
     if (pipeline.current_stage >= 7) {
       toast.info('Já está na última etapa.');
       return;
     }
+    setShowAdvanceDialog(true);
+  }
 
-    const confirmed = window.confirm(
-      `Avançar de "${STAGES[pipeline.current_stage - 1].label}" para "${STAGES[pipeline.current_stage].label}"?`,
-    );
-    if (!confirmed) return;
-
+  async function confirmAdvanceStage() {
+    if (!pipeline) return;
+    setShowAdvanceDialog(false);
     setAdvancing(true);
 
     const nextStage = (pipeline.current_stage + 1) as V10PipelineStage;
@@ -408,6 +420,26 @@ export default function AdminV10PipelineEditor() {
           )}
         </CardContent>
       </Card>
+
+      {/* Advance stage confirmation dialog */}
+      <AlertDialog open={showAdvanceDialog} onOpenChange={setShowAdvanceDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Avançar Etapa</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pipeline && pipeline.current_stage < 7
+                ? `Deseja avançar de "${STAGES[pipeline.current_stage - 1].label}" para "${STAGES[pipeline.current_stage].label}"?`
+                : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAdvanceStage}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
