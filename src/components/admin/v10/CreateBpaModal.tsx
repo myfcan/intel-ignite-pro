@@ -170,7 +170,6 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
     const initialScores = previewData
       ? {
           score_total: previewData.score_total,
-          score_refero: previewData.score_refero,
           score_docs: previewData.score_docs,
           score_pedagogy: previewData.score_pedagogy,
           score_difficulty: previewData.score_difficulty,
@@ -179,7 +178,6 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
         }
       : {
           score_total: 0,
-          score_refero: 0,
           score_docs: 0,
           score_pedagogy: 0,
           score_difficulty: 0,
