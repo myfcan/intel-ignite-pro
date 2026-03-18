@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Loader2, ClipboardCheck, Save, Wrench } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ClipboardCheck, Save, Wrench, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { V10BpaPipeline } from '@/types/v10.types';
@@ -9,6 +9,7 @@ import type { V10BpaPipeline } from '@/types/v10.types';
 interface Stage6AssemblyProps {
   pipeline: V10BpaPipeline;
   onUpdate: (updates: Partial<V10BpaPipeline>) => Promise<void>;
+  onNavigateStage?: (stage: number) => void;
 }
 
 type ChecklistKey =
@@ -22,28 +23,32 @@ type ChecklistKey =
   | 'audios_ok'
   | 'narration_a_ok'
   | 'narration_c_ok'
-  | 'metadata_ok';
+  | 'metadata_ok'
+  | 'gamification_ok';
 
 interface ChecklistItem {
   key: ChecklistKey;
   label: string;
+  fixStage?: number;
+  fixLabel?: string;
 }
 
 const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { key: 'score_ok', label: 'Score de viabilidade ≥ 70' },
-  { key: 'structure_ok', label: 'Estrutura auditada e aprovada' },
-  { key: 'steps_have_frames', label: 'Todos os passos têm frames' },
-  { key: 'steps_have_liv', label: 'Todos os passos têm dicas LIV (tip, analogy, sos)' },
+  { key: 'score_ok', label: 'Score de viabilidade ≥ 70', fixStage: 1, fixLabel: 'Ajustar Score' },
+  { key: 'structure_ok', label: 'Estrutura auditada e aprovada', fixStage: 2, fixLabel: 'Auditar Estrutura' },
+  { key: 'steps_have_frames', label: 'Todos os passos têm frames', fixStage: 2, fixLabel: 'Editar Passos' },
+  { key: 'steps_have_liv', label: 'Todos os passos têm dicas LIV (tip, analogy, sos)', fixStage: 2, fixLabel: 'Editar Passos' },
   { key: 'intro_slides_ok', label: 'Slides de introdução configurados' },
-  { key: 'images_ok', label: 'Todos os passos têm imagem (verificação real nos frames)' },
-  { key: 'mockups_ok', label: 'Todos os frames têm mockup_url (verificação real)' },
-  { key: 'audios_ok', label: 'Todos os passos têm audio_url (verificação real)' },
-  { key: 'narration_a_ok', label: 'Narração Parte A configurada' },
-  { key: 'narration_c_ok', label: 'Narração Parte C configurada' },
+  { key: 'images_ok', label: 'Todos os passos têm imagem (verificação real nos frames)', fixStage: 3, fixLabel: 'Gerar Imagens' },
+  { key: 'mockups_ok', label: 'Todos os frames têm mockup_url (verificação real)', fixStage: 4, fixLabel: 'Upload Mockups' },
+  { key: 'audios_ok', label: 'Todos os passos têm audio_url (verificação real)', fixStage: 5, fixLabel: 'Gerar Áudios' },
+  { key: 'narration_a_ok', label: 'Narração Parte A configurada', fixStage: 5, fixLabel: 'Editar Narração A' },
+  { key: 'narration_c_ok', label: 'Narração Parte C configurada', fixStage: 5, fixLabel: 'Editar Narração C' },
   { key: 'metadata_ok', label: 'Metadados da aula completos (título, descrição, tools)' },
+  { key: 'gamification_ok', label: 'Gamificação configurada (xp_reward > 0)' },
 ];
 
-export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
+export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6AssemblyProps) {
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [fixing, setFixing] = useState(false);
@@ -76,7 +81,7 @@ export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
       } as Partial<V10BpaPipeline>);
 
       const passCount = Object.values(results).filter(Boolean).length;
-      toast.success(`Verificação concluída: ${passCount}/11 itens aprovados`);
+      toast.success(`Verificação concluída: ${passCount}/${CHECKLIST_ITEMS.length} itens aprovados`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       toast.error(`Erro na verificação: ${message}`);
@@ -201,7 +206,7 @@ export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
         } as Partial<V10BpaPipeline>);
 
         const passCount = Object.values(checkData.checklist as Record<string, boolean>).filter(Boolean).length;
-        toast.success(`Verificação concluída: ${passCount}/11 itens aprovados`);
+        toast.success(`Verificação concluída: ${passCount}/${CHECKLIST_ITEMS.length} itens aprovados`);
       }
     } catch (err: any) {
       toast.error(`Erro: ${err.message}`);
@@ -239,6 +244,7 @@ export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
           {CHECKLIST_ITEMS.map((item) => {
             const passed = checklist[item.key] === true;
             const checked = checklist[item.key] != null;
+            const failed = checked && !passed;
             return (
               <div
                 key={item.key}
@@ -253,9 +259,19 @@ export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
                 ) : (
                   <div className="h-5 w-5 shrink-0 rounded-full border-2 border-muted-foreground/30" />
                 )}
-                <span className={checked && !passed ? 'text-red-600' : ''}>
+                <span className={`flex-1 ${failed ? 'text-red-600' : ''}`}>
                   {item.label}
                 </span>
+                {failed && item.fixStage && onNavigateStage && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateStage(item.fixStage!)}
+                    className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  >
+                    {item.fixLabel || `Ir pra Etapa ${item.fixStage}`}
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             );
           })}
@@ -264,7 +280,7 @@ export function Stage6Assembly({ pipeline, onUpdate }: Stage6AssemblyProps) {
         {/* Progress summary */}
         <div className="rounded-lg bg-muted p-4">
           <p className="text-sm font-medium">
-            {passedCount}/11 verificações passaram
+            {passedCount}/{CHECKLIST_ITEMS.length} verificações passaram
           </p>
           {Object.keys(checklist).length > 0 && (
             <p className={`mt-1 text-sm font-semibold ${allPassed ? 'text-green-600' : 'text-red-600'}`}>

@@ -346,7 +346,7 @@ export default function AdminV10PipelineEditor() {
         {activeStage === 3 && <Stage3Images pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
         {activeStage === 4 && <Stage4Mockups pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
         {activeStage === 5 && <Stage5Narration pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
-        {activeStage === 6 && <Stage6Assembly pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
+        {activeStage === 6 && <Stage6Assembly pipeline={pipeline} onUpdate={handlePipelineUpdate} onNavigateStage={(s) => setActiveStage(s as V10PipelineStage)} />}
         {activeStage === 7 && <Stage7Publish pipeline={pipeline} onUpdate={handlePipelineUpdate} />}
       </section>
 
