@@ -819,13 +819,19 @@ export default function AdminManageLessons() {
                 Confirmar Exclusão
               </DialogTitle>
               <DialogDescription>
-                Deletar <strong>{selectedLessons.size} lição(ões)</strong>. Ação irreversível.
+                Deletar <strong>{totalSelected} lição(ões)</strong>. Ação irreversível.
               </DialogDescription>
             </DialogHeader>
             <div className="my-4 max-h-60 overflow-y-auto space-y-2">
               {selectedLessonsData.map(lesson => (
                 <div key={lesson.id} className="flex items-center gap-2 p-2 border rounded text-sm">
                   <Badge variant={lesson.is_active ? 'default' : 'secondary'}>{lesson.is_active ? '🟢' : '🟡'}</Badge>
+                  {lesson.title}
+                </div>
+              ))}
+              {v10Lessons.filter(l => selectedV10Lessons.has(l.id)).map(lesson => (
+                <div key={lesson.id} className="flex items-center gap-2 p-2 border rounded text-sm">
+                  <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">v10</Badge>
                   {lesson.title}
                 </div>
               ))}
