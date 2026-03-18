@@ -34,45 +34,19 @@ serve(async (req) => {
 
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
-    // 1. Query Refero for real screen data
-    let referoContext = "";
-    let referoScreenCount = 0;
-
-    try {
-      const { searchScreens } = await import("../_shared/refero.ts");
-      const screensResult = await searchScreens(title.trim(), 5);
-      referoScreenCount = screensResult.total;
-
-      if (referoScreenCount > 0) {
-        const screenNames = screensResult.screens
-          .map((s: any) => s.screen_name || s.app_name || "screen")
-          .join(", ");
-        referoContext = `\n\nDADOS DO REFERO (banco real de 126.000+ telas):
-- Telas encontradas para "${title}": ${referoScreenCount}
-${screensResult.screens.length > 0 ? `- Exemplos: ${screenNames}` : ""}
-USE esses dados reais para calibrar o score_refero.`;
-      } else {
-        referoContext = `\n\nDADOS DO REFERO: Nenhuma tela encontrada para "${title}". score_refero provavelmente 10-40.`;
-      }
-    } catch (err) {
-      console.warn("Refero query failed (non-fatal):", err);
-      referoContext = "\n\nDADOS DO REFERO: Consulta indisponível.";
-    }
-
-    // 2. Call AI for scoring (same prompt as v10-score-bpa)
+    // 1. Call AI for scoring (4 dimensions — Refero removed: requires OAuth browser flow incompatible with server-side)
     const systemPrompt = `Você é um especialista sênior em design instrucional para aulas de tecnologia.
 
-TAREFA: Analise o tema proposto e retorne um JSON com 5 scores (0-100 cada):
+TAREFA: Analise o tema proposto e retorne um JSON com 4 scores (0-100 cada):
 
-1. **score_refero** (0-100): Disponibilidade de screenshots/referências visuais
-2. **score_docs** (0-100): Qualidade da documentação oficial
-3. **score_pedagogy** (0-100): Valor pedagógico para renda extra
-4. **score_difficulty** (0-100): Facilidade de ensino (fácil = mais pontos)
-5. **score_relevance** (0-100): Relevância mercado 2024-2025
+1. **score_docs** (0-100): Qualidade da documentação oficial e recursos de aprendizado
+2. **score_pedagogy** (0-100): Valor pedagógico e aplicabilidade prática para renda extra
+3. **score_difficulty** (0-100): Facilidade de ensino (fácil = mais pontos)
+4. **score_relevance** (0-100): Relevância mercado 2024-2025
 
 REGRAS:
 - Avalie pelo TEMA em si, não penalize por falta de notas
-- Retorne APENAS JSON puro: { "score_refero": N, "score_docs": N, "score_pedagogy": N, "score_difficulty": N, "score_relevance": N, "justificativa": { "refero": "...", "docs": "...", "pedagogy": "...", "difficulty": "...", "relevance": "..." } }`;
+- Retorne APENAS JSON puro: { "score_docs": N, "score_pedagogy": N, "score_difficulty": N, "score_relevance": N, "justificativa": { "docs": "...", "pedagogy": "...", "difficulty": "...", "relevance": "..." } }`;
 
     const userMessage = `Tema: ${title.trim()}
 ${tool_name ? `Ferramenta: ${tool_name.trim()}` : ""}${referoContext}`;
