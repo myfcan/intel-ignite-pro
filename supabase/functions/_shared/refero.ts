@@ -249,7 +249,7 @@ export async function searchFlows(
 export async function getScreen(
   screenId: string
 ): Promise<ReferoScreen | null> {
-  const result = await callTool("get_screen", { screen_id: screenId });
+  const result = await callTool("refero_get_screen", { screen_id: screenId });
   const parsed = parseToolContent(result) as any;
   return parsed ?? null;
 }
