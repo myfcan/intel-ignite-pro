@@ -279,8 +279,16 @@ TODOS os 3 campos sao OBRIGATORIOS em cada step.
 5. check deve descrever O QUE O ALUNO VE NA TELA (ex: "Voce ve o Dashboard com o botao Create"), NUNCA codigos como "file_exists".
 6. warnings e OBRIGATORIO quando ha armadilhas ou situacoes condicionais. Use null se nao ha.
 7. liv.tip, liv.analogy e liv.sos sao TODOS obrigatorios em cada step.
-8. Use tooltip_term para termos tecnicos que o aluno pode nao conhecer.
-9. Use nav_breadcrumb quando o aluno precisa navegar menus do app.
+8. tooltip_term e OBRIGATORIO para QUALQUER termo tecnico: API, webhook, endpoint, SDK, OAuth, token, dashboard, workflow, trigger, integration, pipeline, deploy, slug, JSON, HTTP, URL, etc.
+   REGRA: Se a description do step menciona termos que um iniciante nao conheceria, PELO MENOS 1 elemento tooltip_term DEVE existir nos frames desse step.
+   Formato do elemento: { "type": "tooltip_term", "term": "API", "definition": "Interface que permite dois softwares se comunicarem automaticamente" }
+   Nao gerar tooltip_term para palavras comuns (email, botao, configurar, conta, senha).
+   AUDITORIA C2: Steps com description > 50 chars sem tooltip_term nos frames SERAO REPROVADOS.
+9. nav_breadcrumb e OBRIGATORIO quando um step tem 2+ frames com bar_sub DIFERENTES.
+   Se o aluno navega de uma tela para outra (ex: Dashboard → Settings → API Keys), inclua nav_breadcrumb no frame de destino.
+   Formato do elemento: { "type": "nav_breadcrumb", "path": ["Dashboard", "Settings", "API Keys"] }
+   REGRA SIMPLES: Se bar_sub muda entre frames consecutivos do mesmo step → nav_breadcrumb obrigatorio no segundo frame.
+   AUDITORIA C3: Steps com bar_sub diferente entre frames sem nav_breadcrumb SERAO REPROVADOS.
 10. Use dependency quando o step depende de algo feito anteriormente.
 11. Use celebration no frame final de uma secao/conquista importante.
 12. Quando trocar de ferramenta entre steps, inclua texto "🔄 Mudamos de ferramenta! Saimos do X → Entramos no Y."
@@ -296,7 +304,14 @@ Lembre-se:
 - Gere warnings para passos com armadilhas ou situacoes condicionais.
 - action e check devem ser FRASES DESCRITIVAS, nao codigos.
 - Todos os campos de liv (tip, analogy, sos) sao obrigatorios.
-- Use tooltip_term para termos tecnicos, nav_breadcrumb para navegacao, dependency para referencias a passos anteriores.`;
+
+AUDITORIA C1-C9 sera executada AUTOMATICAMENTE apos geracao. REGRAS CRITICAS que causam REPROVACAO:
+- C2: Se description > 50 chars, PELO MENOS 1 tooltip_term DEVE existir nos frames do step (termos como API, webhook, dashboard, token, OAuth, workflow, trigger, etc.)
+- C3: Se bar_sub muda entre frames do mesmo step, nav_breadcrumb OBRIGATORIO no frame de destino
+- C4: Todo step deve ter pelo menos 1 frame
+- C9: Todos os campos liv (tip, analogy, sos) devem estar preenchidos
+
+Passos que falharem na auditoria precisarao ser REGENERADOS. Gere corretamente da primeira vez.`;
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

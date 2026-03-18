@@ -255,15 +255,14 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     setAuditing(true);
     try {
       interface AuditResult {
-        c1: boolean; // description > 30 chars
-        c2: boolean; // tooltip_term exists when description is substantial
-        c3: boolean; // nav_breadcrumb exists when bar_sub changes between frames
-        c4: boolean; // at least 1 frame per step
-        c5: boolean; // narration_script not empty
-        c6: boolean; // duration_seconds > 0
-        c7: boolean; // title not empty and > 5 chars
-        c8: boolean; // phase is valid (1-5)
-        c9: boolean; // liv fields present (tip, analogy, sos)
+        c1: boolean;
+        c2: boolean;
+        c3: boolean;
+        c4: boolean;
+        c6: boolean;
+        c7: boolean;
+        c8: boolean;
+        c9: boolean;
         details: string[];
       }
 
@@ -280,7 +279,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         const c1 = desc.length > 30;
         if (!c1) details.push(`C1: description tem ${desc.length} chars (mín: 30)`);
 
-        // C2: tooltip_term exists when description mentions technical concepts (>50 chars = likely has terms)
+        // C2: tooltip_term exists when description is substantial (>50 chars = likely has tech terms)
         const tooltipTerms = allElements.filter((el: any) => el.type === 'tooltip_term');
         const c2 = tooltipTerms.length > 0 || desc.length < 50;
         if (!c2) details.push(`C2: description substancial sem tooltip_term nos frames`);
@@ -296,9 +295,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         const c4 = frames.length > 0;
         if (!c4) details.push(`C4: passo sem frames (${frames.length})`);
 
-        // C5: narration_script not empty
-        const c5 = (step.narration_script || '').trim().length > 10;
-        if (!c5) details.push(`C5: narration_script vazio ou muito curto`);
+        // C5 REMOVIDA: narration_script só existe na Etapa 5, verificar aqui é falso positivo
 
         // C6: duration > 0
         const c6 = step.duration_seconds > 0;
@@ -317,7 +314,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         const c9 = !!(liv && (liv.tip || liv.analogy || liv.sos));
         if (!c9) details.push(`C9: campos LIV vazios (tip/analogy/sos)`);
 
-        auditResults[step.id] = { c1, c2, c3, c4, c5, c6, c7, c8, c9, details };
+        auditResults[step.id] = { c1, c2, c3, c4, c6, c7, c8, c9, details };
         if (details.length > 0) allPassed = false;
       }
 
@@ -353,7 +350,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       });
 
       if (allPassed) {
-        toast.success(`Auditoria C1-C9 completa: ${steps.length}/${steps.length} passos aprovados ✅`);
+        toast.success(`Auditoria C1-C9 completa: ${steps.length}/${steps.length} passos aprovados`);
       } else {
         const failedSteps = Object.values(auditResults).filter(r => r.details.length > 0).length;
         const clauseSummary = Object.entries(clauseCounts)
