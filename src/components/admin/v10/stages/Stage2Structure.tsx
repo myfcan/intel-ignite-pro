@@ -501,6 +501,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     }
   };
 
+  const handleDeleteLesson = async () => {
     if (!pipeline.lesson_id) return;
     const confirmed = window.confirm(
       '⚠️ ATENÇÃO: Isso vai excluir permanentemente a aula e TODOS os dados vinculados:\n\n' +
