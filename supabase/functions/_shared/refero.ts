@@ -269,7 +269,7 @@ export async function getFlow(flowId: string): Promise<ReferoFlow | null> {
 export async function getDesignGuidance(
   topic: string
 ): Promise<string | null> {
-  const result = await callTool("get_design_guidance", { topic });
+  const result = await callTool("refero_get_design_guidance", { topic });
   const parsed = parseToolContent(result);
   return typeof parsed === "string" ? parsed : parsed ? JSON.stringify(parsed) : null;
 }
