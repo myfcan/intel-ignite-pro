@@ -1,157 +1,63 @@
 
 
-# Auditoria Forense do Plano — Com Dados Reais do Código
+## Diagnóstico: Por que o Refero MCP retorna vazio nas Edge Functions
 
----
+### Fato confirmado (dados reais)
 
-## 1. CONFIRMADO: A raiz do problema está no template e no refine
-
-**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
-```markdown
-### Seção 3 (índice 2) — Ponte para primeiro exercício
-**Objetivo:** Frase curta de transição para o primeiro exercício.
-
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
-```
-
-E o exercício associado (linha 89):
+Chamada real feita agora (18:03:08 UTC):
 ```json
-"title": "Teste rápido: respostas genéricas",
+// Response do v10-refero-search para "Calendly"
+{ "query": "Calendly", "screens": [], "total": 0 }
 ```
 
-Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
+Logs da edge function: **zero erros** — a chamada retorna 200 OK mas com dados vazios. Isso significa que o `initSession()` não está falhando com erro, mas o `mcp-session-id` retornado provavelmente é `null` ou inválido.
 
-**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
-```
-11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
+### Causa raiz
 
-13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
-```
+O setup do Refero MCP (visível na sua screenshot) diz explicitamente:
 
-A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
+> **Step 3: Restart & authorize** — "The first time you call Refero, **a browser window opens**. Sign in with your Refero account — after that it's automatic."
 
----
+O protocolo MCP do Refero exige um **fluxo OAuth interativo via browser** na primeira chamada. Edge Functions são server-side (headless) — não podem abrir browser. Resultado: a sessão nunca é autorizada, e todas as queries retornam `[]`.
 
-## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
+### Dois usos diferentes do Refero
 
-**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
-```typescript
-if (refineResponse.ok) {
-  const refineResult = await refineResponse.json();
-  if (refineResult.sections && Array.isArray(refineResult.sections)) {
-    // Replace section content with refined versions — protect Section 0 (Abertura)
-    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
-      parsed.sections[i].content = refineResult.sections[refIdx].content;
-    }
-  }
-}
-```
+| Uso | Onde roda | Funciona? |
+|-----|-----------|-----------|
+| **MCP Connector** (agent-side) — eu (Lovable) consulto Refero durante desenvolvimento | No agente Lovable | SIM — Lovable suporta MCP connectors nativamente |
+| **Score Pipeline** (server-side) — edge function calcula `score_refero` quando admin cria BPA | Supabase Edge Function | NAO — requer OAuth browser |
 
-O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
+### Plano de ação (2 frentes)
 
----
+#### Frente 1: Conectar Refero como MCP Connector no Lovable
 
-## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
+Seus dados da screenshot:
+- Server URL: `https://api.refero.design/mcp`  
+- Bearer token: `mcp-R5tXJ8rbXMM5g85w`
 
-**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
-```typescript
-const finalData: V8LessonData = {
-  contentVersion: "v8",
-  title: parsed.title,
-  // ...
-};
-```
+Isso me daria acesso direto ao Refero durante o desenvolvimento — posso buscar screenshots, flows e guidance para criar mockups melhores no Stage 4.
 
-O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+#### Frente 2: Remover `score_refero` do cálculo de viabilidade
 
----
+Como o scoring roda em edge functions (server-side) e o Refero MCP **não suporta** chamadas server-to-server sem OAuth, o `score_refero` **nunca funcionou em produção** — sempre foi 0, com a IA compensando pelo conhecimento geral.
 
-## 4. CONFIRMADO: `v8-generate-raw-content` não existe
+**Mudanças:**
 
-```
-code--search_files: No matches found for pattern 'v8-generate-raw-content'
-```
+1. **`supabase/functions/v10-preview-score/index.ts`** — Remover bloco de consulta Refero (linhas 41-53). Redistribuir pesos: docs 30%, pedagogy 30%, difficulty 20%, relevance 20%.
 
-A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
+2. **`supabase/functions/v10-score-bpa/index.ts`** — Mesma redistribuição de pesos (se usar o mesmo padrão).
 
----
+3. **`_shared/refero.ts`** — Manter arquivo intacto (pode ser útil futuramente se Refero lançar API server-to-server, ou para Stage 4 mockups).
 
-## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+4. **`v10-refero-search/index.ts`** — Manter como está (útil se resolver auth futuramente).
 
-**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
+5. **UI (CreateBpaModal, Stage1Score)** — Remover exibição de `score_refero` e `refero_screens` dos cards de viabilidade; mostrar apenas os 4 scores funcionais.
 
-Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+6. **Prompt da IA** — Atualizar o system prompt no scoring para remover referência ao Refero e ajustar para 4 dimensões.
 
----
+### Resultado esperado
 
-## 6. GAPS NO PLANO PROPOSTO
-
-### Gap A: O plano NÃO endereça o `contractPattern` não salvo
-O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
-
-**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
-
-### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
-Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
-
-**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
-
-### Gap C: Parser compatibility com output da IA
-O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
-
-**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
-
-### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
-A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
-
----
-
-## 7. PLANO REVISADO FINAL
-
-### Arquivos a criar/modificar
-
-| Arquivo | Ação | O que muda |
-|---------|------|------------|
-| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
-| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
-| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
-| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
-| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
-
-### Detalhes por arquivo
-
-**1. `v8-generate-raw-content/index.ts` (NOVO)**
-- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
-- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
-- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
-- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
-- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
-- Modelo: `google/gemini-2.5-flash`
-
-**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
-- Adicionar após Regra 13:
-  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
-  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
-
-**3. `AdminV8Create.tsx` (EDITAR)**
-- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
-- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
-- Função `sectionsToMarkdown()` para converter output da function em markdown
-- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
-
-**4. `v8Lesson.ts` (EDITAR linha ~136)**
-- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
-
-### Riscos residuais
-
-| Risco | Severidade | Mitigação |
-|-------|-----------|-----------|
-| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
-| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
-| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
+- Score de viabilidade passa a ser **100% baseado em dados reais** (IA avaliando docs, pedagogia, dificuldade, relevância)
+- Zero dependência de API externa que não funciona server-side
+- Refero fica disponível como MCP Connector para uso durante desenvolvimento (Stage 4 mockups)
 
