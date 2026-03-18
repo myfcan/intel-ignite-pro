@@ -340,6 +340,7 @@ export interface V10BpaPipeline {
   images_needed: number;
   images_generated: number;
   images_approved: number;
+  image_statuses: Record<string, string> | null;
 
   // Stage 4: Mockups
   mockups_total: number;
