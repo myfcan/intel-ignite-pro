@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { Save, Sparkles, Search, Monitor, Loader2, BookOpen } from 'lucide-react';
+import { Save, Sparkles, Search, Monitor, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10ScoreSemaphore } from '@/types/v10.types';
@@ -62,11 +62,6 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [searchingRefero, setSearchingRefero] = useState(false);
-  const [searchingDocs, setSearchingDocs] = useState(false);
-  const [docsData, setDocsData] = useState<{
-    total: number;
-    titles: string[];
-  } | null>(null);
   const [referoData, setReferoData] = useState<{
     screens: number;
     flows: number;
@@ -150,28 +145,6 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
     }
   };
 
-  const handleDocsSearch = async () => {
-    setSearchingDocs(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('v10-reftools-search', {
-        body: { action: 'search_docs', query: pipeline.title, limit: 10 },
-      });
-      if (error) {
-        toast.error('Erro ao buscar docs no Ref.tools');
-        return;
-      }
-      const result = data as { results: Array<{ title?: string }>; total: number };
-      setDocsData({
-        total: result.total ?? 0,
-        titles: (result.results ?? []).map((r) => r.title || '').filter(Boolean).slice(0, 5),
-      });
-      toast.success(`Ref.tools: ${result.total ?? 0} docs encontrados para "${pipeline.title}"`);
-    } catch {
-      toast.error('Erro ao buscar docs no Ref.tools');
-    } finally {
-      setSearchingDocs(false);
-    }
-  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -292,48 +265,6 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
           )}
         </div>
 
-        {/* Ref.tools documentation panel */}
-        <div className="rounded-lg border bg-gradient-to-r from-emerald-50 to-teal-50 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              Ref.tools — Documentação Técnica
-            </h4>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDocsSearch}
-              disabled={searchingDocs}
-              className="h-8"
-            >
-              {searchingDocs ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Search className="mr-1 h-3 w-3" />}
-              {searchingDocs ? 'Buscando...' : 'Buscar Docs'}
-            </Button>
-          </div>
-          {docsData ? (
-            <div className="space-y-1">
-              <p className="text-sm text-emerald-700">
-                <span className="font-semibold">{docsData.total}</span> documentos encontrados
-              </p>
-              {docsData.titles.length > 0 && (
-                <p className="text-xs text-emerald-600">
-                  Exemplos: {docsData.titles.join(', ')}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                {docsData.total > 5
-                  ? 'Boa cobertura documental — score_docs recomendado: 70-90'
-                  : docsData.total > 0
-                    ? 'Cobertura parcial — score_docs recomendado: 40-65'
-                    : 'Sem docs — score_docs recomendado: 10-30'}
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Clique "Buscar Docs" para verificar documentação técnica disponível no Ref.tools.
-            </p>
-          )}
-        </div>
 
         {/* Documentation notes */}
         <div className="space-y-2">
