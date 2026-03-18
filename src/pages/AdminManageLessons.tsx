@@ -473,7 +473,8 @@ export default function AdminManageLessons() {
   // V10 Lesson row component
   function V10LessonRow({ lesson }: { lesson: V10Lesson }) {
     return (
-      <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+      <div className={`flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors ${selectedV10Lessons.has(lesson.id) ? 'bg-accent border-primary' : ''}`}>
+        <Checkbox checked={selectedV10Lessons.has(lesson.id)} onCheckedChange={() => toggleV10Lesson(lesson.id)} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <h4 className="font-medium text-sm truncate">{lesson.badge_icon} {lesson.title}</h4>
