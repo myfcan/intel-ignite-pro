@@ -258,7 +258,7 @@ export async function getScreen(
  * Get full details for a specific flow
  */
 export async function getFlow(flowId: string): Promise<ReferoFlow | null> {
-  const result = await callTool("get_flow", { flow_id: flowId });
+  const result = await callTool("refero_get_flow", { flow_id: flowId });
   const parsed = parseToolContent(result) as any;
   return parsed ?? null;
 }
