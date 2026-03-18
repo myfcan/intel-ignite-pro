@@ -21,6 +21,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   const [stepsCount, setStepsCount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [stepImages, setStepImages] = useState<Array<{ stepNumber: number; title: string; src: string; alt: string; stepId: string }>>([]);
+  const [nextBatchIndex, setNextBatchIndex] = useState(0);
 
   // Fetch steps count to help auto-calculate images_needed
   useEffect(() => {
