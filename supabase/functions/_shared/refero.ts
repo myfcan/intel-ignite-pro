@@ -92,6 +92,31 @@ async function initSession(): Promise<string | null> {
     console.log("[Refero] initSession status:", response.status, "body:", responseText.substring(0, 500));
     _sessionId = response.headers.get("mcp-session-id");
     console.log("[Refero] sessionId:", _sessionId);
+
+    // List available tools on first init
+    if (!_toolsListed) {
+      const listHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+        Authorization: `Bearer ${apiKey}`,
+      };
+      if (_sessionId) listHeaders["mcp-session-id"] = _sessionId;
+
+      const listResp = await fetch(REFERO_MCP_URL, {
+        method: "POST",
+        headers: listHeaders,
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 2,
+          method: "tools/list",
+          params: {},
+        }),
+      });
+      const listText = await listResp.text();
+      console.log("[Refero] tools/list:", listText.substring(0, 2000));
+      _toolsListed = true;
+    }
+
     return _sessionId;
   } catch (err) {
     console.error("[Refero] MCP init failed:", err);
