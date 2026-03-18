@@ -34,7 +34,9 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   const [stepsCount, setStepsCount] = useState(0);
   const [stepImages, setStepImages] = useState<StepImage[]>([]);
   const [nextBatchIndex, setNextBatchIndex] = useState(0);
-  const [imageStatuses, setImageStatuses] = useState<Record<string, ImageStatus>>({});
+  const [imageStatuses, setImageStatuses] = useState<Record<string, ImageStatus>>(
+    (pipeline.image_statuses as Record<string, ImageStatus>) || {}
+  );
   const [regeneratingStep, setRegeneratingStep] = useState<string | null>(null);
   const [uploadingStep, setUploadingStep] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
