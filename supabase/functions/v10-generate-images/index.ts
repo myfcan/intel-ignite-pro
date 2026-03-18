@@ -19,24 +19,27 @@ function buildImagePrompt(
   const context = [stepTitle, stepDescription, altText]
     .filter(Boolean)
     .join(". ");
-  return `Create a modern flat vector illustration for a tech learning platform about: ${context}.
+  return `Generate a conceptual diagram/illustration showing the automation workflow or concept: ${context}.
+
+This is a V10 contextual illustration for Parte A (intro) or Parte C (recap) of a tech lesson.
+It is NOT a UI mockup — it is a flow diagram or conceptual illustration.
 
 Style requirements:
-- Modern flat vector illustration with clean bold shapes, thin defined outlines, and vibrant harmonious color palette (blues, violets, warm yellows, soft pinks, greens)
-- Character style: stylized human figures with simplified proportions, expressive poses, minimal facial detail but clear emotion — when relevant to the concept
-- Objects: everyday items (laptops, tablets, documents, folders, charts, calendars) rendered in flat geometric shapes with NO realistic shadows — only subtle flat color shadows for depth
-- Single cohesive scene, centered, 1 to 3 visual elements max, tightly composed as ONE unit
-- The main illustration must fill 85-95% of the frame — almost NO padding around it
+- Clean diagram with tool/app icons connected by directional flow arrows
+- AILIV brand color palette: indigo (#6366F1), violet (#8B5CF6), emerald (#34D399), soft gray (#F3F4F6)
+- Tool/app icons as simplified colored rounded shapes (NOT realistic logos — use colored circles/squares with the tool initial letter)
+- Flow arrows or connection lines between elements showing data/process flow
+- Minimal text labels (tool names only, max 2-3 words per label)
+- Clean, professional, editorial quality
+- Single cohesive diagram, centered composition
 - CLEAN SOLID WHITE BACKGROUND (#FFFFFF)
-- NO 3D rendering, NO gradients, NO realistic textures, NO photorealism
-- Professional editorial illustration quality — clean, polished, modern
-- ABSOLUTELY NO TEXT of any kind inside the image. No words, no letters, no labels, no numbers, no banners, no captions, no typography.
-- CRITICAL: NEVER use brains, lightbulbs, gears, cogs, neural networks, circuit boards, or generic AI/technology symbols.
-- NEVER create infographic-style, diagram-style, or flowchart-style compositions
-- NEVER scatter many small objects — always ONE cohesive central composition
-- IMPORTANT: Compose the image in a 16:9 LANDSCAPE orientation
-- OUTPUT SIZE: Generate the image at exactly 1024x576 pixels (16:9 landscape)
-- The composition must be centered and fill the frame`;
+- ABSOLUTELY NO people, characters, or human figures
+- ABSOLUTELY NO realistic logos or brand marks
+- NO 3D rendering, NO gradients, NO realistic textures
+- NO brains, lightbulbs, gears, neural networks, or generic tech symbols
+- IMPORTANT: 16:9 LANDSCAPE orientation
+- OUTPUT SIZE: exactly 1024x576 pixels (16:9 landscape)
+- The diagram must be centered and fill 80-90% of the frame`;
 }
 
 function base64UrlToBytes(dataUrl: string): Uint8Array {
@@ -351,7 +354,7 @@ serve(async (req: Request) => {
 
             await supabase.from("v10_bpa_pipeline_log").insert({
               pipeline_id,
-              stage: 3,
+              stage: 4,
               action: "generate-images:error",
               details: { message: `Step ${step.step_number}, element ${elementIdx}: ${(err as Error).message}` },
             });
