@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
 import type {
   V10BpaPipeline,
@@ -254,34 +255,85 @@ export default function AdminV10PipelineEditor() {
           </p>
         </div>
 
-        <span
-          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${STATUS_COLORS[pipeline.status]}`}
-        >
-          {STATUS_LABELS[pipeline.status]}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${STATUS_COLORS[pipeline.status]}`}
+          >
+            {STATUS_LABELS[pipeline.status]}
+          </span>
+          {pipeline.current_stage > 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="min-h-[36px] text-xs text-muted-foreground hover:text-destructive"
+              onClick={async () => {
+                const targetStage = window.prompt(
+                  `Voltar para qual etapa? (1-${pipeline.current_stage})\n\nAtual: Etapa ${pipeline.current_stage}`,
+                  '1'
+                );
+                if (!targetStage) return;
+                const num = parseInt(targetStage, 10);
+                if (isNaN(num) || num < 1 || num > pipeline.current_stage) {
+                  toast.error('Etapa inválida');
+                  return;
+                }
+                const confirmed = window.confirm(
+                  `Resetar pipeline para Etapa ${num} (${STAGES[num - 1].label})?`
+                );
+                if (!confirmed) return;
+
+                await handlePipelineUpdate({
+                  current_stage: num as V10PipelineStage,
+                  status: num === 1 ? 'draft' : 'in_progress',
+                  assembly_passed: false,
+                  assembly_checklist: {} as Record<string, boolean>,
+                } as Partial<V10BpaPipeline>);
+                setActiveStage(num as V10PipelineStage);
+
+                await supabase.from('v10_bpa_pipeline_log').insert({
+                  pipeline_id: pipeline.id,
+                  stage: num,
+                  action: 'pipeline_reset',
+                  details: { from_stage: pipeline.current_stage, to_stage: num },
+                });
+
+                toast.success(`Pipeline resetado para Etapa ${num}: ${STAGES[num - 1].label}`);
+              }}
+              title="Voltar para etapa anterior"
+            >
+              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+              Resetar etapa
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Stage stepper */}
+      {/* Stage stepper — all stages navigable for inspection */}
       <nav className="flex items-center gap-1 overflow-x-auto rounded-lg border bg-muted/40 p-2">
         {STAGES.map((stage) => {
-          const isAccessible = stage.num <= pipeline.current_stage;
           const isActive = stage.num === activeStage;
+          const isCurrent = stage.num === pipeline.current_stage;
+          const isPast = stage.num < pipeline.current_stage;
+          const isFuture = stage.num > pipeline.current_stage;
 
           return (
             <button
               key={stage.num}
               type="button"
-              disabled={!isAccessible}
-              onClick={() => isAccessible && setActiveStage(stage.num)}
+              onClick={() => setActiveStage(stage.num)}
               className={`
-                flex min-h-[44px] flex-1 flex-col items-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors
+                flex min-h-[44px] flex-1 flex-col items-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors cursor-pointer
                 ${isActive ? 'bg-white shadow text-indigo-700' : ''}
-                ${isAccessible && !isActive ? 'hover:bg-white/60 text-foreground cursor-pointer' : ''}
-                ${!isAccessible ? 'cursor-not-allowed opacity-40' : ''}
+                ${!isActive && isPast ? 'hover:bg-white/60 text-foreground' : ''}
+                ${!isActive && isCurrent ? 'hover:bg-white/60 text-foreground' : ''}
+                ${!isActive && isFuture ? 'hover:bg-white/60 text-muted-foreground opacity-60' : ''}
               `}
             >
               <span className="text-lg leading-none">{stage.icon}</span>
               <span>{stage.label}</span>
+              {isCurrent && !isActive && (
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+              )}
             </button>
           );
         })}

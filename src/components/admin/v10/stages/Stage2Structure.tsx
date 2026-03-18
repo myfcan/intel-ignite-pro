@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, CheckCircle, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, AlertCircle, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
@@ -70,6 +70,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [auditing, setAuditing] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [deletingLesson, setDeletingLesson] = useState(false);
 
   // Trail/Course selectors for lesson creation
   const [trails, setTrails] = useState<Array<{ id: string; title: string }>>([]);
@@ -262,6 +263,99 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       toast.error('Erro ao auditar estrutura');
     } finally {
       setAuditing(false);
+    }
+  };
+
+  const handleDeleteLesson = async () => {
+    if (!pipeline.lesson_id) return;
+    const confirmed = window.confirm(
+      '⚠️ ATENÇÃO: Isso vai excluir permanentemente a aula e TODOS os dados vinculados:\n\n' +
+      '• Todos os passos (steps)\n' +
+      '• Todos os slides de introdução\n' +
+      '• Todas as narrações (Parte A e C)\n' +
+      '• Todos os áudios gerados\n' +
+      '• Todos os anchors\n\n' +
+      'O pipeline voltará ao estado inicial (sem aula vinculada).\n\n' +
+      'Tem certeza?'
+    );
+    if (!confirmed) return;
+
+    setDeletingLesson(true);
+    try {
+      const lessonId = pipeline.lesson_id;
+
+      // 1. Delete anchors (depend on steps)
+      const { data: stepIds } = await supabase
+        .from('v10_lesson_steps')
+        .select('id')
+        .eq('lesson_id', lessonId);
+
+      if (stepIds && stepIds.length > 0) {
+        const ids = stepIds.map((s: { id: string }) => s.id);
+        await supabase
+          .from('v10_lesson_step_anchors')
+          .delete()
+          .in('step_id', ids);
+      }
+
+      // 2. Delete steps
+      await supabase
+        .from('v10_lesson_steps')
+        .delete()
+        .eq('lesson_id', lessonId);
+
+      // 3. Delete intro slides
+      await supabase
+        .from('v10_lesson_intro_slides')
+        .delete()
+        .eq('lesson_id', lessonId);
+
+      // 4. Delete narrations
+      await supabase
+        .from('v10_lesson_narrations')
+        .delete()
+        .eq('lesson_id', lessonId);
+
+      // 5. Delete the lesson itself
+      await supabase
+        .from('v10_lessons')
+        .delete()
+        .eq('id', lessonId);
+
+      // 6. Reset pipeline counters and clear lesson_id
+      await onUpdate({
+        lesson_id: null,
+        steps_generated: 0,
+        steps_audited: 0,
+        audit_passed: false,
+        images_needed: 0,
+        images_generated: 0,
+        images_approved: 0,
+        mockups_total: 0,
+        mockups_from_refero: 0,
+        mockups_generic: 0,
+        mockups_approved: 0,
+        audios_total: 0,
+        audios_generated: 0,
+        audios_approved: 0,
+        assembly_checklist: {} as Record<string, boolean>,
+        assembly_passed: false,
+      } as Partial<V10BpaPipeline>);
+
+      // 7. Log the deletion
+      await supabase.from('v10_bpa_pipeline_log').insert({
+        pipeline_id: pipeline.id,
+        stage: 2,
+        action: 'lesson_deleted',
+        details: { lesson_id: lessonId, reason: 'manual_delete' },
+      });
+
+      setSteps([]);
+      toast.success('Aula excluída com sucesso. Pipeline resetado.');
+    } catch (err) {
+      toast.error(`Erro ao excluir aula: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+    } finally {
+      setDeletingLesson(false);
     }
   };
 
@@ -509,6 +603,26 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
                 : 'Auditar Estrutura'}
           </Button>
         )}
+
+        {/* Delete lesson */}
+        <div className="border-t pt-4 mt-4">
+          <Button
+            variant="outline"
+            onClick={handleDeleteLesson}
+            disabled={deletingLesson}
+            className="min-h-[44px] w-full text-destructive border-destructive/30 hover:bg-destructive/10"
+          >
+            {deletingLesson ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <AlertTriangle className="mr-2 h-4 w-4" />
+            )}
+            {deletingLesson ? 'Excluindo aula...' : 'Excluir Aula e Resetar Pipeline'}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1 text-center">
+            Remove a aula, todos os passos, narrações e áudios vinculados
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

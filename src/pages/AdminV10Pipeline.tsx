@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Plus, Eye, Rocket, RefreshCw, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Eye, Rocket, RefreshCw, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { V10BpaPipeline } from '@/types/v10.types';
 import { CreateBpaModal } from '@/components/admin/v10/CreateBpaModal';
@@ -137,15 +137,76 @@ function getStatusLabel(status: string): string {
 // ============================================================
 function BpaCard({ pipeline, onRefresh }: { pipeline: BpaPipeline; onRefresh: () => void }) {
   const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeletePipeline = async () => {
+    const confirmed = window.confirm(
+      `⚠️ Excluir pipeline "${pipeline.title}"?\n\n` +
+      'Isso vai excluir permanentemente:\n' +
+      '• O pipeline e todo o log de atividades\n' +
+      (pipeline.lesson_id
+        ? '• A aula vinculada e todos os dados (passos, narrações, áudios, slides)\n'
+        : '') +
+      '\nEssa ação NÃO pode ser desfeita.'
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      if (pipeline.lesson_id) {
+        // Cascade delete lesson data
+        const { data: stepIds } = await supabase
+          .from('v10_lesson_steps')
+          .select('id')
+          .eq('lesson_id', pipeline.lesson_id);
+
+        if (stepIds && stepIds.length > 0) {
+          const ids = stepIds.map((s: { id: string }) => s.id);
+          await supabase.from('v10_lesson_step_anchors').delete().in('step_id', ids);
+        }
+
+        await supabase.from('v10_lesson_steps').delete().eq('lesson_id', pipeline.lesson_id);
+        await supabase.from('v10_lesson_intro_slides').delete().eq('lesson_id', pipeline.lesson_id);
+        await supabase.from('v10_lesson_narrations').delete().eq('lesson_id', pipeline.lesson_id);
+        await supabase.from('v10_lessons').delete().eq('id', pipeline.lesson_id);
+      }
+
+      // Delete pipeline log
+      await supabase.from('v10_bpa_pipeline_log').delete().eq('pipeline_id', pipeline.id);
+
+      // Delete pipeline
+      const { error } = await supabase.from('v10_bpa_pipeline').delete().eq('id', pipeline.id);
+      if (error) throw error;
+
+      toast.success(`Pipeline "${pipeline.title}" excluído.`);
+      onRefresh();
+    } catch (err) {
+      toast.error(`Erro ao excluir: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{pipeline.title}</CardTitle>
-          <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(pipeline.status)}`}>
-            {getStatusLabel(pipeline.status)}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(pipeline.status)}`}>
+              {getStatusLabel(pipeline.status)}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              onClick={handleDeletePipeline}
+              disabled={deleting}
+              title="Excluir pipeline"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
         <p className="text-sm text-gray-500">
           Slug: {pipeline.slug} | Criado: {new Date(pipeline.created_at).toLocaleDateString('pt-BR')}
