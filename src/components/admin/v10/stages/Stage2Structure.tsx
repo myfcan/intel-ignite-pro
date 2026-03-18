@@ -71,6 +71,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const [auditing, setAuditing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [deletingLesson, setDeletingLesson] = useState(false);
+  const [fixingC2C3, setFixingC2C3] = useState(false);
 
   // Trail/Course selectors for lesson creation
   const [trails, setTrails] = useState<Array<{ id: string; title: string }>>([]);
