@@ -130,6 +130,17 @@ export default function AdminManageLessons() {
   const [soloTrailTitle, setSoloTrailTitle] = useState('');
   const [soloTrailIcon, setSoloTrailIcon] = useState('');
 
+  // Rename course modal
+  const [showRenameCourseModal, setShowRenameCourseModal] = useState(false);
+  const [renameCourseId, setRenameCourseId] = useState<string>('');
+  const [renameCourseTitle, setRenameCourseTitle] = useState('');
+  const [renamingCourse, setRenamingCourse] = useState(false);
+
+  // Delete course modal
+  const [showDeleteCourseModal, setShowDeleteCourseModal] = useState(false);
+  const [deleteCourseId, setDeleteCourseId] = useState<string>('');
+  const [deletingCourse, setDeletingCourse] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
