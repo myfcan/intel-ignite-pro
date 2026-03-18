@@ -17,14 +17,15 @@ interface Stage1ScoreProps {
 interface ScoreField {
   key: 'score_refero' | 'score_docs' | 'score_pedagogy' | 'score_difficulty' | 'score_relevance';
   label: string;
+  weight: number;
 }
 
 const SCORE_FIELDS: ScoreField[] = [
-  { key: 'score_refero', label: 'Refero (screenshots disponíveis)' },
-  { key: 'score_docs', label: 'Documentação oficial' },
-  { key: 'score_pedagogy', label: 'Valor pedagógico' },
-  { key: 'score_difficulty', label: 'Dificuldade (inverso: fácil = mais pontos)' },
-  { key: 'score_relevance', label: 'Relevância mercado' },
+  { key: 'score_refero', label: 'Refero (screenshots disponíveis)', weight: 0.20 },
+  { key: 'score_docs', label: 'Documentação oficial', weight: 0.25 },
+  { key: 'score_pedagogy', label: 'Valor pedagógico', weight: 0.25 },
+  { key: 'score_difficulty', label: 'Dificuldade (inverso: fácil = mais pontos)', weight: 0.15 },
+  { key: 'score_relevance', label: 'Relevância mercado', weight: 0.15 },
 ];
 
 function computeSemaphore(total: number): V10ScoreSemaphore {
@@ -61,7 +62,10 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
 
-  const scoreTotal = scores.score_refero + scores.score_docs + scores.score_pedagogy + scores.score_difficulty + scores.score_relevance;
+  // Weighted average: (Refero×20% + Docs×25% + Pedagogia×25% + Dificuldade×15% + Relevância×15%)
+  const scoreTotal = Math.round(
+    SCORE_FIELDS.reduce((sum, field) => sum + scores[field.key] * field.weight, 0)
+  );
   const semaphore = computeSemaphore(scoreTotal);
 
   const handleSliderChange = (key: ScoreField['key'], value: number[]) => {
@@ -148,22 +152,28 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
           {SCORE_FIELDS.map((field) => (
             <div key={field.key} className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor={field.key}>{field.label}</Label>
+                <Label htmlFor={field.key}>
+                  {field.label}
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">
+                    (peso: {Math.round(field.weight * 100)}%)
+                  </span>
+                </Label>
                 <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-sm font-semibold text-primary tabular-nums">
-                  {scores[field.key]}
+                  {scores[field.key]}/100
                 </span>
               </div>
               <Slider
                 id={field.key}
                 min={0}
-                max={20}
-                step={1}
+                max={100}
+                step={5}
                 value={[scores[field.key]]}
                 onValueChange={(value) => handleSliderChange(field.key, value)}
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>0</span>
-                <span>20</span>
+                <span>50</span>
+                <span>100</span>
               </div>
             </div>
           ))}

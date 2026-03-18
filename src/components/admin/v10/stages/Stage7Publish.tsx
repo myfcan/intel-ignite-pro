@@ -1,6 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Rocket,
   Eye,
@@ -49,6 +58,25 @@ export function Stage7Publish({ pipeline, onUpdate }: Stage7PublishProps) {
   const [publishing, setPublishing] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
 
+  // Trail/Course/Position for publication
+  const [trails, setTrails] = useState<Array<{ id: string; title: string }>>([]);
+  const [courses, setCourses] = useState<Array<{ id: string; trail_id: string; title: string }>>([]);
+  const [selectedTrailId, setSelectedTrailId] = useState<string>('');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [orderInTrail, setOrderInTrail] = useState<number>(0);
+
+  useEffect(() => {
+    async function fetchTrailsCourses() {
+      const [t, c] = await Promise.all([
+        supabase.from('trails').select('id, title').eq('is_active', true).order('order_index'),
+        supabase.from('courses').select('id, trail_id, title').eq('is_active', true).order('order_index'),
+      ]);
+      if (t.data) setTrails(t.data);
+      if (c.data) setCourses(c.data);
+    }
+    fetchTrailsCourses();
+  }, []);
+
   const isPublished = pipeline.status === 'published';
   const isReady = pipeline.status === 'ready';
   const canPublish = pipeline.assembly_passed === true;
@@ -88,6 +116,19 @@ export function Stage7Publish({ pipeline, onUpdate }: Stage7PublishProps) {
 
     setPublishing(true);
     try {
+      // Update lesson with trail/course/position before publishing
+      if (pipeline.lesson_id && (selectedTrailId || selectedCourseId || orderInTrail > 0)) {
+        const lessonUpdates: Record<string, unknown> = {};
+        if (selectedTrailId) lessonUpdates.trail_id = selectedTrailId;
+        if (selectedCourseId) lessonUpdates.course_id = selectedCourseId;
+        if (orderInTrail > 0) lessonUpdates.order_in_trail = orderInTrail;
+
+        await supabase
+          .from('v10_lessons')
+          .update(lessonUpdates)
+          .eq('id', pipeline.lesson_id);
+      }
+
       const { data, error } = await supabase.functions.invoke('v10-publish-lesson', {
         body: { pipeline_id: pipeline.id, action: 'publish' }
       });
@@ -207,6 +248,46 @@ export function Stage7Publish({ pipeline, onUpdate }: Stage7PublishProps) {
             <p className="text-sm font-medium">
               Aula publicada em {formatDate(pipeline.published_at)}
             </p>
+          </div>
+        )}
+
+        {/* Trail/Position selector */}
+        {!isPublished && (
+          <div className="rounded-lg border p-4 space-y-4">
+            <h4 className="text-sm font-semibold">Publicar em</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Trilha</Label>
+                <Select value={selectedTrailId} onValueChange={(val) => { setSelectedTrailId(val); setSelectedCourseId(''); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
+                  <SelectContent>
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedTrailId && (
+                <div className="space-y-2">
+                  <Label>Jornada</Label>
+                  <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {courses.filter(c => c.trail_id === selectedTrailId).map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Posição na trilha</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={orderInTrail}
+                  onChange={(e) => setOrderInTrail(Number(e.target.value))}
+                />
+              </div>
+            </div>
           </div>
         )}
 

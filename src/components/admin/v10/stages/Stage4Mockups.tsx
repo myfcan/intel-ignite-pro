@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Layout, CheckCircle2, Save, Calculator, Upload, ChevronDown, ChevronUp, ImageIcon, AlertTriangle } from 'lucide-react';
+import { Layout, CheckCircle2, Save, Calculator, Upload, ChevronDown, ChevronUp, ImageIcon, AlertTriangle, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
 
@@ -128,6 +128,33 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
     }
   }, [pipeline.lesson_id]);
 
+  // Delete a mockup from a specific frame
+  const handleDeleteMockup = useCallback(async (step: V10LessonStep, frameIndex: number) => {
+    if (!confirm('Remover este mockup?')) return;
+
+    const updatedFrames = [...step.frames];
+    if (updatedFrames[frameIndex]) {
+      (updatedFrames[frameIndex] as any).mockup_url = null;
+    }
+
+    const { error } = await supabase
+      .from('v10_lesson_steps')
+      .update({ frames: updatedFrames as any })
+      .eq('id', step.id);
+
+    if (error) {
+      toast.error('Erro ao remover mockup');
+      return;
+    }
+
+    setSteps(prev => prev.map(s =>
+      s.id === step.id ? { ...s, frames: updatedFrames } : s
+    ));
+
+    setMockupsFromRefero(prev => Math.max(0, prev - 1));
+    toast.success('Mockup removido');
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -236,23 +263,34 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
                                 <p className="text-xs text-muted-foreground mt-1">Sem mockup</p>
                               )}
                             </div>
-                            <label className="cursor-pointer">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) handleUploadMockup(step, fi, file);
-                                }}
-                              />
-                              <div className={`inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors hover:bg-muted ${
-                                uploading === `${step.id}-${fi}` ? 'opacity-50' : ''
-                              }`}>
-                                <Upload className="h-3 w-3" />
-                                {frame.mockup_url ? 'Trocar' : 'Upload'}
-                              </div>
-                            </label>
+                            <div className="flex gap-1">
+                              <label className="cursor-pointer">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleUploadMockup(step, fi, file);
+                                  }}
+                                />
+                                <div className={`inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors hover:bg-muted ${
+                                  uploading === `${step.id}-${fi}` ? 'opacity-50' : ''
+                                }`}>
+                                  <Upload className="h-3 w-3" />
+                                  {frame.mockup_url ? 'Trocar' : 'Upload'}
+                                </div>
+                              </label>
+                              {frame.mockup_url && (
+                                <button
+                                  className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+                                  onClick={() => handleDeleteMockup(step, fi)}
+                                  title="Remover mockup"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

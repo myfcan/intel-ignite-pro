@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Image, CheckCircle2, Sparkles, Save, AlertTriangle, Loader2, Calculator } from 'lucide-react';
+import { Image, CheckCircle2, Sparkles, Save, AlertTriangle, Loader2, Calculator, Trash2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import type { V10BpaPipeline } from '@/types/v10.types';
+import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
 
 interface Stage3ImagesProps {
   pipeline: V10BpaPipeline;
@@ -19,7 +19,8 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [stepsCount, setStepsCount] = useState(0);
-  const [nextBatchIndex, setNextBatchIndex] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+  const [stepImages, setStepImages] = useState<Array<{ stepNumber: number; title: string; src: string; alt: string; stepId: string }>>([]);
 
   // Fetch steps count to help auto-calculate images_needed
   useEffect(() => {
@@ -32,6 +33,42 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
         if (count != null) setStepsCount(count);
       });
   }, [pipeline.lesson_id]);
+
+  // Fetch image preview data from step frames
+  const fetchImagePreviews = useCallback(async () => {
+    if (!pipeline.lesson_id) return;
+    const { data } = await supabase
+      .from('v10_lesson_steps')
+      .select('id, step_number, title, frames')
+      .eq('lesson_id', pipeline.lesson_id as string)
+      .order('step_number', { ascending: true });
+
+    if (!data) return;
+
+    const images: typeof stepImages = [];
+    for (const step of data as unknown as V10LessonStep[]) {
+      if (!step.frames || !Array.isArray(step.frames)) continue;
+      for (const frame of step.frames) {
+        if (!frame.elements || !Array.isArray(frame.elements)) continue;
+        for (const el of frame.elements) {
+          if (el.type === 'image' && (el as { src?: string }).src) {
+            images.push({
+              stepNumber: step.step_number,
+              title: step.title,
+              src: (el as { src: string }).src,
+              alt: (el as { alt?: string }).alt || '',
+              stepId: step.id,
+            });
+          }
+        }
+      }
+    }
+    setStepImages(images);
+  }, [pipeline.lesson_id]);
+
+  useEffect(() => {
+    if (showPreview) fetchImagePreviews();
+  }, [showPreview, fetchImagePreviews]);
 
   const progressPercent = imagesNeeded > 0
     ? Math.round((imagesApproved / imagesNeeded) * 100)
@@ -244,7 +281,81 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
             <Save className="mr-2 h-4 w-4" />
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
+
+          <Button
+            variant="outline"
+            className="min-h-[44px]"
+            onClick={() => setShowPreview(!showPreview)}
+          >
+            {showPreview ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+            {showPreview ? 'Ocultar Preview' : 'Ver Imagens'}
+          </Button>
         </div>
+
+        {/* Image preview grid */}
+        {showPreview && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-muted-foreground">
+              Imagens nos frames ({stepImages.length} encontradas)
+            </h4>
+            {stepImages.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhuma imagem com src preenchido nos frames.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {stepImages.map((img, idx) => (
+                  <div key={idx} className="group relative rounded-lg border overflow-hidden bg-white">
+                    <img
+                      src={img.src}
+                      alt={img.alt}
+                      className="w-full h-32 object-cover"
+                      loading="lazy"
+                    />
+                    <div className="p-2">
+                      <p className="text-[10px] font-semibold text-gray-700 truncate">
+                        Passo {img.stepNumber}: {img.title}
+                      </p>
+                      <p className="text-[9px] text-gray-400 truncate">{img.alt}</p>
+                    </div>
+                    <button
+                      className="absolute top-1 right-1 p-1 rounded bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remover imagem"
+                      onClick={async () => {
+                        if (!confirm('Remover esta imagem do frame?')) return;
+                        // Clear the src from the frame element
+                        const { data: step } = await supabase
+                          .from('v10_lesson_steps')
+                          .select('frames')
+                          .eq('id', img.stepId)
+                          .single();
+
+                        if (step) {
+                          const frames = step.frames as any[];
+                          for (const frame of frames) {
+                            if (frame.elements) {
+                              for (const el of frame.elements) {
+                                if (el.type === 'image' && el.src === img.src) {
+                                  el.src = '';
+                                }
+                              }
+                            }
+                          }
+                          await supabase
+                            .from('v10_lesson_steps')
+                            .update({ frames })
+                            .eq('id', img.stepId);
+                        }
+                        toast.success('Imagem removida');
+                        fetchImagePreviews();
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

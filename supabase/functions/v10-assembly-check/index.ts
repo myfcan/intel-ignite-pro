@@ -173,6 +173,12 @@ serve(async (req) => {
       Array.isArray(lesson.tools) &&
       lesson.tools.length > 0;
 
+    // Gamification: badge and xp must be defined
+    const gamification_ok =
+      !!lesson &&
+      typeof lesson.xp_reward === "number" &&
+      lesson.xp_reward > 0;
+
     const results = {
       score_ok,
       structure_ok,
@@ -185,6 +191,7 @@ serve(async (req) => {
       narration_a_ok,
       narration_c_ok,
       metadata_ok,
+      gamification_ok,
     };
 
     const allPassed = Object.values(results).every((v) => v === true);
