@@ -245,16 +245,17 @@ serve(async (req: Request) => {
     // 5. Apply batching (skip batching for targeted mode)
     let batchSteps: any[];
     let hasMoreBatches: boolean;
+    let batchStartIdx = 0;
     if (step_ids && step_ids.length > 0) {
       batchSteps = stepsToProcess;
       hasMoreBatches = false;
     } else {
-      const startIdx = batch_index * batch_size;
-      batchSteps = stepsToProcess.slice(startIdx, startIdx + batch_size);
-      hasMoreBatches = startIdx + batch_size < total;
+      batchStartIdx = batch_index * batch_size;
+      batchSteps = stepsToProcess.slice(batchStartIdx, batchStartIdx + batch_size);
+      hasMoreBatches = batchStartIdx + batch_size < total;
     }
 
-    console.log(`[v10-generate-images] Batch ${batch_index}: processing ${batchSteps.length} steps (startIdx=${startIdx}, batch_size=${batch_size})`);
+    console.log(`[v10-generate-images] Batch ${batch_index}: processing ${batchSteps.length} steps (startIdx=${batchStartIdx}, batch_size=${batch_size})`);
 
     let success = 0;
     let failed = 0;
