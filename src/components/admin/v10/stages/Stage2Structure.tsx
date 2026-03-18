@@ -71,6 +71,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const [auditing, setAuditing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [deletingLesson, setDeletingLesson] = useState(false);
+  const [fixingC2C3, setFixingC2C3] = useState(false);
 
   // Trail/Course selectors for lesson creation
   const [trails, setTrails] = useState<Array<{ id: string; title: string }>>([]);
@@ -365,6 +366,138 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       toast.error('Erro ao auditar estrutura');
     } finally {
       setAuditing(false);
+    }
+  };
+
+  // Retroactive C2/C3 fix for existing steps in the database
+  const handleFixC2C3 = async () => {
+    if (steps.length === 0) return;
+    setFixingC2C3(true);
+    let c2Fixed = 0;
+    let c3Fixed = 0;
+
+    const TECH_TERMS: Record<string, string> = {
+      "api": "Interface que permite dois softwares se comunicarem automaticamente",
+      "webhook": "URL que recebe dados automaticamente quando um evento acontece",
+      "endpoint": "Endereço (URL) específico onde uma API recebe requisições",
+      "oauth": "Protocolo de autorização que permite login seguro sem compartilhar senha",
+      "token": "Código temporário usado para autenticar acessos a um serviço",
+      "dashboard": "Painel de controle visual com métricas e ações principais",
+      "workflow": "Sequência automatizada de tarefas que executa em ordem",
+      "trigger": "Evento que dispara uma automação automaticamente",
+      "pipeline": "Sequência de etapas de processamento de dados em ordem",
+      "prompt": "Instrução de texto enviada para uma IA gerar uma resposta",
+      "template": "Modelo pré-pronto que serve como base para criar algo novo",
+      "scenario": "Automação no Make.com que conecta apps com regras definidas",
+      "module": "Bloco funcional dentro de uma automação que executa uma tarefa",
+      "gpt": "Modelo de linguagem da OpenAI usado para gerar texto",
+      "calendly": "Ferramenta de agendamento online que sincroniza com seu calendário",
+      "make": "Plataforma de automação visual que conecta apps (antigo Integromat)",
+      "zapier": "Plataforma de automação que conecta apps sem código",
+      "chatbot": "Bot conversacional que responde perguntas automaticamente",
+      "ai": "Inteligência Artificial — sistema que simula raciocínio humano",
+      "crm": "Sistema para gerenciar relacionamento com clientes",
+      "lead": "Potencial cliente que demonstrou interesse no produto/serviço",
+      "stripe": "Plataforma de pagamentos online para cobrar clientes",
+      "airtable": "Plataforma que combina planilha com banco de dados visual",
+      "notion": "Ferramenta all-in-one para notas, docs, projetos e banco de dados",
+      "openai": "Empresa criadora do ChatGPT e dos modelos GPT",
+      "gmail": "Serviço de email do Google",
+      "json": "Formato padrão de troca de dados entre sistemas (chave: valor)",
+      "csv": "Formato de arquivo com dados separados por vírgula",
+      "url": "Endereço único que identifica uma página ou recurso na internet",
+      "api key": "Chave secreta usada para autenticar acessos a uma API",
+      "slack": "Plataforma de comunicação para equipes com canais e integrações",
+    };
+
+    try {
+      for (const step of steps) {
+        const desc = (step.description || '').toLowerCase();
+        const title = (step.title || '').toLowerCase();
+        const combinedText = `${title} ${desc}`;
+        const frames = [...(step.frames || [])] as any[];
+        const allElements = frames.flatMap((f: any) => f.elements || []);
+        let modified = false;
+
+        // C2: inject tooltip_term if missing
+        const hasTooltip = allElements.some((el: any) => el.type === 'tooltip_term');
+        if (!hasTooltip && (step.description || '').length >= 50 && frames.length > 0) {
+          const matched: Array<{ term: string; def: string }> = [];
+          for (const [term, def] of Object.entries(TECH_TERMS)) {
+            const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+            if (re.test(combinedText)) {
+              matched.push({ term: term.charAt(0).toUpperCase() + term.slice(1), def });
+              if (matched.length >= 2) break;
+            }
+          }
+          // Fallback: capitalize word
+          if (matched.length === 0) {
+            const caps = (step.description || '').match(/\b[A-Z][a-zA-Z]{2,}\b/g);
+            const skip = new Set(['Voce','Esse','Este','Esta','Essa','Aqui','Agora','Depois','Antes','Clique','Acesse','Configure','Crie','Abra','Vamos','Nesse','Nesta','Para','Como','Quando','Onde','Qual','Cada','Todo','Toda','Todos']);
+            if (caps) {
+              for (const w of caps) {
+                if (!skip.has(w) && w.length >= 3) {
+                  matched.push({ term: w, def: 'Funcionalidade ou conceito utilizado neste passo da aula' });
+                  break;
+                }
+              }
+            }
+          }
+          if (matched.length > 0) {
+            if (!frames[0].elements) frames[0].elements = [];
+            for (const m of matched) {
+              frames[0].elements.push({ type: 'tooltip_term', term: m.term, tip: m.def });
+            }
+            modified = true;
+            c2Fixed++;
+          }
+        }
+
+        // C3: inject nav_breadcrumb if bar_sub changes
+        const hasBreadcrumb = allElements.some((el: any) => el.type === 'nav_breadcrumb');
+        const barSubs = frames.map((f: any) => f.bar_sub).filter(Boolean);
+        const barSubChanges = new Set(barSubs).size > 1;
+        if (barSubChanges && !hasBreadcrumb) {
+          for (let fi = 1; fi < frames.length; fi++) {
+            const prev = frames[fi - 1].bar_sub;
+            const curr = frames[fi].bar_sub;
+            if (curr && prev && curr !== prev) {
+              if (!frames[fi].elements) frames[fi].elements = [];
+              frames[fi].elements.unshift({
+                type: 'nav_breadcrumb',
+                from: prev,
+                to: curr,
+                how: `${prev} → ${curr}`,
+              });
+            }
+          }
+          modified = true;
+          c3Fixed++;
+        }
+
+        // Update step in DB if modified
+        if (modified) {
+          await supabase
+            .from('v10_lesson_steps')
+            .update({ frames } as any)
+            .eq('id', step.id);
+        }
+      }
+
+      // Log the retroactive fix
+      await supabase.from('v10_bpa_pipeline_log').insert({
+        pipeline_id: pipeline.id,
+        stage: 2,
+        action: 'retroactive_c2c3_fix',
+        details: { c2_fixed: c2Fixed, c3_fixed: c3Fixed, total_steps: steps.length },
+      });
+
+      toast.success(`Correção retroativa: ${c2Fixed} C2 fixes, ${c3Fixed} C3 fixes aplicados`);
+      await fetchSteps(); // Reload steps
+    } catch (err) {
+      toast.error(`Erro ao corrigir C2/C3: ${err instanceof Error ? err.message : 'erro'}`);
+    } finally {
+      setFixingC2C3(false);
     }
   };
 
@@ -687,6 +820,19 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
               {generating ? 'Gerando passos...' : 'Gerar com IA (10 passos)'}
             </Button>
           </div>
+        )}
+
+        {/* Fix C2/C3 retroactive button */}
+        {steps.length > 0 && !pipeline.audit_passed && (
+          <Button
+            onClick={handleFixC2C3}
+            disabled={fixingC2C3}
+            variant="outline"
+            className="min-h-[44px] w-full"
+          >
+            {fixingC2C3 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {fixingC2C3 ? 'Corrigindo C2/C3...' : 'Corrigir C2/C3 (tooltip + breadcrumb)'}
+          </Button>
         )}
 
         {/* Audit button */}
