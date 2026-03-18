@@ -134,6 +134,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
         images_needed: imagesNeeded,
         images_generated: imagesGenerated,
         images_approved: imagesApproved,
+        image_statuses: imageStatuses,
       });
       toast.success('Dados de imagens salvos com sucesso');
     } catch {
