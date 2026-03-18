@@ -173,6 +173,7 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
     }
   };
 
+  const handleSave = async () => {
     setSaving(true);
     try {
       await onUpdate({
