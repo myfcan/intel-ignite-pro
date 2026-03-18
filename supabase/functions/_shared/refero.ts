@@ -223,7 +223,7 @@ export async function searchFlows(
   query: string,
   limit = 5
 ): Promise<ReferoFlowResult> {
-  const result = await callTool("search_flows", { query, limit });
+  const result = await callTool("refero_search_flows", { query, limit });
   const parsed = parseToolContent(result) as any;
 
   if (!parsed || result?.isError) {
