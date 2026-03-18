@@ -62,11 +62,6 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [searchingRefero, setSearchingRefero] = useState(false);
-  const [searchingDocs, setSearchingDocs] = useState(false);
-  const [docsData, setDocsData] = useState<{
-    total: number;
-    titles: string[];
-  } | null>(null);
   const [referoData, setReferoData] = useState<{
     screens: number;
     flows: number;
