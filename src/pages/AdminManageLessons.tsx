@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Trash2, AlertTriangle, Bug, Wrench, FolderInput, Plus, Power, ChevronDown, ChevronRight, BookOpen, Layers, GraduationCap, Play } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, Bug, Wrench, FolderInput, Plus, Power, ChevronDown, ChevronRight, BookOpen, Layers, GraduationCap, Play, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
