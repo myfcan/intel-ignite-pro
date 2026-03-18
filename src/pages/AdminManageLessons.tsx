@@ -1239,6 +1239,73 @@ export default function AdminManageLessons() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Rename Course Modal */}
+        <Dialog open={showRenameCourseModal} onOpenChange={setShowRenameCourseModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-primary" />
+                Renomear Jornada
+              </DialogTitle>
+              <DialogDescription>Altere o título da jornada</DialogDescription>
+            </DialogHeader>
+            <Input
+              value={renameCourseTitle}
+              onChange={(e) => setRenameCourseTitle(e.target.value)}
+              placeholder="Novo nome da jornada"
+              onKeyDown={(e) => e.key === 'Enter' && handleRenameCourse()}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRenameCourseModal(false)} disabled={renamingCourse}>Cancelar</Button>
+              <Button onClick={handleRenameCourse} disabled={renamingCourse || !renameCourseTitle.trim()}>
+                {renamingCourse ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Course Modal */}
+        <Dialog open={showDeleteCourseModal} onOpenChange={setShowDeleteCourseModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="w-5 h-5" />
+                Deletar Jornada
+              </DialogTitle>
+              <DialogDescription>
+                {(() => {
+                  const totalLessons = lessons.filter(l => l.course_id === deleteCourseId).length +
+                    v10Lessons.filter(l => l.course_id === deleteCourseId).length;
+                  if (totalLessons > 0) {
+                    return `Esta jornada possui ${totalLessons} aula(s). Mova ou delete as aulas antes de remover a jornada.`;
+                  }
+                  return 'Esta jornada está vazia e pode ser deletada com segurança.';
+                })()}
+              </DialogDescription>
+            </DialogHeader>
+            {deleteCourseId && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Jornada:</p>
+                <p className="text-sm text-muted-foreground">{courses.find(c => c.id === deleteCourseId)?.title}</p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteCourseModal(false)} disabled={deletingCourse}>Cancelar</Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteCourse}
+                disabled={
+                  deletingCourse ||
+                  lessons.filter(l => l.course_id === deleteCourseId).length > 0 ||
+                  v10Lessons.filter(l => l.course_id === deleteCourseId).length > 0
+                }
+              >
+                {deletingCourse ? 'Deletando...' : 'Deletar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
