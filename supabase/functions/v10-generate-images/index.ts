@@ -138,6 +138,7 @@ serve(async (req: Request) => {
       pipeline_id,
       batch_size = 2,
       batch_index = 0,
+      step_ids,
     } = await req.json();
 
     if (!pipeline_id) {
@@ -192,39 +193,66 @@ serve(async (req: Request) => {
       console.log(`[v10-generate-images]   step ${(s as any).step_number} "${(s as any).title}" | elements: [${elementTypes.join(", ")}]`);
     }
 
-    // 4. Filter steps that need images
-    const stepsNeedingImages = steps.filter((step: any) => {
-      const frames = step.frames;
-      if (!frames || !Array.isArray(frames) || frames.length === 0) return true;
+    // 4. Filter steps — if step_ids provided, use only those; otherwise filter by needing images
+    let stepsToProcess: any[];
 
-      let hasImageElement = false;
-      let hasEmptyImage = false;
-
-      for (const frame of frames) {
-        const elements = frame.elements;
-        if (!elements || !Array.isArray(elements)) continue;
-        for (const el of elements) {
-          if (el.type === "image") {
-            hasImageElement = true;
-            if (!el.src || el.src === "" || el.src.startsWith("placeholder")) {
-              hasEmptyImage = true;
+    if (step_ids && Array.isArray(step_ids) && step_ids.length > 0) {
+      // Targeted regeneration: process only specified steps regardless of current src
+      stepsToProcess = steps.filter((s: any) => step_ids.includes(s.id));
+      // For targeted regen, clear existing image src so it gets regenerated
+      for (const step of stepsToProcess) {
+        const frames = (step as any).frames || [];
+        for (const frame of frames) {
+          if (!frame.elements) continue;
+          for (const el of frame.elements) {
+            if (el.type === "image") {
+              el.src = ""; // Force re-generation
             }
           }
         }
       }
+      console.log(`[v10-generate-images] Targeted mode: ${stepsToProcess.length} steps from step_ids=[${step_ids.join(",")}]`);
+    } else {
+      stepsToProcess = steps.filter((step: any) => {
+        const frames = step.frames;
+        if (!frames || !Array.isArray(frames) || frames.length === 0) return true;
 
-      return !hasImageElement || hasEmptyImage;
-    });
+        let hasImageElement = false;
+        let hasEmptyImage = false;
 
-    const total = stepsNeedingImages.length;
+        for (const frame of frames) {
+          const elements = frame.elements;
+          if (!elements || !Array.isArray(elements)) continue;
+          for (const el of elements) {
+            if (el.type === "image") {
+              hasImageElement = true;
+              if (!el.src || el.src === "" || el.src.startsWith("placeholder")) {
+                hasEmptyImage = true;
+              }
+            }
+          }
+        }
+
+        return !hasImageElement || hasEmptyImage;
+      });
+    }
+
+    const total = stepsToProcess.length;
 
     // DIAGNOSTIC LOG: filter result
     console.log(`[v10-generate-images] stepsNeedingImages: ${total} out of ${steps.length} total steps`);
 
-    // 5. Apply batching
-    const startIdx = batch_index * batch_size;
-    const batchSteps = stepsNeedingImages.slice(startIdx, startIdx + batch_size);
-    const hasMoreBatches = startIdx + batch_size < total;
+    // 5. Apply batching (skip batching for targeted mode)
+    let batchSteps: any[];
+    let hasMoreBatches: boolean;
+    if (step_ids && step_ids.length > 0) {
+      batchSteps = stepsToProcess;
+      hasMoreBatches = false;
+    } else {
+      const startIdx = batch_index * batch_size;
+      batchSteps = stepsToProcess.slice(startIdx, startIdx + batch_size);
+      hasMoreBatches = startIdx + batch_size < total;
+    }
 
     console.log(`[v10-generate-images] Batch ${batch_index}: processing ${batchSteps.length} steps (startIdx=${startIdx}, batch_size=${batch_size})`);
 
