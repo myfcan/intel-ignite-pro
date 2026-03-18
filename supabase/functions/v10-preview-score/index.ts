@@ -49,7 +49,7 @@ REGRAS:
 - Retorne APENAS JSON puro: { "score_docs": N, "score_pedagogy": N, "score_difficulty": N, "score_relevance": N, "justificativa": { "docs": "...", "pedagogy": "...", "difficulty": "...", "relevance": "..." } }`;
 
     const userMessage = `Tema: ${title.trim()}
-${tool_name ? `Ferramenta: ${tool_name.trim()}` : ""}${referoContext}`;
+${tool_name ? `Ferramenta: ${tool_name.trim()}` : ""}`;
 
     console.log("Preview score for:", title);
 
