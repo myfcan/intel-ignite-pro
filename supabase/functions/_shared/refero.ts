@@ -195,7 +195,7 @@ export async function searchScreens(
   query: string,
   limit = 10
 ): Promise<ReferoSearchResult> {
-  const result = await callTool("refero_search_screens", { query, limit });
+  const result = await callTool("refero_search_screens", { query, limit, platform: "web" });
   const parsed = parseToolContent(result) as any;
 
   if (!parsed || result?.isError) {
