@@ -138,6 +138,7 @@ serve(async (req: Request) => {
       pipeline_id,
       batch_size = 2,
       batch_index = 0,
+      step_ids,
     } = await req.json();
 
     if (!pipeline_id) {
