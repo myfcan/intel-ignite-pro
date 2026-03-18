@@ -374,10 +374,27 @@ serve(async (req: Request) => {
       }
     }
 
-    // 9. Update pipeline images_generated count
-    const newImagesGenerated = (pipeline.images_generated || 0) + success;
-    const updatePayload: any = { images_generated: newImagesGenerated };
-    
+    // 9. Recalculate images_generated from real DB data (prevents counter inflation)
+    const { data: allStepsForCount } = await supabase
+      .from("v10_lesson_steps")
+      .select("frames")
+      .eq("lesson_id", lessonId);
+
+    let realImageCount = 0;
+    for (const s of (allStepsForCount || [])) {
+      const sFrames = (s as any).frames;
+      if (!Array.isArray(sFrames)) continue;
+      for (const f of sFrames) {
+        for (const el of (f.elements || [])) {
+          if (el.type === "image" && el.src && el.src !== "" && !el.src.startsWith("placeholder")) {
+            realImageCount++;
+          }
+        }
+      }
+    }
+
+    const updatePayload: any = { images_generated: realImageCount };
+
     // Also update images_needed if it was 0 (first run)
     if (pipeline.images_needed === 0 && total > 0) {
       updatePayload.images_needed = total;

@@ -34,7 +34,9 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   const [stepsCount, setStepsCount] = useState(0);
   const [stepImages, setStepImages] = useState<StepImage[]>([]);
   const [nextBatchIndex, setNextBatchIndex] = useState(0);
-  const [imageStatuses, setImageStatuses] = useState<Record<string, ImageStatus>>({});
+  const [imageStatuses, setImageStatuses] = useState<Record<string, ImageStatus>>(
+    (pipeline.image_statuses as Record<string, ImageStatus>) || {}
+  );
   const [regeneratingStep, setRegeneratingStep] = useState<string | null>(null);
   const [uploadingStep, setUploadingStep] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -132,6 +134,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
         images_needed: imagesNeeded,
         images_generated: imagesGenerated,
         images_approved: imagesApproved,
+        image_statuses: imageStatuses,
       });
       toast.success('Dados de imagens salvos com sucesso');
     } catch {
@@ -141,16 +144,32 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
     }
   };
 
-  const handleApproveAll = () => {
-    setImageStatuses(prev => {
-      const next = { ...prev };
-      for (const key of Object.keys(next)) {
-        if (next[key] === 'generated') next[key] = 'approved';
-      }
-      recalcCounters(next);
-      return next;
-    });
-    toast.info('Todas as imagens marcadas como aprovadas. Salve para confirmar.');
+  const handleApproveAll = async () => {
+    const newStatuses = { ...imageStatuses };
+    for (const key of Object.keys(newStatuses)) {
+      if (newStatuses[key] === 'generated') newStatuses[key] = 'approved';
+    }
+    const generated = Object.values(newStatuses).filter(s => s === 'generated' || s === 'approved').length;
+    const approved = Object.values(newStatuses).filter(s => s === 'approved').length;
+
+    setImageStatuses(newStatuses);
+    setImagesGenerated(generated);
+    setImagesApproved(approved);
+
+    setSaving(true);
+    try {
+      await onUpdate({
+        images_needed: imagesNeeded,
+        images_generated: generated,
+        images_approved: approved,
+        image_statuses: newStatuses,
+      });
+      toast.success('Todas as imagens aprovadas e salvas.');
+    } catch {
+      toast.error('Erro ao salvar aprovações.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAutoCalc = () => {

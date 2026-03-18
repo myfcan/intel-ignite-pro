@@ -1662,6 +1662,7 @@ export type Database = {
           current_stage: number
           docs_manual_input: string | null
           id: string
+          image_statuses: Json
           images_approved: number
           images_generated: number
           images_needed: number
@@ -1700,6 +1701,7 @@ export type Database = {
           current_stage?: number
           docs_manual_input?: string | null
           id?: string
+          image_statuses?: Json
           images_approved?: number
           images_generated?: number
           images_needed?: number
@@ -1738,6 +1740,7 @@ export type Database = {
           current_stage?: number
           docs_manual_input?: string | null
           id?: string
+          image_statuses?: Json
           images_approved?: number
           images_generated?: number
           images_needed?: number
