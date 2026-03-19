@@ -175,9 +175,13 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   };
 
   const handleAutoCalc = () => {
-    if (stepsCount > 0) {
+    const realCount = stepImages.length;
+    if (realCount > 0) {
+      setImagesNeeded(realCount);
+      toast.info(`Necessárias atualizado para ${realCount} (elementos image reais). Clique em Salvar.`);
+    } else if (stepsCount > 0) {
       setImagesNeeded(stepsCount);
-      toast.info(`Necessárias atualizado para ${stepsCount} (1 por passo). Clique em Salvar.`);
+      toast.info(`Necessárias atualizado para ${stepsCount} (fallback: 1 por passo). Clique em Salvar.`);
     } else {
       toast.error('Nenhum passo encontrado');
     }
@@ -193,30 +197,49 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
       await onUpdate({ images_needed: stepsCount });
     }
     setGenerating(true);
+    setImageProgress({ current: 0, total: 0 });
+
+    let currentBatch = 0;
+    let totalSuccess = 0;
+    let totalProcessed = 0;
+
     try {
-      const { data, error } = await supabase.functions.invoke('v10-generate-images', {
-        body: { pipeline_id: pipeline.id, batch_size: 15, batch_index: nextBatchIndex }
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data) {
-        const successCount = data.success ?? 0;
-        const hasMore = data.hasMoreBatches ?? false;
-        const totalNeeded = data.total ?? 0;
-        if (totalNeeded > 0 && imagesNeeded === 0) setImagesNeeded(totalNeeded);
-        if (hasMore) {
-          setNextBatchIndex(prev => prev + 1);
-          toast.success(`${successCount} imagens geradas! Próximo lote (batch ${nextBatchIndex + 2}).`);
+      while (true) {
+        const { data, error } = await supabase.functions.invoke('v10-generate-images', {
+          body: { pipeline_id: pipeline.id, batch_size: 3, batch_index: currentBatch }
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        const successCount = data?.success ?? 0;
+        const hasMore = data?.hasMoreBatches ?? false;
+        const totalNeeded = data?.total ?? 0;
+
+        totalSuccess += successCount;
+        totalProcessed += data?.processed ?? 0;
+
+        if (totalNeeded > 0 && imageProgress?.total === 0) {
+          setImageProgress({ current: totalSuccess, total: totalNeeded });
+          if (imagesNeeded === 0) setImagesNeeded(totalNeeded);
         } else {
-          setNextBatchIndex(0);
-          toast.success(`${successCount} imagens geradas! Todos os lotes concluídos.`);
+          setImageProgress(prev => prev ? { ...prev, current: totalSuccess } : { current: totalSuccess, total: totalNeeded });
         }
-        await fetchImagePreviews();
+
+        if (!hasMore) {
+          toast.success(`${totalSuccess} imagens geradas! Todos os lotes concluídos.`);
+          break;
+        }
+
+        currentBatch++;
       }
+
+      await fetchImagePreviews();
     } catch (err) {
       toast.error(`Erro ao gerar imagens: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
     } finally {
       setGenerating(false);
+      setImageProgress(null);
+      setNextBatchIndex(0);
     }
   };
 
