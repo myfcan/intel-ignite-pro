@@ -121,23 +121,24 @@ REGRAS CRÍTICAS (auditoria automática V1-V5):
 
 Retorne APENAS o JSON array.`;
 
-    const aiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage },
-          ],
-        }),
-      }
-    );
+    const gatewayUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const gatewayHeaders = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
+    };
+    const aiModel = "openai/gpt-5";
+
+    const aiResponse = await fetch(gatewayUrl, {
+      method: "POST",
+      headers: gatewayHeaders,
+      body: JSON.stringify({
+        model: aiModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+      }),
+    });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
@@ -163,6 +164,73 @@ Retorne APENAS o JSON array.`;
     if (!Array.isArray(steps)) {
       throw new Error("AI response is not a JSON array");
     }
+
+    // === COMPLETENESS VERIFICATION LOOP ===
+    const MAX_COMPLETION_RETRIES = 2;
+    console.log(`[v10-generate-steps] Initial generation: ${steps.length}/${num_steps} steps`);
+
+    for (let retry = 0; retry < MAX_COMPLETION_RETRIES; retry++) {
+      if (steps.length >= num_steps) break;
+
+      const missing = num_steps - steps.length;
+      const lastStep = steps[steps.length - 1];
+      console.log(`[v10-generate-steps] Completeness retry ${retry + 1}: have ${steps.length}, need ${num_steps}, missing ${missing}`);
+
+      const completionMessage = `Você gerou ${steps.length} passos mas eu pedi ${num_steps}.
+Faltam os passos ${steps.length + 1} até ${num_steps}.
+O último passo gerado foi: step_number=${lastStep.step_number}, title="${lastStep.title}".
+Gere APENAS os ${missing} passos faltantes (do ${steps.length + 1} ao ${num_steps}).
+O último passo (${num_steps}) DEVE ser AILIV (celebração).
+Retorne APENAS o JSON array dos passos faltantes, sem texto adicional.`;
+
+      try {
+        const completionResponse = await fetch(gatewayUrl, {
+          method: "POST",
+          headers: gatewayHeaders,
+          body: JSON.stringify({
+            model: aiModel,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage },
+              { role: "assistant", content: JSON.stringify(steps) },
+              { role: "user", content: completionMessage },
+            ],
+          }),
+        });
+
+        if (!completionResponse.ok) {
+          console.error(`[v10-generate-steps] Completion retry ${retry + 1} failed: ${completionResponse.status}`);
+          break;
+        }
+
+        const completionData = await completionResponse.json();
+        const completionRaw = completionData.choices?.[0]?.message?.content;
+        if (!completionRaw) {
+          console.error(`[v10-generate-steps] Completion retry ${retry + 1}: empty response`);
+          break;
+        }
+
+        const cleanedCompletion = completionRaw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        const completionSteps = JSON.parse(cleanedCompletion);
+
+        if (!Array.isArray(completionSteps) || completionSteps.length === 0) {
+          console.error(`[v10-generate-steps] Completion retry ${retry + 1}: not a valid array`);
+          break;
+        }
+
+        // Merge: renumber and append
+        for (const cs of completionSteps) {
+          cs.step_number = steps.length + 1;
+          steps.push(cs);
+        }
+        console.log(`[v10-generate-steps] After retry ${retry + 1}: ${steps.length}/${num_steps} steps`);
+      } catch (completionError: any) {
+        console.error(`[v10-generate-steps] Completion retry ${retry + 1} error: ${completionError?.message}`);
+        break;
+      }
+    }
+
+    console.log(`[v10-generate-steps] Final completeness: ${steps.length}/${num_steps} steps`);
 
     // 7b. Validate and fix frames
     let totalFrames = 0;
