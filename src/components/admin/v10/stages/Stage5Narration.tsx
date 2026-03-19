@@ -11,6 +11,24 @@ import type { V10BpaPipeline, V10LessonNarration, V10LessonStep, StepAnchor } fr
 import { AdminAnchorTimeline } from '../AdminAnchorTimeline';
 import { ImportFullScriptModal } from './ImportFullScriptModal';
 
+// Timer component for processing elapsed time
+function ProcessingTimer({ startedAt, isRunning }: { startedAt: number; isRunning: boolean }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!isRunning) return;
+    const interval = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [startedAt, isRunning]);
+
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  return (
+    <p className="text-xs text-muted-foreground">
+      ⏱ {mins > 0 ? `${mins}m ` : ''}{secs}s {isRunning ? 'decorridos' : 'total'}
+    </p>
+  );
+}
+
 interface Stage5NarrationProps {
   pipeline: V10BpaPipeline;
   onUpdate: (updates: Partial<V10BpaPipeline>) => Promise<void>;
