@@ -234,6 +234,17 @@ Retorne APENAS o JSON array.`;
       "teste": 3, "validação": 3, "validacao": 3, "verificação": 3, "verificacao": 3, "conclusão": 3, "conclusao": 3,
     };
 
+    // Idempotent: remove any previous steps for this lesson before inserting
+    const { error: deleteStepsError } = await supabase
+      .from("v10_lesson_steps")
+      .delete()
+      .eq("lesson_id", lesson_id);
+    if (deleteStepsError) {
+      console.warn(`[v10-generate-steps] Failed to delete previous steps: ${deleteStepsError.message}`);
+    } else {
+      console.log(`[v10-generate-steps] Cleared previous steps for lesson ${lesson_id}`);
+    }
+
     const insertedSteps = [];
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
