@@ -409,12 +409,24 @@ serve(async (req: Request) => {
       }
     }
 
-    const updatePayload: any = { images_generated: realImageCount };
-
-    // Also update images_needed if it was 0 (first run)
-    if (pipeline.images_needed === 0 && total > 0) {
-      updatePayload.images_needed = total;
+    // Always recalculate images_needed based on actual image elements (including empty src)
+    let realImagesNeeded = 0;
+    for (const s of (allStepsForCount || [])) {
+      const sFrames = (s as any).frames;
+      if (!Array.isArray(sFrames)) continue;
+      for (const f of sFrames) {
+        for (const el of (f.elements || [])) {
+          if (el.type === "image") {
+            realImagesNeeded++;
+          }
+        }
+      }
     }
+
+    const updatePayload: any = { 
+      images_generated: realImageCount,
+      images_needed: realImagesNeeded,
+    };
 
     const { error: pipelineUpdateError } = await supabase
       .from("v10_bpa_pipeline")
