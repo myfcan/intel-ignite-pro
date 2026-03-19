@@ -424,28 +424,33 @@ export function ImportStepsModal({
           <Textarea
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
-            placeholder={`[
-  {
-    "step_number": 1,
-    "title": "Criar conta no Calendly",
-    "app_name": "Calendly",
-    "app_icon": "📅",
-    "phase": 1,
-    "frames": [
-      {
-        "bar_text": "calendly.com",
-        "bar_color": "#006BFF",
-        "bar_sub": "Sign up",
-        "action": "Preencha os campos...",
-        "check": "Você é redirecionado...",
-        "elements": [
-          {"type": "chrome_header", "url": "https://calendly.com/signup"},
-          {"type": "input", "label": "Email", "placeholder": "seu@email.com"}
-        ]
-      }
-    ]
-  }
-]`}
+            placeholder={`{
+  "narration_part_a": "Bem-vindo à aula sobre Calendly...",
+  "narration_part_c": "Parabéns! Você concluiu a aula...",
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Criar conta no Calendly",
+      "app_name": "Calendly",
+      "app_icon": "📅",
+      "phase": 1,
+      "narration_script": "Vamos começar... [ANCHOR:confirmacao]\\nSe você vê a tela, deu certo.",
+      "frames": [
+        {
+          "bar_text": "calendly.com",
+          "bar_color": "#006BFF",
+          "bar_sub": "Sign up",
+          "action": "Preencha os campos...",
+          "check": "Você é redirecionado...",
+          "elements": [
+            {"type": "chrome_header", "url": "https://calendly.com/signup"},
+            {"type": "input", "label": "Email", "placeholder": "seu@email.com"}
+          ]
+        }
+      ]
+    }
+  ]
+}`}
             className="min-h-[400px] font-mono text-xs leading-relaxed"
             maxLength={500000}
           />
