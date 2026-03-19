@@ -190,10 +190,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
       toast.error('Vincule uma aula primeiro');
       return;
     }
-    if (imagesNeeded === 0 && stepsCount > 0) {
-      setImagesNeeded(stepsCount);
-      await onUpdate({ images_needed: stepsCount });
-    }
+    // imagesNeeded will be auto-set from edge function response (totalNeeded)
     setGenerating(true);
     setImageProgress({ current: 0, total: 0 });
 
