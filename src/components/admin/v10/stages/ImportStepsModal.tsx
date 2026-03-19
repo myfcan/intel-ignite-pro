@@ -42,27 +42,52 @@ interface ParsedImport {
 
 const REQUIRED_STEP_FIELDS = ['step_number', 'title', 'frames'] as const;
 
+function parseImportJson(jsonText: string): { parsed: ParsedImport | null; error?: string } {
+  let raw: any;
+  try {
+    raw = JSON.parse(jsonText);
+  } catch (e) {
+    return { parsed: null, error: `JSON inválido: ${(e as Error).message}` };
+  }
+
+  // Support both formats: plain array or object with { steps, narration_part_a, narration_part_c }
+  if (Array.isArray(raw)) {
+    return { parsed: { steps: raw } };
+  }
+
+  if (typeof raw === 'object' && raw !== null && Array.isArray(raw.steps)) {
+    return {
+      parsed: {
+        steps: raw.steps,
+        narration_part_a: typeof raw.narration_part_a === 'string' ? raw.narration_part_a : undefined,
+        narration_part_c: typeof raw.narration_part_c === 'string' ? raw.narration_part_c : undefined,
+      },
+    };
+  }
+
+  return { parsed: null, error: 'JSON deve ser um array de passos ou objeto com { steps: [...], narration_part_a?, narration_part_c? }' };
+}
+
 function validateStepsJson(jsonText: string): ValidationResult {
   const result: ValidationResult = {
     valid: false,
     stepsCount: 0,
     framesCount: 0,
     phasesCount: 0,
+    hasPartA: false,
+    hasPartC: false,
     errors: [],
   };
 
-  let steps: any[];
-  try {
-    steps = JSON.parse(jsonText);
-  } catch (e) {
-    result.errors.push(`JSON inválido: ${(e as Error).message}`);
+  const { parsed, error } = parseImportJson(jsonText);
+  if (!parsed) {
+    result.errors.push(error!);
     return result;
   }
 
-  if (!Array.isArray(steps)) {
-    result.errors.push('JSON deve ser um array de passos: [{ ... }, { ... }]');
-    return result;
-  }
+  const steps = parsed.steps;
+  result.hasPartA = !!parsed.narration_part_a;
+  result.hasPartC = !!parsed.narration_part_c;
 
   if (steps.length === 0) {
     result.errors.push('Array vazio — nenhum passo encontrado');
@@ -76,14 +101,12 @@ function validateStepsJson(jsonText: string): ValidationResult {
   for (const [i, step] of steps.entries()) {
     const prefix = `Passo ${step.step_number ?? i + 1}`;
 
-    // Required fields
     for (const field of REQUIRED_STEP_FIELDS) {
       if (step[field] === undefined || step[field] === null || step[field] === '') {
         result.errors.push(`${prefix}: campo '${field}' faltando`);
       }
     }
 
-    // step_number uniqueness
     if (typeof step.step_number === 'number') {
       if (stepNumbers.has(step.step_number)) {
         result.errors.push(`${prefix}: step_number duplicado`);
@@ -91,28 +114,20 @@ function validateStepsJson(jsonText: string): ValidationResult {
       stepNumbers.add(step.step_number);
     }
 
-    // Phase
     const phase = step.phase ?? step.phase_number ?? 1;
     if (typeof phase === 'number') {
       phases.add(phase);
     }
 
-    // Frames validation
     if (step.frames) {
       if (!Array.isArray(step.frames)) {
         result.errors.push(`${prefix}: 'frames' deve ser array`);
       } else {
         result.framesCount += step.frames.length;
-
         for (const [j, frame] of step.frames.entries()) {
           const fp = `${prefix} Frame ${j + 1}`;
-
-          if (!frame.bar_text) {
-            result.errors.push(`${fp}: 'bar_text' faltando`);
-          }
-          if (!frame.bar_color) {
-            result.errors.push(`${fp}: 'bar_color' faltando`);
-          }
+          if (!frame.bar_text) result.errors.push(`${fp}: 'bar_text' faltando`);
+          if (!frame.bar_color) result.errors.push(`${fp}: 'bar_color' faltando`);
           if (!frame.elements || !Array.isArray(frame.elements) || frame.elements.length === 0) {
             result.errors.push(`${fp}: 'elements' vazio ou faltando`);
           }
