@@ -30,7 +30,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { pipeline_id, num_steps, instructions } = await req.json();
+    const { pipeline_id, num_steps, instructions, trail_id, course_id } = await req.json();
 
     if (!pipeline_id || !num_steps) {
       return new Response(
