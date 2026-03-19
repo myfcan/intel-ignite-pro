@@ -270,7 +270,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">Nenhum screenshot encontrado para "{pipeline.title}".</p>
+              <p className="text-xs text-muted-foreground">Nenhum screenshot encontrado para "{[...new Set(steps.map(s => s.app_name).filter(Boolean))].join(', ') || pipeline.title}".</p>
             )
           )}
           {!showReferoResults && (
