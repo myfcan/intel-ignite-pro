@@ -200,8 +200,18 @@ Retorne APENAS o JSON array.`;
 
     // 7d. Run V1 + V3 validations (log only, non-blocking)
     const v1Result = validateTools(steps, declaredTools);
-    if (!v1Result.passed) {
-      console.warn(`[v10-generate-steps] V1 validation warnings: ${v1Result.errors.join('; ')}`);
+    if (!v1Result.passed && declaredTools.length > 0) {
+      console.error(`[v10-generate-steps] V1 validation BLOCKED: ${v1Result.errors.join('; ')}`);
+      return new Response(
+        JSON.stringify({
+          error: 'Validação V1 falhou — passos usam ferramentas não declaradas',
+          errors: v1Result.errors,
+          hint: 'Volte para a Etapa 1 e declare as ferramentas corretas no campo tools.',
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } else if (!v1Result.passed) {
+      console.warn(`[v10-generate-steps] V1 validation warnings (tools empty, non-blocking): ${v1Result.errors.join('; ')}`);
     }
     const v3Result = validateStructure(steps);
     if (!v3Result.passed) {
