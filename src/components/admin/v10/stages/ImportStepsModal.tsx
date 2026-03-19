@@ -29,7 +29,15 @@ interface ValidationResult {
   stepsCount: number;
   framesCount: number;
   phasesCount: number;
+  hasPartA: boolean;
+  hasPartC: boolean;
   errors: string[];
+}
+
+interface ParsedImport {
+  steps: any[];
+  narration_part_a?: string;
+  narration_part_c?: string;
 }
 
 const REQUIRED_STEP_FIELDS = ['step_number', 'title', 'frames'] as const;
