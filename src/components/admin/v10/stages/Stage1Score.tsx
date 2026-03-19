@@ -63,6 +63,17 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
 
+  const addTools = () => {
+    const newTools = newTool
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t && !tools.includes(t));
+    if (newTools.length > 0) {
+      setTools([...tools, ...newTools]);
+      setNewTool('');
+    }
+  };
+
   const scoreTotal = Math.round(
     SCORE_FIELDS.reduce((sum, field) => sum + scores[field.key] * field.weight, 0)
   );
