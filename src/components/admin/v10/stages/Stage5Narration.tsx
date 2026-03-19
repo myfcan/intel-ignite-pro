@@ -303,6 +303,13 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
   // ── Process all steps sequentially ─────────────────────────────────────
   const [processingAll, setProcessingAll] = useState(false);
+  const [processProgress, setProcessProgress] = useState<{
+    total: number;
+    current: number;
+    currentStepTitle: string;
+    results: Array<{ step: number; title: string; status: 'ok' | 'error' | 'pending' | 'processing' }>;
+    startedAt: number;
+  } | null>(null);
 
   const handleProcessAll = useCallback(async () => {
     const stepsWithScript = steps.filter(s => {
@@ -316,12 +323,34 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
     }
 
     setProcessingAll(true);
+    const initialResults = stepsWithScript.map(s => ({
+      step: s.step_number,
+      title: s.title,
+      status: 'pending' as const,
+    }));
+    setProcessProgress({
+      total: stepsWithScript.length,
+      current: 0,
+      currentStepTitle: stepsWithScript[0].title,
+      results: initialResults,
+      startedAt: Date.now(),
+    });
+
     let successCount = 0;
     let errorCount = 0;
 
-    for (const step of stepsWithScript) {
+    for (let i = 0; i < stepsWithScript.length; i++) {
+      const step = stepsWithScript[i];
       const script = editingScripts[step.id] ?? step.narration_script;
       setProcessingStep(step.id);
+      setProcessProgress(prev => prev ? {
+        ...prev,
+        current: i,
+        currentStepTitle: step.title,
+        results: prev.results.map((r, idx) =>
+          idx === i ? { ...r, status: 'processing' as const } : r
+        ),
+      } : null);
 
       try {
         const { data, error } = await supabase.functions.invoke('v10-process-anchors', {
@@ -335,16 +364,35 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
         if (error || data?.error) {
           errorCount++;
           console.error(`Step ${step.step_number} error:`, error || data?.error);
+          setProcessProgress(prev => prev ? {
+            ...prev,
+            results: prev.results.map((r, idx) =>
+              idx === i ? { ...r, status: 'error' as const } : r
+            ),
+          } : null);
         } else {
           successCount++;
+          setProcessProgress(prev => prev ? {
+            ...prev,
+            results: prev.results.map((r, idx) =>
+              idx === i ? { ...r, status: 'ok' as const } : r
+            ),
+          } : null);
         }
       } catch {
         errorCount++;
+        setProcessProgress(prev => prev ? {
+          ...prev,
+          results: prev.results.map((r, idx) =>
+            idx === i ? { ...r, status: 'error' as const } : r
+          ),
+        } : null);
       }
     }
 
     setProcessingStep(null);
     setProcessingAll(false);
+    setProcessProgress(prev => prev ? { ...prev, current: prev.total, currentStepTitle: 'Concluído!' } : null);
 
     toast.success(`Processamento concluído: ${successCount} ok, ${errorCount} erros`);
 
