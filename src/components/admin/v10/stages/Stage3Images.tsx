@@ -421,12 +421,16 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
           {stepsCount > 0 && (
             <Button variant="outline" className="min-h-[44px]" onClick={handleAutoCalc}>
               <Calculator className="mr-2 h-4 w-4" />
-              Calcular ({stepsCount})
+              Calcular ({stepImages.length > 0 ? stepImages.length : stepsCount})
             </Button>
           )}
           <Button variant="outline" className="min-h-[44px]" onClick={handleGenerate} disabled={pipeline.lesson_id === null || generating}>
             {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {generating ? 'Gerando...' : 'Gerar Imagens'}
+            {generating
+              ? imageProgress
+                ? `Gerando... ${imageProgress.current}/${imageProgress.total}`
+                : 'Gerando...'
+              : 'Gerar Imagens'}
           </Button>
           <Button variant="outline" className="min-h-[44px]" onClick={handleApproveAll} disabled={imagesGenerated === 0}>
             <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -437,6 +441,16 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
         </div>
+
+        {/* Auto-loop progress bar */}
+        {generating && imageProgress && imageProgress.total > 0 && (
+          <div className="space-y-1">
+            <Progress value={(imageProgress.current / imageProgress.total) * 100} className="h-2" />
+            <p className="text-xs text-muted-foreground text-center">
+              Gerando imagens... {imageProgress.current}/{imageProgress.total}
+            </p>
+          </div>
+        )}
 
         {/* Image Grid — always visible */}
         <div className="space-y-3">
