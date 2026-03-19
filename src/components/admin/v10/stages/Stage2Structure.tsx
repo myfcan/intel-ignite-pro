@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, CheckCircle, AlertCircle, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, AlertCircle, Sparkles, Loader2, AlertTriangle, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
