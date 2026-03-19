@@ -223,9 +223,31 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       toast.error('Declare pelo menos 1 ferramenta na Etapa 1 (Score) antes de gerar passos.');
       return false;
     }
+
+    type GenerateChunkResult = {
+      error?: string;
+      stage?: string;
+      lesson_id?: string;
+      steps_count?: number;
+      estimated_minutes?: number;
+      timings?: Record<string, number>;
+      chunk?: {
+        start: number;
+        end: number;
+        requested: number;
+        generated: number;
+      };
+      progress?: {
+        generated: number;
+        total_requested: number;
+        completed: boolean;
+        remaining: number;
+        next_chunk_start: number | null;
+      };
+    };
+
     setGenerating(true);
     try {
-      // Parse num_steps from instructions (e.g. "Passo 13:" → 13)
       const stepMatches = (instructions || '').match(/Passo\s+(\d+)/gi) || [] as string[];
       let maxStep = 0;
       for (const m of stepMatches) {
@@ -234,38 +256,86 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       }
       const numSteps = maxStep > 0 ? maxStep : 13;
 
-      const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
-        body: {
-          pipeline_id: pipeline.id,
-          num_steps: numSteps,
-          instructions: instructions || '',
-          trail_id: selectedTrailId || null,
-          course_id: selectedCourseId || null,
-        },
-      });
+      const CHUNK_SIZE = 3;
+      const maxCalls = Math.ceil(numSteps / CHUNK_SIZE) + 3;
 
-      if (error) {
-        toast.error(`Erro ao gerar passos: ${error.message || 'erro desconhecido'}`);
+      let nextChunkStart = 1;
+      let finalResult: GenerateChunkResult | null = null;
+      const forensicTimings: Array<{
+        chunk_start?: number;
+        chunk_end?: number;
+        timings?: Record<string, number>;
+      }> = [];
+
+      for (let call = 0; call < maxCalls; call++) {
+        const isFirstCall = nextChunkStart === 1;
+
+        const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
+          body: {
+            pipeline_id: pipeline.id,
+            num_steps: numSteps,
+            instructions: instructions || '',
+            trail_id: selectedTrailId || null,
+            course_id: selectedCourseId || null,
+            chunk_start: nextChunkStart,
+            chunk_size: CHUNK_SIZE,
+            reset: isFirstCall,
+          },
+        });
+
+        if (error) {
+          toast.error(`Erro ao gerar passos: ${error.message || 'erro desconhecido'}`);
+          return false;
+        }
+
+        const result = (data || {}) as GenerateChunkResult;
+
+        if (result.error) {
+          toast.error(`Erro na geração (${result.stage || 'unknown'}): ${result.error}`);
+          return false;
+        }
+
+        forensicTimings.push({
+          chunk_start: result.chunk?.start,
+          chunk_end: result.chunk?.end,
+          timings: result.timings,
+        });
+
+        if (result.progress?.completed) {
+          finalResult = result;
+          break;
+        }
+
+        const next = result.progress?.next_chunk_start;
+        const generated = result.progress?.generated ?? 0;
+
+        if (!next || next <= nextChunkStart) {
+          toast.error(`Fluxo inconsistente detectado após ${generated}/${numSteps} passos.`);
+          return false;
+        }
+
+        nextChunkStart = next;
+      }
+
+      if (!finalResult || !finalResult.progress?.completed) {
+        toast.error('Não foi possível concluir a geração dentro do limite seguro de chamadas.');
         return false;
       }
 
-      if (data?.error) {
-        toast.error(`Erro: ${data.error}`);
-        return false;
-      }
+      console.log('[Stage2Structure] Forensic timings by chunk', forensicTimings);
 
-      const result = data as { steps_count: number; lesson_id?: string; estimated_minutes?: number };
-      toast.success(`${result.steps_count} passos gerados pela IA!`);
-
-      // Update pipeline with lesson_id and steps count
+      const totalSteps = finalResult.progress.generated;
       const updates: Partial<V10BpaPipeline> = {
-        steps_generated: result.steps_count,
+        steps_generated: totalSteps,
       };
-      if (result.lesson_id) {
-        updates.lesson_id = result.lesson_id;
+      if (finalResult.lesson_id) {
+        updates.lesson_id = finalResult.lesson_id;
       }
+
       await onUpdate(updates);
       await fetchSteps();
+
+      toast.success(`${totalSteps} passos gerados com sucesso (arquitetura anti-timeout ativa).`);
       return true;
     } catch (err) {
       toast.error(`Erro ao gerar passos: ${err instanceof Error ? err.message : 'erro desconhecido'}`);

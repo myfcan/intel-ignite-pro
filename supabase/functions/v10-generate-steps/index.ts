@@ -7,6 +7,194 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const AI_TIMEOUT_MS = 110_000;
+const DEFAULT_CHUNK_SIZE = 3;
+const MAX_CHUNK_SIZE = 5;
+const MAX_COMPLETION_RETRIES = 1;
+
+type TimingMap = Record<string, number>;
+
+const PHASE_MAP: Record<string, number> = {
+  "setup": 1,
+  "preparação": 1,
+  "preparacao": 1,
+  "início": 1,
+  "inicio": 1,
+  "conceitos": 1,
+  "fundamentos": 1,
+  "construção": 2,
+  "construcao": 2,
+  "desenvolvimento": 2,
+  "execução": 2,
+  "execucao": 2,
+  "prática": 2,
+  "pratica": 2,
+  "teste": 3,
+  "validação": 3,
+  "validacao": 3,
+  "verificação": 3,
+  "verificacao": 3,
+  "conclusão": 3,
+  "conclusao": 3,
+  "aplicação": 3,
+  "aplicacao": 3,
+};
+
+function clampInt(value: unknown, min: number, max: number, fallback: number): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  const normalized = Math.floor(numeric);
+  return Math.max(min, Math.min(max, normalized));
+}
+
+function extractStepsArray(rawContent: string): any[] {
+  const cleaned = rawContent
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && Array.isArray(parsed.steps)) return parsed.steps;
+  } catch {
+    // fallback abaixo
+  }
+
+  const firstBracket = cleaned.indexOf("[");
+  const lastBracket = cleaned.lastIndexOf("]");
+  if (firstBracket >= 0 && lastBracket > firstBracket) {
+    const candidate = cleaned.slice(firstBracket, lastBracket + 1);
+    const parsed = JSON.parse(candidate);
+    if (Array.isArray(parsed)) return parsed;
+  }
+
+  throw new Error("AI response is not a JSON array");
+}
+
+function normalizePhase(phase: unknown): number {
+  if (typeof phase === "number" && phase >= 1 && phase <= 3) return phase;
+  if (typeof phase === "string") {
+    return PHASE_MAP[phase.toLowerCase().trim()] ?? 1;
+  }
+  return 1;
+}
+
+async function timed<T>(timings: TimingMap, key: string, fn: () => Promise<T>): Promise<T> {
+  const start = Date.now();
+  try {
+    return await fn();
+  } finally {
+    timings[key] = (timings[key] ?? 0) + (Date.now() - start);
+  }
+}
+
+async function callAiGateway(args: {
+  apiKey: string;
+  model: string;
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+  timings: TimingMap;
+  timingKey: string;
+}): Promise<string> {
+  const { apiKey, model, messages, timings, timingKey } = args;
+
+  return await timed(timings, timingKey, async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+
+    try {
+      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        throw new Error(`AI Gateway error (${aiResponse.status}): ${errorText}`);
+      }
+
+      const aiData = await aiResponse.json();
+      const rawContent = aiData?.choices?.[0]?.message?.content;
+
+      if (!rawContent || typeof rawContent !== "string") {
+        throw new Error("No content returned from AI Gateway");
+      }
+
+      return rawContent;
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        throw new Error(`AI timeout after ${AI_TIMEOUT_MS}ms`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
+}
+
+function buildIntroSlides(args: {
+  lessonId: string;
+  pipelineTitle: string;
+  stepsCount: number;
+  estimatedMinutes: number;
+  tools: string[];
+}) {
+  const { lessonId, pipelineTitle, stepsCount, estimatedMinutes, tools } = args;
+
+  const introSlides: Array<Record<string, unknown>> = [];
+  introSlides.push({
+    lesson_id: lessonId,
+    slide_order: 1,
+    icon: "BookOpen",
+    tool_name: null,
+    tool_color: "#6366f1",
+    title: pipelineTitle,
+    subtitle: `${stepsCount} passos | ${estimatedMinutes} min`,
+    description: `Bem-vindo! Nesta aula você vai aprender ${pipelineTitle.toLowerCase()}.`,
+    label: "Introdução",
+    appear_at_seconds: 0,
+  });
+
+  const toolColors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
+  tools.forEach((tool, idx) => {
+    introSlides.push({
+      lesson_id: lessonId,
+      slide_order: idx + 2,
+      icon: "Wrench",
+      tool_name: tool,
+      tool_color: toolColors[idx % toolColors.length],
+      title: tool,
+      subtitle: "Ferramenta utilizada",
+      description: `Você vai usar ${tool} nesta aula.`,
+      label: "Ferramenta",
+      appear_at_seconds: (idx + 1) * 3,
+    });
+  });
+
+  introSlides.push({
+    lesson_id: lessonId,
+    slide_order: tools.length + 2,
+    icon: "Rocket",
+    tool_name: null,
+    tool_color: "#10B981",
+    title: "Vamos começar!",
+    subtitle: "Tudo pronto para iniciar",
+    description: "Clique em continuar para começar o tutorial.",
+    label: "Início",
+    appear_at_seconds: (tools.length + 1) * 3,
+  });
+
+  return introSlides;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -19,32 +207,57 @@ serve(async (req) => {
     });
   }
 
+  const startedAt = Date.now();
+  const timings: TimingMap = {};
+  let stage = "init";
+
   try {
-    // Auth: require admin/supervisor role
+    stage = "auth";
     const { requireAdmin } = await import("../_shared/auth.ts");
-    const authResult = await requireAdmin(req);
+    const authResult = await timed(timings, "auth_ms", async () => requireAdmin(req));
     if (authResult.error) return authResult.error;
 
+    stage = "payload";
+    const payload = await timed(timings, "parse_payload_ms", async () => req.json());
+    const {
+      pipeline_id,
+      num_steps,
+      instructions,
+      trail_id,
+      course_id,
+      chunk_start,
+      chunk_size,
+      reset,
+    } = payload ?? {};
+
+    const requestedSteps = clampInt(num_steps, 1, 200, 0);
+    if (!pipeline_id || requestedSteps <= 0) {
+      return new Response(
+        JSON.stringify({ error: "pipeline_id and valid num_steps are required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const chunkStart = clampInt(chunk_start, 1, requestedSteps, 1);
+    const requestedChunkSize = clampInt(chunk_size, 1, MAX_CHUNK_SIZE, DEFAULT_CHUNK_SIZE);
+    const chunkEnd = Math.min(requestedSteps, chunkStart + requestedChunkSize - 1);
+    const targetChunkSize = chunkEnd - chunkStart + 1;
+
+    stage = "clients";
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { pipeline_id, num_steps, instructions, trail_id, course_id } = await req.json();
-
-    if (!pipeline_id || !num_steps) {
-      return new Response(
-        JSON.stringify({ error: "pipeline_id and num_steps are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!lovableApiKey) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // 1. Fetch pipeline
-    const { data: pipeline, error: pipelineError } = await supabase
-      .from("v10_bpa_pipeline")
-      .select("*")
-      .eq("id", pipeline_id)
-      .single();
+    stage = "fetch_pipeline";
+    const { data: pipeline, error: pipelineError } = await timed(timings, "fetch_pipeline_ms", async () =>
+      supabase.from("v10_bpa_pipeline").select("*").eq("id", pipeline_id).single()
+    );
 
     if (pipelineError || !pipeline) {
       return new Response(
@@ -53,450 +266,416 @@ serve(async (req) => {
       );
     }
 
-    let lesson_id = pipeline.lesson_id;
-
-    // 2. If pipeline has no lesson_id, create one in v10_lessons
-    if (!lesson_id) {
-      const { data: lesson, error: lessonError } = await supabase
-        .from("v10_lessons")
-        .insert({
-          slug: pipeline.slug,
-          title: pipeline.title,
-          status: "draft",
-          total_steps: 0,
-          estimated_minutes: 0,
-          tools: [],
-          xp_reward: 0,
-          order_in_trail: 0,
-          ...(trail_id ? { trail_id } : {}),
-          ...(course_id ? { course_id } : {}),
-        })
-        .select("id")
-        .single();
+    stage = "ensure_lesson";
+    let lessonId = pipeline.lesson_id as string | null;
+    if (!lessonId) {
+      const { data: lesson, error: lessonError } = await timed(timings, "create_lesson_ms", async () =>
+        supabase
+          .from("v10_lessons")
+          .insert({
+            slug: pipeline.slug,
+            title: pipeline.title,
+            status: "draft",
+            total_steps: 0,
+            estimated_minutes: 0,
+            tools: [],
+            xp_reward: 0,
+            order_in_trail: 0,
+            ...(trail_id ? { trail_id } : {}),
+            ...(course_id ? { course_id } : {}),
+          })
+          .select("id")
+          .single()
+      );
 
       if (lessonError || !lesson) {
         throw new Error(`Failed to create lesson: ${lessonError?.message}`);
       }
 
-      lesson_id = lesson.id;
+      lessonId = lesson.id;
 
-      // 3. Update pipeline with the new lesson_id
-      const { error: updatePipelineError } = await supabase
-        .from("v10_bpa_pipeline")
-        .update({ lesson_id })
-        .eq("id", pipeline_id);
+      const { error: updatePipelineError } = await timed(timings, "attach_lesson_to_pipeline_ms", async () =>
+        supabase.from("v10_bpa_pipeline").update({ lesson_id: lessonId }).eq("id", pipeline_id)
+      );
 
       if (updatePipelineError) {
         throw new Error(`Failed to update pipeline with lesson_id: ${updatePipelineError.message}`);
       }
     }
 
-    // 4. Call the Lovable AI Gateway — using Prompt Master system prompt
-    const { PROMPT_GENERATE_STEPS, postProcessC2C3, postProcessFrameDefaults, validateTools, validateStructure } = await import("../_shared/prompt-master.ts");
-    const systemPrompt = PROMPT_GENERATE_STEPS;
+    const shouldResetAll = Boolean(reset) && chunkStart === 1;
 
-    // Extract declared tools from pipeline title/docs
-    const declaredTools = (pipeline.tools as string[] || []);
+    stage = "cleanup_target_range";
+    if (shouldResetAll) {
+      await timed(timings, "delete_existing_steps_ms", async () =>
+        supabase.from("v10_lesson_steps").delete().eq("lesson_id", lessonId)
+      );
+      await timed(timings, "delete_intro_slides_ms", async () =>
+        supabase.from("v10_lesson_intro_slides").delete().eq("lesson_id", lessonId)
+      );
+    } else {
+      await timed(timings, "delete_chunk_range_ms", async () =>
+        supabase
+          .from("v10_lesson_steps")
+          .delete()
+          .eq("lesson_id", lessonId)
+          .gte("step_number", chunkStart)
+          .lte("step_number", chunkEnd)
+      );
+    }
+
+    stage = "prompt";
+    const {
+      PROMPT_GENERATE_STEPS,
+      postProcessC2C3,
+      postProcessFrameDefaults,
+      validateTools,
+      validateStructure,
+    } = await timed(timings, "load_prompt_utils_ms", async () => import("../_shared/prompt-master.ts"));
+
+    const declaredTools = Array.isArray(pipeline.tools)
+      ? pipeline.tools.filter((t: unknown): t is string => typeof t === "string")
+      : [];
 
     const instructionsBlock = instructions
       ? `\n\nINSTRUÇÕES DO INSTRUTOR (prioridade máxima):\n${instructions}\n`
-      : '';
+      : "";
 
-    const userMessage = `Gere ${num_steps} passos para a aula "${pipeline.title}" (slug: ${pipeline.slug}).
+    const userMessage = `Gere APENAS os passos ${chunkStart} até ${chunkEnd} (total ${targetChunkSize} passos) para a aula "${pipeline.title}" (slug: ${pipeline.slug}).
 
-Ferramentas declaradas: ${declaredTools.length > 0 ? declaredTools.join(', ') : 'Detectar automaticamente do contexto'}
+Ferramentas declaradas: ${declaredTools.length > 0 ? declaredTools.join(", ") : "Detectar automaticamente do contexto"}
 
-Documentacao/notas do instrutor sobre o app:
-${pipeline.docs_manual_input || "Nenhuma documentacao fornecida — use seu conhecimento sobre o app."}
+Documentação/notas do instrutor:
+${pipeline.docs_manual_input || "Nenhuma documentação fornecida — use seu conhecimento sobre o app."}
 ${instructionsBlock}
-REGRAS CRÍTICAS (auditoria automática V1-V5):
-- Use APENAS as ferramentas declaradas (V1). Último passo = AILIV.
-- 3 fases obrigatórias (phase_number 1-3), não 5 (V3).
-- Média ≤1.5 frames/passo (V2). 78% dos passos devem ter 1 frame.
-- 80%+ dos passos devem ter dependency (V3).
-- 3-5 celebrations no total (V3).
-- description > 30 chars com termos técnicos → tooltip_term obrigatório (C2).
-- bar_sub muda entre frames → nav_breadcrumb obrigatório (C3).
-- Declare lesson_type: "automation" | "tutorial" | "conceptual".
+REGRAS CRÍTICAS:
+- Use APENAS ferramentas declaradas (exceto último passo AILIV quando aplicável no fim total).
+- step_number deve ser absoluto (ex: ${chunkStart}, ${chunkStart + 1}...).
+- 1 passo = 1 ação atômica.
+- Descrição >30 chars com termos técnicos.
+- Inclua frames com action e check.
 
-Retorne APENAS o JSON array.`;
+Retorne APENAS o JSON array dos ${targetChunkSize} passos solicitados.`;
 
-    const gatewayUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
-    const gatewayHeaders = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
-    };
     const aiModel = "openai/gpt-5";
 
-    const aiResponse = await fetch(gatewayUrl, {
-      method: "POST",
-      headers: gatewayHeaders,
-      body: JSON.stringify({
-        model: aiModel,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
-      }),
+    stage = "ai_initial";
+    const initialRaw = await callAiGateway({
+      apiKey: lovableApiKey,
+      model: aiModel,
+      messages: [
+        { role: "system", content: PROMPT_GENERATE_STEPS },
+        { role: "user", content: userMessage },
+      ],
+      timings,
+      timingKey: "ai_call_initial_ms",
     });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      throw new Error(`AI Gateway error (${aiResponse.status}): ${errorText}`);
-    }
+    stage = "ai_parse_initial";
+    let chunkSteps = await timed(timings, "ai_parse_initial_ms", async () => extractStepsArray(initialRaw));
 
-    const aiData = await aiResponse.json();
-    const rawContent = aiData.choices?.[0]?.message?.content;
+    for (let retry = 0; retry < MAX_COMPLETION_RETRIES && chunkSteps.length < targetChunkSize; retry++) {
+      const missing = targetChunkSize - chunkSteps.length;
+      const completionMessage = `Você retornou ${chunkSteps.length} passos, mas eu pedi ${targetChunkSize}.\nFaltam ${missing} passos no intervalo ${chunkStart}-${chunkEnd}.\nRetorne APENAS um JSON array com os passos faltantes.`;
 
-    if (!rawContent) {
-      throw new Error("No content returned from AI Gateway");
-    }
+      stage = `ai_completion_retry_${retry + 1}`;
+      const completionRaw = await callAiGateway({
+        apiKey: lovableApiKey,
+        model: aiModel,
+        messages: [
+          { role: "system", content: PROMPT_GENERATE_STEPS },
+          { role: "user", content: userMessage },
+          { role: "assistant", content: JSON.stringify(chunkSteps) },
+          { role: "user", content: completionMessage },
+        ],
+        timings,
+        timingKey: `ai_call_completion_retry_${retry + 1}_ms`,
+      });
 
-    // 7. Parse the JSON response
-    let steps;
-    try {
-      const cleaned = rawContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      steps = JSON.parse(cleaned);
-    } catch {
-      throw new Error(`Failed to parse AI response as JSON: ${rawContent.substring(0, 500)}`);
-    }
+      const completionSteps = await timed(timings, `ai_parse_completion_retry_${retry + 1}_ms`, async () =>
+        extractStepsArray(completionRaw)
+      );
 
-    if (!Array.isArray(steps)) {
-      throw new Error("AI response is not a JSON array");
-    }
-
-    // === COMPLETENESS VERIFICATION LOOP ===
-    const MAX_COMPLETION_RETRIES = 2;
-    console.log(`[v10-generate-steps] Initial generation: ${steps.length}/${num_steps} steps`);
-
-    for (let retry = 0; retry < MAX_COMPLETION_RETRIES; retry++) {
-      if (steps.length >= num_steps) break;
-
-      const missing = num_steps - steps.length;
-      const lastStep = steps[steps.length - 1];
-      console.log(`[v10-generate-steps] Completeness retry ${retry + 1}: have ${steps.length}, need ${num_steps}, missing ${missing}`);
-
-      const completionMessage = `Você gerou ${steps.length} passos mas eu pedi ${num_steps}.
-Faltam os passos ${steps.length + 1} até ${num_steps}.
-O último passo gerado foi: step_number=${lastStep.step_number}, title="${lastStep.title}".
-Gere APENAS os ${missing} passos faltantes (do ${steps.length + 1} ao ${num_steps}).
-O último passo (${num_steps}) DEVE ser AILIV (celebração).
-Retorne APENAS o JSON array dos passos faltantes, sem texto adicional.`;
-
-      try {
-        const completionResponse = await fetch(gatewayUrl, {
-          method: "POST",
-          headers: gatewayHeaders,
-          body: JSON.stringify({
-            model: aiModel,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userMessage },
-              { role: "assistant", content: JSON.stringify(steps) },
-              { role: "user", content: completionMessage },
-            ],
-          }),
-        });
-
-        if (!completionResponse.ok) {
-          console.error(`[v10-generate-steps] Completion retry ${retry + 1} failed: ${completionResponse.status}`);
-          break;
-        }
-
-        const completionData = await completionResponse.json();
-        const completionRaw = completionData.choices?.[0]?.message?.content;
-        if (!completionRaw) {
-          console.error(`[v10-generate-steps] Completion retry ${retry + 1}: empty response`);
-          break;
-        }
-
-        const cleanedCompletion = completionRaw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const completionSteps = JSON.parse(cleanedCompletion);
-
-        if (!Array.isArray(completionSteps) || completionSteps.length === 0) {
-          console.error(`[v10-generate-steps] Completion retry ${retry + 1}: not a valid array`);
-          break;
-        }
-
-        // Merge: renumber and append
-        for (const cs of completionSteps) {
-          cs.step_number = steps.length + 1;
-          steps.push(cs);
-        }
-        console.log(`[v10-generate-steps] After retry ${retry + 1}: ${steps.length}/${num_steps} steps`);
-      } catch (completionError: any) {
-        console.error(`[v10-generate-steps] Completion retry ${retry + 1} error: ${completionError?.message}`);
-        break;
+      if (completionSteps.length > 0) {
+        chunkSteps = [...chunkSteps, ...completionSteps];
       }
     }
 
-    console.log(`[v10-generate-steps] Final completeness: ${steps.length}/${num_steps} steps`);
-
-    // 7b. Validate and fix frames
-    let totalFrames = 0;
-    for (const step of steps) {
-      if (!step.frames || !Array.isArray(step.frames) || step.frames.length === 0) {
-        // Auto-fix: create a default frame if none exist
-        step.frames = [{
-          bar_text: step.app_name || "app",
-          bar_sub: step.title || "Tela principal",
-          bar_color: step.accent_color || "#6366F1",
-          elements: [],
-        }];
-        console.warn(`[v10-generate-steps] Step "${step.title}" had 0 frames — auto-created 1 default frame`);
-      }
-      for (const frame of step.frames) {
-        if (!frame.bar_text) {
-          frame.bar_text = step.app_name || "app";
-          console.warn(`[v10-generate-steps] Frame in "${step.title}" had empty bar_text — auto-filled with "${frame.bar_text}"`);
-        }
-      }
-      totalFrames += step.frames.length;
-    }
-    const avgFrames = steps.length > 0 ? totalFrames / steps.length : 0;
-    console.log(`[v10-generate-steps] Frame validation: ${totalFrames} total frames across ${steps.length} steps (avg: ${avgFrames.toFixed(2)})`);
-    if (avgFrames < 1.3) {
-      console.warn(`[v10-generate-steps] WARNING: Low frame average ${avgFrames.toFixed(2)} (expected >= 1.3). Steps may need more frames for multi-screen navigation.`);
+    if (!Array.isArray(chunkSteps) || chunkSteps.length === 0) {
+      throw new Error("AI retornou zero passos para o chunk solicitado");
     }
 
-    // 7c. POST-PROCESSING: Use shared utilities from prompt-master.ts
-    const c2c3Result = postProcessC2C3(steps);
-    console.log(`[v10-generate-steps] Post-processing C2C3: ${c2c3Result.c2Fixes} C2 fixes, ${c2c3Result.c3Fixes} C3 fixes`);
+    if (chunkSteps.length < targetChunkSize) {
+      throw new Error(
+        `Completeness failure no chunk ${chunkStart}-${chunkEnd}: retornou ${chunkSteps.length}/${targetChunkSize}`
+      );
+    }
 
-    postProcessFrameDefaults(steps);
-    console.log(`[v10-generate-steps] Post-processing frame defaults complete`);
+    if (chunkSteps.length > targetChunkSize) {
+      chunkSteps = chunkSteps.slice(0, targetChunkSize);
+    }
 
-    // 7d. Run V1 + V3 validations (log only, non-blocking)
-    const v1Result = validateTools(steps, declaredTools);
+    stage = "post_process";
+    const c2c3Result = await timed(timings, "post_process_c2c3_ms", async () => postProcessC2C3(chunkSteps));
+    await timed(timings, "post_process_defaults_ms", async () => {
+      postProcessFrameDefaults(chunkSteps);
+      return null;
+    });
+
+    for (const step of chunkSteps) {
+      if (!Array.isArray(step.frames) || step.frames.length === 0) {
+        step.frames = [
+          {
+            bar_text: step.app_name || "app",
+            bar_sub: step.title || "Tela principal",
+            bar_color: step.accent_color || "#6366F1",
+            elements: [],
+            action: "",
+            check: "",
+          },
+        ];
+      }
+    }
+
+    const v1Result = await timed(timings, "validate_tools_ms", async () =>
+      validateTools(chunkSteps, declaredTools)
+    );
+
     if (!v1Result.passed && declaredTools.length > 0) {
-      console.error(`[v10-generate-steps] V1 validation BLOCKED: ${v1Result.errors.join('; ')}`);
       return new Response(
         JSON.stringify({
-          error: 'Validação V1 falhou — passos usam ferramentas não declaradas',
+          error: "Validação V1 falhou — passos usam ferramentas não declaradas",
           errors: v1Result.errors,
-          hint: 'Volte para a Etapa 1 e declare as ferramentas corretas no campo tools.',
+          stage,
+          timings,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    } else if (!v1Result.passed) {
-      console.warn(`[v10-generate-steps] V1 validation warnings (tools empty, non-blocking): ${v1Result.errors.join('; ')}`);
-    }
-    const v3Result = validateStructure(steps);
-    if (!v3Result.passed) {
-      console.warn(`[v10-generate-steps] V3 validation warnings: ${v3Result.errors.join('; ')}`);
     }
 
-    // Check for INTERMEDIARY_NEEDED response
-    if (steps.length === 1 && steps[0]?.status === 'INTERMEDIARY_NEEDED') {
-      // Column intermediary_status does NOT exist in DB — just return the response
-      return new Response(
-        JSON.stringify({ success: true, intermediary_needed: true, options: steps[0].options }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const rows = chunkSteps.map((step: any, index: number) => {
+      const absoluteStepNumber = chunkStart + index;
+      const title = typeof step.title === "string" && step.title.trim()
+        ? step.title.trim()
+        : `Passo ${absoluteStepNumber}`;
 
-    // 8. Sanitize and insert each step into v10_lesson_steps
-    const PHASE_MAP: Record<string, number> = {
-      "setup": 1, "preparação": 1, "preparacao": 1, "início": 1, "inicio": 1,
-      "construção": 2, "construcao": 2, "desenvolvimento": 2, "execução": 2, "execucao": 2,
-      "teste": 3, "validação": 3, "validacao": 3, "verificação": 3, "verificacao": 3, "conclusão": 3, "conclusao": 3,
-    };
+      const slug = (step.slug || title)
+        .toString()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "")
+        .replace(/-+/g, "-");
 
-    // Idempotent: remove any previous steps for this lesson before inserting
-    const { error: deleteStepsError } = await supabase
-      .from("v10_lesson_steps")
-      .delete()
-      .eq("lesson_id", lesson_id);
-    if (deleteStepsError) {
-      console.warn(`[v10-generate-steps] Failed to delete previous steps: ${deleteStepsError.message}`);
-    } else {
-      console.log(`[v10-generate-steps] Cleared previous steps for lesson ${lesson_id}`);
-    }
+      const phase = normalizePhase(step.phase_number ?? step.phase);
+      const progressPercent = Math.round((100 / requestedSteps) * absoluteStepNumber);
 
-    const insertedSteps = [];
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      const slug = step.slug || step.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-');
-      const progressPercent = Math.round((100 / steps.length) * (i + 1));
+      const liv = step.liv && typeof step.liv === "object"
+        ? {
+            tip: step.liv.tip ?? "",
+            analogy: step.liv.analogy ?? "",
+            sos: step.liv.sos ?? "",
+          }
+        : { tip: "", analogy: "", sos: "" };
 
-      // Sanitize phase: convert string labels to integer (1-3)
-      let phase = step.phase_number ?? step.phase;
-      if (typeof phase === "string") {
-        phase = PHASE_MAP[phase.toLowerCase().trim()] ?? 1;
-        console.warn(`[v10-generate-steps] Step "${step.title}" had string phase "${step.phase}" → mapped to ${phase}`);
-      }
-      if (typeof phase !== "number" || phase < 1 || phase > 3) {
-        phase = 1;
-      }
+      return {
+        lesson_id: lessonId,
+        step_number: absoluteStepNumber,
+        slug,
+        title,
+        description: typeof step.description === "string" ? step.description : "",
+        phase,
+        app_name: typeof step.app_name === "string" ? step.app_name : null,
+        app_icon: typeof step.app_icon === "string" ? step.app_icon : null,
+        duration_seconds:
+          typeof step.duration_seconds === "number" && step.duration_seconds > 0
+            ? step.duration_seconds
+            : 30,
+        frames: Array.isArray(step.frames) ? step.frames : [],
+        liv,
+        warnings: step.warnings && typeof step.warnings === "object" ? step.warnings : null,
+        app_badge_bg: typeof step.app_badge_bg === "string" ? step.app_badge_bg : "#EEF2FF",
+        app_badge_color: typeof step.app_badge_color === "string" ? step.app_badge_color : "#6366F1",
+        accent_color: typeof step.accent_color === "string" ? step.accent_color : "#6366F1",
+        progress_percent: progressPercent,
+      };
+    });
 
-      const { data: inserted, error: insertError } = await supabase
-        .from("v10_lesson_steps")
-        .insert({
-          lesson_id,
-          step_number: i + 1,
-          slug,
-          title: step.title,
-          description: step.description,
-          phase,
-          app_name: step.app_name,
-          app_icon: step.app_icon || null,
-          duration_seconds: typeof step.duration_seconds === "number" ? step.duration_seconds : 30,
-          frames: step.frames,
-          liv: (step.liv && typeof step.liv === 'object' && step.liv.tip !== undefined)
-            ? step.liv
-            : { tip: "", analogy: "", sos: "" },
-          warnings: step.warnings || null,
-          app_badge_bg: step.app_badge_bg || "#EEF2FF",
-          app_badge_color: step.app_badge_color || "#6366F1",
-          accent_color: step.accent_color || "#6366F1",
-          progress_percent: progressPercent,
-        })
-        .select("id")
-        .single();
-
-      if (insertError) {
-        throw new Error(`Failed to insert step ${i + 1}: ${insertError.message}`);
-      }
-
-      insertedSteps.push(inserted);
-    }
-
-    // 9. Update v10_bpa_pipeline with steps_generated count
-    const { error: updateStepsError } = await supabase
-      .from("v10_bpa_pipeline")
-      .update({ steps_generated: steps.length })
-      .eq("id", pipeline_id);
-
-    if (updateStepsError) {
-      throw new Error(`Failed to update pipeline steps_generated: ${updateStepsError.message}`);
-    }
-
-    // 10. Update v10_lessons with total_steps, estimated_minutes, description, and tools
-    const totalDurationSeconds = steps.reduce(
-      (sum: number, s: { duration_seconds: number }) => sum + (s.duration_seconds || 0),
-      0
+    stage = "insert_chunk";
+    const { error: insertError } = await timed(timings, "insert_chunk_ms", async () =>
+      supabase.from("v10_lesson_steps").insert(rows)
     );
-    const estimatedMinutes = Math.ceil(totalDurationSeconds / 60);
 
-    // Extract unique tools from step app_name values
-    const toolsSet = new Set<string>();
-    for (const step of steps) {
-      if (step.app_name && typeof step.app_name === "string" && step.app_name.trim()) {
-        toolsSet.add(step.app_name.trim());
-      }
+    if (insertError) {
+      throw new Error(`Failed to insert chunk ${chunkStart}-${chunkEnd}: ${insertError.message}`);
     }
-    const tools = Array.from(toolsSet);
 
-    // Generate a description from pipeline data
-    const description = `Aula prática de ${pipeline.title} com ${steps.length} passos interativos. Ferramentas: ${tools.join(", ") || "diversas"}. Duração estimada: ${estimatedMinutes} minutos.`;
+    stage = "fetch_all_steps";
+    const { data: allStepsData, error: allStepsError } = await timed(timings, "fetch_all_steps_ms", async () =>
+      supabase
+        .from("v10_lesson_steps")
+        .select("*")
+        .eq("lesson_id", lessonId)
+        .order("step_number", { ascending: true })
+    );
 
-    const { error: updateLessonError } = await supabase
-      .from("v10_lessons")
-      .update({
-        total_steps: steps.length,
-        estimated_minutes: estimatedMinutes,
-        description,
+    if (allStepsError) {
+      throw new Error(`Failed to fetch all lesson steps: ${allStepsError.message}`);
+    }
+
+    const allSteps = (allStepsData ?? []) as any[];
+    let generatedCount = allSteps.length;
+
+    if (generatedCount > requestedSteps) {
+      await timed(timings, "trim_extra_steps_ms", async () =>
+        supabase
+          .from("v10_lesson_steps")
+          .delete()
+          .eq("lesson_id", lessonId)
+          .gt("step_number", requestedSteps)
+      );
+      generatedCount = requestedSteps;
+    }
+
+    const completed = generatedCount >= requestedSteps;
+    let estimatedMinutes: number | null = null;
+    let tools: string[] = [];
+    let v3Warnings: string[] = [];
+
+    stage = "update_pipeline_progress";
+    await timed(timings, "update_pipeline_steps_ms", async () =>
+      supabase.from("v10_bpa_pipeline").update({ steps_generated: generatedCount }).eq("id", pipeline_id)
+    );
+
+    if (completed) {
+      stage = "finalize_lesson";
+      const finalSteps = allSteps
+        .filter((s) => typeof s.step_number === "number" && s.step_number <= requestedSteps)
+        .sort((a, b) => a.step_number - b.step_number);
+
+      const totalDurationSeconds = finalSteps.reduce(
+        (sum: number, step: any) => sum + (step.duration_seconds || 0),
+        0
+      );
+      estimatedMinutes = Math.ceil(totalDurationSeconds / 60);
+
+      tools = Array.from(
+        new Set(
+          finalSteps
+            .map((step: any) => (typeof step.app_name === "string" ? step.app_name.trim() : ""))
+            .filter((name: string) => Boolean(name) && name !== "AILIV")
+        )
+      );
+
+      const description = `Aula prática de ${pipeline.title} com ${requestedSteps} passos interativos. Ferramentas: ${tools.join(", ") || "diversas"}. Duração estimada: ${estimatedMinutes} minutos.`;
+
+      await timed(timings, "update_lesson_metadata_ms", async () =>
+        supabase
+          .from("v10_lessons")
+          .update({
+            total_steps: requestedSteps,
+            estimated_minutes: estimatedMinutes,
+            description,
+            tools,
+          })
+          .eq("id", lessonId)
+      );
+
+      const introSlides = buildIntroSlides({
+        lessonId,
+        pipelineTitle: pipeline.title,
+        stepsCount: requestedSteps,
+        estimatedMinutes,
         tools,
-      })
-      .eq("id", lesson_id);
-
-    if (updateLessonError) {
-      throw new Error(`Failed to update lesson: ${updateLessonError.message}`);
-    }
-
-    // 10b. Auto-create intro slides based on tools
-    const introSlides = [];
-
-    // Slide 1: Welcome/title slide
-    introSlides.push({
-      lesson_id,
-      slide_order: 1,
-      icon: "BookOpen",
-      tool_name: null,
-      tool_color: "#6366f1",
-      title: pipeline.title,
-      subtitle: `${steps.length} passos | ${estimatedMinutes} min`,
-      description: `Bem-vindo! Nesta aula você vai aprender ${pipeline.title.toLowerCase()}.`,
-      label: "Introdução",
-      appear_at_seconds: 0,
-    });
-
-    // Slides for each tool
-    const toolColors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
-    tools.forEach((tool, idx) => {
-      introSlides.push({
-        lesson_id,
-        slide_order: idx + 2,
-        icon: "Wrench",
-        tool_name: tool,
-        tool_color: toolColors[idx % toolColors.length],
-        title: tool,
-        subtitle: "Ferramenta utilizada",
-        description: `Você vai usar ${tool} nesta aula.`,
-        label: "Ferramenta",
-        appear_at_seconds: (idx + 1) * 3,
       });
-    });
 
-    // Final slide: "Vamos começar"
-    introSlides.push({
-      lesson_id,
-      slide_order: tools.length + 2,
-      icon: "Rocket",
-      tool_name: null,
-      tool_color: "#10B981",
-      title: "Vamos começar!",
-      subtitle: "Tudo pronto para iniciar",
-      description: "Clique em continuar para começar o tutorial.",
-      label: "Início",
-      appear_at_seconds: (tools.length + 1) * 3,
-    });
+      await timed(timings, "refresh_intro_slides_ms", async () => {
+        await supabase.from("v10_lesson_intro_slides").delete().eq("lesson_id", lessonId);
+        if (introSlides.length > 0) {
+          await supabase.from("v10_lesson_intro_slides").insert(introSlides);
+        }
+        return null;
+      });
 
-    // Delete existing intro slides (idempotent)
-    await supabase
-      .from("v10_lesson_intro_slides")
-      .delete()
-      .eq("lesson_id", lesson_id);
+      const v3Result = await timed(timings, "validate_structure_ms", async () =>
+        validateStructure(finalSteps)
+      );
 
-    // Insert new intro slides
-    const { error: introError } = await supabase
-      .from("v10_lesson_intro_slides")
-      .insert(introSlides);
+      if (!v3Result.passed) {
+        v3Warnings = v3Result.errors;
+        console.warn(`[v10-generate-steps] V3 validation warnings: ${v3Warnings.join("; ")}`);
+      }
 
-    if (introError) {
-      console.error("Failed to create intro slides:", introError.message);
+      console.log(`[v10-generate-steps] Completion OK ${requestedSteps}/${requestedSteps} steps`);
     }
 
-    // 11. Log to v10_bpa_pipeline_log (includes C2/C3 fix counts for forensics)
-    await supabase.from("v10_bpa_pipeline_log").insert({
-      pipeline_id,
-      stage: 2,
-      action: "steps_generated",
-      details: {
-        lesson_id,
-        num_steps: steps.length,
-        estimated_minutes: estimatedMinutes,
+    stage = "forensic_log";
+    const forensicDetails = {
+      lesson_id: lessonId,
+      chunk_start: chunkStart,
+      chunk_end: chunkEnd,
+      chunk_target: targetChunkSize,
+      chunk_inserted: rows.length,
+      generated_total: generatedCount,
+      requested_total: requestedSteps,
+      completed,
+      ai_model: aiModel,
       c2_fixes: c2c3Result.c2Fixes,
       c3_fixes: c2c3Result.c3Fixes,
-      },
-    });
+      timings,
+      warnings: v3Warnings,
+    };
 
-    // 12. Return steps count and lesson_id
+    try {
+      await timed(timings, "insert_forensic_log_ms", async () =>
+        supabase.from("v10_bpa_pipeline_log").insert({
+          pipeline_id,
+          stage: 2,
+          action: "steps_generation_chunk",
+          details: forensicDetails,
+        })
+      );
+    } catch (logError: any) {
+      console.error("[v10-generate-steps] failed to write forensic log:", logError?.message ?? logError);
+    }
+
+    timings.total_ms = Date.now() - startedAt;
+    console.log(
+      `[v10-generate-steps] chunk ${chunkStart}-${chunkEnd} done in ${timings.total_ms}ms (generated ${generatedCount}/${requestedSteps})`
+    );
+
     return new Response(
       JSON.stringify({
         success: true,
-        lesson_id,
-        steps_count: steps.length,
+        lesson_id: lessonId,
+        chunk: {
+          start: chunkStart,
+          end: chunkEnd,
+          requested: targetChunkSize,
+          generated: rows.length,
+        },
+        progress: {
+          generated: generatedCount,
+          total_requested: requestedSteps,
+          completed,
+          remaining: Math.max(0, requestedSteps - generatedCount),
+          next_chunk_start: completed ? null : generatedCount + 1,
+        },
+        steps_count: generatedCount,
         estimated_minutes: estimatedMinutes,
         tools,
-        intro_slides_created: introSlides.length,
+        timings,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
+    timings.total_ms = Date.now() - startedAt;
     console.error("v10-generate-steps error:", error);
     return new Response(
-      JSON.stringify({ error: error?.message ?? String(error) }),
+      JSON.stringify({
+        error: error?.message ?? String(error),
+        stage,
+        timings,
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
