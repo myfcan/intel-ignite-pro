@@ -190,18 +190,24 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
       toast.error('Vincule uma aula primeiro');
       return;
     }
-    // imagesNeeded will be auto-set from edge function response (totalNeeded)
+
+    const regenerateStepIds = Array.from(new Set(stepImages.map(img => img.stepId)));
+    const forceRegenerate = regenerateStepIds.length > 0;
+
     setGenerating(true);
     setImageProgress({ current: 0, total: 0 });
 
     let currentBatch = 0;
     let totalSuccess = 0;
-    let totalProcessed = 0;
 
     try {
       while (true) {
+        const requestBody = forceRegenerate
+          ? { pipeline_id: pipeline.id, batch_size: regenerateStepIds.length, step_ids: regenerateStepIds }
+          : { pipeline_id: pipeline.id, batch_size: 3, batch_index: currentBatch };
+
         const { data, error } = await supabase.functions.invoke('v10-generate-images', {
-          body: { pipeline_id: pipeline.id, batch_size: 3, batch_index: currentBatch }
+          body: requestBody,
         });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
@@ -211,7 +217,6 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
         const totalNeeded = data?.total ?? 0;
 
         totalSuccess += successCount;
-        totalProcessed += data?.processed ?? 0;
 
         if (totalNeeded > 0 && imageProgress?.total === 0) {
           setImageProgress({ current: totalSuccess, total: totalNeeded });
@@ -220,8 +225,8 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
           setImageProgress(prev => prev ? { ...prev, current: totalSuccess } : { current: totalSuccess, total: totalNeeded });
         }
 
-        if (!hasMore) {
-          toast.success(`${totalSuccess} imagens geradas! Todos os lotes concluídos.`);
+        if (!hasMore || forceRegenerate) {
+          toast.success(`${totalSuccess} imagens ${forceRegenerate ? 'regeneradas' : 'geradas'}! Todos os lotes concluídos.`);
           break;
         }
 
