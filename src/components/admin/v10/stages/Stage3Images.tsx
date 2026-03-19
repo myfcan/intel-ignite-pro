@@ -367,6 +367,20 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Banner: pular etapa se importou JSON */}
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="text-red-500 text-xl flex-shrink-0">⚠️</div>
+          <div>
+            <p className="text-red-800 font-bold text-sm">
+              Importou os passos via JSON na Etapa 2?
+            </p>
+            <p className="text-red-600 text-sm mt-1">
+              Pule esta etapa. Seus frames já contêm os mockups completos.
+              Clique em <strong>"Avançar Etapa"</strong> abaixo para ir direto à Narração.
+            </p>
+          </div>
+        </div>
+
         {/* Warning if no lesson linked */}
         {pipeline.lesson_id === null && (
           <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
