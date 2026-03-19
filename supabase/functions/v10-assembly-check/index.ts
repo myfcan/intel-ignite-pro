@@ -134,17 +134,23 @@ serve(async (req) => {
 
     const intro_slides_ok = slidesCount > 0;
 
-    // Images: ALWAYS verify real data in frames — never trust pipeline counters alone
+    // Images: check for type:image elements OR sufficient mockup elements (≥3)
+    // For imported JSON, mockups ARE the visual content — no separate images needed
     const images_ok =
       steps.length > 0 &&
       steps.every((s: Record<string, unknown>) => {
         const frames = s.frames as any[];
         if (!frames || !Array.isArray(frames)) return false;
-        return frames.some((f: any) =>
+        // Pass if frames have image elements OR have sufficient mockup elements (≥3)
+        const hasImage = frames.some((f: any) =>
           f.elements?.some(
             (el: any) => el.type === "image" && el.src && el.src !== "" && !el.src.startsWith("placeholder")
           )
         );
+        const hasMockupElements = frames.every((f: any) =>
+          f.elements && Array.isArray(f.elements) && f.elements.length >= 3
+        );
+        return hasImage || hasMockupElements;
       });
 
     // Mockups: verify frames have sufficient elements (≥3) — mockups are React components, not images

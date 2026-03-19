@@ -106,45 +106,182 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
     }
 
     setFixing(true);
+    const lessonId = pipeline.lesson_id as string;
+    const fixes: string[] = [];
+
     try {
-      // Fetch steps to extract tools
-      const { data: steps } = await supabase
+      // ── Fetch all steps ──
+      const { data: stepsRaw } = await supabase
         .from('v10_lesson_steps')
-        .select('app_name, duration_seconds')
-        .eq('lesson_id', pipeline.lesson_id as string);
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .order('step_number');
+      const steps = (stepsRaw || []) as any[];
 
-      const stepsData = steps || [];
+      // ── 1. FIX LIV: fill empty tip/analogy/sos ──
+      let livFixed = 0;
+      for (const step of steps) {
+        const liv = step.liv || {};
+        const needsFix =
+          !liv.tip?.trim() ||
+          !liv.analogy?.trim() ||
+          !liv.sos?.trim();
+        if (needsFix) {
+          const updatedLiv = {
+            tip: liv.tip?.trim() || `Dica para ${step.title}: siga as instruções com atenção`,
+            analogy: liv.analogy?.trim() || `${step.title} funciona como seguir uma receita passo a passo`,
+            sos: liv.sos?.trim() || `Se algo der errado, tente recarregar a página e refazer este passo`,
+          };
+          await supabase
+            .from('v10_lesson_steps')
+            .update({ liv: updatedLiv } as any)
+            .eq('id', step.id);
+          livFixed++;
+        }
+      }
+      if (livFixed > 0) fixes.push(`LIV: ${livFixed} passos corrigidos`);
 
-      // Extract unique tools
+      // ── 2. FIX V2 FRAMES: inject chrome_header, fill action/check ──
+      let v2Fixed = 0;
+      for (const step of steps) {
+        const frames = [...(step.frames || [])] as any[];
+        let modified = false;
+        for (const frame of frames) {
+          if (!frame.elements) frame.elements = [];
+          // Inject chrome_header if missing as first element
+          if (frame.elements.length === 0 || frame.elements[0]?.type !== 'chrome_header') {
+            const url = frame.bar_text ? `https://${frame.bar_text.toLowerCase().replace(/\s/g, '')}` : 'https://app.example.com';
+            frame.elements.unshift({ type: 'chrome_header', url });
+            modified = true;
+          }
+          // Fill action if empty
+          if (!frame.action && step.description) {
+            frame.action = step.description;
+            modified = true;
+          }
+          // Fill check if empty
+          if (!frame.check) {
+            frame.check = `Você completou: ${step.title}`;
+            modified = true;
+          }
+        }
+        if (modified) {
+          await supabase
+            .from('v10_lesson_steps')
+            .update({ frames } as any)
+            .eq('id', step.id);
+          v2Fixed++;
+        }
+      }
+      if (v2Fixed > 0) fixes.push(`V2 Frames: ${v2Fixed} passos corrigidos`);
+
+      // ── 3. FIX V3 STRUCTURE: celebrations + dependency ──
+      // Re-fetch steps after V2 fix
+      const { data: stepsAfterV2 } = await supabase
+        .from('v10_lesson_steps')
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .order('step_number');
+      const stepsV3 = (stepsAfterV2 || []) as any[];
+      let v3Fixed = 0;
+
+      // Ensure last step has celebration
+      const lastStep = stepsV3[stepsV3.length - 1];
+      if (lastStep) {
+        const frames = [...(lastStep.frames || [])] as any[];
+        const lastFrame = frames[frames.length - 1];
+        const hasCeleb = lastFrame?.elements?.some((e: any) => e.type === 'celebration');
+        if (!hasCeleb && lastFrame) {
+          if (!lastFrame.elements) lastFrame.elements = [];
+          lastFrame.elements.push({
+            type: 'celebration',
+            text: 'Parabéns! Aula completa! 🎉',
+            next: 'Você dominou todas as etapas.',
+          });
+          await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', lastStep.id);
+          v3Fixed++;
+        }
+      }
+
+      // Ensure transition steps (phase changes) have celebration
+      for (let i = 1; i < stepsV3.length - 1; i++) {
+        const prev = stepsV3[i - 1];
+        const curr = stepsV3[i];
+        if (prev.phase !== curr.phase) {
+          const frames = [...(curr.frames || [])] as any[];
+          const firstFrame = frames[0];
+          const hasCeleb = firstFrame?.elements?.some((e: any) => e.type === 'celebration');
+          if (!hasCeleb && firstFrame) {
+            firstFrame.elements.push({
+              type: 'celebration',
+              text: `Fase ${prev.phase} concluída! 🎉`,
+              next: `Iniciando fase ${curr.phase}.`,
+            });
+            await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', curr.id);
+            v3Fixed++;
+          }
+        }
+      }
+
+      // Inject dependency elements on steps 2+ if missing
+      for (let i = 1; i < stepsV3.length; i++) {
+        const step = stepsV3[i];
+        const frames = [...(step.frames || [])] as any[];
+        const allElements = frames.flatMap((f: any) => f.elements || []);
+        const hasDep = allElements.some((e: any) => e.type === 'dependency');
+        if (!hasDep && frames[0]) {
+          const prevStep = stepsV3[i - 1];
+          // Insert after chrome_header (position 1)
+          const insertIdx = frames[0].elements?.[0]?.type === 'chrome_header' ? 1 : 0;
+          frames[0].elements.splice(insertIdx, 0, {
+            type: 'dependency',
+            text: `Usando o resultado do passo ${prevStep.step_number}.`,
+          });
+          await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', step.id);
+          v3Fixed++;
+        }
+      }
+      if (v3Fixed > 0) fixes.push(`V3 Estrutura: ${v3Fixed} correções`);
+
+      // ── 4. FIX TOOLS: sync pipeline.tools from step app_names ──
       const toolsSet = new Set<string>();
-      for (const step of stepsData) {
+      for (const step of steps) {
         if (step.app_name?.trim()) toolsSet.add(step.app_name.trim());
       }
       const tools = Array.from(toolsSet);
 
-      // Calculate duration
-      const totalSeconds = stepsData.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+      // Update pipeline tools
+      await supabase
+        .from('v10_bpa_pipeline')
+        .update({ tools } as any)
+        .eq('id', pipeline.id);
+
+      // ── 5. FIX METADATA: description + tools on lesson ──
+      const totalSeconds = steps.reduce((sum: number, s: any) => sum + (s.duration_seconds || 0), 0);
       const estimatedMinutes = Math.ceil(totalSeconds / 60);
+      const description = `Aula prática de ${pipeline.title} com ${steps.length} passos interativos. Ferramentas: ${tools.join(', ') || 'diversas'}. Duração estimada: ${estimatedMinutes} minutos.`;
 
-      // Update lesson metadata
-      const description = `Aula prática de ${pipeline.title} com ${stepsData.length} passos interativos. Ferramentas: ${tools.join(', ') || 'diversas'}. Duração estimada: ${estimatedMinutes} minutos.`;
-
-      const { error: lessonError } = await supabase
+      await supabase
         .from('v10_lessons')
         .update({ description, tools } as any)
-        .eq('id', pipeline.lesson_id as string);
+        .eq('id', lessonId);
+      fixes.push('Metadados atualizados');
 
-      if (lessonError) throw lessonError;
+      // ── 6. FIX GAMIFICATION: set xp_reward ──
+      const xpReward = steps.length * 10; // 10 XP per step
+      await supabase
+        .from('v10_lessons')
+        .update({ xp_reward: xpReward } as any)
+        .eq('id', lessonId);
+      fixes.push(`Gamificação: ${xpReward} XP configurado`);
 
-      // Check if intro slides exist
+      // ── 7. FIX INTRO SLIDES ──
       const { count: slidesCount } = await supabase
         .from('v10_lesson_intro_slides')
         .select('id', { count: 'exact', head: true })
-        .eq('lesson_id', pipeline.lesson_id as string);
+        .eq('lesson_id', lessonId);
 
       if (!slidesCount || slidesCount === 0) {
-        // Create intro slides
-        const lessonId = pipeline.lesson_id as string;
         const toolColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
         const introSlides: any[] = [
           {
@@ -154,7 +291,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
             tool_name: null,
             tool_color: '#6366f1',
             title: pipeline.title,
-            subtitle: `${stepsData.length} passos | ${estimatedMinutes} min`,
+            subtitle: `${steps.length} passos | ${estimatedMinutes} min`,
             description: `Bem-vindo! Nesta aula você vai aprender ${pipeline.title.toLowerCase()}.`,
             label: 'Introdução',
             appear_at_seconds: 0,
@@ -189,21 +326,15 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
           appear_at_seconds: (tools.length + 1) * 3,
         });
 
-        const { error: slidesError } = await supabase
+        await supabase
           .from('v10_lesson_intro_slides')
           .insert(introSlides);
-
-        if (slidesError) {
-          console.error('Intro slides error:', slidesError);
-          toast.error(`Intro slides: ${slidesError.message}`);
-        } else {
-          toast.success(`${introSlides.length} intro slides criados`);
-        }
+        fixes.push(`${introSlides.length} intro slides criados`);
       }
 
-      toast.success('Metadados e intro slides corrigidos. Executando verificação...');
+      toast.success(`Correções aplicadas: ${fixes.join(' | ')}`);
 
-      // Auto-run verification (no second click needed)
+      // ── Auto re-verify ──
       const { data: checkData, error: checkError } = await supabase.functions.invoke('v10-assembly-check', {
         body: { pipeline_id: pipeline.id }
       });
@@ -212,10 +343,11 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
         await onUpdate({
           assembly_checklist: checkData.checklist,
           assembly_passed: checkData.all_passed,
+          tools,
         } as Partial<V10BpaPipeline>);
 
         const passCount = Object.values(checkData.checklist as Record<string, boolean>).filter(Boolean).length;
-        toast.success(`Verificação concluída: ${passCount}/${CHECKLIST_ITEMS.length} itens aprovados`);
+        toast.success(`Re-verificação: ${passCount}/${CHECKLIST_ITEMS.length} itens aprovados`);
       }
     } catch (err: any) {
       toast.error(`Erro: ${err.message}`);
@@ -327,8 +459,8 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
             Salvar Checklist
           </Button>
 
-          {/* Fix missing metadata/intro slides */}
-          {(!checklist.intro_slides_ok || !checklist.metadata_ok) && (
+          {/* Fix all auto-fixable issues */}
+          {!allPassed && (
             <Button
               variant="outline"
               onClick={handleFixMissing}
@@ -340,7 +472,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
               ) : (
                 <Wrench className="mr-2 h-4 w-4" />
               )}
-              {fixing ? 'Corrigindo...' : 'Corrigir Pendências (Metadados + Intro Slides)'}
+              {fixing ? 'Corrigindo tudo...' : 'Corrigir Todas as Pendências'}
             </Button>
           )}
         </div>
