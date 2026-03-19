@@ -321,7 +321,8 @@ serve(async (req: Request) => {
             const prompt = buildImagePrompt(
               step.title || "",
               step.description || "",
-              element.alt || ""
+              element.alt || "",
+              step.app_name || ""
             );
 
             console.log(`[v10-generate-images] Generating image for step ${step.step_number}, element ${elementIdx}...`);
