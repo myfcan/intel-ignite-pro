@@ -1067,6 +1067,28 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         }}
         isLoading={generating}
       />
+
+      <ImportStepsModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        pipelineId={pipeline.id}
+        lessonId={pipeline.lesson_id ?? null}
+        onSuccess={() => {
+          // Reload steps
+          if (pipeline.lesson_id) {
+            setLoading(true);
+            supabase
+              .from('v10_lesson_steps')
+              .select('*')
+              .eq('lesson_id', pipeline.lesson_id)
+              .order('step_number')
+              .then(({ data }) => {
+                if (data) setSteps(data as unknown as V10LessonStep[]);
+                setLoading(false);
+              });
+          }
+        }}
+      />
     </>
   );
 }
