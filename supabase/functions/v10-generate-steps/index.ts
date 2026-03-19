@@ -220,11 +220,7 @@ Retorne APENAS o JSON array.`;
 
     // Check for INTERMEDIARY_NEEDED response
     if (steps.length === 1 && steps[0]?.status === 'INTERMEDIARY_NEEDED') {
-      const { error: intError } = await supabase
-        .from("v10_bpa_pipeline")
-        .update({ intermediary_status: steps[0] })
-        .eq("id", pipeline_id);
-      if (intError) console.error("Failed to save intermediary_status:", intError);
+      // Column intermediary_status does NOT exist in DB — just return the response
       return new Response(
         JSON.stringify({ success: true, intermediary_needed: true, options: steps[0].options }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
