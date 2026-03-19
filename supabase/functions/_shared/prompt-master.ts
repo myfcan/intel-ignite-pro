@@ -627,8 +627,16 @@ export function validateNarration(steps: any[]): ValidationResult {
     if (step.warnings?.warn && !script.includes('[ANCHOR:pontos_atencao]')) {
       errors.push(`Passo ${step.step_number}: tem warnings mas narração sem [ANCHOR:pontos_atencao]`);
     }
-    if (step.step_number < steps.length && !script.includes('Deu certo se')) {
-      errors.push(`Passo ${step.step_number}: narração sem "Deu certo se"`);
+    if (step.step_number < steps.length) {
+      const hasConfirmation =
+        script.includes('[ANCHOR:confirmacao]') ||
+        script.includes('Deu certo se') ||
+        script.includes('Se você vê') ||
+        script.includes('Se você vê') ||
+        /(?:funcionou|pronto)[.!,]?\s*$/im.test(script);
+      if (!hasConfirmation) {
+        errors.push(`Passo ${step.step_number}: narração sem frase de confirmação`);
+      }
     }
   }
   return { passed: errors.length === 0, errors };
