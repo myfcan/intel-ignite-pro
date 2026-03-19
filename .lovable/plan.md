@@ -1,171 +1,181 @@
 
 
-# Auditoria do Plano — Gaps Identificados e Plano Revisado
+# Plano Forense: Corrigir "Gerar Passos" — Causa Raiz + Correções
 
-## Gaps Encontrados no Plano Anterior
+## 1. CAUSA RAIZ CONFIRMADA (com evidências)
 
-### GAP 1 (CRÍTICO): Frontend fica inerte após remover injeção
+Existem **3 falhas encadeadas** que impedem "Gerar Passos" de funcionar:
 
-**Código real** — `Stage3Images.tsx`, L190-243, `handleGenerate`:
+### Falha A — `liv` nulo no passo 13 (causa do 500)
+
+A IA gerou 13 passos, mas o passo 13 retornou `liv: null`. O insert na L270 passa `liv: step.liv` direto, sem sanitização.
+
+**Código real** (`v10-generate-steps/index.ts`, L269-270):
 ```typescript
-while (true) {
-  const { data, error } = await supabase.functions.invoke('v10-generate-images', {
-    body: { pipeline_id: pipeline.id, batch_size: 3, batch_index: currentBatch }
-  });
-  // ...
-  if (!hasMore) {
-    toast.success(`${totalSuccess} imagens geradas! Todos os lotes concluídos.`);
-    break;
-  }
-}
+frames: step.frames,
+liv: step.liv,    // ← null quando IA não gera o campo
 ```
 
-Se removermos a injeção automática da edge function (L238-248), **nenhum passo terá `type: "image"`**. O filtro L253-267 retorna 0 steps. A edge function responde `{ total: 0, hasMoreBatches: false, success: 0 }`. O frontend mostra "0 imagens geradas!" e o grid fica vazio.
+**Schema real** (`v10_lesson_steps.liv`): `jsonb, NOT NULL, default '{"sos":"","tip":"","analogy":""}'`.
 
-**O plano anterior diz "0 alterações no frontend" — ERRADO.** O frontend precisa de ajuste ou o Stage 4 fica completamente inerte.
+O default do Postgres só se aplica quando a coluna é OMITIDA do INSERT. Ao passar `null` explicitamente, o NOT NULL constraint é violado.
 
-### GAP 2 (MODERADO): Opção C não define critérios de seleção
+### Falha B — 12 passos órfãos impedem retry (UNIQUE constraint)
 
-O plano diz "Stage 4 gera screenshots apenas para passos de intro/celebração" mas NÃO define como identificar esses passos. Não existe flag `is_intro` ou `is_celebration` em `v10_lesson_steps`. O campo `app_name` no último passo é "AILIV" (celebração), mas não há critério formal para "intro".
+Após o crash no passo 13, os passos 1-12 já foram persistidos:
+- **Query real**: `SELECT count(*) FROM v10_lesson_steps WHERE lesson_id = '8fd4e972...'` → `12`
+- **Pipeline**: `steps_generated = 0`, `total_steps = 0` (inconsistente)
 
-### GAP 3 (MENOR): `handleAutoCalc` calcula errado
+Ao clicar "Gerar Passos" novamente, a função tenta inserir step_number 1 → viola `UNIQUE (lesson_id, step_number)` → novo 500.
 
-`Stage3Images.tsx`, L177-188:
+**Index real**: `v10_lesson_steps_lesson_id_step_number_key ON (lesson_id, step_number)`
+
+### Falha C — V1 bloqueia alias de ferramenta (causa de 400 intermitente)
+
+**Log anterior**: `V1 validation BLOCKED ... "OpenAI Platform" ... ferramentas declaradas: [Calendly, ChatGPT]`
+
+A IA às vezes usa `"OpenAI Platform"` (nome da TABELA_FERRAMENTAS no prompt-master) em vez de `"ChatGPT"` (nome declarado pelo usuário). A validação em L512 faz comparação `===` literal:
 ```typescript
-const handleAutoCalc = () => {
-  const realCount = stepImages.length;
-  if (realCount > 0) {
-    setImagesNeeded(realCount);
-  } else if (stepsCount > 0) {
-    setImagesNeeded(stepsCount); // Fallback: 1 por passo — errado se removemos injeção
-  }
-};
+if (!declaredTools.includes(step.app_name) && step.app_name !== 'AILIV') {
 ```
-Com 0 image elements, cai no fallback `stepsCount` (ex: 13), mas a edge function não vai gerar 13 imagens porque não há `type: "image"` nos frames.
 
-### GAP 4 (MENOR): Limpeza Calendly indefinida
+Não há canonicalização de nomes.
 
-O plano diz "via SQL ou edge function" mas não especifica. Precisa de ação concreta.
+### Falha D (latente) — `intermediary_status` coluna inexistente
+
+**Query real**: `SELECT column_name FROM information_schema.columns WHERE table_name = 'v10_bpa_pipeline' AND column_name = 'intermediary_status'` → `[]` (vazio)
+
+Código L223-226:
+```typescript
+.update({ intermediary_status: steps[0] })
+```
+
+Só é atingido no path `INTERMEDIARY_NEEDED` — não é a causa principal, mas vai crashar se atingido.
 
 ---
 
-## Plano Revisado (Opção C Completa)
+## 2. PLANO DE CORREÇÕES (5 alterações)
 
-### Alteração 1 — Edge Function: remover injeção E adicionar injeção seletiva
+### Alteração 1 — Sanitizar `liv` antes do insert
 
-**Arquivo**: `supabase/functions/v10-generate-images/index.ts`
+**Arquivo**: `supabase/functions/v10-generate-steps/index.ts`, L269-270
 
-Substituir o bloco L218-267 (injeção universal + filtro) por lógica seletiva:
-- Injetar `type: "image"` **apenas** no primeiro e último passo (intro e celebração)
-- Manter o filtro de `src` vazio para processar apenas os injetados
-
-Critério de seleção (baseado no template):
-- **Passo 1** = intro (sempre)
-- **Último passo** = celebração (sempre, `app_name` = "AILIV")
-
+Substituir `liv: step.liv` por fallback obrigatório:
 ```typescript
-// Injeção SELETIVA: apenas primeiro e último passo
-for (const step of steps) {
-  const stepNum = (step as any).step_number;
-  const isFirst = stepNum === 1;
-  const isLast = stepNum === steps.length;
-  
-  if (!isFirst && !isLast) continue; // pula passos do meio
-  
-  const frames = (step as any).frames;
-  if (!frames || !Array.isArray(frames) || frames.length === 0) continue;
-  
-  let hasImageElement = false;
-  for (const frame of frames) {
-    if (frame.elements?.some((e: any) => e.type === "image")) {
-      hasImageElement = true;
-      break;
+liv: (step.liv && typeof step.liv === 'object' && step.liv.tip !== undefined)
+  ? step.liv
+  : { tip: "", analogy: "", sos: "" },
+```
+
+### Alteração 2 — Tornar geração idempotente (delete before insert)
+
+**Arquivo**: `supabase/functions/v10-generate-steps/index.ts`
+
+Antes do loop de insert (L241), adicionar delete dos passos existentes para a mesma `lesson_id`:
+```typescript
+// Idempotent: remove any previous steps for this lesson
+await supabase
+  .from("v10_lesson_steps")
+  .delete()
+  .eq("lesson_id", lesson_id);
+```
+
+Isso resolve tanto o estado atual (12 órfãos) quanto futuras colisões.
+
+### Alteração 3 — Canonicalizar nomes de ferramenta na V1
+
+**Arquivo**: `supabase/functions/_shared/prompt-master.ts`, função `validateTools` (L509-518)
+
+Adicionar mapa de aliases antes da comparação:
+```typescript
+const TOOL_ALIASES: Record<string, string> = {
+  "OpenAI Platform": "ChatGPT",
+  "OpenAI": "ChatGPT",
+  "OpenAI ChatGPT": "ChatGPT",
+  "Make.com": "Make",
+  "Google Sheets": "Sheets",
+  "Google Forms": "Forms",
+  "WhatsApp": "WhatsApp Business",
+};
+
+export function validateTools(steps, declaredTools) {
+  const canonical = (name: string) => TOOL_ALIASES[name] || name;
+  const declaredSet = new Set(declaredTools.map(canonical));
+  const errors = [];
+  for (const step of steps) {
+    const appCanonical = canonical(step.app_name);
+    if (!declaredSet.has(appCanonical) && step.app_name !== 'AILIV') {
+      errors.push(`BLOQUEADO: Passo ${step.step_number} usa "${step.app_name}" ...`);
     }
   }
-  
-  if (!hasImageElement) {
-    const firstFrame = frames[0];
-    if (!firstFrame.elements) firstFrame.elements = [];
-    firstFrame.elements.push({
-      type: "image", src: "", 
-      alt: (step as any).title || "Ilustração",
-      width: 1024, height: 576,
-    });
-  }
+  return { passed: errors.length === 0, errors };
 }
 ```
 
-### Alteração 2 — Edge Function: mudar prompt para screenshot realista
+### Alteração 4 — Remover referência a `intermediary_status`
 
-**Arquivo**: `supabase/functions/v10-generate-images/index.ts`, L14-42
+**Arquivo**: `supabase/functions/v10-generate-steps/index.ts`, L221-232
 
-Substituir `buildImagePrompt` por prompt que gera screenshots de UI realistas (conforme plano anterior — sem mudança nesta parte).
-
-### Alteração 3 — Frontend: ajustar `handleAutoCalc`
-
-**Arquivo**: `src/components/admin/v10/stages/Stage3Images.tsx`, L177-188
-
-Remover fallback `stepsCount`. Quando não há `type: "image"` nos frames, mostrar mensagem explicativa em vez de número inflado:
-
+A coluna `intermediary_status` **NÃO EXISTE** no banco. Remover o update e simplesmente retornar o resultado `INTERMEDIARY_NEEDED` sem persistir:
 ```typescript
-const handleAutoCalc = () => {
-  const realCount = stepImages.length;
-  if (realCount > 0) {
-    setImagesNeeded(realCount);
-    toast.info(`Necessárias: ${realCount} (imagens existentes nos frames).`);
-  } else {
-    setImagesNeeded(0);
-    toast.info('Nenhum elemento de imagem nos frames. Clique "Gerar Imagens" para criar imagens de intro e celebração.');
-  }
-};
+if (steps.length === 1 && steps[0]?.status === 'INTERMEDIARY_NEEDED') {
+  // Column intermediary_status does NOT exist — just return the response
+  return new Response(
+    JSON.stringify({ success: true, intermediary_needed: true, options: steps[0].options }),
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
 ```
 
-### Alteração 4 — Limpeza Calendly via migration
+### Alteração 5 — Corrigir `validateStructure` (phase vs phase_number)
 
-**Ação**: Executar SQL migration para remover `type: "image"` injetados dos frames da aula `d217b930-5277-4afe-8f4a-ca797af20b5e`:
+**Arquivo**: `supabase/functions/_shared/prompt-master.ts`, L557
 
-```sql
--- Remove injected image elements from all steps of the Calendly lesson
-UPDATE v10_lesson_steps
-SET frames = (
-  SELECT jsonb_agg(
-    jsonb_set(frame, '{elements}',
-      (SELECT COALESCE(jsonb_agg(el), '[]'::jsonb)
-       FROM jsonb_array_elements(frame->'elements') el
-       WHERE el->>'type' != 'image')
-    )
-  )
-  FROM jsonb_array_elements(frames::jsonb) frame
-)
-WHERE lesson_id = 'd217b930-5277-4afe-8f4a-ca797af20b5e';
+Código atual:
+```typescript
+const phases = new Set(steps.map((s: any) => s.phase_number));
 ```
 
-### Alteração 5 — Re-deploy
+O insert usa `phase` (não `phase_number`). Após sanitização, o campo canônico é `phase`. Corrigir para:
+```typescript
+const phases = new Set(steps.map((s: any) => s.phase_number ?? s.phase));
+```
 
-Deploy de `v10-generate-images`.
+### Deploy
+
+Re-deploy de `v10-generate-steps` (que puxa `_shared/prompt-master.ts`).
 
 ---
 
-## Checklist Preditivo Revisado
+## 3. DADOS CORRUPTADOS — estado atual
+
+| Dado | Valor real | Valor correto |
+|------|-----------|---------------|
+| `v10_lesson_steps` count para lesson `8fd4e972` | 12 | 0 (limpeza via Alteração 2 no próximo run) |
+| `v10_bpa_pipeline.steps_generated` | 0 | 0 (correto, pois geração falhou) |
+| `v10_lessons.total_steps` | 0 | 0 (correto) |
+| `v10_lessons.tools` | `[]` | `[]` (será preenchido após geração bem-sucedida) |
+
+A Alteração 2 (idempotent delete) resolve automaticamente os 12 passos órfãos no próximo clique de "Gerar Passos".
+
+---
+
+## 4. CHECKLIST PREDITIVO PÓS-EXECUÇÃO
 
 | Cenário | Coberto? | Como |
 |---------|----------|------|
-| Clicar "Gerar Imagens" com 0 image elements | Sim | Injeção seletiva cria 2 (intro+celebração) |
-| Passos do meio NÃO recebem imagem | Sim | `if (!isFirst && !isLast) continue` |
-| Passos do meio mantêm mockup JSON puro | Sim | Não são tocados pela edge function |
-| Grid mostra apenas 2 imagens (intro+celebração) | Sim | `fetchImagePreviews` busca `type: "image"` dos frames |
-| `handleAutoCalc` não infla contador | Sim | Removido fallback `stepsCount` |
-| Aula Calendly limpa de imagens injetadas | Sim | Migration SQL (Alt. 4) |
-| Regenerar imagem individual funciona | Sim | `step_ids` mode não mudou (L202-217) |
-| Upload manual funciona | Sim | Não tocado |
-| Aulas já publicadas (template) | Sem impacto | 0 image elements, não processadas |
-| `images_needed` pipeline counter | Sim | Recalculado pela edge function L386-409 |
-| Stage 3 (Mockups/enrich-frames) | Sem impacto | Edge function separada |
+| `liv` nulo em qualquer passo | Sim | Fallback obrigatório (Alt. 1) |
+| Retry após falha parcial | Sim | Delete idempotente (Alt. 2) |
+| IA usa "OpenAI Platform" em vez de "ChatGPT" | Sim | Aliases V1 (Alt. 3) |
+| IA retorna `INTERMEDIARY_NEEDED` | Sim | Sem update em coluna inexistente (Alt. 4) |
+| `validateStructure` conta fases errado | Sim | Usa `phase` com fallback (Alt. 5) |
+| JSON truncado/mal formado da IA | Parcial | Já tratado L156-161 (throw com substring do raw) |
+| Frontend mostra erro genérico "non-2xx" | Já tratado | L238-246 extrai `data.error` e `error.message` |
 
-## Escopo Revisado
+## 5. ESCOPO
 
-- 1 edge function alterada: `v10-generate-images/index.ts` (prompt + injeção seletiva)
-- 1 frontend alterado: `Stage3Images.tsx` (handleAutoCalc)
-- 1 migration: limpeza Calendly
+- 2 arquivos alterados: `v10-generate-steps/index.ts` + `_shared/prompt-master.ts`
+- 0 migrations
+- 0 alterações frontend
 - 1 deploy
 
