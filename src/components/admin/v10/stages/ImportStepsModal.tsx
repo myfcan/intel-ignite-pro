@@ -362,7 +362,40 @@ export function ImportStepsModal({
         });
       }
 
-      toast.success(`✅ ${steps.length} passos importados! C2/C3 auto-corrigidos (${c2Fixed}+${c3Fixed})`);
+      // 6. Save Part A / Part C narrations if provided
+      let narrationsSaved = 0;
+      if (parsed.narration_part_a || parsed.narration_part_c) {
+        // Fetch existing narrations
+        const { data: existingNarrations } = await supabase
+          .from('v10_lesson_narrations')
+          .select('id, part')
+          .eq('lesson_id', lessonId);
+
+        for (const part of ['A', 'C'] as const) {
+          const text = part === 'A' ? parsed.narration_part_a : parsed.narration_part_c;
+          if (!text) continue;
+
+          const existing = existingNarrations?.find((n) => n.part === part);
+          if (existing) {
+            await supabase
+              .from('v10_lesson_narrations')
+              .update({ script_text: text, audio_url: null, duration_seconds: 0 } as any)
+              .eq('id', existing.id);
+          } else {
+            await supabase
+              .from('v10_lesson_narrations')
+              .insert({ lesson_id: lessonId, part, script_text: text, duration_seconds: 0 } as any);
+          }
+          narrationsSaved++;
+        }
+      }
+
+      const extras = [
+        `C2/C3 (${c2Fixed}+${c3Fixed})`,
+        narrationsSaved > 0 ? `Parte ${parsed.narration_part_a ? 'A' : ''}${parsed.narration_part_a && parsed.narration_part_c ? '+' : ''}${parsed.narration_part_c ? 'C' : ''} salva` : '',
+      ].filter(Boolean).join(' · ');
+
+      toast.success(`✅ ${steps.length} passos importados! ${extras}`);
       onSuccess();
       onClose();
     } catch (e) {
