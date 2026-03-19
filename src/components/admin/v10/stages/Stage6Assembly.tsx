@@ -40,7 +40,7 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   { key: 'steps_have_liv', label: 'Todos os passos têm dicas LIV (tip, analogy, sos)', fixStage: 2, fixLabel: 'Editar Passos' },
   { key: 'intro_slides_ok', label: 'Slides de introdução configurados' },
   { key: 'images_ok', label: 'Todos os passos têm imagem (verificação real nos frames)', fixStage: 4, fixLabel: 'Gerar Imagens' },
-  { key: 'mockups_ok', label: 'Todos os frames têm mockup_url (verificação real)', fixStage: 3, fixLabel: 'Upload Mockups' },
+  { key: 'mockups_ok', label: 'Todos os frames têm elements suficientes (≥3)', fixStage: 3, fixLabel: 'Enriquecer Frames' },
   { key: 'audios_ok', label: 'Todos os passos têm audio_url (verificação real)', fixStage: 5, fixLabel: 'Gerar Áudios' },
   { key: 'narration_a_ok', label: 'Narração Parte A configurada', fixStage: 5, fixLabel: 'Editar Narração A' },
   { key: 'narration_c_ok', label: 'Narração Parte C configurada', fixStage: 5, fixLabel: 'Editar Narração C' },
