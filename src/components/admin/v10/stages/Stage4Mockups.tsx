@@ -204,44 +204,53 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
     toast.success(`Screenshot do Refero importado para Passo ${step.step_number}, Frame ${frameIndex + 1}`);
   }, []);
 
-  // Generate mockups via AI (v10-generate-mockups edge function)
+  // Generate mockups via AI — auto-loop through all batches
   const handleGenerateMockups = async () => {
     if (!pipeline.lesson_id) {
       toast.error('Vincule uma aula primeiro (Etapa 2)');
       return;
     }
     setGeneratingMockups(true);
+    setMockupProgress({ current: 0, total: totalFrames });
+
+    let batchIdx = 0;
+    let totalGenerated = 0;
+
     try {
-      const { data, error } = await supabase.functions.invoke('v10-generate-mockups', {
-        body: { pipeline_id: pipeline.id, batch_size: 3, batch_index: nextBatchIndex },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      while (true) {
+        const { data, error } = await supabase.functions.invoke('v10-generate-mockups', {
+          body: { pipeline_id: pipeline.id, batch_size: 5, batch_index: batchIdx },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
 
-      if (data) {
-        const successCount = data.success ?? 0;
-        const hasMore = data.hasMoreBatches ?? false;
+        const successCount = data?.success ?? 0;
+        const hasMore = data?.hasMoreBatches ?? false;
+        totalGenerated += successCount;
 
-        if (hasMore) {
-          setNextBatchIndex(prev => prev + 1);
-          toast.success(`${successCount} mockups gerados! Clique novamente para o próximo lote (batch ${nextBatchIndex + 2}).`);
-        } else {
-          setNextBatchIndex(0);
-          toast.success(`${successCount} mockups gerados! Todos os lotes concluídos.`);
+        setMockupProgress({ current: totalGenerated, total: data?.total ?? totalFrames });
+
+        if (!hasMore || successCount === 0) {
+          toast.success(`${totalGenerated} mockups gerados! Todos os lotes concluídos.`);
+          break;
         }
 
-        // Refresh steps to show new mockup_urls
-        const { data: freshSteps } = await supabase
-          .from('v10_lesson_steps')
-          .select('*')
-          .eq('lesson_id', pipeline.lesson_id as string)
-          .order('step_number', { ascending: true });
-        if (freshSteps) setSteps(freshSteps as unknown as V10LessonStep[]);
+        batchIdx++;
       }
+
+      // Refresh steps to show new mockup_urls
+      const { data: freshSteps } = await supabase
+        .from('v10_lesson_steps')
+        .select('*')
+        .eq('lesson_id', pipeline.lesson_id as string)
+        .order('step_number', { ascending: true });
+      if (freshSteps) setSteps(freshSteps as unknown as V10LessonStep[]);
     } catch (err) {
-      toast.error(`Erro ao gerar mockups: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+      toast.error(`Erro ao gerar mockups (batch ${batchIdx + 1}): ${err instanceof Error ? err.message : 'erro desconhecido'}`);
     } finally {
       setGeneratingMockups(false);
+      setMockupProgress(null);
+      setNextBatchIndex(0);
     }
   };
 
