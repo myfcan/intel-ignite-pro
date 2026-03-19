@@ -506,12 +506,33 @@ export function postProcessFrameDefaults(steps: any[]): void {
   }
 }
 
+const TOOL_ALIASES: Record<string, string> = {
+  "OpenAI Platform": "ChatGPT",
+  "OpenAI": "ChatGPT",
+  "OpenAI ChatGPT": "ChatGPT",
+  "ChatGPT": "ChatGPT",
+  "Make.com": "Make",
+  "Make": "Make",
+  "Google Sheets": "Sheets",
+  "Sheets": "Sheets",
+  "Google Forms": "Forms",
+  "Forms": "Forms",
+  "WhatsApp": "WhatsApp Business",
+  "WhatsApp Business": "WhatsApp Business",
+};
+
+function canonicalToolName(name: string): string {
+  return TOOL_ALIASES[name] || name;
+}
+
 export function validateTools(steps: any[], declaredTools: string[]): ValidationResult {
   const errors: string[] = [];
+  const declaredSet = new Set(declaredTools.map(canonicalToolName));
   for (const step of steps) {
-    if (!declaredTools.includes(step.app_name) && step.app_name !== 'AILIV') {
+    const canonical = canonicalToolName(step.app_name);
+    if (!declaredSet.has(canonical) && step.app_name !== 'AILIV') {
       errors.push(
-        `BLOQUEADO: Passo ${step.step_number} usa "${step.app_name}" que NÃO está nas ferramentas declaradas: [${declaredTools.join(', ')}]`
+        `BLOQUEADO: Passo ${step.step_number} usa "${step.app_name}" (canônico: "${canonical}") que NÃO está nas ferramentas declaradas: [${declaredTools.join(', ')}]`
       );
     }
   }
@@ -554,7 +575,7 @@ export function validateFrames(steps: any[]): ValidationResult {
 export function validateStructure(steps: any[]): ValidationResult {
   const errors: string[] = [];
 
-  const phases = new Set(steps.map((s: any) => s.phase_number));
+  const phases = new Set(steps.map((s: any) => s.phase_number ?? s.phase));
   if (phases.size !== 3) {
     errors.push(`${phases.size} fases detectadas (obrigatório 3)`);
   }

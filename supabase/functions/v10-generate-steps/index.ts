@@ -220,11 +220,7 @@ Retorne APENAS o JSON array.`;
 
     // Check for INTERMEDIARY_NEEDED response
     if (steps.length === 1 && steps[0]?.status === 'INTERMEDIARY_NEEDED') {
-      const { error: intError } = await supabase
-        .from("v10_bpa_pipeline")
-        .update({ intermediary_status: steps[0] })
-        .eq("id", pipeline_id);
-      if (intError) console.error("Failed to save intermediary_status:", intError);
+      // Column intermediary_status does NOT exist in DB — just return the response
       return new Response(
         JSON.stringify({ success: true, intermediary_needed: true, options: steps[0].options }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -237,6 +233,17 @@ Retorne APENAS o JSON array.`;
       "construção": 2, "construcao": 2, "desenvolvimento": 2, "execução": 2, "execucao": 2,
       "teste": 3, "validação": 3, "validacao": 3, "verificação": 3, "verificacao": 3, "conclusão": 3, "conclusao": 3,
     };
+
+    // Idempotent: remove any previous steps for this lesson before inserting
+    const { error: deleteStepsError } = await supabase
+      .from("v10_lesson_steps")
+      .delete()
+      .eq("lesson_id", lesson_id);
+    if (deleteStepsError) {
+      console.warn(`[v10-generate-steps] Failed to delete previous steps: ${deleteStepsError.message}`);
+    } else {
+      console.log(`[v10-generate-steps] Cleared previous steps for lesson ${lesson_id}`);
+    }
 
     const insertedSteps = [];
     for (let i = 0; i < steps.length; i++) {
@@ -267,7 +274,9 @@ Retorne APENAS o JSON array.`;
           app_icon: step.app_icon || null,
           duration_seconds: typeof step.duration_seconds === "number" ? step.duration_seconds : 30,
           frames: step.frames,
-          liv: step.liv,
+          liv: (step.liv && typeof step.liv === 'object' && step.liv.tip !== undefined)
+            ? step.liv
+            : { tip: "", analogy: "", sos: "" },
           warnings: step.warnings || null,
           app_badge_bg: step.app_badge_bg || "#EEF2FF",
           app_badge_color: step.app_badge_color || "#6366F1",
