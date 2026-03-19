@@ -256,8 +256,8 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       }
       const numSteps = maxStep > 0 ? maxStep : 13;
 
-      const CHUNK_SIZE = 3;
-      const maxCalls = Math.ceil(numSteps / CHUNK_SIZE) + 3;
+      let currentChunkSize = 3;
+      const maxCalls = Math.ceil(numSteps / currentChunkSize) + 5;
 
       let nextChunkStart = 1;
       let finalResult: GenerateChunkResult | null = null;
@@ -265,10 +265,13 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         chunk_start?: number;
         chunk_end?: number;
         timings?: Record<string, number>;
+        error?: string;
       }> = [];
 
       for (let call = 0; call < maxCalls; call++) {
         const isFirstCall = nextChunkStart === 1;
+
+        toast.info(`Gerando passos ${nextChunkStart}–${Math.min(nextChunkStart + currentChunkSize - 1, numSteps)} de ${numSteps}...`, { duration: 3000 });
 
         const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
           body: {
@@ -278,13 +281,41 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
             trail_id: selectedTrailId || null,
             course_id: selectedCourseId || null,
             chunk_start: nextChunkStart,
-            chunk_size: CHUNK_SIZE,
+            chunk_size: currentChunkSize,
             reset: isFirstCall,
           },
         });
 
+        // --- GAP B FIX: Parse structured error from edge function ---
         if (error) {
-          toast.error(`Erro ao gerar passos: ${error.message || 'erro desconhecido'}`);
+          // Try to extract the structured error body
+          let errorBody: any = null;
+          try {
+            // supabase-js puts the response body in error.context when status != 2xx
+            if (typeof error === 'object' && error.context) {
+              errorBody = error.context;
+            }
+          } catch { /* ignore parse errors */ }
+
+          const errorType = errorBody?.error_type || 'unknown';
+          const retryable = errorBody?.retryable === true;
+          const retryHint = errorBody?.retry_hint || '';
+          const errorStage = errorBody?.stage || 'unknown';
+          const errorMsg = errorBody?.error || error.message || 'erro desconhecido';
+
+          if (retryable && retryHint === 'reduce_chunk_size' && currentChunkSize > 1) {
+            // Adaptive: reduce chunk size and retry the same chunk
+            currentChunkSize = 1;
+            toast.warning(`Timeout no chunk (estágio: ${errorStage}). Reduzindo para 1 passo por vez...`, { duration: 5000 });
+            forensicTimings.push({
+              chunk_start: nextChunkStart,
+              error: `timeout_retry_reduced_chunk: ${errorMsg}`,
+            });
+            continue; // retry same nextChunkStart with smaller chunk
+          }
+
+          toast.error(`Erro na geração (${errorStage}): ${errorMsg}`, { duration: 8000 });
+          console.error('[Stage2Structure] Structured error from edge:', errorBody);
           return false;
         }
 
@@ -315,6 +346,8 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         }
 
         nextChunkStart = next;
+        // Reset chunk size back to normal after a successful call
+        currentChunkSize = 3;
       }
 
       if (!finalResult || !finalResult.progress?.completed) {
@@ -335,7 +368,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       await onUpdate(updates);
       await fetchSteps();
 
-      toast.success(`${totalSteps} passos gerados com sucesso (arquitetura anti-timeout ativa).`);
+      toast.success(`${totalSteps} passos gerados com sucesso!`);
       return true;
     } catch (err) {
       toast.error(`Erro ao gerar passos: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
