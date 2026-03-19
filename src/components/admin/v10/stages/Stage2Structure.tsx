@@ -218,21 +218,27 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     }
   };
 
-  const handleGenerateWithAI = async (instructions?: string) => {
+  const handleGenerateWithAI = async (instructions?: string): Promise<boolean> => {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
-        body: { pipeline_id: pipeline.id, num_steps: 10, instructions: instructions || '' },
+        body: {
+          pipeline_id: pipeline.id,
+          num_steps: 10,
+          instructions: instructions || '',
+          trail_id: selectedTrailId || null,
+          course_id: selectedCourseId || null,
+        },
       });
 
       if (error) {
         toast.error(`Erro ao gerar passos: ${error.message || 'erro desconhecido'}`);
-        return;
+        return false;
       }
 
       if (data?.error) {
         toast.error(`Erro: ${data.error}`);
-        return;
+        return false;
       }
 
       const result = data as { steps_count: number; lesson_id?: string; estimated_minutes?: number };
@@ -247,8 +253,10 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       }
       await onUpdate(updates);
       await fetchSteps();
+      return true;
     } catch (err) {
       toast.error(`Erro ao gerar passos: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+      return false;
     } finally {
       setGenerating(false);
     }
