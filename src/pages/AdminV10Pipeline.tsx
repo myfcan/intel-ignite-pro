@@ -143,11 +143,11 @@ function BpaCard({ pipeline, onRefresh }: { pipeline: BpaPipeline; onRefresh: ()
     const confirmed = window.confirm(
       `⚠️ Excluir pipeline "${pipeline.title}"?\n\n` +
       'Isso vai excluir permanentemente:\n' +
-      '• O pipeline e todo o log de atividades\n' +
+      '• O pipeline\n' +
       (pipeline.lesson_id
         ? '• A aula vinculada e todos os dados (passos, narrações, áudios, slides)\n'
         : '') +
-      '\nEssa ação NÃO pode ser desfeita.'
+      '\nObs: o histórico forense será preservado.\n\nEssa ação NÃO pode ser desfeita.'
     );
     if (!confirmed) return;
 
@@ -170,9 +170,6 @@ function BpaCard({ pipeline, onRefresh }: { pipeline: BpaPipeline; onRefresh: ()
         await supabase.from('v10_lesson_narrations').delete().eq('lesson_id', pipeline.lesson_id);
         await supabase.from('v10_lessons').delete().eq('id', pipeline.lesson_id);
       }
-
-      // Delete pipeline log
-      await supabase.from('v10_bpa_pipeline_log').delete().eq('pipeline_id', pipeline.id);
 
       // Delete pipeline
       const { error } = await supabase.from('v10_bpa_pipeline').delete().eq('id', pipeline.id);

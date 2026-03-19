@@ -246,9 +246,57 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       };
     };
 
+    const parseInvokeErrorContext = async (invokeError: unknown): Promise<{ body: unknown; status: number | null }> => {
+      const err = invokeError as any;
+      const context = err?.context;
+      if (!context) return { body: null, status: null };
+
+      if (
+        typeof context === 'object' &&
+        context !== null &&
+        typeof context.json === 'function' &&
+        typeof context.text === 'function'
+      ) {
+        const response = context as Response;
+        const status = typeof (response as any).status === 'number' ? (response as any).status : null;
+
+        try {
+          const parsedJson = await response.clone().json();
+          return { body: parsedJson, status };
+        } catch {
+          try {
+            const rawText = await response.clone().text();
+            if (!rawText) return { body: null, status };
+            try {
+              return { body: JSON.parse(rawText), status };
+            } catch {
+              return { body: rawText, status };
+            }
+          } catch {
+            return { body: null, status };
+          }
+        }
+      }
+
+      if (typeof context === 'string') {
+        try {
+          return { body: JSON.parse(context), status: null };
+        } catch {
+          return { body: context, status: null };
+        }
+      }
+
+      if (typeof context === 'object') {
+        const maybeStatus = typeof (context as any).status === 'number' ? (context as any).status : null;
+        return { body: context, status: maybeStatus };
+      }
+
+      return { body: null, status: null };
+    };
+
     setGenerating(true);
     try {
-      const stepMatches = (instructions || '').match(/Passo\s+(\d+)/gi) || [] as string[];
+      const stepMatches = (instructions || '').match(/Passo\s+(\d+)/gi) || [];
       let maxStep = 0;
       for (const m of stepMatches) {
         const n = parseInt(m.replace(/\D/g, ''));
@@ -257,7 +305,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       const numSteps = maxStep > 0 ? maxStep : 13;
 
       let currentChunkSize = 3;
-      const maxCalls = Math.ceil(numSteps / currentChunkSize) + 5;
+      const maxCalls = Math.ceil(numSteps / Math.max(currentChunkSize, 1)) + 8;
 
       let nextChunkStart = 1;
       let finalResult: GenerateChunkResult | null = null;
@@ -286,36 +334,31 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
           },
         });
 
-        // --- GAP B FIX: Parse structured error from edge function ---
         if (error) {
-          // Try to extract the structured error body
-          let errorBody: any = null;
-          try {
-            // supabase-js puts the response body in error.context when status != 2xx
-            if (typeof error === 'object' && error.context) {
-              errorBody = error.context;
-            }
-          } catch { /* ignore parse errors */ }
+          const { body, status } = await parseInvokeErrorContext(error);
+          const bodyObject = body && typeof body === 'object' ? (body as Record<string, any>) : null;
+          const bodyMessage = typeof body === 'string' ? body : bodyObject?.error;
 
-          const errorType = errorBody?.error_type || 'unknown';
-          const retryable = errorBody?.retryable === true;
-          const retryHint = errorBody?.retry_hint || '';
-          const errorStage = errorBody?.stage || 'unknown';
-          const errorMsg = errorBody?.error || error.message || 'erro desconhecido';
+          const errorType = bodyObject?.error_type || (status === 408 ? 'ai_timeout' : 'unknown');
+          const retryable = bodyObject?.retryable === true || status === 408;
+          const retryHint = bodyObject?.retry_hint || (status === 408 ? 'reduce_chunk_size' : '');
+          const errorStage = bodyObject?.stage || 'unknown';
+          const errorMsg = bodyMessage || error.message || 'erro desconhecido';
+          const isTimeout = errorType === 'ai_timeout' || /timeout/i.test(errorMsg);
 
-          if (retryable && retryHint === 'reduce_chunk_size' && currentChunkSize > 1) {
-            // Adaptive: reduce chunk size and retry the same chunk
+          const shouldReduceChunk = currentChunkSize > 1 && (retryHint === 'reduce_chunk_size' || isTimeout);
+          if (retryable && shouldReduceChunk) {
             currentChunkSize = 1;
             toast.warning(`Timeout no chunk (estágio: ${errorStage}). Reduzindo para 1 passo por vez...`, { duration: 5000 });
             forensicTimings.push({
               chunk_start: nextChunkStart,
-              error: `timeout_retry_reduced_chunk: ${errorMsg}`,
+              error: `timeout_retry_reduced_chunk(status:${status ?? 'n/a'}): ${errorMsg}`,
             });
-            continue; // retry same nextChunkStart with smaller chunk
+            continue;
           }
 
-          toast.error(`Erro na geração (${errorStage}): ${errorMsg}`, { duration: 8000 });
-          console.error('[Stage2Structure] Structured error from edge:', errorBody);
+          toast.error(`Erro na geração (${errorStage})${status ? ` [HTTP ${status}]` : ''}: ${errorMsg}`, { duration: 8000 });
+          console.error('[Stage2Structure] invoke error parsed', { status, bodyObject, rawBody: body, message: error.message });
           return false;
         }
 
@@ -346,7 +389,6 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         }
 
         nextChunkStart = next;
-        // Reset chunk size back to normal after a successful call
         currentChunkSize = 3;
       }
 
