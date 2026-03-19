@@ -221,12 +221,29 @@ Retorne APENAS o JSON array.`;
       );
     }
 
-    // 8. Insert each step into v10_lesson_steps
+    // 8. Sanitize and insert each step into v10_lesson_steps
+    const PHASE_MAP: Record<string, number> = {
+      "setup": 1, "preparação": 1, "preparacao": 1, "início": 1, "inicio": 1,
+      "construção": 2, "construcao": 2, "desenvolvimento": 2, "execução": 2, "execucao": 2,
+      "teste": 3, "validação": 3, "validacao": 3, "verificação": 3, "verificacao": 3, "conclusão": 3, "conclusao": 3,
+    };
+
     const insertedSteps = [];
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
       const slug = step.slug || step.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-');
       const progressPercent = Math.round((100 / steps.length) * (i + 1));
+
+      // Sanitize phase: convert string labels to integer (1-3)
+      let phase = step.phase;
+      if (typeof phase === "string") {
+        phase = PHASE_MAP[phase.toLowerCase().trim()] ?? 1;
+        console.warn(`[v10-generate-steps] Step "${step.title}" had string phase "${step.phase}" → mapped to ${phase}`);
+      }
+      if (typeof phase !== "number" || phase < 1 || phase > 3) {
+        phase = 1;
+      }
+
       const { data: inserted, error: insertError } = await supabase
         .from("v10_lesson_steps")
         .insert({
@@ -235,10 +252,10 @@ Retorne APENAS o JSON array.`;
           slug,
           title: step.title,
           description: step.description,
-          phase: step.phase,
+          phase,
           app_name: step.app_name,
           app_icon: step.app_icon || null,
-          duration_seconds: step.duration_seconds,
+          duration_seconds: typeof step.duration_seconds === "number" ? step.duration_seconds : 30,
           frames: step.frames,
           liv: step.liv,
           warnings: step.warnings || null,
