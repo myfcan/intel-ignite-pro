@@ -489,6 +489,72 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
           </p>
         </div>
 
+        {/* Live processing tracker */}
+        {(processingAll || processProgress) && processProgress && (
+          <div className="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {processingAll && <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />}
+                <span className="font-semibold text-sm text-indigo-800">
+                  {processingAll
+                    ? `Processando áudios... (${processProgress.current + 1}/${processProgress.total})`
+                    : `Concluído! ${processProgress.results.filter(r => r.status === 'ok').length}/${processProgress.total} com sucesso`
+                  }
+                </span>
+              </div>
+              {!processingAll && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setProcessProgress(null)}
+                  className="text-xs h-7"
+                >
+                  Fechar
+                </Button>
+              )}
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-2 w-full overflow-hidden rounded-full bg-indigo-100">
+              <div
+                className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                style={{ width: `${Math.round(((processingAll ? processProgress.current : processProgress.total) / processProgress.total) * 100)}%` }}
+              />
+            </div>
+
+            {/* Current step */}
+            {processingAll && (
+              <p className="text-xs text-indigo-600">
+                ▶ {processProgress.currentStepTitle}
+              </p>
+            )}
+
+            {/* Elapsed time */}
+            <ProcessingTimer startedAt={processProgress.startedAt} isRunning={processingAll} />
+
+            {/* Step results grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto">
+              {processProgress.results.map((r) => (
+                <div
+                  key={r.step}
+                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md ${
+                    r.status === 'ok' ? 'bg-green-100 text-green-700' :
+                    r.status === 'error' ? 'bg-red-100 text-red-700' :
+                    r.status === 'processing' ? 'bg-indigo-100 text-indigo-700' :
+                    'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {r.status === 'ok' && <CheckCircle2 className="h-3 w-3 flex-shrink-0" />}
+                  {r.status === 'error' && <AlertCircle className="h-3 w-3 flex-shrink-0" />}
+                  {r.status === 'processing' && <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />}
+                  {r.status === 'pending' && <span className="h-3 w-3 rounded-full border border-current flex-shrink-0" />}
+                  <span className="truncate">P{r.step}: {r.title}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Metric cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {/* Total de Áudios */}
