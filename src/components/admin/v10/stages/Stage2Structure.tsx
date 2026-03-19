@@ -974,11 +974,11 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
                 </div>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
                   onClick={() => setShowForm(true)}
-                  className="min-h-[44px] w-full"
+                  className="min-h-[44px] flex-1"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar Passo
@@ -987,10 +987,19 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
                   variant="outline"
                   onClick={() => setShowInstructionsModal(true)}
                   disabled={generating || !pipeline.lesson_id}
-                  className="min-h-[44px] w-full"
+                  className="min-h-[44px] flex-1"
                 >
                   {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                   {generating ? 'Gerando passos...' : 'Gerar com IA'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowImportModal(true)}
+                  disabled={!pipeline.lesson_id}
+                  className="min-h-[44px] flex-1"
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Importar JSON
                 </Button>
               </div>
             )}
