@@ -1,0 +1,1 @@
+ALTER TABLE public.v10_bpa_pipeline ADD COLUMN tools text[] NOT NULL DEFAULT '{}'::text[];

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { Save, Sparkles, Loader2 } from 'lucide-react';
+import { Save, Sparkles, Loader2, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10ScoreSemaphore } from '@/types/v10.types';
@@ -57,6 +58,8 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
     score_relevance: pipeline.score_relevance,
   });
   const [docsManualInput, setDocsManualInput] = useState(pipeline.docs_manual_input ?? '');
+  const [tools, setTools] = useState<string[]>(pipeline.tools ?? []);
+  const [newTool, setNewTool] = useState('');
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
 
@@ -106,6 +109,7 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
         score_total: scoreTotal,
         score_semaphore: semaphore,
         docs_manual_input: docsManualInput || null,
+        tools,
       });
       toast.success('Score salvo com sucesso!');
     } catch {
@@ -167,6 +171,65 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Tools declaration */}
+        <div className="space-y-2">
+          <Label>Ferramentas da aula (obrigatório)</Label>
+          <p className="text-xs text-muted-foreground">
+            Declare todas as ferramentas que serão usadas nesta aula. A IA só poderá gerar passos com estas ferramentas.
+          </p>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {tools.map((tool, i) => (
+              <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                {tool}
+                <button
+                  type="button"
+                  onClick={() => setTools(tools.filter((_, j) => j !== i))}
+                  className="ml-1 rounded-full hover:bg-primary/20 p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ex: Calendly, ChatGPT, Make..."
+              value={newTool}
+              onChange={(e) => setNewTool(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const trimmed = newTool.trim();
+                  if (trimmed && !tools.includes(trimmed)) {
+                    setTools([...tools, trimmed]);
+                    setNewTool('');
+                  }
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const trimmed = newTool.trim();
+                if (trimmed && !tools.includes(trimmed)) {
+                  setTools([...tools, trimmed]);
+                  setNewTool('');
+                }
+              }}
+              disabled={!newTool.trim()}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {tools.length === 0 && (
+            <p className="text-xs text-destructive font-medium">
+              ⚠️ Sem ferramentas declaradas. A geração de passos será bloqueada.
+            </p>
+          )}
         </div>
 
         {/* Documentation notes */}

@@ -219,6 +219,10 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   };
 
   const handleGenerateWithAI = async (instructions?: string): Promise<boolean> => {
+    if (!pipeline.tools || pipeline.tools.length === 0) {
+      toast.error('Declare pelo menos 1 ferramenta na Etapa 1 (Score) antes de gerar passos.');
+      return false;
+    }
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('v10-generate-steps', {

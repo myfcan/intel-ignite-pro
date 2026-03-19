@@ -330,6 +330,7 @@ export interface V10BpaPipeline {
   score_relevance: number;
   score_semaphore: V10ScoreSemaphore;
   docs_manual_input: string | null;
+  tools: string[];
 
   // Stage 2: Step structure
   steps_generated: number;
