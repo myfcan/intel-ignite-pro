@@ -138,7 +138,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
 
     try {
       while (true) {
-        const { data, error } = await supabase.functions.invoke('v10-generate-mockups', {
+        const { data, error } = await supabase.functions.invoke('v10-enrich-frames', {
           body: { pipeline_id: pipeline.id, batch_size: 5, batch_index: batchIdx },
         });
         if (error) throw error;

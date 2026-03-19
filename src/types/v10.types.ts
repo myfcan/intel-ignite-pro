@@ -357,6 +357,11 @@ export interface V10BpaPipeline {
   assembly_checklist: Record<string, boolean>;
   assembly_passed: boolean;
 
+  // Prompt Master fields
+  lesson_type: 'automation' | 'tutorial' | 'conceptual' | null;
+  unverified_tools: string[] | null;
+  intermediary_status: Record<string, unknown> | null;
+
   // Stage 7: Publication
   preview_at: string | null;
   approved_at: string | null;

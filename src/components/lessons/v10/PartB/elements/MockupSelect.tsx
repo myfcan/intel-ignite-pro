@@ -5,6 +5,7 @@ interface MockupSelectProps {
   options: string[];
   selected: number;
   highlight?: boolean;
+  barColor?: string;
 }
 
 const MockupSelect: React.FC<MockupSelectProps> = ({
@@ -12,8 +13,10 @@ const MockupSelect: React.FC<MockupSelectProps> = ({
   options,
   selected,
   highlight = false,
+  barColor,
 }) => {
   const selectedValue = options[selected] ?? '';
+  const highlightColor = barColor || '#818CF8';
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -21,9 +24,10 @@ const MockupSelect: React.FC<MockupSelectProps> = ({
       <div
         className={`flex items-center justify-between px-2.5 py-1 rounded-md text-xs border transition-colors ${
           highlight
-            ? 'border-indigo-400 ring-2 ring-indigo-100 bg-indigo-50'
+            ? 'ring-2'
             : 'border-gray-200 bg-[#F9FAFB]'
         }`}
+        style={highlight ? { borderColor: highlightColor, backgroundColor: `${highlightColor}10`, boxShadow: `0 0 0 2px ${highlightColor}20` } : undefined}
       >
         <span className="text-gray-900">{selectedValue}</span>
         <svg

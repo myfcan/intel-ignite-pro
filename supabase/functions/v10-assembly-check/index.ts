@@ -96,7 +96,16 @@ serve(async (req) => {
     const narrations = narrationsRes.data || [];
     const lesson = lessonRes.data;
 
-    // 4. Run all 11 checklist items
+    // 4a. Run V1-V5 validations from Prompt Master
+    const { validateTools, validateFrames, validateStructure, validateNarration } = await import("../_shared/prompt-master.ts");
+    const declaredTools = (lesson?.tools as string[]) || [];
+    const v1Result = validateTools(steps, declaredTools);
+    const v2Result = validateFrames(steps);
+    const v3Result = validateStructure(steps);
+    // V4 (pedagogical) is covered by the existing C1-C9 audit in Stage2
+    const v5Result = validateNarration(steps);
+
+    // 4b. Run all checklist items (12 existing + 5 V-validations = 17)
     const score_ok = pipeline.score_total >= 70;
 
     const structure_ok = pipeline.audit_passed === true;
@@ -192,7 +201,23 @@ serve(async (req) => {
       narration_c_ok,
       metadata_ok,
       gamification_ok,
+      // V1-V5 Prompt Master validations
+      v1_tools_ok: v1Result.passed,
+      v2_frames_ok: v2Result.passed,
+      v3_structure_ok: v3Result.passed,
+      v5_narration_ok: v5Result.passed,
     };
+
+    // Log V-validation details for debugging
+    const vErrors = [
+      ...v1Result.errors.map(e => `V1: ${e}`),
+      ...v2Result.errors.map(e => `V2: ${e}`),
+      ...v3Result.errors.map(e => `V3: ${e}`),
+      ...v5Result.errors.map(e => `V5: ${e}`),
+    ];
+    if (vErrors.length > 0) {
+      console.log(`[v10-assembly-check] V-validation errors: ${vErrors.join('; ')}`);
+    }
 
     const allPassed = Object.values(results).every((v) => v === true);
 

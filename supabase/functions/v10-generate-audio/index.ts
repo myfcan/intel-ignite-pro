@@ -254,11 +254,13 @@ async function handleStepsAudio(
   const results: Array<{ step_number: number; audio_url: string; duration_seconds: number }> = [];
 
   // 3-6. Process each step sequentially
-  for (const step of steps) {
+  for (let si = 0; si < steps.length; si++) {
+    const step = steps[si];
+    const prevStep = si > 0 ? steps[si - 1] : undefined;
     console.log(`[v10-generate-audio] Processing step ${step.step_number}: ${step.title || 'untitled'}`);
 
-    // 3. Generate narration script for step
-    const script = await generateStepScript(step, lovableApiKey);
+    // 3. Generate narration script for step (with previous step for tool-change detection)
+    const script = await generateStepScript(step, lovableApiKey, prevStep);
     console.log(`[v10-generate-audio] Step ${step.step_number} script: ${script.length} chars`);
 
     // 4. Generate audio
@@ -337,22 +339,33 @@ Retorne APENAS o texto do script, sem aspas, sem markdown, sem instruções.`;
 async function generateStepScript(
   step: any,
   lovableApiKey: string,
+  prevStep?: any,
 ): Promise<string> {
+  const { PROMPT_GENERATE_NARRATION } = await import("../_shared/prompt-master.ts");
+
   const title = step.title || '';
   const description = step.description || '';
-  const frameContent = step.frame_content || step.content || '';
+  const frames = step.frames || [];
+  const firstFrame = frames[0] || {};
+  const warnings = step.warnings || null;
 
-  const systemPrompt = `Você é uma narradora brasileira chamada Alice, com voz amigável e envolvente. Gere um script de narração curto e claro para um passo de uma aula prática de tecnologia. O script deve:
-- Explicar o que o aluno precisa fazer neste passo
-- Ser direto e objetivo, mas amigável
-- Contextualizar o passo dentro do aprendizado
-- Usar linguagem acessível em português brasileiro
-- Ter entre 30-60 palavras
-Retorne APENAS o texto do script, sem aspas, sem markdown, sem instruções.`;
+  // Detect tool change from previous step
+  const toolChanged = prevStep && prevStep.app_name !== step.app_name;
 
-  const userMessage = `Título do passo: ${title}\nDescrição: ${description}\nConteúdo do frame: ${typeof frameContent === 'string' ? frameContent.slice(0, 500) : JSON.stringify(frameContent).slice(0, 500)}`;
+  const userMessage = `Passo ${step.step_number}: "${title}"
+Descrição: ${description}
+App: ${step.app_name || 'desconhecido'}
+${toolChanged ? `TROCA DE FERRAMENTA: ${prevStep.app_name} → ${step.app_name}` : ''}
 
-  return await callLovableAI(systemPrompt, userMessage, lovableApiKey);
+Frame action: ${firstFrame.action || 'N/A'}
+Frame check: ${firstFrame.check || 'N/A'}
+
+${warnings?.warn ? `Warning: ${warnings.warn}` : 'Sem warnings.'}
+${warnings?.ift ? `SE: ${warnings.ift.desc} → ENTÃO: ${warnings.ift.act}` : ''}
+
+Gere o narration_script com as tags [ANCHOR:*] apropriadas.`;
+
+  return await callLovableAI(PROMPT_GENERATE_NARRATION, userMessage, lovableApiKey);
 }
 
 async function callLovableAI(
