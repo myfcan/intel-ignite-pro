@@ -647,13 +647,22 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
             </Button>
             <Button
               variant="outline"
-              onClick={handleGenerateWithAI}
+              onClick={() => setShowInstructionsModal(true)}
               disabled={generating}
               className="min-h-[44px]"
             >
               {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               {generating ? 'Gerando...' : 'Criar Aula + Gerar com IA'}
             </Button>
+            <GenerateWithInstructionsModal
+              open={showInstructionsModal}
+              onClose={() => setShowInstructionsModal(false)}
+              onGenerate={async (instructions) => {
+                await handleGenerateWithAI(instructions);
+                setShowInstructionsModal(false);
+              }}
+              isLoading={generating}
+            />
           </div>
         </CardContent>
       </Card>
