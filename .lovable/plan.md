@@ -1,109 +1,100 @@
 
+Diagnóstico sistêmico (com prova real)
 
-# Plano: Sistema de Verificação de Completude + Migração para GPT-5
-
-## Problema Real Identificado
-
-1. **`num_steps` hardcoded em 10** — `Stage2Structure.tsx` L231 envia `num_steps: 10`, independente do que as instruções pedem (ex: 13 passos).
-2. **Sem verificação de completude** — A edge function aceita qualquer quantidade de passos da IA sem validar contra o pedido.
-3. **Modelo atual: `google/gemini-2.5-flash`** — L133 de `v10-generate-steps/index.ts`. Será trocado por `openai/gpt-5`.
-
-## Plano de Correções (3 arquivos)
-
-### Alteração 1 — Extrair `num_steps` das instruções (Frontend)
-
-**Arquivo**: `src/components/admin/v10/stages/Stage2Structure.tsx`, L228-236
-
-Extrair a quantidade de passos das instruções do usuário via regex (ex: "Passo 13:" → 13 passos) e enviar como `num_steps` real em vez do valor fixo `10`.
-
-```typescript
-// Parse num_steps from instructions
-const stepMatches = instructions?.match(/Passo\s+(\d+)/gi) || [];
-const maxStep = stepMatches.reduce((max, m) => {
-  const n = parseInt(m.replace(/\D/g, ''));
-  return n > max ? n : max;
-}, 0);
-const numSteps = maxStep > 0 ? maxStep : 13; // fallback 13
-
-body: {
-  pipeline_id: pipeline.id,
-  num_steps: numSteps,
-  instructions: instructions || '',
-  ...
+1) Estado atual do fluxo (código real)
+- Frontend chama a função em loop por chunk:
+```ts
+// src/components/admin/v10/stages/Stage2Structure.tsx
+const { data, error } = await supabase.functions.invoke('v10-generate-steps', { body: { ... } });
+if (error) {
+  toast.error(`Erro ao gerar passos: ${error.message || 'erro desconhecido'}`);
+  return false;
+}
+```
+- Edge usa GPT-5 com timeout fixo:
+```ts
+// supabase/functions/v10-generate-steps/index.ts
+const AI_TIMEOUT_MS = 110_000;
+...
+const aiModel = "openai/gpt-5";
+...
+const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+```
+- Cada chunk ainda envia contexto pesado completo:
+```ts
+Documentação/notas do instrutor:
+${pipeline.docs_manual_input || "..."}
+${instructionsBlock}
+```
+- A função apaga dados antes de gerar (risco sistêmico):
+```ts
+if (shouldResetAll) {
+  await supabase.from("v10_lesson_steps").delete().eq("lesson_id", lessonId)
+  await supabase.from("v10_lesson_intro_slides").delete().eq("lesson_id", lessonId)
 }
 ```
 
-### Alteração 2 — Sistema de Verificação + Completude (Edge Function)
+2) Evidência forense real (logs/timestamps)
+- Log real de timeout (bloco fornecido):
+`2026-03-19T17:38:10Z ERROR v10-generate-steps error: Error: AI timeout after 110000ms`
+- Screenshot OCR real:
+  - `Captura_de_Tela_2026-03-19_às_13.12.59.png`: “Failed to send a request to the Edge Function”
+  - `Captura_de_Tela_2026-03-19_às_13.38.13.png`: “Edge Function returned a non-2xx status code”
+- Analytics real (agora): `POST | 400 | .../v10-generate-steps | execution_time_ms: 1526 | version: 98`
+- Replay real: toast de exclusão de pipeline em `1773942040241` (“Pipeline ... excluído.”)
 
-**Arquivo**: `supabase/functions/v10-generate-steps/index.ts`
+3) Gaps do plano anterior (e efeito sistêmico)
+- Gap A: chunking sem redução real de payload → timeout permanece.
+- Gap B: erro esperado (timeout) retorna 500, UI mostra erro genérico.
+- Gap C: telemetria de falha não persiste no banco; hoje só loga sucesso.
+- Gap D: reset destrutivo antes da geração (perda de passos/intro se falhar no 1º chunk).
+- Gap E: UX inconsistente (“Gerar com IA (10 passos)”) enquanto lógica é dinâmica.
+- Gap F: histórico forense pode ser removido ao excluir pipeline (`delete` em `v10_bpa_pipeline_log`).
 
-Após receber os passos da IA (L155-165), adicionar loop de verificação:
+Plano robusto revisado (implementação)
 
-```
-1. Gerar passos (chamada principal)
-2. Contar steps recebidos vs num_steps pedido
-3. Se completo → segue fluxo padrão
-4. Se incompleto → enviar follow-up pedindo APENAS os passos faltantes
-5. Mesclar array original + complemento
-6. Repetir até completo ou max 2 retries
-7. Seguir fluxo padrão com array final
-```
+Escopo de arquivos
+- `supabase/functions/v10-generate-steps/index.ts`
+- `src/components/admin/v10/stages/Stage2Structure.tsx`
+- `src/pages/AdminV10Pipeline.tsx` (forense/retensão)
 
-Lógica concreta:
-```typescript
-const MAX_COMPLETION_RETRIES = 2;
-let allSteps = steps; // resultado da primeira chamada
+1) Edge: tornar timeout erro tratável (não genérico)
+- Converter timeout de IA em resposta estruturada de negócio (retryable), com:
+  - `error_type`, `stage`, `chunk_start/end`, `timings`, `prompt_sizes`, `retry_hint`.
+- Manter 500 apenas para falhas inesperadas de infraestrutura.
 
-for (let retry = 0; retry < MAX_COMPLETION_RETRIES; retry++) {
-  if (allSteps.length >= num_steps) break;
-  
-  const missing = num_steps - allSteps.length;
-  const lastStep = allSteps[allSteps.length - 1];
-  
-  const completionMessage = `Você gerou ${allSteps.length} passos mas eu pedi ${num_steps}.
-Faltam os passos ${allSteps.length + 1} até ${num_steps}.
-O último passo gerado foi: step_number=${lastStep.step_number}, title="${lastStep.title}".
-Gere APENAS os ${missing} passos faltantes (do ${allSteps.length + 1} ao ${num_steps}).
-O último passo (${num_steps}) DEVE ser AILIV (celebração).
-Retorne APENAS o JSON array dos passos faltantes.`;
+2) Edge: reduzir payload por chunk de forma determinística
+- Extrair somente bloco de instruções do intervalo `Passo N..M`.
+- Em chunks > 1, não reenviar contexto completo; usar versão compacta.
+- Repetir no mesmo modelo (`openai/gpt-5`) com modo compacto antes de falhar.
 
-  // Segunda chamada à IA (mesma config, prompt de completude)
-  const completionResponse = await fetch(gatewayUrl, { ... });
-  const completionSteps = parse(completionResponse);
-  
-  // Renumerar e mesclar
-  for (const cs of completionSteps) {
-    cs.step_number = allSteps.length + 1;
-    allSteps.push(cs);
-  }
-}
+3) Edge: eliminar reset destrutivo antes de sucesso
+- Remover delete global no início.
+- Escrever chunk com `upsert` por `(lesson_id, step_number)` (constraint existente).
+- Limpeza final (`> requestedSteps`) só após completar geração.
 
-// Log resultado da verificação
-console.log(`[v10-generate-steps] Completeness: ${allSteps.length}/${num_steps} steps`);
-```
+4) Edge: telemetria forense obrigatória em sucesso e falha
+- Inserir `steps_generation_chunk_start`, `steps_generation_chunk`, `steps_generation_chunk_failed` em `v10_bpa_pipeline_log`.
+- Incluir `request_id` e `version` em `details`.
 
-### Alteração 3 — Trocar modelo para GPT-5
+5) Frontend: erro útil + retomada
+- Ler payload de erro estruturado (stage/timings/chunk), não só `error.message`.
+- Em timeout retryable: reduzir chunk dinamicamente e retomar do `next_chunk_start`.
+- Corrigir rótulo do botão para não induzir “10 passos”.
 
-**Arquivo**: `supabase/functions/v10-generate-steps/index.ts`, L133
+6) Forense sistêmico
+- Não apagar logs forenses ao excluir pipeline; manter histórico de incidentes.
 
-```typescript
-// ANTES:
-model: "google/gemini-2.5-flash",
+Validação obrigatória (prova de robustez)
+- Caso real com instrução longa (mesmo padrão das capturas).
+- Evidências exigidas após correção:
+  1. `v10_bpa_pipeline_log` com `steps_generation_chunk_start/chunk/failed` e timings.
+  2. Ausência de erro genérico na UI; exibição de stage real em falha.
+  3. Sem perda de passos preexistentes quando 1º chunk falhar.
+  4. Continuidade de `step_number` sem duplicidade.
+  5. Teste de ponta a ponta no fluxo “Gerar Passos” com retomada.
 
-// DEPOIS:
-model: "openai/gpt-5",
-```
-
-## Escopo Final
-
-| Item | Arquivo | Tipo |
-|------|---------|------|
-| Extrair `num_steps` real das instruções | `Stage2Structure.tsx` | Frontend |
-| Loop de completude (max 2 retries) | `v10-generate-steps/index.ts` | Edge Function |
-| Trocar modelo para `openai/gpt-5` | `v10-generate-steps/index.ts` | Edge Function |
-| Deploy automático | — | 1 deploy |
-
-- 2 arquivos alterados
-- 0 migrations
-- 0 tabelas novas
-
+NÃO LOCALIZADO NO CÓDIGO
+- Qualquer redirecionamento disparado durante `handleGenerateWithAI` (não há `navigate` nesse fluxo).
+- Registro persistido de falhas recentes na tabela `v10_bpa_pipeline_log` com ações `steps_generation_chunk_failed` (consulta retornou vazio).
+- Pipeline ativo que originou o último erro (foi excluído no fluxo observado).
