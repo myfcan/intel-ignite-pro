@@ -225,10 +225,18 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     }
     setGenerating(true);
     try {
+      // Parse num_steps from instructions (e.g. "Passo 13:" → 13)
+      const stepMatches = (instructions || '').match(/Passo\s+(\d+)/gi) || [];
+      const maxStep = stepMatches.reduce((max: number, m: string) => {
+        const n = parseInt(m.replace(/\D/g, ''));
+        return n > max ? n : max;
+      }, 0);
+      const numSteps = maxStep > 0 ? maxStep : 13;
+
       const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
         body: {
           pipeline_id: pipeline.id,
-          num_steps: 10,
+          num_steps: numSteps,
           instructions: instructions || '',
           trail_id: selectedTrailId || null,
           course_id: selectedCourseId || null,
