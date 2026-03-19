@@ -334,10 +334,6 @@ serve(async (req: Request) => {
     }
 
     // 7. Update pipeline counters
-    const newMockupsTotal = framesToProcess.length + (steps as any[]).reduce((sum, s) => {
-      return sum + ((s.frames || []) as any[]).filter((f: any) => f.mockup_url).length;
-    }, 0) - framesToProcess.length; // frames that already had mockups
-
     const totalWithMockups = (steps as any[]).reduce((sum, s) => {
       return sum + ((s.frames || []) as any[]).filter((f: any) => f.mockup_url).length;
     }, 0);
