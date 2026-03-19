@@ -173,6 +173,65 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
           ))}
         </div>
 
+        {/* Tools declaration */}
+        <div className="space-y-2">
+          <Label>Ferramentas da aula (obrigatório)</Label>
+          <p className="text-xs text-muted-foreground">
+            Declare todas as ferramentas que serão usadas nesta aula. A IA só poderá gerar passos com estas ferramentas.
+          </p>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {tools.map((tool, i) => (
+              <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                {tool}
+                <button
+                  type="button"
+                  onClick={() => setTools(tools.filter((_, j) => j !== i))}
+                  className="ml-1 rounded-full hover:bg-primary/20 p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ex: Calendly, ChatGPT, Make..."
+              value={newTool}
+              onChange={(e) => setNewTool(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const trimmed = newTool.trim();
+                  if (trimmed && !tools.includes(trimmed)) {
+                    setTools([...tools, trimmed]);
+                    setNewTool('');
+                  }
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const trimmed = newTool.trim();
+                if (trimmed && !tools.includes(trimmed)) {
+                  setTools([...tools, trimmed]);
+                  setNewTool('');
+                }
+              }}
+              disabled={!newTool.trim()}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {tools.length === 0 && (
+            <p className="text-xs text-destructive font-medium">
+              ⚠️ Sem ferramentas declaradas. A geração de passos será bloqueada.
+            </p>
+          )}
+        </div>
+
         {/* Documentation notes */}
         <div className="space-y-2">
           <Label htmlFor="docs_manual_input">Notas de documentação (opcional)</Label>
