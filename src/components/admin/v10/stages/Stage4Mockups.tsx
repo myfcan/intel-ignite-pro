@@ -95,7 +95,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
       const storagePath = `v10/${pipeline.lesson_id}/mockups/step_${step.step_number}_frame_${frameIndex}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('lesson-images')
+        .from('lesson-audios')
         .upload(storagePath, file, {
           contentType: file.type,
           upsert: true,
@@ -104,7 +104,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
-        .from('lesson-images')
+        .from('lesson-audios')
         .getPublicUrl(storagePath);
 
       // Update the frame's mockup_url in the step's frames array
