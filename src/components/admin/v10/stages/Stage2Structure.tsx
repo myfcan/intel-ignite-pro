@@ -226,11 +226,12 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     setGenerating(true);
     try {
       // Parse num_steps from instructions (e.g. "Passo 13:" → 13)
-      const stepMatches = (instructions || '').match(/Passo\s+(\d+)/gi) || [];
-      const maxStep = stepMatches.reduce((max: number, m: string) => {
+      const stepMatches = (instructions || '').match(/Passo\s+(\d+)/gi) || [] as string[];
+      let maxStep = 0;
+      for (const m of stepMatches) {
         const n = parseInt(m.replace(/\D/g, ''));
-        return n > max ? n : max;
-      }, 0);
+        if (n > maxStep) maxStep = n;
+      }
       const numSteps = maxStep > 0 ? maxStep : 13;
 
       const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
