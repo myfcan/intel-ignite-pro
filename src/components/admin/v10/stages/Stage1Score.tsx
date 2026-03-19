@@ -109,6 +109,7 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
         score_total: scoreTotal,
         score_semaphore: semaphore,
         docs_manual_input: docsManualInput || null,
+        tools,
       });
       toast.success('Score salvo com sucesso!');
     } catch {
