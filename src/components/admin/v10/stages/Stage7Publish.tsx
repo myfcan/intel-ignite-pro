@@ -67,15 +67,24 @@ export function Stage7Publish({ pipeline, onUpdate }: Stage7PublishProps) {
 
   useEffect(() => {
     async function fetchTrailsCourses() {
-      const [t, c] = await Promise.all([
+      const [t, c, lessonRes] = await Promise.all([
         supabase.from('trails').select('id, title').eq('is_active', true).order('order_index'),
         supabase.from('courses').select('id, trail_id, title').eq('is_active', true).order('order_index'),
+        pipeline.lesson_id
+          ? supabase.from('v10_lessons').select('trail_id, course_id, order_in_trail').eq('id', pipeline.lesson_id).single()
+          : Promise.resolve({ data: null }),
       ]);
       if (t.data) setTrails(t.data);
       if (c.data) setCourses(c.data);
+      // Pre-fill from existing lesson data
+      if (lessonRes.data) {
+        if (lessonRes.data.trail_id) setSelectedTrailId(lessonRes.data.trail_id);
+        if (lessonRes.data.course_id) setSelectedCourseId(lessonRes.data.course_id);
+        if (lessonRes.data.order_in_trail != null) setOrderInTrail(lessonRes.data.order_in_trail);
+      }
     }
     fetchTrailsCourses();
-  }, []);
+  }, [pipeline.lesson_id]);
 
   const isPublished = pipeline.status === 'published';
   const isReady = pipeline.status === 'ready';
