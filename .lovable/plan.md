@@ -1,157 +1,184 @@
 
 
-# Auditoria Forense do Plano — Com Dados Reais do Código
+# Plano: Reescrever v10-generate-mockups — Enriquecimento JSON, Não PNG
 
----
+## 1. DIAGNÓSTICO COM DADOS REAIS
 
-## 1. CONFIRMADO: A raiz do problema está no template e no refine
+### O que está ERRADO — `v10-generate-mockups/index.ts`
 
-**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
-```markdown
-### Seção 3 (índice 2) — Ponte para primeiro exercício
-**Objetivo:** Frase curta de transição para o primeiro exercício.
-
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
-```
-
-E o exercício associado (linha 89):
-```json
-"title": "Teste rápido: respostas genéricas",
-```
-
-Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
-
-**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
-```
-11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
-
-13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
-```
-
-A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
-
----
-
-## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
-
-**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
+**Linha 82-141 — Gera PNG via Gemini Image:**
 ```typescript
-if (refineResponse.ok) {
-  const refineResult = await refineResponse.json();
-  if (refineResult.sections && Array.isArray(refineResult.sections)) {
-    // Replace section content with refined versions — protect Section 0 (Abertura)
-    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
-      parsed.sections[i].content = refineResult.sections[refIdx].content;
-    }
-  }
-}
-```
-
-O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
-
----
-
-## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
-
-**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
-```typescript
-const finalData: V8LessonData = {
-  contentVersion: "v8",
-  title: parsed.title,
+async function generateMockupImage(prompt: string): Promise<Uint8Array> {
   // ...
+  body: JSON.stringify({
+    model: "google/gemini-2.5-flash-image",
+    messages: [{ role: "user", content: prompt }],
+    modalities: ["image", "text"],
+  }),
+```
+
+**Linha 286-298 — Upload para Storage:**
+```typescript
+const storagePath = `v10-mockups/${lessonId}/step_${step.step_number}_frame_${frameIdx}.png`;
+const { error: uploadError } = await supabase.storage
+  .from("lesson-audios")
+  .upload(storagePath, imageBytes.buffer as ArrayBuffer, {
+```
+
+**Linha 305 — Salva `mockup_url` no frame:**
+```typescript
+updatedFrames[frameIdx] = { ...updatedFrames[frameIdx], mockup_url: publicUrl };
+```
+
+### O que está CERTO — `v10-generate-steps/index.ts`
+
+**Linha 268-269 — Prompt já pede frames ricos:**
+```
+1. Cada frame DEVE simular a interface REAL do app — use chrome_header + inputs + buttons + tabelas etc.
+2. NUNCA gere frames so com texto generico. Cada frame deve parecer uma tela real do app.
+```
+
+O `v10-generate-steps` já gera frames com elements ricos. O problema é que DEPOIS, `v10-generate-mockups` ignora esses elements e gera um PNG genérico.
+
+### O que o Player usa — `FrameRenderer.tsx`
+
+**Linha 126-138 — Renderiza elements do JSON, NUNCA usa mockup_url:**
+```typescript
+const FrameRenderer: React.FC<FrameRendererProps> = ({ frame, accentColor }) => {
+  return (
+    <MockupChrome barText={frame.bar_text} barSub={frame.bar_sub} barColor={frame.bar_color}
+      tip={frame.tip} action={frame.action} check={frame.check} accentColor={accentColor}>
+      {(frame.elements || []).map((element, index) => renderElement(element, index))}
+    </MockupChrome>
+  );
 };
 ```
 
-O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+### Validação ERRADA — `v10-assembly-check/index.ts`
 
----
-
-## 4. CONFIRMADO: `v8-generate-raw-content` não existe
-
+**Linha 141-148:**
+```typescript
+const mockups_ok =
+  steps.every((s: Record<string, unknown>) => {
+    const frames = s.frames as any[];
+    return frames.every((f: any) => f.mockup_url && f.mockup_url !== "");
+  });
 ```
-code--search_files: No matches found for pattern 'v8-generate-raw-content'
+Valida `mockup_url` — campo que o player nem usa. Deveria validar `elements.length >= 3`.
+
+---
+
+## 2. PLANO DE ALTERAÇÕES
+
+### Arquivo 1: `supabase/functions/v10-generate-mockups/index.ts` — REESCREVER
+
+**Deletar:** `generateMockupImage()` (linhas 82-141), `base64UrlToBytes()` (linhas 72-80), `buildMockupPrompt()` (linhas 14-70), upload para Storage (linhas 286-301)
+
+**Criar:** Função `enrichFrame()` que:
+- Recebe: frame JSON atual + step title + step description + app_name
+- Chama `google/gemini-3-flash-preview` (TEXT, não image) via Lovable AI Gateway
+- Prompt segue EXATAMENTE o spec do usuário: "Você é um especialista em UI/UX. Recebeu este frame JSON... Enriqueça com elements que representem a tela REAL do app. Use cores reais, campos reais, botões com texto real. Use os 15 types. Retorne APENAS o JSON."
+- Inclui os 6 exemplos reais do prompt do usuário (Make, Google Sheets, Google Forms, Bland AI, etc.)
+- Parse com `JSON.parse()` + try/catch (fallback = frame original)
+- Marca `frame.enriched = true`
+
+**Critério de frame que precisa enriquecimento:**
+```typescript
+const contentElements = frame.elements?.filter(e => 
+  ['input','select','button','table','code_block','image'].includes(e.type)
+) || [];
+const needsEnrichment = !frame.enriched && contentElements.length < 2;
 ```
 
-A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
+**Fluxo:**
+1. Fetch pipeline → lesson_id → steps
+2. Coletar frames com `needsEnrichment`
+3. Aplicar batching (batch_size, batch_index) — MANTER interface atual
+4. Para cada frame: chamar `enrichFrame()` → salvar JSON enriquecido de volta em `v10_lesson_steps`
+5. ZERO upload para Storage, ZERO geração de PNG
+6. Retornar `{ total, processed, success, failed, hasMoreBatches }` — mesma interface
 
----
+**Preservar:** Auth, CORS, batch logic, retry com backoff para 429, Refero como referência (passar screenshots como contexto textual no prompt, não como imagem)
 
-## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
+### Arquivo 2: `src/components/admin/v10/stages/Stage4Mockups.tsx` — Atualizar UI
 
-**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+**Linha 376 — Trocar contagem de "mockups":**
+```typescript
+// ANTES
+const mockupCount = step.frames?.filter((f: any) => f.mockup_url).length || 0;
+// DEPOIS
+const mockupCount = step.frames?.filter((f: any) => f.enriched || (f.elements?.length >= 3)).length || 0;
 ```
 
-Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+**Linhas 401-411 — Trocar `<img>` por FrameRenderer em miniatura:**
+```typescript
+// ANTES
+<img src={frame.mockup_url} alt={`Mockup frame ${fi + 1}`} className="h-20 rounded border object-cover" />
+// DEPOIS
+<div className="mt-2 w-48 transform scale-[0.25] origin-top-left h-[160px] overflow-hidden rounded border pointer-events-none">
+  <FrameRenderer frame={frame} accentColor={frame.bar_color || '#6366F1'} />
+</div>
+```
+
+**Remover:** `handleUploadMockup` (linhas 89-135), `handleDeleteMockup` (linhas 138-162), `handleImportReferoScreen` (linhas 184-205), upload `<input type="file">` (linhas 414-429), Refero import dropdown (linhas 431-449), delete button (linhas 450-458)
+
+**Manter:** Refero search como referência visual, auto-loop em `handleGenerateMockups`, barra de progresso
+
+**Renomear:** Botão "Gerar Mockups com IA" → "Enriquecer Frames com IA"
+
+### Arquivo 3: `supabase/functions/v10-assembly-check/index.ts` — Validação
+
+**Linhas 141-148 — Trocar validação:**
+```typescript
+// ANTES
+return frames.every((f: any) => f.mockup_url && f.mockup_url !== "");
+// DEPOIS
+return frames.every((f: any) => f.elements && Array.isArray(f.elements) && f.elements.length >= 3);
+```
+
+### Arquivo 4: `src/components/admin/v10/stages/Stage6Assembly.tsx` — Label
+
+**Linha 43:**
+```typescript
+// ANTES
+{ key: 'mockups_ok', label: 'Todos os frames têm mockup_url (verificação real)', fixStage: 3, fixLabel: 'Upload Mockups' },
+// DEPOIS
+{ key: 'mockups_ok', label: 'Todos os frames têm elements suficientes (≥3)', fixStage: 3, fixLabel: 'Enriquecer Frames' },
+```
 
 ---
 
-## 6. GAPS NO PLANO PROPOSTO
+## 3. ANÁLISE DE EFEITOS SISTÊMICOS
 
-### Gap A: O plano NÃO endereça o `contractPattern` não salvo
-O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
+| Componente | Impacto | Ação |
+|---|---|---|
+| `FrameRenderer.tsx` (player) | NENHUM — já renderiza elements, nunca usou mockup_url | Nenhuma |
+| `v10-generate-images/index.ts` (Stage 4) | NENHUM — gera diagramas conceituais, não mockups | Nenhuma |
+| `v10-assembly-check/index.ts` | DIRETO — mockups_ok precisa trocar validação | Alterar |
+| `Stage6Assembly.tsx` | DIRETO — label do checklist precisa atualizar | Alterar |
+| `Stage4Mockups.tsx` | DIRETO — preview e fluxo de upload precisam mudar | Alterar |
+| `v10-generate-mockups/index.ts` | DIRETO — reescrever de image AI para text AI | Alterar |
+| `v10_bpa_pipeline` colunas `mockups_total`, `mockups_from_refero`, `mockups_generic` | Podem continuar existindo — `mockups_total` = total frames, semântica muda de "mockup images" para "frames enriched" | Nenhuma migration |
+| Storage bucket `lesson-audios` path `v10-mockups/` | Lixo antigo — PNGs gerados anteriormente ficam no Storage mas não são mais usados | Inofensivo |
+| `supabase/config.toml` | `v10-generate-mockups` já registrado — nenhuma alteração | Nenhuma |
 
-**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
+## 4. GAPS IDENTIFICADOS E COBERTOS
 
-### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
-Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
+| Gap | Coberto? |
+|---|---|
+| IA retorna JSON malformado | Sim — try/catch + fallback para frame original |
+| Frames já ricos sendo reprocessados | Sim — skip se `enriched === true` ou `elements.length >= 3` |
+| FrameRenderer em miniatura cortado no admin | Sim — `transform: scale(0.25)` + `origin-top-left` + `overflow-hidden` com altura fixa |
+| Import de FrameRenderer no admin (path) | Sim — import de `@/components/lessons/v10/PartB/FrameRenderer` |
+| Timeout da edge function | Sim — batch_size mantido, text AI ~3-5s/frame vs ~10s/frame image |
+| Stage 4 (Imagens) gerando mockups por engano | Não afetado — Stage 4 já foi corrigido para gerar apenas diagramas |
+| `mockup_url` campo órfão no tipo V10Frame | Inofensivo — campo continua no type mas não é mais populado/usado |
 
-**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
-
-### Gap C: Parser compatibility com output da IA
-O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
-
-**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
-
-### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
-A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
-
----
-
-## 7. PLANO REVISADO FINAL
-
-### Arquivos a criar/modificar
-
-| Arquivo | Ação | O que muda |
-|---------|------|------------|
-| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
-| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
-| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
-| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
-| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
-
-### Detalhes por arquivo
-
-**1. `v8-generate-raw-content/index.ts` (NOVO)**
-- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
-- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
-- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
-- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
-- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
-- Modelo: `google/gemini-2.5-flash`
-
-**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
-- Adicionar após Regra 13:
-  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
-  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
-
-**3. `AdminV8Create.tsx` (EDITAR)**
-- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
-- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
-- Função `sectionsToMarkdown()` para converter output da function em markdown
-- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
-
-**4. `v8Lesson.ts` (EDITAR linha ~136)**
-- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
-
-### Riscos residuais
+## 5. RISCOS
 
 | Risco | Severidade | Mitigação |
-|-------|-----------|-----------|
-| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
-| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
-| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
+|---|---|---|
+| IA não gera elements fiéis à interface real | Médio | Prompt inclui 6 exemplos reais completos + nome do app + lista dos 15 types |
+| IA ignora `enriched` flag e reenriquece | Baixo | Filtro no edge function: skip se `frame.enriched === true` |
+| Frames com >15 elements ficando pesados | Baixo | Limite no prompt: "máximo 12 elements por frame" |
 
