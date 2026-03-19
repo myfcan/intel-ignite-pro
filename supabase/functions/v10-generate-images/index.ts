@@ -69,7 +69,7 @@ async function generateImageGemini(prompt: string): Promise<Uint8Array> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
+        model: "google/gemini-3.1-flash-image-preview",
         messages: [{ role: "user", content: prompt }],
         modalities: ["image", "text"],
       }),
@@ -409,12 +409,24 @@ serve(async (req: Request) => {
       }
     }
 
-    const updatePayload: any = { images_generated: realImageCount };
-
-    // Also update images_needed if it was 0 (first run)
-    if (pipeline.images_needed === 0 && total > 0) {
-      updatePayload.images_needed = total;
+    // Always recalculate images_needed based on actual image elements (including empty src)
+    let realImagesNeeded = 0;
+    for (const s of (allStepsForCount || [])) {
+      const sFrames = (s as any).frames;
+      if (!Array.isArray(sFrames)) continue;
+      for (const f of sFrames) {
+        for (const el of (f.elements || [])) {
+          if (el.type === "image") {
+            realImagesNeeded++;
+          }
+        }
+      }
     }
+
+    const updatePayload: any = { 
+      images_generated: realImageCount,
+      images_needed: realImagesNeeded,
+    };
 
     const { error: pipelineUpdateError } = await supabase
       .from("v10_bpa_pipeline")
