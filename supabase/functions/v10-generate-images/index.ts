@@ -216,26 +216,54 @@ serve(async (req: Request) => {
       }
       console.log(`[v10-generate-images] Targeted mode: ${stepsToProcess.length} steps from step_ids=[${step_ids.join(",")}]`);
     } else {
-      // Only process steps that ALREADY have image elements with empty src
+      // Process ALL steps: inject image element if missing, then filter for empty src
+      for (const step of steps) {
+        const frames = (step as any).frames;
+        if (!frames || !Array.isArray(frames) || frames.length === 0) continue;
+
+        // Check if any frame already has an image element
+        let hasImageElement = false;
+        for (const frame of frames) {
+          if (!frame.elements || !Array.isArray(frame.elements)) continue;
+          for (const el of frame.elements) {
+            if (el.type === "image") {
+              hasImageElement = true;
+              break;
+            }
+          }
+          if (hasImageElement) break;
+        }
+
+        // If no image element exists, inject one into the first frame
+        if (!hasImageElement) {
+          const firstFrame = frames[0];
+          if (!firstFrame.elements) firstFrame.elements = [];
+          firstFrame.elements.push({
+            type: "image",
+            src: "",
+            alt: (step as any).title || "Ilustração do passo",
+            width: 1024,
+            height: 576,
+          });
+          console.log(`[v10-generate-images] Injected image element into step ${(step as any).step_number}`);
+        }
+      }
+
+      // Now filter for steps with empty image src
       stepsToProcess = steps.filter((step: any) => {
         const frames = step.frames;
         if (!frames || !Array.isArray(frames) || frames.length === 0) return false;
-
-        let hasEmptyImage = false;
 
         for (const frame of frames) {
           const elements = frame.elements;
           if (!elements || !Array.isArray(elements)) continue;
           for (const el of elements) {
-            if (el.type === "image") {
-              if (!el.src || el.src === "" || el.src.startsWith("placeholder")) {
-                hasEmptyImage = true;
-              }
+            if (el.type === "image" && (!el.src || el.src === "" || el.src.startsWith("placeholder"))) {
+              return true;
             }
           }
         }
-
-        return hasEmptyImage;
+        return false;
       });
     }
 
