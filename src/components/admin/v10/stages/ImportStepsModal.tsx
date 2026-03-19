@@ -193,7 +193,9 @@ export function ImportStepsModal({
 
     setIsImporting(true);
     try {
-      const steps = JSON.parse(jsonText) as any[];
+      const { parsed } = parseImportJson(jsonText);
+      if (!parsed) return;
+      const steps = parsed.steps;
 
       // 1. Delete existing steps for this lesson
       const { error: delError } = await supabase
