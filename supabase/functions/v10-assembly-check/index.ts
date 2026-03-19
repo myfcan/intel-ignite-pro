@@ -69,7 +69,8 @@ serve(async (req) => {
       supabase
         .from("v10_lesson_steps")
         .select("*")
-        .eq("lesson_id", lessonId),
+        .eq("lesson_id", lessonId)
+        .order("step_number", { ascending: true }),
 
       // Intro slides count
       supabase
