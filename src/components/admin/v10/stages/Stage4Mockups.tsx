@@ -93,14 +93,30 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
   const handleReferoSearch = async () => {
     setSearchingRefero(true);
     try {
-      const { data, error } = await supabase.functions.invoke('v10-refero-search', {
-        body: { action: 'search_screens', query: pipeline.title, limit: 20 },
-      });
-      if (error) throw error;
-      const result = data as { screens: typeof referoScreens; total: number };
-      setReferoScreens(result.screens ?? []);
+      // Extrair app_names únicos dos steps — busca por app, não pelo título genérico
+      const appNames = [...new Set(
+        steps.map(s => s.app_name).filter(Boolean)
+      )] as string[];
+
+      if (appNames.length === 0) {
+        toast.warning('Nenhum app_name encontrado nos passos. Defina app_name nos steps primeiro.');
+        setSearchingRefero(false);
+        return;
+      }
+
+      const allScreens: typeof referoScreens = [];
+      for (const appName of appNames) {
+        const { data, error } = await supabase.functions.invoke('v10-refero-search', {
+          body: { action: 'search_screens', query: appName, limit: 10 },
+        });
+        if (!error && data?.screens) {
+          allScreens.push(...data.screens);
+        }
+      }
+
+      setReferoScreens(allScreens);
       setShowReferoResults(true);
-      toast.success(`Refero: ${result.total ?? 0} telas encontradas`);
+      toast.success(`Refero: ${allScreens.length} telas de ${appNames.join(', ')}`);
     } catch {
       toast.error('Erro ao buscar no Refero');
     } finally {
@@ -254,7 +270,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">Nenhum screenshot encontrado para "{pipeline.title}".</p>
+              <p className="text-xs text-muted-foreground">Nenhum screenshot encontrado para "{[...new Set(steps.map(s => s.app_name).filter(Boolean))].join(', ') || pipeline.title}".</p>
             )
           )}
           {!showReferoResults && (
