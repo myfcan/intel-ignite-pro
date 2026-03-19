@@ -147,13 +147,13 @@ serve(async (req) => {
         );
       });
 
-    // Mockups: ALWAYS verify real mockup_url on every frame — never trust counters
+    // Mockups: verify frames have sufficient elements (≥3) — mockups are React components, not images
     const mockups_ok =
       steps.length > 0 &&
       steps.every((s: Record<string, unknown>) => {
         const frames = s.frames as any[];
         if (!frames || !Array.isArray(frames) || frames.length === 0) return false;
-        return frames.every((f: any) => f.mockup_url && f.mockup_url !== "");
+        return frames.every((f: any) => f.elements && Array.isArray(f.elements) && f.elements.length >= 3);
       });
 
     // Audios: ALWAYS verify real audio_url on every step — never trust counters

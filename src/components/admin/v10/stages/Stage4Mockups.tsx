@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Layout, CheckCircle2, Save, Calculator, Upload, ChevronDown, ChevronUp, ImageIcon, AlertTriangle, Trash2, Search, Monitor, Loader2, Sparkles } from 'lucide-react';
+import { Layout, CheckCircle2, Save, Calculator, ChevronDown, ChevronUp, ImageIcon, AlertTriangle, Search, Monitor, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
+import FrameRenderer from '@/components/lessons/v10/PartB/FrameRenderer';
 
 interface Stage4MockupsProps {
   pipeline: V10BpaPipeline;
@@ -22,12 +23,11 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
   const [steps, setSteps] = useState<V10LessonStep[]>([]);
   const [loadingSteps, setLoadingSteps] = useState(false);
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
-  const [uploading, setUploading] = useState<string | null>(null);
   const [searchingRefero, setSearchingRefero] = useState(false);
   const [referoScreens, setReferoScreens] = useState<Array<{ id: string; screen_name?: string; app_name?: string; thumbnail_url?: string; url?: string }>>([]);
   const [showReferoResults, setShowReferoResults] = useState(false);
   const [generatingMockups, setGeneratingMockups] = useState(false);
-  const [nextBatchIndex, setNextBatchIndex] = useState(0);
+  const [mockupProgress, setMockupProgress] = useState<{ current: number; total: number } | null>(null);
 
   const progressPercent = mockupsTotal > 0
     ? Math.round((mockupsApproved / mockupsTotal) * 100)
@@ -54,8 +54,13 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
       });
   }, [pipeline.lesson_id]);
 
-  // Count frames across all steps (= mockups needed)
+  // Count frames across all steps
   const totalFrames = steps.reduce((sum, s) => sum + (s.frames?.length || 0), 0);
+
+  // Count enriched frames
+  const enrichedFrames = steps.reduce((sum, s) => {
+    return sum + (s.frames?.filter((f: any) => f.enriched === true || (f.elements && f.elements.length >= 3)).length || 0);
+  }, 0);
 
   const handleAutoCalc = () => {
     setMockupsTotal(totalFrames);
@@ -84,163 +89,87 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
     toast.info('Todos os mockups foram marcados como aprovados. Clique em Salvar para confirmar.');
   };
 
-  // Upload a mockup screenshot for a specific step frame
-  const handleUploadMockup = useCallback(async (step: V10LessonStep, frameIndex: number, file: File) => {
-    if (!pipeline.lesson_id) return;
-
-    setUploading(`${step.id}-${frameIndex}`);
-    try {
-      const ext = file.name.split('.').pop() || 'png';
-      const storagePath = `v10/${pipeline.lesson_id}/mockups/step_${step.step_number}_frame_${frameIndex}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('lesson-images')
-        .upload(storagePath, file, {
-          contentType: file.type,
-          upsert: true,
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('lesson-images')
-        .getPublicUrl(storagePath);
-
-      // Update the frame's mockup_url in the step's frames array
-      const updatedFrames = [...step.frames];
-      if (updatedFrames[frameIndex]) {
-        (updatedFrames[frameIndex] as any).mockup_url = urlData.publicUrl;
-      }
-
-      const { error: updateError } = await supabase
-        .from('v10_lesson_steps')
-        .update({ frames: updatedFrames as any })
-        .eq('id', step.id);
-
-      if (updateError) throw updateError;
-
-      // Update local state
-      setSteps(prev => prev.map(s =>
-        s.id === step.id ? { ...s, frames: updatedFrames } : s
-      ));
-
-      setMockupsFromRefero(prev => prev + 1);
-      toast.success(`Mockup enviado: Passo ${step.step_number}, Frame ${frameIndex + 1}`);
-    } catch (err: any) {
-      toast.error(`Erro no upload: ${err.message}`);
-    } finally {
-      setUploading(null);
-    }
-  }, [pipeline.lesson_id]);
-
-  // Delete a mockup from a specific frame
-  const handleDeleteMockup = useCallback(async (step: V10LessonStep, frameIndex: number) => {
-    if (!confirm('Remover este mockup?')) return;
-
-    const updatedFrames = [...step.frames];
-    if (updatedFrames[frameIndex]) {
-      (updatedFrames[frameIndex] as any).mockup_url = null;
-    }
-
-    const { error } = await supabase
-      .from('v10_lesson_steps')
-      .update({ frames: updatedFrames as any })
-      .eq('id', step.id);
-
-    if (error) {
-      toast.error('Erro ao remover mockup');
-      return;
-    }
-
-    setSteps(prev => prev.map(s =>
-      s.id === step.id ? { ...s, frames: updatedFrames } : s
-    ));
-
-    setMockupsFromRefero(prev => Math.max(0, prev - 1));
-    toast.success('Mockup removido');
-  }, []);
-
   // Search Refero for reference screenshots
-  const handleReferoSearch = useCallback(async () => {
+  const handleReferoSearch = async () => {
     setSearchingRefero(true);
     try {
-      const { data, error } = await supabase.functions.invoke('v10-refero-search', {
-        body: { action: 'search_screens', query: pipeline.title, limit: 20 },
-      });
-      if (error) throw error;
-      const result = data as { screens: typeof referoScreens; total: number };
-      setReferoScreens(result.screens ?? []);
+      // Extrair app_names únicos dos steps — busca por app, não pelo título genérico
+      const appNames = [...new Set(
+        steps.map(s => s.app_name).filter(Boolean)
+      )] as string[];
+
+      if (appNames.length === 0) {
+        toast.warning('Nenhum app_name encontrado nos passos. Defina app_name nos steps primeiro.');
+        setSearchingRefero(false);
+        return;
+      }
+
+      const allScreens: typeof referoScreens = [];
+      for (const appName of appNames) {
+        const { data, error } = await supabase.functions.invoke('v10-refero-search', {
+          body: { action: 'search_screens', query: appName, limit: 10 },
+        });
+        if (!error && data?.screens) {
+          allScreens.push(...data.screens);
+        }
+      }
+
+      setReferoScreens(allScreens);
       setShowReferoResults(true);
-      toast.success(`Refero: ${result.total ?? 0} telas encontradas`);
+      toast.success(`Refero: ${allScreens.length} telas de ${appNames.join(', ')}`);
     } catch {
       toast.error('Erro ao buscar no Refero');
     } finally {
       setSearchingRefero(false);
     }
-  }, [pipeline.title]);
+  };
 
-  // Import a Refero screenshot as mockup_url for a frame
-  const handleImportReferoScreen = useCallback(async (step: V10LessonStep, frameIndex: number, screenUrl: string) => {
-    const updatedFrames = [...step.frames];
-    if (updatedFrames[frameIndex]) {
-      (updatedFrames[frameIndex] as any).mockup_url = screenUrl;
-    }
-
-    const { error } = await supabase
-      .from('v10_lesson_steps')
-      .update({ frames: updatedFrames as any })
-      .eq('id', step.id);
-
-    if (error) {
-      toast.error('Erro ao importar screenshot do Refero');
-      return;
-    }
-
-    setSteps(prev => prev.map(s =>
-      s.id === step.id ? { ...s, frames: updatedFrames } : s
-    ));
-    setMockupsFromRefero(prev => prev + 1);
-    toast.success(`Screenshot do Refero importado para Passo ${step.step_number}, Frame ${frameIndex + 1}`);
-  }, []);
-
-  // Generate mockups via AI (v10-generate-mockups edge function)
+  // Enrich frames via AI — auto-loop through all batches
   const handleGenerateMockups = async () => {
     if (!pipeline.lesson_id) {
       toast.error('Vincule uma aula primeiro (Etapa 2)');
       return;
     }
     setGeneratingMockups(true);
+    setMockupProgress({ current: 0, total: totalFrames });
+
+    let batchIdx = 0;
+    let totalEnriched = 0;
+
     try {
-      const { data, error } = await supabase.functions.invoke('v10-enrich-frames', {
-        body: { pipeline_id: pipeline.id, batch_size: 3, batch_index: nextBatchIndex },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      while (true) {
+        const { data, error } = await supabase.functions.invoke('v10-enrich-frames', {
+          body: { pipeline_id: pipeline.id, batch_size: 5, batch_index: batchIdx },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
 
-      if (data) {
-        const successCount = data.success ?? 0;
-        const hasMore = data.hasMoreBatches ?? false;
+        const successCount = data?.success ?? 0;
+        const hasMore = data?.hasMoreBatches ?? false;
+        totalEnriched += successCount;
 
-        if (hasMore) {
-          setNextBatchIndex(prev => prev + 1);
-          toast.success(`${successCount} mockups gerados! Clique novamente para o próximo lote (batch ${nextBatchIndex + 2}).`);
-        } else {
-          setNextBatchIndex(0);
-          toast.success(`${successCount} mockups gerados! Todos os lotes concluídos.`);
+        setMockupProgress({ current: totalEnriched, total: data?.total ?? totalFrames });
+
+        if (!hasMore || successCount === 0) {
+          toast.success(`${totalEnriched} frames enriquecidos! Todos os lotes concluídos.`);
+          break;
         }
 
-        // Refresh steps to show new mockup_urls
-        const { data: freshSteps } = await supabase
-          .from('v10_lesson_steps')
-          .select('*')
-          .eq('lesson_id', pipeline.lesson_id as string)
-          .order('step_number', { ascending: true });
-        if (freshSteps) setSteps(freshSteps as unknown as V10LessonStep[]);
+        batchIdx++;
       }
+
+      // Refresh steps to show enriched frames
+      const { data: freshSteps } = await supabase
+        .from('v10_lesson_steps')
+        .select('*')
+        .eq('lesson_id', pipeline.lesson_id as string)
+        .order('step_number', { ascending: true });
+      if (freshSteps) setSteps(freshSteps as unknown as V10LessonStep[]);
     } catch (err) {
-      toast.error(`Erro ao gerar mockups: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+      toast.error(`Erro ao enriquecer frames (batch ${batchIdx + 1}): ${err instanceof Error ? err.message : 'erro desconhecido'}`);
     } finally {
       setGeneratingMockups(false);
+      setMockupProgress(null);
     }
   };
 
@@ -249,7 +178,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Layout className="h-5 w-5 text-indigo-500" />
-          Etapa 3 — Mockups
+          Etapa 3 — Mockups (Enriquecimento de Frames)
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -265,22 +194,22 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
         <div className="space-y-1">
           <div className="flex items-center justify-between text-sm font-medium">
             <span>Progresso</span>
-            <span>{progressPercent}%</span>
+            <span>{totalFrames > 0 ? Math.round((enrichedFrames / totalFrames) * 100) : 0}%</span>
           </div>
           <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className={`h-full rounded-full transition-all ${barColor}`}
-              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+              className={`h-full rounded-full transition-all ${enrichedFrames >= totalFrames && totalFrames > 0 ? 'bg-green-500' : enrichedFrames > 0 ? 'bg-yellow-500' : 'bg-red-500'}`}
+              style={{ width: `${totalFrames > 0 ? Math.min(100, Math.round((enrichedFrames / totalFrames) * 100)) : 0}%` }}
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            {mockupsApproved} aprovados de {mockupsTotal} total
+            {enrichedFrames} enriquecidos de {totalFrames} frames totais
           </p>
         </div>
 
         {/* Breakdown summary */}
         <div className="rounded-md border bg-gradient-to-r from-indigo-50 to-violet-50 px-4 py-2 text-sm font-medium text-indigo-800">
-          Refero: {mockupsFromRefero} | Genéricos: {mockupsGeneric} | Total: {mockupsTotal}
+          Enriquecidos: {enrichedFrames} | Total: {totalFrames} | Aprovados: {mockupsApproved}
         </div>
 
         {/* Metric cards */}
@@ -303,12 +232,12 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
           </div>
         </div>
 
-        {/* Refero screenshot search */}
+        {/* Refero screenshot search — reference only */}
         <div className="rounded-lg border bg-gradient-to-r from-violet-50 to-indigo-50 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-indigo-800 flex items-center gap-2">
               <Monitor className="h-4 w-4" />
-              Refero — Screenshots Reais (126k+ telas)
+              Refero — Referência Visual (126k+ telas)
             </h4>
             <Button
               variant="outline"
@@ -324,7 +253,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
           {showReferoResults && (
             referoScreens.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-xs text-indigo-600">{referoScreens.length} screenshots encontrados. Clique em um frame expandido para importar.</p>
+                <p className="text-xs text-indigo-600">{referoScreens.length} screenshots encontrados como referência visual.</p>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto">
                   {referoScreens.map((screen, idx) => (
                     <div key={screen.id || idx} className="rounded border bg-white p-1 text-center">
@@ -341,29 +270,29 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">Nenhum screenshot encontrado para "{pipeline.title}".</p>
+              <p className="text-xs text-muted-foreground">Nenhum screenshot encontrado para "{[...new Set(steps.map(s => s.app_name).filter(Boolean))].join(', ') || pipeline.title}".</p>
             )
           )}
           {!showReferoResults && (
             <p className="text-xs text-muted-foreground">
-              Busque screenshots reais de interfaces no banco Refero para usar como referência nos mockups.
+              Busque screenshots reais no Refero como referência visual para os frames.
             </p>
           )}
         </div>
 
-        {/* Per-step mockup management */}
+        {/* Per-step frame management with FrameRenderer preview */}
         {!loadingSteps && steps.length > 0 && (
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <ImageIcon className="h-4 w-4 text-indigo-500" />
-              Mockups por Passo ({totalFrames} frames)
+              Frames por Passo ({totalFrames} frames — {enrichedFrames} enriquecidos)
             </h3>
 
             <div className="space-y-2">
               {steps.map((step) => {
                 const isExpanded = expandedStep === step.id;
                 const frameCount = step.frames?.length || 0;
-                const mockupCount = step.frames?.filter((f: any) => f.mockup_url).length || 0;
+                const enrichedCount = step.frames?.filter((f: any) => f.enriched === true || (f.elements && f.elements.length >= 3)).length || 0;
 
                 return (
                   <div key={step.id} className="rounded-lg border">
@@ -377,78 +306,41 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
                       </span>
                       <span className="flex-1 text-sm font-medium truncate">{step.title}</span>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{mockupCount}/{frameCount} mockups</span>
+                        <span className={enrichedCount === frameCount && frameCount > 0 ? 'text-green-600 font-medium' : ''}>
+                          {enrichedCount}/{frameCount} enriquecidos
+                        </span>
                         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </div>
                     </button>
 
                     {isExpanded && (
                       <div className="p-3 space-y-3">
-                        {step.frames?.map((frame: any, fi: number) => (
-                          <div key={fi} className="flex items-center gap-3 rounded border p-2">
-                            <div className="flex-1">
-                              <p className="text-xs font-medium">Frame {fi + 1}: {frame.bar_text || 'Sem título'}</p>
-                              {frame.mockup_url ? (
-                                <div className="mt-2">
-                                  <img
-                                    src={frame.mockup_url}
-                                    alt={`Mockup frame ${fi + 1}`}
-                                    className="h-20 rounded border object-cover"
-                                  />
+                        {step.frames?.map((frame: any, fi: number) => {
+                          const isEnriched = frame.enriched === true || (frame.elements && frame.elements.length >= 3);
+                          return (
+                            <div key={fi} className="rounded border p-2 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-medium">
+                                  Frame {fi + 1}: {frame.bar_text || 'Sem título'}
+                                  {isEnriched && <span className="ml-2 text-green-600">✓ Enriquecido</span>}
+                                </p>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {frame.elements?.length || 0} elements
+                                </span>
+                              </div>
+                              {/* FrameRenderer preview — scaled down */}
+                              {frame.elements && frame.elements.length > 0 ? (
+                                <div className="relative w-full overflow-hidden rounded border bg-white" style={{ height: '180px' }}>
+                                  <div className="origin-top-left" style={{ transform: 'scale(0.35)', width: `${100 / 0.35}%` }}>
+                                    <FrameRenderer frame={frame} accentColor={frame.bar_color || '#6366F1'} />
+                                  </div>
                                 </div>
                               ) : (
-                                <p className="text-xs text-muted-foreground mt-1">Sem mockup</p>
+                                <p className="text-xs text-muted-foreground">Sem elements — precisa enriquecimento</p>
                               )}
                             </div>
-                            <div className="flex gap-1">
-                              <label className="cursor-pointer">
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleUploadMockup(step, fi, file);
-                                  }}
-                                />
-                                <div className={`inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors hover:bg-muted ${
-                                  uploading === `${step.id}-${fi}` ? 'opacity-50' : ''
-                                }`}>
-                                  <Upload className="h-3 w-3" />
-                                  {frame.mockup_url ? 'Trocar' : 'Upload'}
-                                </div>
-                              </label>
-                              {referoScreens.length > 0 && !frame.mockup_url && (
-                                <select
-                                  className="rounded-md border px-2 py-1 text-xs max-w-[140px]"
-                                  defaultValue=""
-                                  onChange={(e) => {
-                                    if (e.target.value) {
-                                      handleImportReferoScreen(step, fi, e.target.value);
-                                      e.target.value = '';
-                                    }
-                                  }}
-                                >
-                                  <option value="" disabled>Refero...</option>
-                                  {referoScreens.filter(s => s.thumbnail_url || s.url).map((s, si) => (
-                                    <option key={s.id || si} value={s.thumbnail_url || s.url || ''}>
-                                      {s.screen_name || s.app_name || `Screen ${si + 1}`}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
-                              {frame.mockup_url && (
-                                <button
-                                  className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
-                                  onClick={() => handleDeleteMockup(step, fi)}
-                                  title="Remover mockup"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -461,19 +353,36 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
         {/* Action buttons */}
         <div className="flex flex-wrap gap-3">
           {pipeline.lesson_id && totalFrames > 0 && (
-            <Button
-              variant="outline"
-              className="min-h-[44px] bg-gradient-to-r from-violet-50 to-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-              onClick={handleGenerateMockups}
-              disabled={generatingMockups}
-            >
-              {generatingMockups ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                className="min-h-[44px] bg-gradient-to-r from-violet-50 to-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                onClick={handleGenerateMockups}
+                disabled={generatingMockups}
+              >
+                {generatingMockups ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                {generatingMockups && mockupProgress
+                  ? `Enriquecendo Frames... ${mockupProgress.current}/${mockupProgress.total}`
+                  : `Enriquecer Frames com IA (${totalFrames - enrichedFrames} pendentes)`}
+              </Button>
+              {generatingMockups && mockupProgress && mockupProgress.total > 0 && (
+                <div className="w-full">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.round((mockupProgress.current / mockupProgress.total) * 100))}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {Math.round((mockupProgress.current / mockupProgress.total) * 100)}% concluído
+                  </p>
+                </div>
               )}
-              {generatingMockups ? 'Enriquecendo Frames...' : `Enriquecer Frames com IA (${totalFrames} frames)`}
-            </Button>
+            </div>
           )}
 
           {totalFrames > 0 && (

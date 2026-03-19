@@ -357,7 +357,7 @@ Retorne APENAS o JSON array.`;
       console.error("Failed to create intro slides:", introError.message);
     }
 
-    // 11. Log to v10_bpa_pipeline_log
+    // 11. Log to v10_bpa_pipeline_log (includes C2/C3 fix counts for forensics)
     await supabase.from("v10_bpa_pipeline_log").insert({
       pipeline_id,
       stage: 2,
@@ -366,6 +366,8 @@ Retorne APENAS o JSON array.`;
         lesson_id,
         num_steps: steps.length,
         estimated_minutes: estimatedMinutes,
+        c2_fixes: c2Fixes,
+        c3_fixes: c3Fixes,
       },
     });
 

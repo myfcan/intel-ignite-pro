@@ -55,6 +55,7 @@ export interface ReferoFlowResult {
 }
 
 let _sessionId: string | null = null;
+let _toolsListed = false;
 
 async function initSession(): Promise<string | null> {
   if (_sessionId) return _sessionId;
@@ -66,6 +67,17 @@ async function initSession(): Promise<string | null> {
   }
 
   try {
+    const body = JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2024-11-05",
+        capabilities: {},
+        clientInfo: { name: "intel-ignite-pro", version: "1.0.0" },
+      },
+    });
+    console.log("[Refero] initSession request:", body);
     const response = await fetch(REFERO_MCP_URL, {
       method: "POST",
       headers: {
@@ -73,22 +85,41 @@ async function initSession(): Promise<string | null> {
         "Accept": "application/json, text/event-stream",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "initialize",
-        params: {
-          protocolVersion: "2024-11-05",
-          capabilities: {},
-          clientInfo: { name: "intel-ignite-pro", version: "1.0.0" },
-        },
-      }),
+      body,
     });
 
+    const responseText = await response.text();
+    console.log("[Refero] initSession status:", response.status, "body:", responseText.substring(0, 500));
     _sessionId = response.headers.get("mcp-session-id");
+    console.log("[Refero] sessionId:", _sessionId);
+
+    // List available tools on first init
+    if (!_toolsListed) {
+      const listHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+        Authorization: `Bearer ${apiKey}`,
+      };
+      if (_sessionId) listHeaders["mcp-session-id"] = _sessionId;
+
+      const listResp = await fetch(REFERO_MCP_URL, {
+        method: "POST",
+        headers: listHeaders,
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 2,
+          method: "tools/list",
+          params: {},
+        }),
+      });
+      const listText = await listResp.text();
+      console.log("[Refero] tools/list:", listText.substring(0, 2000));
+      _toolsListed = true;
+    }
+
     return _sessionId;
   } catch (err) {
-    console.error("Refero MCP init failed:", err);
+    console.error("[Refero] MCP init failed:", err);
     return null;
   }
 }
@@ -113,30 +144,35 @@ async function callTool(
   if (sessionId) headers["mcp-session-id"] = sessionId;
 
   try {
+    const body = JSON.stringify({
+      jsonrpc: "2.0",
+      id: Date.now(),
+      method: "tools/call",
+      params: {
+        name: toolName,
+        arguments: args,
+      },
+    });
+    console.log("[Refero] callTool request:", toolName, JSON.stringify(args));
     const response = await fetch(REFERO_MCP_URL, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: Date.now(),
-        method: "tools/call",
-        params: {
-          name: toolName,
-          arguments: args,
-        },
-      }),
+      body,
     });
 
+    const responseText = await response.text();
+    console.log("[Refero] callTool status:", response.status, "body:", responseText.substring(0, 1000));
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Refero MCP error (${response.status}):`, errorText);
+      console.error(`[Refero] MCP error (${response.status}):`, responseText);
       return null;
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
+    console.log("[Refero] callTool result keys:", data.result ? Object.keys(data.result) : "null");
     return data.result ?? null;
   } catch (err) {
-    console.error(`Refero MCP call '${toolName}' failed:`, err);
+    console.error(`[Refero] MCP call '${toolName}' failed:`, err);
     return null;
   }
 }
@@ -159,10 +195,11 @@ export async function searchScreens(
   query: string,
   limit = 10
 ): Promise<ReferoSearchResult> {
-  const result = await callTool("search_screens", { query, limit });
+  const result = await callTool("refero_search_screens", { query, limit, platform: "web" });
   const parsed = parseToolContent(result) as any;
 
-  if (!parsed || result?.isError) {
+  if (!parsed) {
+    console.warn("[Refero] searchScreens: no parsed content, isError:", result?.isError);
     return { screens: [], total: 0, query };
   }
 
@@ -171,11 +208,13 @@ export async function searchScreens(
     ? parsed
     : Array.isArray(parsed?.screens)
       ? parsed.screens
-      : [];
+      : Array.isArray(parsed?.records)
+        ? parsed.records
+        : [];
 
   return {
     screens: screens.slice(0, limit),
-    total: parsed?.total ?? screens.length,
+    total: parsed?.total_count ?? parsed?.total ?? screens.length,
     query,
   };
 }
@@ -187,10 +226,10 @@ export async function searchFlows(
   query: string,
   limit = 5
 ): Promise<ReferoFlowResult> {
-  const result = await callTool("search_flows", { query, limit });
+  const result = await callTool("refero_search_flows", { query, limit });
   const parsed = parseToolContent(result) as any;
 
-  if (!parsed || result?.isError) {
+  if (!parsed) {
     return { flows: [], total: 0, query };
   }
 
@@ -213,7 +252,7 @@ export async function searchFlows(
 export async function getScreen(
   screenId: string
 ): Promise<ReferoScreen | null> {
-  const result = await callTool("get_screen", { screen_id: screenId });
+  const result = await callTool("refero_get_screen", { screen_id: screenId });
   const parsed = parseToolContent(result) as any;
   return parsed ?? null;
 }
@@ -222,7 +261,7 @@ export async function getScreen(
  * Get full details for a specific flow
  */
 export async function getFlow(flowId: string): Promise<ReferoFlow | null> {
-  const result = await callTool("get_flow", { flow_id: flowId });
+  const result = await callTool("refero_get_flow", { flow_id: flowId });
   const parsed = parseToolContent(result) as any;
   return parsed ?? null;
 }
@@ -233,7 +272,7 @@ export async function getFlow(flowId: string): Promise<ReferoFlow | null> {
 export async function getDesignGuidance(
   topic: string
 ): Promise<string | null> {
-  const result = await callTool("get_design_guidance", { topic });
+  const result = await callTool("refero_get_design_guidance", { topic });
   const parsed = parseToolContent(result);
   return typeof parsed === "string" ? parsed : parsed ? JSON.stringify(parsed) : null;
 }
