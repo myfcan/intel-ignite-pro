@@ -946,7 +946,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
                   className="min-h-[44px] w-full"
                 >
                   {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  {generating ? 'Gerando passos...' : 'Gerar com IA (10 passos)'}
+                  {generating ? 'Gerando passos...' : 'Gerar com IA'}
                 </Button>
               </div>
             )}
