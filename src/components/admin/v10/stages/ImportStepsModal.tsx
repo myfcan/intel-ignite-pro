@@ -217,7 +217,127 @@ export function ImportStepsModal({
         },
       });
 
-      toast.success(`✅ ${steps.length} passos importados! (${validation.framesCount} frames)`);
+      // 5. Auto-fix C2/C3 on imported steps
+      let c2Fixed = 0;
+      let c3Fixed = 0;
+      const TECH_TERMS: Record<string, string> = {
+        "api": "Interface que permite dois softwares se comunicarem automaticamente",
+        "webhook": "URL que recebe dados automaticamente quando um evento acontece",
+        "endpoint": "Endereço (URL) específico onde uma API recebe requisições",
+        "oauth": "Protocolo de autorização que permite login seguro sem compartilhar senha",
+        "token": "Código temporário usado para autenticar acessos a um serviço",
+        "dashboard": "Painel de controle visual com métricas e ações principais",
+        "workflow": "Sequência automatizada de tarefas que executa em ordem",
+        "trigger": "Evento que dispara uma automação automaticamente",
+        "pipeline": "Sequência de etapas de processamento de dados em ordem",
+        "prompt": "Instrução de texto enviada para uma IA gerar uma resposta",
+        "template": "Modelo pré-pronto que serve como base para criar algo novo",
+        "scenario": "Automação no Make.com que conecta apps com regras definidas",
+        "module": "Bloco funcional dentro de uma automação que executa uma tarefa",
+        "gpt": "Modelo de linguagem da OpenAI usado para gerar texto",
+        "calendly": "Ferramenta de agendamento online que sincroniza com seu calendário",
+        "make": "Plataforma de automação visual que conecta apps (antigo Integromat)",
+        "zapier": "Plataforma de automação que conecta apps sem código",
+        "chatbot": "Bot conversacional que responde perguntas automaticamente",
+        "ai": "Inteligência Artificial — sistema que simula raciocínio humano",
+        "crm": "Sistema para gerenciar relacionamento com clientes",
+        "lead": "Potencial cliente que demonstrou interesse no produto/serviço",
+        "mcp": "Protocolo que conecta IA a apps externos — como um tradutor universal",
+        "chatgpt": "Assistente de IA da OpenAI baseado no modelo GPT",
+        "event type": "Modelo de reunião no Calendly — define duração e disponibilidade",
+        "single-use link": "Link de agendamento que funciona uma vez só — depois expira",
+      };
+
+      // Fetch inserted steps
+      const { data: insertedSteps } = await supabase
+        .from('v10_lesson_steps')
+        .select('id, title, description, frames')
+        .eq('lesson_id', lessonId)
+        .order('step_number');
+
+      if (insertedSteps) {
+        for (const step of insertedSteps) {
+          const desc = (step.description || '').toLowerCase();
+          const title = (step.title || '').toLowerCase();
+          const combinedText = `${title} ${desc}`;
+          const frames = [...((step.frames as any[]) || [])] as any[];
+          const allElements = frames.flatMap((f: any) => f.elements || []);
+          let modified = false;
+
+          // C2: inject tooltip_term if missing
+          const hasTooltip = allElements.some((el: any) => el.type === 'tooltip_term');
+          if (!hasTooltip && frames.length > 0) {
+            const matched: Array<{ term: string; def: string }> = [];
+            for (const [term, def] of Object.entries(TECH_TERMS)) {
+              const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+              if (re.test(combinedText)) {
+                matched.push({ term: term.charAt(0).toUpperCase() + term.slice(1), def });
+                if (matched.length >= 2) break;
+              }
+            }
+            if (matched.length === 0) {
+              const caps = (step.description || '').match(/\b[A-Z][a-zA-Z]{2,}\b/g);
+              const skip = new Set(['Voce','Esse','Este','Esta','Essa','Aqui','Agora','Depois','Antes','Clique','Acesse','Configure','Crie','Abra','Vamos','Nesse','Nesta','Para','Como','Quando','Onde','Qual','Cada','Todo','Toda','Todos','Pule','Seus']);
+              if (caps) {
+                for (const w of caps) {
+                  if (!skip.has(w) && w.length >= 3) {
+                    matched.push({ term: w, def: 'Funcionalidade ou conceito utilizado neste passo' });
+                    break;
+                  }
+                }
+              }
+            }
+            if (matched.length > 0) {
+              if (!frames[0].elements) frames[0].elements = [];
+              for (const m of matched) {
+                frames[0].elements.push({ type: 'tooltip_term', term: m.term, tip: m.def });
+              }
+              modified = true;
+              c2Fixed++;
+            }
+          }
+
+          // C3: inject nav_breadcrumb if bar_sub changes
+          const hasBreadcrumb = allElements.some((el: any) => el.type === 'nav_breadcrumb');
+          const barSubs = frames.map((f: any) => f.bar_sub).filter(Boolean);
+          const barSubChanges = new Set(barSubs).size > 1;
+          if (barSubChanges && !hasBreadcrumb) {
+            for (let fi = 1; fi < frames.length; fi++) {
+              const prev = frames[fi - 1].bar_sub;
+              const curr = frames[fi].bar_sub;
+              if (curr && prev && curr !== prev) {
+                if (!frames[fi].elements) frames[fi].elements = [];
+                frames[fi].elements.unshift({
+                  type: 'nav_breadcrumb',
+                  from: prev,
+                  to: curr,
+                  how: `${prev} → ${curr}`,
+                });
+              }
+            }
+            modified = true;
+            c3Fixed++;
+          }
+
+          if (modified) {
+            await supabase
+              .from('v10_lesson_steps')
+              .update({ frames } as any)
+              .eq('id', step.id);
+          }
+        }
+      }
+
+      if (c2Fixed > 0 || c3Fixed > 0) {
+        await supabase.from('v10_bpa_pipeline_log').insert({
+          pipeline_id: pipelineId,
+          stage: 2,
+          action: 'auto_c2c3_fix_on_import',
+          details: { c2_fixed: c2Fixed, c3_fixed: c3Fixed },
+        });
+      }
+
+      toast.success(`✅ ${steps.length} passos importados! C2/C3 auto-corrigidos (${c2Fixed}+${c3Fixed})`);
       onSuccess();
       onClose();
     } catch (e) {
