@@ -459,8 +459,8 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
             Salvar Checklist
           </Button>
 
-          {/* Fix missing metadata/intro slides */}
-          {(!checklist.intro_slides_ok || !checklist.metadata_ok) && (
+          {/* Fix all auto-fixable issues */}
+          {!allPassed && (
             <Button
               variant="outline"
               onClick={handleFixMissing}
@@ -472,7 +472,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
               ) : (
                 <Wrench className="mr-2 h-4 w-4" />
               )}
-              {fixing ? 'Corrigindo...' : 'Corrigir Pendências (Metadados + Intro Slides)'}
+              {fixing ? 'Corrigindo tudo...' : 'Corrigir Todas as Pendências'}
             </Button>
           )}
         </div>
