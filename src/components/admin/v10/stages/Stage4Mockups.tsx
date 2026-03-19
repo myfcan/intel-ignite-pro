@@ -471,19 +471,36 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
         {/* Action buttons */}
         <div className="flex flex-wrap gap-3">
           {pipeline.lesson_id && totalFrames > 0 && (
-            <Button
-              variant="outline"
-              className="min-h-[44px] bg-gradient-to-r from-violet-50 to-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-              onClick={handleGenerateMockups}
-              disabled={generatingMockups}
-            >
-              {generatingMockups ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                className="min-h-[44px] bg-gradient-to-r from-violet-50 to-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                onClick={handleGenerateMockups}
+                disabled={generatingMockups}
+              >
+                {generatingMockups ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                {generatingMockups && mockupProgress
+                  ? `Gerando Mockups... ${mockupProgress.current}/${mockupProgress.total}`
+                  : `Gerar Mockups com IA (${totalFrames} frames)`}
+              </Button>
+              {generatingMockups && mockupProgress && mockupProgress.total > 0 && (
+                <div className="w-full">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.round((mockupProgress.current / mockupProgress.total) * 100))}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {Math.round((mockupProgress.current / mockupProgress.total) * 100)}% concluído
+                  </p>
+                </div>
               )}
-              {generatingMockups ? 'Gerando Mockups...' : `Gerar Mockups com IA (${totalFrames} frames)`}
-            </Button>
+            </div>
           )}
 
           {totalFrames > 0 && (
