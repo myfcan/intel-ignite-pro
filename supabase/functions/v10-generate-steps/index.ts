@@ -235,7 +235,7 @@ Retorne APENAS o JSON array.`;
       const progressPercent = Math.round((100 / steps.length) * (i + 1));
 
       // Sanitize phase: convert string labels to integer (1-3)
-      let phase = step.phase;
+      let phase = step.phase_number ?? step.phase;
       if (typeof phase === "string") {
         phase = PHASE_MAP[phase.toLowerCase().trim()] ?? 1;
         console.warn(`[v10-generate-steps] Step "${step.title}" had string phase "${step.phase}" → mapped to ${phase}`);
