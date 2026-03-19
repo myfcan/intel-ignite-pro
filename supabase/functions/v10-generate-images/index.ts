@@ -216,8 +216,15 @@ serve(async (req: Request) => {
       }
       console.log(`[v10-generate-images] Targeted mode: ${stepsToProcess.length} steps from step_ids=[${step_ids.join(",")}]`);
     } else {
-      // Process ALL steps: inject image element if missing, then filter for empty src
+      // SELECTIVE INJECTION: only inject image element into first step (intro) and last step (celebration)
+      const totalSteps = steps.length;
       for (const step of steps) {
+        const stepNum = (step as any).step_number;
+        const isFirst = stepNum === 1;
+        const isLast = stepNum === totalSteps;
+
+        if (!isFirst && !isLast) continue; // skip middle steps — they use JSON mockups only
+
         const frames = (step as any).frames;
         if (!frames || !Array.isArray(frames) || frames.length === 0) continue;
 
@@ -245,7 +252,7 @@ serve(async (req: Request) => {
             width: 1024,
             height: 576,
           });
-          console.log(`[v10-generate-images] Injected image element into step ${(step as any).step_number}`);
+          console.log(`[v10-generate-images] Injected image element into step ${stepNum} (${isFirst ? 'intro' : 'celebration'})`);
         }
       }
 
