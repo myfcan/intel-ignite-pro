@@ -68,6 +68,8 @@ serve(async (req) => {
           tools: [],
           xp_reward: 0,
           order_in_trail: 0,
+          ...(trail_id ? { trail_id } : {}),
+          ...(course_id ? { course_id } : {}),
         })
         .select("id")
         .single();

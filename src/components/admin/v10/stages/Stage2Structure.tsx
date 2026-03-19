@@ -604,298 +604,300 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     }
   };
 
-  if (!pipeline.lesson_id) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Etapa 2 — Estrutura de Passos</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3 rounded-lg border border-dashed p-6">
-            <AlertCircle className="h-5 w-5 text-muted-foreground" />
-            <p className="text-muted-foreground">
-              Nenhuma aula vinculada ao pipeline
-            </p>
-          </div>
-
-          {/* Trail/Course selectors */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Trilha (N1)</Label>
-              <Select value={selectedTrailId} onValueChange={(val) => { setSelectedTrailId(val); setSelectedCourseId(''); }}>
-                <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
-                <SelectContent>
-                  {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedTrailId && (
-              <div className="space-y-2">
-                <Label>Jornada (N2)</Label>
-                <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione uma jornada" /></SelectTrigger>
-                  <SelectContent>
-                    {courses.filter(c => c.trail_id === selectedTrailId).map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              onClick={handleCreateLesson}
-              disabled={creatingLesson}
-              className="min-h-[44px]"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {creatingLesson ? 'Criando...' : 'Criar Aula'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowInstructionsModal(true)}
-              disabled={generating}
-              className="min-h-[44px]"
-            >
-              {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {generating ? 'Gerando...' : 'Criar Aula + Gerar com IA'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Etapa 2 — Estrutura de Passos</CardTitle>
-          <div className="flex items-center gap-3">
-            {pipeline.lesson_type && (
-              <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 border-indigo-200">
-                {LESSON_TYPE_LABELS[pipeline.lesson_type] || pipeline.lesson_type}
-              </span>
-            )}
-            <span className="text-sm text-muted-foreground">
-              {pipeline.steps_generated} passos gerados
-              {pipeline.steps_audited > 0 && ` / ${pipeline.steps_audited} auditados`}
-            </span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Steps list */}
-        {loading ? (
-          <p className="text-muted-foreground text-sm">Carregando passos...</p>
-        ) : steps.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Nenhum passo criado ainda.</p>
-        ) : (
-          <div className="space-y-2">
-            {steps.map((step) => (
-              <div
-                key={step.id}
-                className={`flex items-center justify-between rounded-lg border border-l-4 ${PHASE_BORDER_COLORS[step.phase]} p-3`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-sm font-semibold">
-                    {step.step_number}
-                  </span>
-                  <div>
-                    <p className="font-medium text-sm">{step.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${PHASE_COLORS[step.phase]}`}>
-                        {PHASE_LABELS[step.phase]}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {step.duration_seconds}s
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {step.frames.length} frame{step.frames.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteStep(step.id)}
-                  disabled={deletingId === step.id}
-                  className="min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Add step form */}
-        {showForm ? (
-          <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-            <p className="font-medium text-sm">Novo Passo (#{steps.length + 1})</p>
-
-            <div className="space-y-2">
-              <Label htmlFor="step-title">Título</Label>
-              <Input
-                id="step-title"
-                placeholder="Ex: Configurar variáveis de ambiente"
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              />
+    <>
+      {!pipeline.lesson_id ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Etapa 2 — Estrutura de Passos</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3 rounded-lg border border-dashed p-6">
+              <AlertCircle className="h-5 w-5 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                Nenhuma aula vinculada ao pipeline
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="step-description">Descrição</Label>
-              <Textarea
-                id="step-description"
-                placeholder="Descrição do passo (opcional)"
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                rows={2}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            {/* Trail/Course selectors */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="step-phase">Fase</Label>
-                <Select
-                  value={String(form.phase)}
-                  onValueChange={(val) => setForm((f) => ({ ...f, phase: Number(val) as 1 | 2 | 3 }))}
-                >
-                  <SelectTrigger id="step-phase">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Label>Trilha (N1)</Label>
+                <Select value={selectedTrailId} onValueChange={(val) => { setSelectedTrailId(val); setSelectedCourseId(''); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma trilha" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1 — Setup</SelectItem>
-                    <SelectItem value="2">2 — Construção</SelectItem>
-                    <SelectItem value="3">3 — Teste</SelectItem>
+                    {trails.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="step-duration">Duração (segundos)</Label>
-                <Input
-                  id="step-duration"
-                  type="number"
-                  min={1}
-                  value={form.duration_seconds}
-                  onChange={(e) => setForm((f) => ({ ...f, duration_seconds: Number(e.target.value) || 30 }))}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="step-app">App Name</Label>
-              <Input
-                id="step-app"
-                placeholder="Ex: VS Code, Terminal, Chrome"
-                value={form.app_name}
-                onChange={(e) => setForm((f) => ({ ...f, app_name: e.target.value }))}
-              />
+              {selectedTrailId && (
+                <div className="space-y-2">
+                  <Label>Jornada (N2)</Label>
+                  <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione uma jornada" /></SelectTrigger>
+                    <SelectContent>
+                      {courses.filter(c => c.trail_id === selectedTrailId).map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddStep} className="min-h-[44px]">
+              <Button
+                onClick={handleCreateLesson}
+                disabled={creatingLesson}
+                className="min-h-[44px]"
+              >
                 <Plus className="mr-2 h-4 w-4" />
-                Adicionar
+                {creatingLesson ? 'Criando...' : 'Criar Aula'}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => {
-                  setShowForm(false);
-                  setForm({ ...INITIAL_FORM });
-                }}
+                onClick={() => setShowInstructionsModal(true)}
+                disabled={generating}
                 className="min-h-[44px]"
               >
-                Cancelar
+                {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                {generating ? 'Gerando...' : 'Criar Aula + Gerar com IA'}
               </Button>
             </div>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowForm(true)}
-              className="min-h-[44px] w-full"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar Passo
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowInstructionsModal(true)}
-              disabled={generating || !pipeline.lesson_id}
-              className="min-h-[44px] w-full"
-            >
-              {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {generating ? 'Gerando passos...' : 'Gerar com IA (10 passos)'}
-            </Button>
-            <GenerateWithInstructionsModal
-              open={showInstructionsModal}
-              onClose={() => setShowInstructionsModal(false)}
-              onGenerate={async (instructions) => {
-                await handleGenerateWithAI(instructions);
-                setShowInstructionsModal(false);
-              }}
-              isLoading={generating}
-            />
-          </div>
-        )}
-
-        {/* Fix C2/C3 retroactive button */}
-        {steps.length > 0 && !pipeline.audit_passed && (
-          <Button
-            onClick={handleFixC2C3}
-            disabled={fixingC2C3}
-            variant="outline"
-            className="min-h-[44px] w-full"
-          >
-            {fixingC2C3 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {fixingC2C3 ? 'Corrigindo C2/C3...' : 'Corrigir C2/C3 (tooltip + breadcrumb)'}
-          </Button>
-        )}
-
-        {/* Audit button */}
-        {steps.length > 0 && (
-          <Button
-            onClick={handleAudit}
-            disabled={auditing}
-            className="min-h-[44px] w-full"
-            variant={pipeline.audit_passed ? 'outline' : 'default'}
-          >
-            <CheckCircle className="mr-2 h-4 w-4" />
-            {auditing
-              ? 'Auditando...'
-              : pipeline.audit_passed
-                ? 'Re-auditar Estrutura'
-                : 'Auditar Estrutura'}
-          </Button>
-        )}
-
-        {/* Delete lesson */}
-        <div className="border-t pt-4 mt-4">
-          <Button
-            variant="outline"
-            onClick={handleDeleteLesson}
-            disabled={deletingLesson}
-            className="min-h-[44px] w-full text-destructive border-destructive/30 hover:bg-destructive/10"
-          >
-            {deletingLesson ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Etapa 2 — Estrutura de Passos</CardTitle>
+              <div className="flex items-center gap-3">
+                {pipeline.lesson_type && (
+                  <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 border-indigo-200">
+                    {LESSON_TYPE_LABELS[pipeline.lesson_type] || pipeline.lesson_type}
+                  </span>
+                )}
+                <span className="text-sm text-muted-foreground">
+                  {pipeline.steps_generated} passos gerados
+                  {pipeline.steps_audited > 0 && ` / ${pipeline.steps_audited} auditados`}
+                </span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Steps list */}
+            {loading ? (
+              <p className="text-muted-foreground text-sm">Carregando passos...</p>
+            ) : steps.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Nenhum passo criado ainda.</p>
             ) : (
-              <AlertTriangle className="mr-2 h-4 w-4" />
+              <div className="space-y-2">
+                {steps.map((step) => (
+                  <div
+                    key={step.id}
+                    className={`flex items-center justify-between rounded-lg border border-l-4 ${PHASE_BORDER_COLORS[step.phase]} p-3`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-sm font-semibold">
+                        {step.step_number}
+                      </span>
+                      <div>
+                        <p className="font-medium text-sm">{step.title}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${PHASE_COLORS[step.phase]}`}>
+                            {PHASE_LABELS[step.phase]}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {step.duration_seconds}s
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {step.frames.length} frame{step.frames.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteStep(step.id)}
+                      disabled={deletingId === step.id}
+                      className="min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             )}
-            {deletingLesson ? 'Excluindo aula...' : 'Excluir Aula e Resetar Pipeline'}
-          </Button>
-          <p className="text-xs text-muted-foreground mt-1 text-center">
-            Remove a aula, todos os passos, narrações e áudios vinculados
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+
+            {/* Add step form */}
+            {showForm ? (
+              <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                <p className="font-medium text-sm">Novo Passo (#{steps.length + 1})</p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="step-title">Título</Label>
+                  <Input
+                    id="step-title"
+                    placeholder="Ex: Configurar variáveis de ambiente"
+                    value={form.title}
+                    onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="step-description">Descrição</Label>
+                  <Textarea
+                    id="step-description"
+                    placeholder="Descrição do passo (opcional)"
+                    value={form.description}
+                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="step-phase">Fase</Label>
+                    <Select
+                      value={String(form.phase)}
+                      onValueChange={(val) => setForm((f) => ({ ...f, phase: Number(val) as 1 | 2 | 3 }))}
+                    >
+                      <SelectTrigger id="step-phase">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 — Setup</SelectItem>
+                        <SelectItem value="2">2 — Construção</SelectItem>
+                        <SelectItem value="3">3 — Teste</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="step-duration">Duração (segundos)</Label>
+                    <Input
+                      id="step-duration"
+                      type="number"
+                      min={1}
+                      value={form.duration_seconds}
+                      onChange={(e) => setForm((f) => ({ ...f, duration_seconds: Number(e.target.value) || 30 }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="step-app">App Name</Label>
+                  <Input
+                    id="step-app"
+                    placeholder="Ex: VS Code, Terminal, Chrome"
+                    value={form.app_name}
+                    onChange={(e) => setForm((f) => ({ ...f, app_name: e.target.value }))}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleAddStep} className="min-h-[44px]">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowForm(false);
+                      setForm({ ...INITIAL_FORM });
+                    }}
+                    className="min-h-[44px]"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowForm(true)}
+                  className="min-h-[44px] w-full"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Passo
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowInstructionsModal(true)}
+                  disabled={generating || !pipeline.lesson_id}
+                  className="min-h-[44px] w-full"
+                >
+                  {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  {generating ? 'Gerando passos...' : 'Gerar com IA (10 passos)'}
+                </Button>
+              </div>
+            )}
+
+            {/* Fix C2/C3 retroactive button */}
+            {steps.length > 0 && !pipeline.audit_passed && (
+              <Button
+                onClick={handleFixC2C3}
+                disabled={fixingC2C3}
+                variant="outline"
+                className="min-h-[44px] w-full"
+              >
+                {fixingC2C3 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                {fixingC2C3 ? 'Corrigindo C2/C3...' : 'Corrigir C2/C3 (tooltip + breadcrumb)'}
+              </Button>
+            )}
+
+            {/* Audit button */}
+            {steps.length > 0 && (
+              <Button
+                onClick={handleAudit}
+                disabled={auditing}
+                className="min-h-[44px] w-full"
+                variant={pipeline.audit_passed ? 'outline' : 'default'}
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                {auditing
+                  ? 'Auditando...'
+                  : pipeline.audit_passed
+                    ? 'Re-auditar Estrutura'
+                    : 'Auditar Estrutura'}
+              </Button>
+            )}
+
+            {/* Delete lesson */}
+            <div className="border-t pt-4 mt-4">
+              <Button
+                variant="outline"
+                onClick={handleDeleteLesson}
+                disabled={deletingLesson}
+                className="min-h-[44px] w-full text-destructive border-destructive/30 hover:bg-destructive/10"
+              >
+                {deletingLesson ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                )}
+                {deletingLesson ? 'Excluindo aula...' : 'Excluir Aula e Resetar Pipeline'}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1 text-center">
+                Remove a aula, todos os passos, narrações e áudios vinculados
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal always mounted — available in both branches */}
+      <GenerateWithInstructionsModal
+        open={showInstructionsModal}
+        onClose={() => setShowInstructionsModal(false)}
+        onGenerate={async (instructions) => {
+          const ok = await handleGenerateWithAI(instructions);
+          if (ok) setShowInstructionsModal(false);
+        }}
+        isLoading={generating}
+      />
+    </>
   );
 }
