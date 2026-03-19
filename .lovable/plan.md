@@ -1,39 +1,25 @@
 
 
-# Fix: Build Error in v10-generate-steps — Undefined c2Fixes/c3Fixes
+# Fix PR#245: Completar referências c2Fixes/c3Fixes
 
-## Bug with Real Code Evidence
+## Alteração
 
-**Line 189** — the result is stored in `c2c3Result`:
-```typescript
-const c2c3Result = postProcessC2C3(steps);
-```
-
-**Lines 369-370** — but referenced as bare variables (NOT on c2c3Result):
-```typescript
-c2_fixes: c2Fixes,    // TS2304: Cannot find name 'c2Fixes'
-c3_fixes: c3Fixes,    // TS2304: Cannot find name 'c3Fixes'
-```
-
-## Fix — 1 file, 2 lines
-
-### `supabase/functions/v10-generate-steps/index.ts` lines 369-370
+**Arquivo:** `supabase/functions/v10-generate-steps/index.ts`  
+**Linhas 369-370** — trocar variáveis inexistentes pelas propriedades do objeto `c2c3Result`:
 
 ```typescript
-// BEFORE
+// DE (atual — erro TS2304)
 c2_fixes: c2Fixes,
 c3_fixes: c3Fixes,
 
-// AFTER
+// PARA
 c2_fixes: c2c3Result.c2Fixes,
 c3_fixes: c2c3Result.c3Fixes,
 ```
 
-## Analysis
+## Impacto
 
-| Question | Answer |
-|---|---|
-| Migration needed? | NO — pure TypeScript reference bug |
-| Other files affected? | NONE — `c2c3Result` is local to this function |
-| Risk | ZERO — just fixing variable reference to match line 189 |
+- Completa a intenção do PR#245: gravar contagem de auto-fixes C2/C3 no `v10_bpa_pipeline_log`
+- Resolve o erro de build `TS2304: Cannot find name`
+- Sem migration necessária — correção puramente TypeScript
 
