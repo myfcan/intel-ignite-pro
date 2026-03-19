@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GenerateWithInstructionsModal } from './GenerateWithInstructionsModal';
+import { ImportStepsModal } from './ImportStepsModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, CheckCircle, AlertCircle, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, AlertCircle, Sparkles, Loader2, AlertTriangle, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { V10BpaPipeline, V10LessonStep } from '@/types/v10.types';
@@ -74,6 +75,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const [deletingLesson, setDeletingLesson] = useState(false);
   const [fixingC2C3, setFixingC2C3] = useState(false);
   const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Trail/Course selectors for lesson creation
   const [trails, setTrails] = useState<Array<{ id: string; title: string }>>([]);
@@ -972,11 +974,11 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
                 </div>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
                   onClick={() => setShowForm(true)}
-                  className="min-h-[44px] w-full"
+                  className="min-h-[44px] flex-1"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar Passo
@@ -985,10 +987,19 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
                   variant="outline"
                   onClick={() => setShowInstructionsModal(true)}
                   disabled={generating || !pipeline.lesson_id}
-                  className="min-h-[44px] w-full"
+                  className="min-h-[44px] flex-1"
                 >
                   {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                   {generating ? 'Gerando passos...' : 'Gerar com IA'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowImportModal(true)}
+                  disabled={!pipeline.lesson_id}
+                  className="min-h-[44px] flex-1"
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Importar JSON
                 </Button>
               </div>
             )}
@@ -1055,6 +1066,28 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
           if (ok) setShowInstructionsModal(false);
         }}
         isLoading={generating}
+      />
+
+      <ImportStepsModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        pipelineId={pipeline.id}
+        lessonId={pipeline.lesson_id ?? null}
+        onSuccess={() => {
+          // Reload steps
+          if (pipeline.lesson_id) {
+            setLoading(true);
+            supabase
+              .from('v10_lesson_steps')
+              .select('*')
+              .eq('lesson_id', pipeline.lesson_id)
+              .order('step_number')
+              .then(({ data }) => {
+                if (data) setSteps(data as unknown as V10LessonStep[]);
+                setLoading(false);
+              });
+          }
+        }}
       />
     </>
   );
