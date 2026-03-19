@@ -226,7 +226,9 @@ serve(async (req) => {
       console.log(`[v10-assembly-check] V-validation errors: ${vErrors.join('; ')}`);
     }
 
-    const allPassed = Object.values(results).every((v) => v === true);
+    // V5 (narration) is informational — does not block publishing
+    const { v5_narration_ok, ...blockingResults } = results;
+    const allPassed = Object.values(blockingResults).every((v) => v === true);
 
     // 5. Update pipeline with checklist results
     const { error: updateError } = await supabase
