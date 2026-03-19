@@ -28,6 +28,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
   const [showReferoResults, setShowReferoResults] = useState(false);
   const [generatingMockups, setGeneratingMockups] = useState(false);
   const [nextBatchIndex, setNextBatchIndex] = useState(0);
+  const [mockupProgress, setMockupProgress] = useState<{ current: number; total: number } | null>(null);
 
   const progressPercent = mockupsTotal > 0
     ? Math.round((mockupsApproved / mockupsTotal) * 100)
