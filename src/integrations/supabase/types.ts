@@ -1685,6 +1685,7 @@ export type Database = {
           steps_audited: number
           steps_generated: number
           title: string
+          tools: string[]
           updated_at: string
         }
         Insert: {
@@ -1724,6 +1725,7 @@ export type Database = {
           steps_audited?: number
           steps_generated?: number
           title: string
+          tools?: string[]
           updated_at?: string
         }
         Update: {
@@ -1763,6 +1765,7 @@ export type Database = {
           steps_audited?: number
           steps_generated?: number
           title?: string
+          tools?: string[]
           updated_at?: string
         }
         Relationships: [
