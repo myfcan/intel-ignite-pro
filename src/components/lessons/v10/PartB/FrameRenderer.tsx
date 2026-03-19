@@ -22,7 +22,7 @@ interface FrameRendererProps {
   accentColor: string;
 }
 
-function renderElement(element: V10Element, index: number): React.ReactNode {
+function renderElement(element: V10Element, index: number, barColor?: string): React.ReactNode {
   switch (element.type) {
     case 'chrome_header':
       return <ChromeHeader key={index} url={element.url} />;
@@ -42,6 +42,7 @@ function renderElement(element: V10Element, index: number): React.ReactNode {
           value={element.value}
           placeholder={element.placeholder}
           highlight={element.highlight}
+          barColor={barColor}
         />
       );
 
@@ -53,6 +54,7 @@ function renderElement(element: V10Element, index: number): React.ReactNode {
           options={element.options}
           selected={element.selected}
           highlight={element.highlight}
+          barColor={barColor}
         />
       );
 
@@ -63,6 +65,7 @@ function renderElement(element: V10Element, index: number): React.ReactNode {
           label={element.label}
           primary={element.primary}
           icon={element.icon}
+          barColor={barColor}
         />
       );
 
@@ -134,7 +137,7 @@ const FrameRenderer: React.FC<FrameRendererProps> = ({ frame, accentColor }) => 
       check={frame.check}
       accentColor={accentColor}
     >
-      {(frame.elements || []).map((element, index) => renderElement(element, index))}
+      {(frame.elements || []).map((element, index) => renderElement(element, index, frame.bar_color))}
     </MockupChrome>
   );
 };

@@ -89,229 +89,31 @@ serve(async (req) => {
       }
     }
 
-    // 4. Call the Lovable AI Gateway
-    const systemPrompt = `Voce e um designer instrucional V10 especializado em criar aulas interativas que SIMULAM a interface real dos apps/ferramentas. Cada frame deve parecer um MOCKUP da tela do app, usando elementos de UI — NUNCA imagens ilustrativas genericas.
+    // 4. Call the Lovable AI Gateway — using Prompt Master system prompt
+    const { PROMPT_GENERATE_STEPS, postProcessC2C3, postProcessFrameDefaults, validateTools, validateStructure } = await import("../_shared/prompt-master.ts");
+    const systemPrompt = PROMPT_GENERATE_STEPS;
 
-## ESTRUTURA DO STEP
-
-{
-  "title": "string - titulo curto e descritivo",
-  "slug": "string - kebab-case do titulo, ex: criar-conta-make",
-  "description": "string - descricao CONTEXTUAL do passo (o que e a ferramenta, por que este passo importa)",
-  "phase": number (1-5),
-  "app_name": "string - nome CURTO da ferramenta (ex: Make, Bland AI, Sheets, Forms, Calendly)",
-  "app_icon": "string - emoji representativo (ex: 🌐, 📞, 📊, 📝, 📅)",
-  "app_badge_bg": "string - cor de fundo do badge hex (clara, ex: #EEF2FF)",
-  "app_badge_color": "string - cor do texto do badge hex (escura, ex: #6366F1)",
-  "accent_color": "string - cor principal do app hex (ex: #6366F1 para Make, #1E293B para Bland)",
-  "duration_seconds": number (20-60),
-  "frames": [Frame],
-  "liv": { "tip": "string", "analogy": "string", "sos": "string" },
-  "warnings": Warning ou null
-}
-
-## OS 15 TIPOS DE ELEMENTO (use todos que fizerem sentido para simular a interface real)
-
-1. chrome_header — Barra do navegador simulado
-   {"type": "chrome_header", "url": "make.com/en/register"}
-
-2. text — Instrucao ou conteudo textual
-   {"type": "text", "content": "Crie sua conta gratuita no Make.com"}
-
-3. input — Campo de entrada (simula inputs reais do app)
-   {"type": "input", "label": "Email", "placeholder": "seu@email.com", "highlight": true}
-   Use highlight:true no campo principal que o aluno deve preencher.
-
-4. select — Menu dropdown
-   {"type": "select", "label": "Modelo", "options": ["GPT-3.5", "GPT-4"], "selected": 0}
-
-5. button — Botao de acao
-   {"type": "button", "label": "Sign up with email", "primary": true}
-   primary:true = botao principal, primary:false = secundario.
-
-6. warning — Alerta visual dentro do frame
-   {"type": "warning", "text": "A key aparece CORTADA. Crie uma nova."}
-
-7. nav_breadcrumb — Caminho de navegacao dentro do app
-   {"type": "nav_breadcrumb", "from": "Dashboard", "to": "Settings → API Keys", "how": "Menu lateral → Settings → API Keys"}
-
-8. table — Tabela de dados do app
-   {"type": "table", "headers": ["Name", "Key"], "rows": [["Default", "org_e6b9...435"]]}
-
-9. code_block — Bloco de codigo/JSON
-   {"type": "code_block", "language": "json", "content": "{\\"key\\": \\"value\\"}"}
-
-10. celebration — Tela de conquista/celebracao
-    {"type": "celebration", "text": "Planilha criada!", "next": "Agora vamos criar o formulario."}
-
-11. dependency — Referencia a passo anterior
-    {"type": "dependency", "text": "Voce vai precisar da API Key do passo 2."}
-
-12. tooltip_term — Termo tecnico com explicacao
-    {"type": "tooltip_term", "term": "Webhook", "tip": "URL que recebe dados automaticamente"}
-
-13. divider — Separador visual
-    {"type": "divider"}
-
-14. image — Placeholder para screenshot (sera preenchido depois)
-    {"type": "image", "src": "", "alt": "Tela do dashboard do Make"}
-
-15. shimmer — Placeholder de carregamento
-    {"type": "shimmer", "height": 40}
-
-## ESTRUTURA DO FRAME
-
-{
-  "bar_text": "string - dominio/nome do app (ex: make.com, bland.ai)",
-  "bar_sub": "string - pagina/secao atual (ex: Pagina inicial, Settings → API Keys)",
-  "bar_color": "string - cor hex do app",
-  "elements": [array de elementos que SIMULAM a interface real],
-  "tip": {"text": "string - dica contextual", "position": "top" ou "bottom"} ou null,
-  "action": "string DESCRITIVA - o que o aluno deve fazer (ex: Acesse make.com e clique em Sign up. Use email do Google.)",
-  "check": "string DESCRITIVA - como o aluno confirma que fez certo (ex: Voce ve o Dashboard do Make com o botao Create a new scenario.)" ou null
-}
-
-IMPORTANTE sobre action e check:
-- action deve ser uma FRASE DESCRITIVA dizendo exatamente o que fazer (NAO use codigos como click_button, type_text)
-- check deve descrever o que o aluno deve VER na tela para confirmar (NAO use codigos como file_exists, output_contains)
-- O ultimo frame de cada step DEVE ter check preenchido
-
-## ESTRUTURA DE WARNINGS (mapeado para "Pontos de atencao" no menu LIV)
-
-Cada step pode ter um campo warnings:
-{
-  "warn": "string - alerta principal (ex: Escolha Hosting Region: US, nao Europe.)",
-  "ift": {
-    "tag": "SE → ENTAO",
-    "desc": "string - condicao (ex: Apareceu tela de onboarding?)",
-    "act": "string - o que fazer (ex: Clique Skip ou X ate ver o Dashboard.)"
-  }
-}
-
-Se o step tem alguma armadilha, pegadinha, ou situacao condicional, SEMPRE gere warnings.
-Se nao ha armadilha, use null.
-
-## ESTRUTURA DE LIV (Assistente Virtual)
-
-{
-  "tip": "Resumo rapido do passo em 1-2 frases",
-  "analogy": "Analogia do mundo real para facilitar entendimento (ex: API Key e tipo a senha do Wi-Fi)",
-  "sos": "Mensagem de socorro detalhada se o aluno travar"
-}
-
-TODOS os 3 campos sao OBRIGATORIOS em cada step.
-
-## EXEMPLO COMPLETO (Step 1 da aula SDR de Voz com IA)
-
-{
-  "title": "Criar conta no Make.com",
-  "slug": "criar-conta-make",
-  "description": "O Make.com (plataforma que conecta apps entre si) e a ferramenta que vai conectar tudo: quando um lead preencher o formulario, o Make dispara a ligacao automaticamente.",
-  "phase": 1,
-  "app_name": "Make",
-  "app_icon": "🌐",
-  "app_badge_bg": "#EEF2FF",
-  "app_badge_color": "#6366F1",
-  "accent_color": "#6366F1",
-  "duration_seconds": 45,
-  "frames": [
-    {
-      "bar_text": "make.com", "bar_sub": "Pagina inicial", "bar_color": "#6366F1",
-      "elements": [
-        {"type": "chrome_header", "url": "make.com/en/register"},
-        {"type": "text", "content": "Crie sua conta gratuita no Make.com"},
-        {"type": "input", "label": "Email", "placeholder": "seu@email.com", "highlight": true},
-        {"type": "input", "label": "Senha", "placeholder": "Minimo 8 caracteres", "highlight": false},
-        {"type": "button", "label": "Sign up with email", "primary": true},
-        {"type": "divider"},
-        {"type": "button", "label": "Continue with Google", "primary": false}
-      ],
-      "tip": {"text": "Use o mesmo email que usa no Google — vai facilitar na hora de conectar", "position": "bottom"},
-      "action": "Acesse make.com e clique em Sign up. Use seu email do Google para facilitar.",
-      "check": null
-    },
-    {
-      "bar_text": "make.com", "bar_sub": "Onboarding", "bar_color": "#6366F1",
-      "elements": [
-        {"type": "chrome_header", "url": "make.com/onboarding"},
-        {"type": "text", "content": "O Make vai fazer varias perguntas de personalizacao."},
-        {"type": "warning", "text": "O Make vai fazer varias perguntas. Nao importa o que responder — clique Skip ou X em tudo ate chegar no Dashboard."},
-        {"type": "button", "label": "Skip", "primary": false},
-        {"type": "button", "label": "Continue", "primary": true}
-      ],
-      "tip": {"text": "Skip, Skip, Skip — ignore tudo ate ver o Dashboard", "position": "top"},
-      "action": "Pule todas as perguntas do onboarding. Clique Skip ou X ate chegar no Dashboard.",
-      "check": "Voce ve o Dashboard do Make com o botao Create a new scenario."
-    }
-  ],
-  "liv": {
-    "tip": "Nesse passo voce cria sua conta no Make.com. E gratuito e leva 2 minutos. Use o email do Google pra facilitar depois.",
-    "analogy": "O Make e tipo uma linha de montagem digital: voce programa quando acontecer X, faca Y automaticamente.",
-    "sos": "Se tiver duvida sobre qual plano escolher: o gratuito ja serve. Ele permite 1.000 operacoes/mes."
-  },
-  "warnings": {
-    "warn": "Escolha Hosting Region: US (nao Europe). Algumas integracoes funcionam melhor na regiao US.",
-    "ift": {"tag": "SE → ENTAO", "desc": "Apareceu tela de onboarding com perguntas?", "act": "Clique Skip ou X em tudo ate ver o Dashboard."}
-  }
-}
-
-## FASES
-
-1 = Preparacao (criar contas, instalar, contextualizar)
-2 = Configuracao (configurar ferramentas, conectar APIs)
-3 = Execucao (realizar a tarefa principal da aula)
-4 = Validacao (testar, verificar resultados)
-5 = Conclusao (revisar, consolidar aprendizado, celebrar)
-
-## REGRAS OBRIGATORIAS
-
-1. Cada frame DEVE simular a interface REAL do app — use chrome_header + inputs + buttons + tabelas etc.
-2. NUNCA gere frames so com texto generico. Cada frame deve parecer uma tela real do app.
-3. REGRA DE FRAMES POR PASSO (OBRIGATORIA — analise a complexidade da navegacao):
-   1 frame = Acao simples numa unica tela (ex: "Crie uma planilha nova" → 1 tela so)
-   2 frames = Acao com navegacao entre telas (ex: "Va em Settings, depois API Keys" → Dashboard → API Keys = 2 telas)
-   3 frames = Acao complexa com multiplas telas (ex: "Crie conta, pule onboarding, chegue no Dashboard" → Signup → Onboarding → Dashboard = 3 telas)
-   Cada frame = 1 mockup que sera gerado na Etapa 3. Total de frames = total de mockups.
-   Media esperada: ~1.5 frames/passo. Minimo absoluto: 1 frame por passo.
-   Cada frame DEVE ter bar_text preenchido (dominio/URL do app da tela).
-   JUSTIFIQUE o numero de frames baseado na complexidade da navegacao no passo.
-4. action deve ser FRASE DESCRITIVA (ex: "Acesse make.com e clique em Sign up"), NUNCA codigos como "click_button".
-5. check deve descrever O QUE O ALUNO VE NA TELA (ex: "Voce ve o Dashboard com o botao Create"), NUNCA codigos como "file_exists".
-6. warnings e OBRIGATORIO quando ha armadilhas ou situacoes condicionais. Use null se nao ha.
-7. liv.tip, liv.analogy e liv.sos sao TODOS obrigatorios em cada step.
-8. tooltip_term e OBRIGATORIO para QUALQUER termo tecnico: API, webhook, endpoint, SDK, OAuth, token, dashboard, workflow, trigger, integration, pipeline, deploy, slug, JSON, HTTP, URL, etc.
-   REGRA: Se a description do step menciona termos que um iniciante nao conheceria, PELO MENOS 1 elemento tooltip_term DEVE existir nos frames desse step.
-   Formato do elemento: { "type": "tooltip_term", "term": "API", "definition": "Interface que permite dois softwares se comunicarem automaticamente" }
-   Nao gerar tooltip_term para palavras comuns (email, botao, configurar, conta, senha).
-   AUDITORIA C2: Steps com description > 50 chars sem tooltip_term nos frames SERAO REPROVADOS.
-9. nav_breadcrumb e OBRIGATORIO quando um step tem 2+ frames com bar_sub DIFERENTES.
-   Se o aluno navega de uma tela para outra (ex: Dashboard → Settings → API Keys), inclua nav_breadcrumb no frame de destino.
-   Formato do elemento: { "type": "nav_breadcrumb", "path": ["Dashboard", "Settings", "API Keys"] }
-   REGRA SIMPLES: Se bar_sub muda entre frames consecutivos do mesmo step → nav_breadcrumb obrigatorio no segundo frame.
-   AUDITORIA C3: Steps com bar_sub diferente entre frames sem nav_breadcrumb SERAO REPROVADOS.
-10. Use dependency quando o step depende de algo feito anteriormente.
-11. Use celebration no frame final de uma secao/conquista importante.
-12. Quando trocar de ferramenta entre steps, inclua texto "🔄 Mudamos de ferramenta! Saimos do X → Entramos no Y."
-13. Retorne APENAS o JSON array, sem markdown, sem explicacoes adicionais.`;
+    // Extract declared tools from pipeline title/docs
+    const declaredTools = (pipeline.tools as string[] || []);
 
     const userMessage = `Gere ${num_steps} passos para a aula "${pipeline.title}" (slug: ${pipeline.slug}).
+
+Ferramentas declaradas: ${declaredTools.length > 0 ? declaredTools.join(', ') : 'Detectar automaticamente do contexto'}
 
 Documentacao/notas do instrutor sobre o app:
 ${pipeline.docs_manual_input || "Nenhuma documentacao fornecida — use seu conhecimento sobre o app."}
 
-Lembre-se:
-- Cada frame deve SIMULAR a interface real do app com chrome_header, inputs, buttons, tables, etc.
-- Gere warnings para passos com armadilhas ou situacoes condicionais.
-- action e check devem ser FRASES DESCRITIVAS, nao codigos.
-- Todos os campos de liv (tip, analogy, sos) sao obrigatorios.
+REGRAS CRÍTICAS (auditoria automática V1-V5):
+- Use APENAS as ferramentas declaradas (V1). Último passo = AILIV.
+- 3 fases obrigatórias (phase_number 1-3), não 5 (V3).
+- Média ≤1.5 frames/passo (V2). 78% dos passos devem ter 1 frame.
+- 80%+ dos passos devem ter dependency (V3).
+- 3-5 celebrations no total (V3).
+- description > 30 chars com termos técnicos → tooltip_term obrigatório (C2).
+- bar_sub muda entre frames → nav_breadcrumb obrigatório (C3).
+- Declare lesson_type: "automation" | "tutorial" | "conceptual".
 
-AUDITORIA C1-C9 sera executada AUTOMATICAMENTE apos geracao. REGRAS CRITICAS que causam REPROVACAO:
-- C2: Se description > 50 chars, PELO MENOS 1 tooltip_term DEVE existir nos frames do step (termos como API, webhook, dashboard, token, OAuth, workflow, trigger, etc.)
-- C3: Se bar_sub muda entre frames do mesmo step, nav_breadcrumb OBRIGATORIO no frame de destino
-- C4: Todo step deve ter pelo menos 1 frame
-- C9: Todos os campos liv (tip, analogy, sos) devem estar preenchidos
-
-Passos que falharem na auditoria precisarao ser REGENERADOS. Gere corretamente da primeira vez.`;
+Retorne APENAS o JSON array.`;
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -383,186 +185,35 @@ Passos que falharem na auditoria precisarao ser REGENERADOS. Gere corretamente d
       console.warn(`[v10-generate-steps] WARNING: Low frame average ${avgFrames.toFixed(2)} (expected >= 1.3). Steps may need more frames for multi-screen navigation.`);
     }
 
-    // 7c. POST-PROCESSING: Auto-inject tooltip_term (C2) and nav_breadcrumb (C3)
-    // The AI consistently ignores instructions to generate these elements,
-    // so we inject them deterministically after generation.
-    const TECH_TERMS: Record<string, string> = {
-      "api": "Interface que permite dois softwares se comunicarem automaticamente",
-      "webhook": "URL que recebe dados automaticamente quando um evento acontece",
-      "endpoint": "Endereco (URL) especifico onde uma API recebe requisicoes",
-      "sdk": "Kit de ferramentas de desenvolvimento para integrar com um servico",
-      "oauth": "Protocolo de autorizacao que permite login seguro sem compartilhar senha",
-      "token": "Codigo temporario usado para autenticar acessos a um servico",
-      "dashboard": "Painel de controle visual com metricas e acoes principais",
-      "workflow": "Sequencia automatizada de tarefas que executa em ordem",
-      "trigger": "Evento que dispara uma automacao automaticamente",
-      "integration": "Conexao entre dois apps que permite troca de dados",
-      "pipeline": "Sequencia de etapas de processamento de dados em ordem",
-      "deploy": "Processo de publicar e disponibilizar um app ou atualizacao",
-      "slug": "Versao simplificada de um texto usada em URLs (sem espacos ou acentos)",
-      "json": "Formato padrao de troca de dados entre sistemas (chave: valor)",
-      "http": "Protocolo de comunicacao usado na web para enviar e receber dados",
-      "url": "Endereco unico que identifica uma pagina ou recurso na internet",
-      "script": "Codigo que executa uma sequencia de comandos automaticamente",
-      "template": "Modelo pre-pronto que serve como base para criar algo novo",
-      "scenario": "Automacao no Make.com que conecta apps com regras definidas",
-      "module": "Bloco funcional dentro de uma automacao que executa uma tarefa",
-      "node": "Ponto de processamento em um fluxo de automacao",
-      "zap": "Automacao no Zapier que conecta dois ou mais apps",
-      "prompt": "Instrucao de texto enviada para uma IA gerar uma resposta",
-      "model": "Versao treinada de uma IA (ex: GPT-4, Claude, Gemini)",
-      "fine-tuning": "Processo de treinar uma IA com dados especificos para melhorar resultados",
-      "embedding": "Representacao numerica de texto usada para busca semantica",
-      "vector": "Conjunto de numeros que representa dados para processamento por IA",
-      "database": "Sistema organizado para armazenar e consultar dados",
-      "query": "Consulta feita a um banco de dados ou API para buscar informacoes",
-      "automation": "Processo que executa tarefas sem intervencao humana",
-      "crm": "Sistema para gerenciar relacionamento com clientes",
-      "lead": "Potencial cliente que demonstrou interesse no produto/servico",
-      "funnel": "Sequencia de etapas que guia um lead ate a conversao",
-      "conversion": "Momento em que um lead realiza a acao desejada (compra, cadastro)",
-      "saas": "Software acessado pela internet via assinatura (Software as a Service)",
-      "hosting": "Servico que armazena e disponibiliza um site/app na internet",
-      "domain": "Nome unico que identifica um site na internet (ex: google.com)",
-      "ssl": "Certificado de seguranca que criptografa dados entre navegador e servidor",
-      "dns": "Sistema que traduz nomes de dominio em enderecos IP",
-      "cdn": "Rede de servidores distribuidos que acelera a entrega de conteudo",
-      "cache": "Armazenamento temporario de dados para acesso mais rapido",
-      "cookies": "Pequenos arquivos que sites salvam no navegador para lembrar preferencias",
-      "header": "Informacoes extras enviadas junto com requisicoes HTTP",
-      "payload": "Dados enviados no corpo de uma requisicao HTTP",
-      "response": "Dados retornados por um servidor apos receber uma requisicao",
-      "status code": "Numero que indica o resultado de uma requisicao HTTP (ex: 200=OK, 404=nao encontrado)",
-      "rate limit": "Limite de requisicoes permitidas em um periodo de tempo",
-      "api key": "Chave secreta usada para autenticar acessos a uma API",
-      "secret key": "Chave privada que nunca deve ser compartilhada publicamente",
-      "environment variable": "Variavel de configuracao armazenada fora do codigo",
-      "env": "Abreviacao de environment variable — configuracao externa ao codigo",
-      "regex": "Padrao de texto usado para buscar e validar strings",
-      "cron": "Sistema de agendamento que executa tarefas em horarios definidos",
-      "csv": "Formato de arquivo com dados separados por virgula",
-      "spreadsheet": "Planilha digital para organizar dados em linhas e colunas",
-      "form": "Formulario digital para coletar dados de usuarios",
-      "iframe": "Elemento HTML que incorpora uma pagina dentro de outra",
-      "widget": "Componente visual reutilizavel em uma interface",
-      "plugin": "Extensao que adiciona funcionalidades a um software existente",
-      "extension": "Programa que adiciona recursos extras ao navegador",
-      "bot": "Programa automatizado que executa tarefas repetitivas",
-      "chatbot": "Bot conversacional que responde perguntas automaticamente",
-      "ai": "Inteligencia Artificial — sistema que simula raciocinio humano",
-      "gpt": "Modelo de linguagem da OpenAI usado para gerar texto",
-      "llm": "Modelo de linguagem grande — IA treinada em enormes volumes de texto",
-      "airtable": "Plataforma que combina planilha com banco de dados visual",
-      "notion": "Ferramenta all-in-one para notas, docs, projetos e banco de dados",
-      "slack": "Plataforma de comunicacao para equipes com canais e integracoes",
-      "stripe": "Plataforma de pagamentos online para cobrar clientes",
-      "calendly": "Ferramenta de agendamento online que sincroniza com seu calendario",
-      "hubspot": "Plataforma de CRM, marketing e vendas",
-      "mailchimp": "Plataforma de email marketing para enviar campanhas",
-      "twilio": "Plataforma para enviar SMS, WhatsApp e fazer chamadas por API",
-      "bland ai": "Plataforma de IA para ligacoes telefonicas automatizadas",
-      "make": "Plataforma de automacao visual que conecta apps (antigo Integromat)",
-      "zapier": "Plataforma de automacao que conecta apps sem codigo",
-      "n8n": "Plataforma open-source de automacao de workflows",
-      "supabase": "Plataforma open-source alternativa ao Firebase com banco Postgres",
-      "firebase": "Plataforma Google para backend de apps (auth, database, hosting)",
-      "vercel": "Plataforma de deploy para apps frontend e serverless",
-      "render": "Plataforma de deploy para apps web e APIs",
-      "google sheets": "Planilha online do Google com colaboracao em tempo real",
-      "google forms": "Ferramenta do Google para criar formularios online",
-    };
+    // 7c. POST-PROCESSING: Use shared utilities from prompt-master.ts
+    const c2c3Result = postProcessC2C3(steps);
+    console.log(`[v10-generate-steps] Post-processing C2C3: ${c2c3Result.c2Fixes} C2 fixes, ${c2c3Result.c3Fixes} C3 fixes`);
 
-    let c2Fixes = 0;
-    let c3Fixes = 0;
+    postProcessFrameDefaults(steps);
+    console.log(`[v10-generate-steps] Post-processing frame defaults complete`);
 
-    for (const step of steps) {
-      const desc = (step.description || "").toLowerCase();
-      const title = (step.title || "").toLowerCase();
-      const combinedText = `${title} ${desc}`;
-      const frames = step.frames || [];
-      const allElements = frames.flatMap((f: any) => f.elements || []);
-
-      // C2 FIX: If description > 50 chars and no tooltip_term, find tech terms and inject
-      const hasTooltipTerm = allElements.some((el: any) => el.type === "tooltip_term");
-      if (!hasTooltipTerm && (step.description || "").length > 50) {
-        // Find matching tech terms in the step text
-        const matchedTerms: Array<{ term: string; definition: string }> = [];
-        for (const [term, definition] of Object.entries(TECH_TERMS)) {
-          // Match whole word (with word boundaries via regex)
-          const termRegex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, "i");
-          if (termRegex.test(combinedText)) {
-            matchedTerms.push({ term: term.charAt(0).toUpperCase() + term.slice(1), definition });
-          }
-          if (matchedTerms.length >= 2) break; // Max 2 tooltips per step
-        }
-
-        // If no dictionary match, extract the first capitalized technical-looking word
-        if (matchedTerms.length === 0) {
-          const capitalWords = (step.description || "").match(/\b[A-Z][a-zA-Z]{2,}\b/g);
-          const commonWords = new Set(["Voce", "Esse", "Este", "Esta", "Essa", "Aqui", "Agora", "Depois", "Antes", "Clique", "Acesse", "Configure", "Crie", "Abra", "Vamos", "Nesse", "Nesta", "Para", "Como", "Quando", "Onde", "Qual", "Cada", "Todo", "Toda", "Todos"]);
-          if (capitalWords) {
-            for (const w of capitalWords) {
-              if (!commonWords.has(w) && w.length >= 3) {
-                matchedTerms.push({
-                  term: w,
-                  definition: `Funcionalidade ou conceito utilizado neste passo da aula`,
-                });
-                break;
-              }
-            }
-          }
-        }
-
-        // Inject tooltip_term into first frame
-        if (matchedTerms.length > 0 && frames.length > 0) {
-          if (!frames[0].elements) frames[0].elements = [];
-          for (const mt of matchedTerms) {
-            frames[0].elements.push({
-              type: "tooltip_term",
-              term: mt.term,
-              tip: mt.definition,
-            });
-          }
-          c2Fixes++;
-          console.log(`[v10-generate-steps] C2 fix: injected ${matchedTerms.length} tooltip_term(s) into "${step.title}": ${matchedTerms.map(t => t.term).join(", ")}`);
-        }
-      }
-
-      // C3 FIX: If bar_sub changes between frames and no nav_breadcrumb, inject one
-      const hasNavBreadcrumb = allElements.some((el: any) => el.type === "nav_breadcrumb");
-      const barSubValues = frames.map((f: any) => f.bar_sub).filter(Boolean);
-      const barSubChanges = new Set(barSubValues).size > 1;
-
-      if (barSubChanges && !hasNavBreadcrumb) {
-        // Add nav_breadcrumb to each frame (after the first) where bar_sub differs from previous
-        for (let fi = 1; fi < frames.length; fi++) {
-          const prevSub = frames[fi - 1].bar_sub;
-          const currSub = frames[fi].bar_sub;
-          if (currSub && prevSub && currSub !== prevSub) {
-            if (!frames[fi].elements) frames[fi].elements = [];
-            // Build path from all unique bar_sub values up to this frame
-            const pathSoFar = [];
-            const seen = new Set<string>();
-            for (let pi = 0; pi <= fi; pi++) {
-              const sub = frames[pi].bar_sub;
-              if (sub && !seen.has(sub)) {
-                seen.add(sub);
-                pathSoFar.push(sub);
-              }
-            }
-            frames[fi].elements.unshift({
-              type: "nav_breadcrumb",
-              from: prevSub,
-              to: currSub,
-              how: pathSoFar.join(" → "),
-            });
-          }
-        }
-        c3Fixes++;
-        console.log(`[v10-generate-steps] C3 fix: injected nav_breadcrumb into "${step.title}" (bar_sub changes: ${barSubValues.join(" → ")})`);
-      }
+    // 7d. Run V1 + V3 validations (log only, non-blocking)
+    const v1Result = validateTools(steps, declaredTools);
+    if (!v1Result.passed) {
+      console.warn(`[v10-generate-steps] V1 validation warnings: ${v1Result.errors.join('; ')}`);
     }
-    console.log(`[v10-generate-steps] Post-processing complete: ${c2Fixes} C2 fixes, ${c3Fixes} C3 fixes`);
+    const v3Result = validateStructure(steps);
+    if (!v3Result.passed) {
+      console.warn(`[v10-generate-steps] V3 validation warnings: ${v3Result.errors.join('; ')}`);
+    }
+
+    // Check for INTERMEDIARY_NEEDED response
+    if (steps.length === 1 && steps[0]?.status === 'INTERMEDIARY_NEEDED') {
+      const { error: intError } = await supabase
+        .from("v10_bpa_pipeline")
+        .update({ intermediary_status: steps[0] })
+        .eq("id", pipeline_id);
+      if (intError) console.error("Failed to save intermediary_status:", intError);
+      return new Response(
+        JSON.stringify({ success: true, intermediary_needed: true, options: steps[0].options }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // 8. Insert each step into v10_lesson_steps
     const insertedSteps = [];

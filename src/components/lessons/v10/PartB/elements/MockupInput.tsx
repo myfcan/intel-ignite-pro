@@ -5,6 +5,7 @@ interface MockupInputProps {
   value?: string;
   placeholder?: string;
   highlight?: boolean;
+  barColor?: string;
 }
 
 const MockupInput: React.FC<MockupInputProps> = ({
@@ -12,16 +13,19 @@ const MockupInput: React.FC<MockupInputProps> = ({
   value,
   placeholder,
   highlight = false,
+  barColor,
 }) => {
+  const highlightColor = barColor || '#818CF8';
   return (
     <div className="flex flex-col gap-0.5">
       <label className="text-[10px] font-medium text-gray-700">{label}</label>
       <div
         className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${
           highlight
-            ? 'border-indigo-400 ring-2 ring-indigo-100 bg-indigo-50'
+            ? 'ring-2'
             : 'border-gray-200 bg-[#F9FAFB]'
         }`}
+        style={highlight ? { borderColor: highlightColor, backgroundColor: `${highlightColor}10`, boxShadow: `0 0 0 2px ${highlightColor}20` } : undefined}
       >
         {value ? (
           <span className="text-gray-900">{value}</span>

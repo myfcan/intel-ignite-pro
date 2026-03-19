@@ -24,7 +24,11 @@ type ChecklistKey =
   | 'narration_a_ok'
   | 'narration_c_ok'
   | 'metadata_ok'
-  | 'gamification_ok';
+  | 'gamification_ok'
+  | 'v1_tools_ok'
+  | 'v2_frames_ok'
+  | 'v3_structure_ok'
+  | 'v5_narration_ok';
 
 interface ChecklistItem {
   key: ChecklistKey;
@@ -46,6 +50,11 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   { key: 'narration_c_ok', label: 'Narração Parte C configurada', fixStage: 5, fixLabel: 'Editar Narração C' },
   { key: 'metadata_ok', label: 'Metadados da aula completos (título, descrição, tools)' },
   { key: 'gamification_ok', label: 'Gamificação configurada (xp_reward > 0)' },
+  // V1-V5 Prompt Master validations
+  { key: 'v1_tools_ok', label: 'V1: Ferramentas usadas são apenas as declaradas', fixStage: 2, fixLabel: 'Editar Passos' },
+  { key: 'v2_frames_ok', label: 'V2: Frames válidos (chrome_header, bar_text, action/check)', fixStage: 3, fixLabel: 'Enriquecer Frames' },
+  { key: 'v3_structure_ok', label: 'V3: Estrutura (3 fases, AILIV último, celebrations 3-5)', fixStage: 2, fixLabel: 'Editar Passos' },
+  { key: 'v5_narration_ok', label: 'V5: Narração com anchors obrigatórios', fixStage: 5, fixLabel: 'Gerar Narrações' },
 ];
 
 export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6AssemblyProps) {

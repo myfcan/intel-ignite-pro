@@ -211,7 +211,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
     }
     setGeneratingMockups(true);
     try {
-      const { data, error } = await supabase.functions.invoke('v10-generate-mockups', {
+      const { data, error } = await supabase.functions.invoke('v10-enrich-frames', {
         body: { pipeline_id: pipeline.id, batch_size: 3, batch_index: nextBatchIndex },
       });
       if (error) throw error;
@@ -472,7 +472,7 @@ export function Stage4Mockups({ pipeline, onUpdate }: Stage4MockupsProps) {
               ) : (
                 <Sparkles className="mr-2 h-4 w-4" />
               )}
-              {generatingMockups ? 'Gerando Mockups...' : `Gerar Mockups com IA (${totalFrames} frames)`}
+              {generatingMockups ? 'Enriquecendo Frames...' : `Enriquecer Frames com IA (${totalFrames} frames)`}
             </Button>
           )}
 

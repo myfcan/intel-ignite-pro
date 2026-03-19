@@ -22,33 +22,33 @@ interface Stage2StructureProps {
 }
 
 const PHASE_LABELS: Record<number, string> = {
-  1: 'Preparação',
-  2: 'Configuração',
-  3: 'Execução',
-  4: 'Validação',
-  5: 'Conclusão',
+  1: 'Setup',
+  2: 'Construção',
+  3: 'Teste',
 };
 
 const PHASE_COLORS: Record<number, string> = {
   1: 'bg-blue-100 text-blue-800 border-blue-200',
   2: 'bg-green-100 text-green-800 border-green-200',
   3: 'bg-purple-100 text-purple-800 border-purple-200',
-  4: 'bg-orange-100 text-orange-800 border-orange-200',
-  5: 'bg-teal-100 text-teal-800 border-teal-200',
 };
 
 const PHASE_BORDER_COLORS: Record<number, string> = {
   1: 'border-l-blue-500',
   2: 'border-l-green-500',
   3: 'border-l-purple-500',
-  4: 'border-l-orange-500',
-  5: 'border-l-teal-500',
+};
+
+const LESSON_TYPE_LABELS: Record<string, string> = {
+  automation: 'Automação',
+  tutorial: 'Tutorial',
+  conceptual: 'Conceitual',
 };
 
 interface NewStepForm {
   title: string;
   description: string;
-  phase: 1 | 2 | 3 | 4 | 5;
+  phase: 1 | 2 | 3;
   app_name: string;
   duration_seconds: number;
 }
@@ -305,9 +305,9 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
         const c7 = (step.title || '').trim().length > 5;
         if (!c7) details.push(`C7: título muito curto (${step.title?.length || 0} chars)`);
 
-        // C8: phase valid (1-5)
-        const c8 = step.phase >= 1 && step.phase <= 5;
-        if (!c8) details.push(`C8: phase inválida (${step.phase})`);
+        // C8: phase valid (1-3, Prompt Master R7)
+        const c8 = step.phase >= 1 && step.phase <= 3;
+        if (!c8) details.push(`C8: phase inválida (${step.phase}), deve ser 1-3`);
 
         // C9: LIV fields present
         const liv = step.liv as unknown as Record<string, string> | null;
@@ -530,10 +530,17 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Etapa 2 — Estrutura de Passos</CardTitle>
-          <span className="text-sm text-muted-foreground">
-            {pipeline.steps_generated} passos gerados
-            {pipeline.steps_audited > 0 && ` / ${pipeline.steps_audited} auditados`}
-          </span>
+          <div className="flex items-center gap-3">
+            {pipeline.lesson_type && (
+              <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 border-indigo-200">
+                {LESSON_TYPE_LABELS[pipeline.lesson_type] || pipeline.lesson_type}
+              </span>
+            )}
+            <span className="text-sm text-muted-foreground">
+              {pipeline.steps_generated} passos gerados
+              {pipeline.steps_audited > 0 && ` / ${pipeline.steps_audited} auditados`}
+            </span>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -613,17 +620,15 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
                 <Label htmlFor="step-phase">Fase</Label>
                 <Select
                   value={String(form.phase)}
-                  onValueChange={(val) => setForm((f) => ({ ...f, phase: Number(val) as 1 | 2 | 3 | 4 | 5 }))}
+                  onValueChange={(val) => setForm((f) => ({ ...f, phase: Number(val) as 1 | 2 | 3 }))}
                 >
                   <SelectTrigger id="step-phase">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1 — Preparação</SelectItem>
-                    <SelectItem value="2">2 — Configuração</SelectItem>
-                    <SelectItem value="3">3 — Execução</SelectItem>
-                    <SelectItem value="4">4 — Validação</SelectItem>
-                    <SelectItem value="5">5 — Conclusão</SelectItem>
+                    <SelectItem value="1">1 — Setup</SelectItem>
+                    <SelectItem value="2">2 — Construção</SelectItem>
+                    <SelectItem value="3">3 — Teste</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
