@@ -216,11 +216,11 @@ serve(async (req: Request) => {
       }
       console.log(`[v10-generate-images] Targeted mode: ${stepsToProcess.length} steps from step_ids=[${step_ids.join(",")}]`);
     } else {
+      // Only process steps that ALREADY have image elements with empty src
       stepsToProcess = steps.filter((step: any) => {
         const frames = step.frames;
-        if (!frames || !Array.isArray(frames) || frames.length === 0) return true;
+        if (!frames || !Array.isArray(frames) || frames.length === 0) return false;
 
-        let hasImageElement = false;
         let hasEmptyImage = false;
 
         for (const frame of frames) {
@@ -228,7 +228,6 @@ serve(async (req: Request) => {
           if (!elements || !Array.isArray(elements)) continue;
           for (const el of elements) {
             if (el.type === "image") {
-              hasImageElement = true;
               if (!el.src || el.src === "" || el.src.startsWith("placeholder")) {
                 hasEmptyImage = true;
               }
@@ -236,7 +235,7 @@ serve(async (req: Request) => {
           }
         }
 
-        return !hasImageElement || hasEmptyImage;
+        return hasEmptyImage;
       });
     }
 
@@ -263,32 +262,10 @@ serve(async (req: Request) => {
     let success = 0;
     let failed = 0;
 
-    // 6. Process each step sequentially
+    // 6. Process each step sequentially (NO injection — only process existing image elements)
     for (const step of batchSteps) {
       const frames = (step.frames as any[]) || [];
       let stepUpdated = false;
-
-      // Check if step already has an image element somewhere
-      let hasExistingImage = false;
-      for (const frame of frames) {
-        if (frame.elements?.some((el: any) => el.type === "image" && el.src && el.src !== "" && !el.src.startsWith("placeholder"))) {
-          hasExistingImage = true;
-          break;
-        }
-      }
-
-      // If no image element exists, inject one into the first frame
-      if (!hasExistingImage && frames.length > 0) {
-        if (!frames[0].elements) frames[0].elements = [];
-        const existingEmpty = frames[0].elements.find((el: any) => el.type === "image" && (!el.src || el.src === ""));
-        if (!existingEmpty) {
-          frames[0].elements.unshift({
-            type: "image",
-            src: "",
-            alt: `Ilustração: ${step.title || "passo da aula"}`,
-          });
-        }
-      }
 
       for (let frameIdx = 0; frameIdx < frames.length; frameIdx++) {
         const frame = frames[frameIdx];

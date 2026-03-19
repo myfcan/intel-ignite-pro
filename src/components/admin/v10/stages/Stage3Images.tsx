@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { Image, CheckCircle2, Sparkles, Save, AlertTriangle, Loader2, Calculator, Trash2, Upload, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +33,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [nextBatchIndex, setNextBatchIndex] = useState(0);
+  const [imageProgress, setImageProgress] = useState<{ current: number; total: number } | null>(null);
   const [stepsCount, setStepsCount] = useState(0);
   const [stepImages, setStepImages] = useState<StepImage[]>([]);
   const [imageStatuses, setImageStatuses] = useState<Record<string, ImageStatus>>(
@@ -173,9 +175,13 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
   };
 
   const handleAutoCalc = () => {
-    if (stepsCount > 0) {
+    const realCount = stepImages.length;
+    if (realCount > 0) {
+      setImagesNeeded(realCount);
+      toast.info(`Necessárias atualizado para ${realCount} (elementos image reais). Clique em Salvar.`);
+    } else if (stepsCount > 0) {
       setImagesNeeded(stepsCount);
-      toast.info(`Necessárias atualizado para ${stepsCount} (1 por passo). Clique em Salvar.`);
+      toast.info(`Necessárias atualizado para ${stepsCount} (fallback: 1 por passo). Clique em Salvar.`);
     } else {
       toast.error('Nenhum passo encontrado');
     }
@@ -191,30 +197,49 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
       await onUpdate({ images_needed: stepsCount });
     }
     setGenerating(true);
+    setImageProgress({ current: 0, total: 0 });
+
+    let currentBatch = 0;
+    let totalSuccess = 0;
+    let totalProcessed = 0;
+
     try {
-      const { data, error } = await supabase.functions.invoke('v10-generate-images', {
-        body: { pipeline_id: pipeline.id, batch_size: 15, batch_index: nextBatchIndex }
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data) {
-        const successCount = data.success ?? 0;
-        const hasMore = data.hasMoreBatches ?? false;
-        const totalNeeded = data.total ?? 0;
-        if (totalNeeded > 0 && imagesNeeded === 0) setImagesNeeded(totalNeeded);
-        if (hasMore) {
-          setNextBatchIndex(prev => prev + 1);
-          toast.success(`${successCount} imagens geradas! Próximo lote (batch ${nextBatchIndex + 2}).`);
+      while (true) {
+        const { data, error } = await supabase.functions.invoke('v10-generate-images', {
+          body: { pipeline_id: pipeline.id, batch_size: 3, batch_index: currentBatch }
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        const successCount = data?.success ?? 0;
+        const hasMore = data?.hasMoreBatches ?? false;
+        const totalNeeded = data?.total ?? 0;
+
+        totalSuccess += successCount;
+        totalProcessed += data?.processed ?? 0;
+
+        if (totalNeeded > 0 && imageProgress?.total === 0) {
+          setImageProgress({ current: totalSuccess, total: totalNeeded });
+          if (imagesNeeded === 0) setImagesNeeded(totalNeeded);
         } else {
-          setNextBatchIndex(0);
-          toast.success(`${successCount} imagens geradas! Todos os lotes concluídos.`);
+          setImageProgress(prev => prev ? { ...prev, current: totalSuccess } : { current: totalSuccess, total: totalNeeded });
         }
-        await fetchImagePreviews();
+
+        if (!hasMore) {
+          toast.success(`${totalSuccess} imagens geradas! Todos os lotes concluídos.`);
+          break;
+        }
+
+        currentBatch++;
       }
+
+      await fetchImagePreviews();
     } catch (err) {
       toast.error(`Erro ao gerar imagens: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
     } finally {
       setGenerating(false);
+      setImageProgress(null);
+      setNextBatchIndex(0);
     }
   };
 
@@ -396,12 +421,16 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
           {stepsCount > 0 && (
             <Button variant="outline" className="min-h-[44px]" onClick={handleAutoCalc}>
               <Calculator className="mr-2 h-4 w-4" />
-              Calcular ({stepsCount})
+              Calcular ({stepImages.length > 0 ? stepImages.length : stepsCount})
             </Button>
           )}
           <Button variant="outline" className="min-h-[44px]" onClick={handleGenerate} disabled={pipeline.lesson_id === null || generating}>
             {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {generating ? 'Gerando...' : 'Gerar Imagens'}
+            {generating
+              ? imageProgress
+                ? `Gerando... ${imageProgress.current}/${imageProgress.total}`
+                : 'Gerando...'
+              : 'Gerar Imagens'}
           </Button>
           <Button variant="outline" className="min-h-[44px]" onClick={handleApproveAll} disabled={imagesGenerated === 0}>
             <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -412,6 +441,16 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
         </div>
+
+        {/* Auto-loop progress bar */}
+        {generating && imageProgress && imageProgress.total > 0 && (
+          <div className="space-y-1">
+            <Progress value={(imageProgress.current / imageProgress.total) * 100} className="h-2" />
+            <p className="text-xs text-muted-foreground text-center">
+              Gerando imagens... {imageProgress.current}/{imageProgress.total}
+            </p>
+          </div>
+        )}
 
         {/* Image Grid — always visible */}
         <div className="space-y-3">
