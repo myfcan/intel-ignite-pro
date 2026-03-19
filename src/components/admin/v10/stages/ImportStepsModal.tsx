@@ -29,10 +29,44 @@ interface ValidationResult {
   stepsCount: number;
   framesCount: number;
   phasesCount: number;
+  hasPartA: boolean;
+  hasPartC: boolean;
   errors: string[];
 }
 
+interface ParsedImport {
+  steps: any[];
+  narration_part_a?: string;
+  narration_part_c?: string;
+}
+
 const REQUIRED_STEP_FIELDS = ['step_number', 'title', 'frames'] as const;
+
+function parseImportJson(jsonText: string): { parsed: ParsedImport | null; error?: string } {
+  let raw: any;
+  try {
+    raw = JSON.parse(jsonText);
+  } catch (e) {
+    return { parsed: null, error: `JSON inválido: ${(e as Error).message}` };
+  }
+
+  // Support both formats: plain array or object with { steps, narration_part_a, narration_part_c }
+  if (Array.isArray(raw)) {
+    return { parsed: { steps: raw } };
+  }
+
+  if (typeof raw === 'object' && raw !== null && Array.isArray(raw.steps)) {
+    return {
+      parsed: {
+        steps: raw.steps,
+        narration_part_a: typeof raw.narration_part_a === 'string' ? raw.narration_part_a : undefined,
+        narration_part_c: typeof raw.narration_part_c === 'string' ? raw.narration_part_c : undefined,
+      },
+    };
+  }
+
+  return { parsed: null, error: 'JSON deve ser um array de passos ou objeto com { steps: [...], narration_part_a?, narration_part_c? }' };
+}
 
 function validateStepsJson(jsonText: string): ValidationResult {
   const result: ValidationResult = {
@@ -40,21 +74,20 @@ function validateStepsJson(jsonText: string): ValidationResult {
     stepsCount: 0,
     framesCount: 0,
     phasesCount: 0,
+    hasPartA: false,
+    hasPartC: false,
     errors: [],
   };
 
-  let steps: any[];
-  try {
-    steps = JSON.parse(jsonText);
-  } catch (e) {
-    result.errors.push(`JSON inválido: ${(e as Error).message}`);
+  const { parsed, error } = parseImportJson(jsonText);
+  if (!parsed) {
+    result.errors.push(error!);
     return result;
   }
 
-  if (!Array.isArray(steps)) {
-    result.errors.push('JSON deve ser um array de passos: [{ ... }, { ... }]');
-    return result;
-  }
+  const steps = parsed.steps;
+  result.hasPartA = !!parsed.narration_part_a;
+  result.hasPartC = !!parsed.narration_part_c;
 
   if (steps.length === 0) {
     result.errors.push('Array vazio — nenhum passo encontrado');
@@ -68,14 +101,12 @@ function validateStepsJson(jsonText: string): ValidationResult {
   for (const [i, step] of steps.entries()) {
     const prefix = `Passo ${step.step_number ?? i + 1}`;
 
-    // Required fields
     for (const field of REQUIRED_STEP_FIELDS) {
       if (step[field] === undefined || step[field] === null || step[field] === '') {
         result.errors.push(`${prefix}: campo '${field}' faltando`);
       }
     }
 
-    // step_number uniqueness
     if (typeof step.step_number === 'number') {
       if (stepNumbers.has(step.step_number)) {
         result.errors.push(`${prefix}: step_number duplicado`);
@@ -83,28 +114,20 @@ function validateStepsJson(jsonText: string): ValidationResult {
       stepNumbers.add(step.step_number);
     }
 
-    // Phase
     const phase = step.phase ?? step.phase_number ?? 1;
     if (typeof phase === 'number') {
       phases.add(phase);
     }
 
-    // Frames validation
     if (step.frames) {
       if (!Array.isArray(step.frames)) {
         result.errors.push(`${prefix}: 'frames' deve ser array`);
       } else {
         result.framesCount += step.frames.length;
-
         for (const [j, frame] of step.frames.entries()) {
           const fp = `${prefix} Frame ${j + 1}`;
-
-          if (!frame.bar_text) {
-            result.errors.push(`${fp}: 'bar_text' faltando`);
-          }
-          if (!frame.bar_color) {
-            result.errors.push(`${fp}: 'bar_color' faltando`);
-          }
+          if (!frame.bar_text) result.errors.push(`${fp}: 'bar_text' faltando`);
+          if (!frame.bar_color) result.errors.push(`${fp}: 'bar_color' faltando`);
           if (!frame.elements || !Array.isArray(frame.elements) || frame.elements.length === 0) {
             result.errors.push(`${fp}: 'elements' vazio ou faltando`);
           }
@@ -170,7 +193,9 @@ export function ImportStepsModal({
 
     setIsImporting(true);
     try {
-      const steps = JSON.parse(jsonText) as any[];
+      const { parsed } = parseImportJson(jsonText);
+      if (!parsed) return;
+      const steps = parsed.steps;
 
       // 1. Delete existing steps for this lesson
       const { error: delError } = await supabase
@@ -337,7 +362,40 @@ export function ImportStepsModal({
         });
       }
 
-      toast.success(`✅ ${steps.length} passos importados! C2/C3 auto-corrigidos (${c2Fixed}+${c3Fixed})`);
+      // 6. Save Part A / Part C narrations if provided
+      let narrationsSaved = 0;
+      if (parsed.narration_part_a || parsed.narration_part_c) {
+        // Fetch existing narrations
+        const { data: existingNarrations } = await supabase
+          .from('v10_lesson_narrations')
+          .select('id, part')
+          .eq('lesson_id', lessonId);
+
+        for (const part of ['A', 'C'] as const) {
+          const text = part === 'A' ? parsed.narration_part_a : parsed.narration_part_c;
+          if (!text) continue;
+
+          const existing = existingNarrations?.find((n) => n.part === part);
+          if (existing) {
+            await supabase
+              .from('v10_lesson_narrations')
+              .update({ script_text: text, audio_url: null, duration_seconds: 0 } as any)
+              .eq('id', existing.id);
+          } else {
+            await supabase
+              .from('v10_lesson_narrations')
+              .insert({ lesson_id: lessonId, part, script_text: text, duration_seconds: 0 } as any);
+          }
+          narrationsSaved++;
+        }
+      }
+
+      const extras = [
+        `C2/C3 (${c2Fixed}+${c3Fixed})`,
+        narrationsSaved > 0 ? `Parte ${parsed.narration_part_a ? 'A' : ''}${parsed.narration_part_a && parsed.narration_part_c ? '+' : ''}${parsed.narration_part_c ? 'C' : ''} salva` : '',
+      ].filter(Boolean).join(' · ');
+
+      toast.success(`✅ ${steps.length} passos importados! ${extras}`);
       onSuccess();
       onClose();
     } catch (e) {
@@ -359,35 +417,40 @@ export function ImportStepsModal({
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Cole o JSON completo dos passos da aula. Formato: array de objetos com campos obrigatórios
-            (<code className="text-xs">step_number</code>, <code className="text-xs">title</code>, <code className="text-xs">frames</code>).
+            Cole o JSON dos passos da aula. Aceita array <code className="text-xs">[...]</code> ou objeto com narrações:
+            <code className="text-xs ml-1">{'{ "narration_part_a": "...", "narration_part_c": "...", "steps": [...] }'}</code>
           </p>
 
           <Textarea
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
-            placeholder={`[
-  {
-    "step_number": 1,
-    "title": "Criar conta no Calendly",
-    "app_name": "Calendly",
-    "app_icon": "📅",
-    "phase": 1,
-    "frames": [
-      {
-        "bar_text": "calendly.com",
-        "bar_color": "#006BFF",
-        "bar_sub": "Sign up",
-        "action": "Preencha os campos...",
-        "check": "Você é redirecionado...",
-        "elements": [
-          {"type": "chrome_header", "url": "https://calendly.com/signup"},
-          {"type": "input", "label": "Email", "placeholder": "seu@email.com"}
-        ]
-      }
-    ]
-  }
-]`}
+            placeholder={`{
+  "narration_part_a": "Bem-vindo à aula sobre Calendly...",
+  "narration_part_c": "Parabéns! Você concluiu a aula...",
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Criar conta no Calendly",
+      "app_name": "Calendly",
+      "app_icon": "📅",
+      "phase": 1,
+      "narration_script": "Vamos começar... [ANCHOR:confirmacao]\\nSe você vê a tela, deu certo.",
+      "frames": [
+        {
+          "bar_text": "calendly.com",
+          "bar_color": "#006BFF",
+          "bar_sub": "Sign up",
+          "action": "Preencha os campos...",
+          "check": "Você é redirecionado...",
+          "elements": [
+            {"type": "chrome_header", "url": "https://calendly.com/signup"},
+            {"type": "input", "label": "Email", "placeholder": "seu@email.com"}
+          ]
+        }
+      ]
+    }
+  ]
+}`}
             className="min-h-[400px] font-mono text-xs leading-relaxed"
             maxLength={500000}
           />
@@ -413,6 +476,11 @@ export function ImportStepsModal({
                     <p className="font-semibold text-green-800">JSON válido</p>
                     <p className="text-green-600 mt-1">
                       {validation.stepsCount} passos · {validation.framesCount} frames · {validation.phasesCount} fases
+                      {(validation.hasPartA || validation.hasPartC) && (
+                        <span className="ml-1">
+                          · Narração: {[validation.hasPartA && 'Parte A', validation.hasPartC && 'Parte C'].filter(Boolean).join(' + ')}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
