@@ -63,6 +63,17 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
 
+  const addTools = () => {
+    const newTools = newTool
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t && !tools.includes(t));
+    if (newTools.length > 0) {
+      setTools([...tools, ...newTools]);
+      setNewTool('');
+    }
+  };
+
   const scoreTotal = Math.round(
     SCORE_FIELDS.reduce((sum, field) => sum + scores[field.key] * field.weight, 0)
   );
@@ -201,11 +212,7 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  const trimmed = newTool.trim();
-                  if (trimmed && !tools.includes(trimmed)) {
-                    setTools([...tools, trimmed]);
-                    setNewTool('');
-                  }
+                  addTools();
                 }
               }}
             />
@@ -213,13 +220,7 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
-                const trimmed = newTool.trim();
-                if (trimmed && !tools.includes(trimmed)) {
-                  setTools([...tools, trimmed]);
-                  setNewTool('');
-                }
-              }}
+              onClick={addTools}
               disabled={!newTool.trim()}
             >
               <Plus className="h-4 w-4" />
