@@ -417,8 +417,8 @@ export function ImportStepsModal({
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Cole o JSON completo dos passos da aula. Formato: array de objetos com campos obrigatórios
-            (<code className="text-xs">step_number</code>, <code className="text-xs">title</code>, <code className="text-xs">frames</code>).
+            Cole o JSON dos passos da aula. Aceita array <code className="text-xs">[...]</code> ou objeto com narrações:
+            <code className="text-xs ml-1">{'{ "narration_part_a": "...", "narration_part_c": "...", "steps": [...] }'}</code>
           </p>
 
           <Textarea
