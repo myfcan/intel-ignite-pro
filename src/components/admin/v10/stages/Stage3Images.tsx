@@ -179,11 +179,9 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
     if (realCount > 0) {
       setImagesNeeded(realCount);
       toast.info(`Necessárias atualizado para ${realCount} (elementos image reais). Clique em Salvar.`);
-    } else if (stepsCount > 0) {
-      setImagesNeeded(stepsCount);
-      toast.info(`Necessárias atualizado para ${stepsCount} (fallback: 1 por passo). Clique em Salvar.`);
     } else {
-      toast.error('Nenhum passo encontrado');
+      setImagesNeeded(0);
+      toast.info('Nenhum elemento de imagem nos frames. Clique "Gerar Imagens" para criar imagens de intro e celebração.');
     }
   };
 
@@ -192,10 +190,7 @@ export function Stage3Images({ pipeline, onUpdate }: Stage3ImagesProps) {
       toast.error('Vincule uma aula primeiro');
       return;
     }
-    if (imagesNeeded === 0 && stepsCount > 0) {
-      setImagesNeeded(stepsCount);
-      await onUpdate({ images_needed: stepsCount });
-    }
+    // imagesNeeded will be auto-set from edge function response (totalNeeded)
     setGenerating(true);
     setImageProgress({ current: 0, total: 0 });
 
