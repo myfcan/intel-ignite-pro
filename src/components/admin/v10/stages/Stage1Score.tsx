@@ -58,6 +58,8 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
     score_relevance: pipeline.score_relevance,
   });
   const [docsManualInput, setDocsManualInput] = useState(pipeline.docs_manual_input ?? '');
+  const [tools, setTools] = useState<string[]>(pipeline.tools ?? []);
+  const [newTool, setNewTool] = useState('');
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
 
