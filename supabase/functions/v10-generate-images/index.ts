@@ -14,32 +14,32 @@ function delay(ms: number): Promise<void> {
 function buildImagePrompt(
   stepTitle: string,
   stepDescription: string,
-  altText: string
+  altText: string,
+  appName?: string
 ): string {
   const context = [stepTitle, stepDescription, altText]
     .filter(Boolean)
     .join(". ");
-  return `Generate a conceptual diagram/illustration showing the automation workflow or concept: ${context}.
+  const toolContext = appName ? `The tool/app shown is "${appName}".` : "";
+  return `Generate a realistic UI screenshot mockup of a software interface: ${context}.
+${toolContext}
 
-This is a V10 contextual illustration for Parte A (intro) or Parte C (recap) of a tech lesson.
-It is NOT a UI mockup — it is a flow diagram or conceptual illustration.
+This should look like an actual screenshot of the tool's web interface.
 
 Style requirements:
-- Clean diagram with tool/app icons connected by directional flow arrows
-- AILIV brand color palette: indigo (#6366F1), violet (#8B5CF6), emerald (#34D399), soft gray (#F3F4F6)
-- Tool/app icons as simplified colored rounded shapes (NOT realistic logos — use colored circles/squares with the tool initial letter)
-- Flow arrows or connection lines between elements showing data/process flow
-- Minimal text labels (tool names only, max 2-3 words per label)
-- Clean, professional, editorial quality
-- Single cohesive diagram, centered composition
-- CLEAN SOLID WHITE BACKGROUND (#FFFFFF)
-- ABSOLUTELY NO people, characters, or human figures
-- ABSOLUTELY NO realistic logos or brand marks
-- NO 3D rendering, NO gradients, NO realistic textures
-- NO brains, lightbulbs, gears, neural networks, or generic tech symbols
+- Realistic flat UI screenshot of a modern web application / SaaS tool
+- Show actual interface elements: navigation bar, sidebar, buttons, input fields, tables, cards
+- Use realistic colors and layouts matching modern SaaS tools (white backgrounds, subtle borders, professional typography)
+- Include placeholder text in interface elements that matches the tool's purpose
+- Clean, professional, pixel-perfect quality
+- CLEAN SOLID WHITE BACKGROUND behind the browser chrome
+- NO flowcharts, NO diagrams, NO arrows between icons
+- NO abstract representations — show the ACTUAL interface as a user would see it
+- NO people, characters, or human figures
+- NO 3D rendering, NO gradients on the background
 - IMPORTANT: 16:9 LANDSCAPE orientation
 - OUTPUT SIZE: exactly 1024x576 pixels (16:9 landscape)
-- The diagram must be centered and fill 80-90% of the frame`;
+- The screenshot should be centered and fill 90% of the frame`;
 }
 
 function base64UrlToBytes(dataUrl: string): Uint8Array {
