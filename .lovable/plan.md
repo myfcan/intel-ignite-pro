@@ -1,157 +1,147 @@
 
 
-# Auditoria Forense do Plano — Com Dados Reais do Código
+# Auditoria Forense: Stage 3 (Imagens) — Auto-loop + Correções
 
----
+## 1. CONFIRMADO: Frontend envia `batch_size: 15` — edge function recebe e usa
 
-## 1. CONFIRMADO: A raiz do problema está no template e no refine
-
-**Evidência real — `.lovable/v8-raw-content-model.md` linhas 76-82:**
-```markdown
-### Seção 3 (índice 2) — Ponte para primeiro exercício
-**Objetivo:** Frase curta de transição para o primeiro exercício.
-
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
-```
-```
-
-E o exercício associado (linha 89):
-```json
-"title": "Teste rápido: respostas genéricas",
-```
-
-Toda aula que usa esse template herda literalmente "Teste rápido" + a mesma ponte de 1 linha.
-
-**Evidência real — `v8-refine-content/index.ts` linhas 40-44:**
-```
-11. **Transições explícitas**: Cada seção deve começar com uma frase que conecte ao que veio antes ("Agora que você entendeu X, vamos ver Y...").
-
-13. **Detecção de texto pré-quiz/playground**: Se a seção termina com uma frase que é literalmente a pergunta do quiz seguinte (...), REMOVA essa frase redundante da seção, pois o quiz já vai narrá-la.
-```
-
-A Regra 11 **incentiva** transições genéricas. A Regra 13 pede remoção mas **não proíbe criação** de novas. Não existe Regra 16 ou 17 anti-pergunta. CONFIRMADO: gap real.
-
----
-
-## 2. CONFIRMADO: Não existe validação pós-refine contra perguntas
-
-**Evidência real — `AdminV8Create.tsx` linhas 608-634:**
+**`Stage3Images.tsx` linha 196:**
 ```typescript
-if (refineResponse.ok) {
-  const refineResult = await refineResponse.json();
-  if (refineResult.sections && Array.isArray(refineResult.sections)) {
-    // Replace section content with refined versions — protect Section 0 (Abertura)
-    for (let i = startIdx; i < parsed.sections.length && (i - offset) < refineResult.sections.length; i++) {
-      parsed.sections[i].content = refineResult.sections[refIdx].content;
-    }
+const { data, error } = await supabase.functions.invoke('v10-generate-images', {
+  body: { pipeline_id: pipeline.id, batch_size: 15, batch_index: nextBatchIndex }
+});
+```
+
+**`v10-generate-images/index.ts` linha 142:**
+```typescript
+const {
+  pipeline_id,
+  batch_size = 2,
+  batch_index = 0,
+  step_ids,
+} = await req.json();
+```
+
+O default do edge function é 2, mas o frontend sobrescreve para 15. Com 16 steps e múltiplos elementos `image` por step (~22 imagens totais), 22 × ~10s = 220s → timeout confirmado nos logs (shutdown após ~200s).
+
+## 2. CONFIRMADO: Sem auto-loop — clique único = 1 batch
+
+**`Stage3Images.tsx` linhas 184-219:** A função `handleGenerate` faz UMA chamada e retorna. Se `hasMoreBatches === true`, mostra um toast pedindo novo clique:
+```typescript
+if (hasMore) {
+  setNextBatchIndex(prev => prev + 1);
+  toast.success(`${successCount} imagens geradas! Próximo lote (batch ${nextBatchIndex + 2}).`);
+}
+```
+
+Nenhum `while` loop. CONFIRMADO.
+
+## 3. CONFIRMADO: Injeção automática de imagens em steps sem `type: "image"`
+
+**`v10-generate-images/index.ts` linhas 280-291:**
+```typescript
+if (!hasExistingImage && frames.length > 0) {
+  if (!frames[0].elements) frames[0].elements = [];
+  const existingEmpty = frames[0].elements.find((el: any) => el.type === "image" && (!el.src || el.src === ""));
+  if (!existingEmpty) {
+    frames[0].elements.unshift({
+      type: "image",
+      src: "",
+      alt: `Ilustração: ${step.title || "passo da aula"}`,
+    });
   }
 }
 ```
 
-O merge aceita **qualquer conteúdo** do refine sem nenhuma verificação de trailing questions. CONFIRMADO.
+Isso INJETA um elemento `image` vazio em TODOS os 16 steps, mesmo os que originalmente não tinham nenhum. Resultado: 16 steps processados quando possivelmente apenas ~8-10 realmente precisam de imagem.
 
----
+## 4. CONFIRMADO: `handleAutoCalc` usa `stepsCount` (total de steps), não contagem real de elementos `image`
 
-## 3. CONFIRMADO: `contractPattern` não é salvo no JSON
-
-**Evidência real — `AdminV8Create.tsx` linhas 791-809:**
+**`Stage3Images.tsx` linhas 175-182:**
 ```typescript
-const finalData: V8LessonData = {
-  contentVersion: "v8",
-  title: parsed.title,
-  // ...
+const handleAutoCalc = () => {
+  if (stepsCount > 0) {
+    setImagesNeeded(stepsCount);
+    toast.info(`Necessárias atualizado para ${stepsCount} (1 por passo). Clique em Salvar.`);
+  }
 };
 ```
 
-O tipo `V8LessonData` (em `v8Lesson.ts` linha 136) tem campo `contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03'` mas o `finalData` em AdminV8Create **nunca o popula**. O `selectedPattern` (linha 654) é logado mas não salvo. CONFIRMADO: gap real.
+`stepsCount` vem de uma query `count: 'exact'` (linha 52) = total de steps (16). Não conta elementos `type: "image"` reais. O botão "Calcular (16)" define `imagesNeeded = 16` quando o número real de elementos `image` nos frames pode ser 22 (steps com múltiplos frames) ou 0 (antes da primeira geração com injeção).
 
----
+## 5. GAP NÃO COBERTO NO PLANO ANTERIOR: Log stage errado
 
-## 4. CONFIRMADO: `v8-generate-raw-content` não existe
-
-```
-code--search_files: No matches found for pattern 'v8-generate-raw-content'
-```
-
-A função precisa ser criada do zero. Precisa de entry no `supabase/config.toml`.
-
----
-
-## 5. CONFIRMADO: Seções-ponte de 1 linha existem no template
-
-**Evidência — `.lovable/v8-raw-content-model.md` linha 81:**
-```markdown
-Qual tipo de resposta tem mais chance de aparecer quando você pergunta "Onde pedir uma pizza?"
+**`v10-generate-images/index.ts` linha 417:**
+```typescript
+await supabase.from("v10_bpa_pipeline_log").insert({
+  pipeline_id,
+  stage: 3,
+  action: "generate-images:completed",
 ```
 
-Essa é a seção INTEIRA. Uma linha. O áudio gerado para isso tem ~5 segundos (confirmado pelos logs: `section 2: only 0 speakable chars` — a seção 2 nem gerou áudio).
+A UI mostra "Etapa 4 — Imagens" (`Stage3Images.tsx` linha 341). O log grava `stage: 3`. O Stage de Mockups (anterior) usa `stage: 4`. Inversão de numeração entre logs e UI — dificulta auditoria futura.
+
+Porém, verificando o Stage4Mockups, o log do mockups usa `stage: 3` também. Isso sugere que a numeração de stages no log segue uma convenção interna diferente da UI. **Manter como está para evitar quebrar queries existentes no `v10_bpa_pipeline_log`.**
+
+## 6. CONFIRMADO: Filtro `stepsToProcess` inclui steps SEM elementos image
+
+**`v10-generate-images/index.ts` linhas 219-240:**
+```typescript
+stepsToProcess = steps.filter((step: any) => {
+  // ...
+  return !hasImageElement || hasEmptyImage;
+});
+```
+
+`!hasImageElement` retorna `true` para steps sem nenhum elemento `type: "image"`. Esses steps entram no batch e recebem injeção (Gap 3 acima). Resultado: todos os 16 steps são processados na primeira execução.
 
 ---
 
-## 6. GAPS NO PLANO PROPOSTO
+## Plano Revisado Final
 
-### Gap A: O plano NÃO endereça o `contractPattern` não salvo
-O `V8LessonData` já tem o campo mas o pipeline nunca o popula. Sem isso, é impossível auditar depois qual combinação (narrativa + ângulo) foi usada.
+### Arquivo 1: `Stage3Images.tsx` — Auto-loop + Calcular corrigido
 
-**Correção necessária:** Adicionar `contractPattern: selectedPattern` na construção do `finalData` (linha 791 de AdminV8Create).
+**Mudança A — Auto-loop (linhas 184-219):**
+Substituir o `handleGenerate` por um `while` loop:
+- `batch_size: 3` (3 steps por batch; cada step pode ter 1-3 imagens × ~10s = ~30s máx)
+- Após cada batch com `hasMoreBatches === true`, chamar automaticamente o próximo
+- Adicionar state `imageProgress: { current: number; total: number } | null`
+- Atualizar progresso a cada batch: `current += data.success`
+- Botão mostra "Gerando imagens... 12/22" com barra de progresso inline
 
-### Gap B: O plano NÃO menciona salvar `narrativeVariation` no JSON
-Se criarmos 3 variações narrativas, precisamos de um campo novo em `V8LessonData` para registrar qual foi usada. Sem isso, o admin não sabe qual variação gerou qual aula.
+**Mudança B — Calcular com contagem real (linhas 175-182):**
+Substituir `stepsCount` por contagem real de elementos `type: "image"` dos frames existentes. Usar `stepImages.length` (já carregado por `fetchImagePreviews`):
+```typescript
+const handleAutoCalc = () => {
+  const realCount = stepImages.length;
+  if (realCount > 0) {
+    setImagesNeeded(realCount);
+  } else if (stepsCount > 0) {
+    setImagesNeeded(stepsCount); // fallback se ainda não tem frames
+  }
+};
+```
 
-**Correção necessária:** Adicionar `narrativeVariation?: 'everyday' | 'professional' | 'curiosity'` ao tipo `V8LessonData` e populá-lo no `finalData`.
+### Arquivo 2: `v10-generate-images/index.ts` — Remover injeção
 
-### Gap C: Parser compatibility com output da IA
-O `v8ContentParser.ts` (linha 41) espera `^#\s+(.+)$` para título e `^##\s` para seções. Se a IA gerar `### Subseção` ou `## 1. Título`, o parser cria menos de 9 seções e o Hard Gate (linha 782-784) aborta o pipeline.
+**Mudança C — Remover injeção automática (linhas 280-291):**
+Deletar o bloco inteiro. Se um step não tem elemento `type: "image"`, ele simplesmente não precisa de imagem gerada.
 
-**Mitigação necessária:** A nova function deve usar tool calling com schema `sections[]` (como já feito no `v8-refine-content`), retornando um array estruturado que o frontend converte para markdown antes de popular o textarea. Isso elimina o risco de formato incompatível.
+**Mudança D — Ajustar filtro (linhas 219-240):**
+Trocar `return !hasImageElement || hasEmptyImage` por `return hasImageElement && hasEmptyImage`. Assim, apenas steps que JÁ possuem elementos `image` com `src` vazio são processados.
 
-### Gap D: O plano propõe "Preview Texto" mas não especifica como converter tool-call output → markdown
-A function retornaria `{ sections: [{title, content}] }`. Mas o textarea espera markdown com `# Título\n\n## Seção 1 — X\ncontent...`. Precisa de uma função de conversão `sectionsToMarkdown()`.
+**Mudança E — Remover variável morta `newMockupsTotal`:**
+NÃO LOCALIZADO NO CÓDIGO da edge function `v10-generate-images`. A variável `newMockupsTotal` mencionada no plano anterior pertence ao `v10-generate-mockups`, não a esta function. NENHUMA ação necessária aqui.
 
----
+### Sem Migration
 
-## 7. PLANO REVISADO FINAL
+Nenhuma alteração de schema. Alterações puramente de lógica client-side (auto-loop, cálculo) e server-side (remoção de injeção, filtro).
 
-### Arquivos a criar/modificar
-
-| Arquivo | Ação | O que muda |
-|---------|------|------------|
-| `supabase/functions/v8-generate-raw-content/index.ts` | **NOVO** | Edge function de geração de conteúdo bruto |
-| `supabase/config.toml` | **EDITAR** | Adicionar entry `[functions.v8-generate-raw-content]` |
-| `supabase/functions/v8-refine-content/index.ts` | **EDITAR** | Adicionar Regras 16-17 ao prompt (linhas 44-67) |
-| `src/pages/AdminV8Create.tsx` | **EDITAR** | Bloco UI de geração IA + salvar `contractPattern` + `narrativeVariation` no finalData |
-| `src/types/v8Lesson.ts` | **EDITAR** | Adicionar `narrativeVariation` ao tipo `V8LessonData` |
-
-### Detalhes por arquivo
-
-**1. `v8-generate-raw-content/index.ts` (NOVO)**
-- Input: `{ title, objectives: string[], variationStyle: 'everyday' | 'professional' | 'curiosity' }`
-- System prompt com 3 sub-prompts por variação (arcos narrativos, exemplos de abertura, transições proibidas)
-- Regra hard: mínimo 100 palavras por seção, proibido seções que são apenas 1 pergunta
-- Regra hard: marcadores `[EXERCISE:tipo]` e `[PLAYGROUND]` nas posições corretas
-- Tool calling retornando `{ title, description, sections: [{title, content}] }` — o frontend monta o markdown
-- Modelo: `google/gemini-2.5-flash`
-
-**2. `v8-refine-content/index.ts` (EDITAR linhas 44-67)**
-- Adicionar após Regra 13:
-  - Regra 16: "NUNCA termine uma seção com uma pergunta interrogativa."
-  - Regra 17: "PROIBIDO criar frases que funcionem como enunciado de exercício (ex: 'Teste rápido:', 'Vamos testar:', 'Qual dos seguintes...')."
-
-**3. `AdminV8Create.tsx` (EDITAR)**
-- Novo state: `generationTitle`, `generationObjectives`, `generationVariation`
-- Bloco UI acima do textarea no modo `content`: 3 inputs + botão "Gerar com IA"
-- Função `sectionsToMarkdown()` para converter output da function em markdown
-- Linha 791: adicionar `contractPattern: selectedPattern` e `narrativeVariation` ao `finalData`
-
-**4. `v8Lesson.ts` (EDITAR linha ~136)**
-- Adicionar: `narrativeVariation?: 'everyday' | 'professional' | 'curiosity';`
-
-### Riscos residuais
+### Riscos
 
 | Risco | Severidade | Mitigação |
 |-------|-----------|-----------|
-| IA gera <9 seções | Médio | Validação na function + Hard Gate existente |
-| Timeout (>60s) | Baixo | Gemini 2.5 Flash com tool calling é rápido (~10-20s) |
-| IA ignora regras de variação | Médio | Sub-prompts com exemplos literais + few-shot |
+| Steps sem elementos `image` ficam sem imagem após remoção da injeção | Esperado | É o comportamento correto — v10-generate-steps deve criar os elementos `image` nos frames na geração inicial |
+| `stepImages.length === 0` antes da primeira geração | Baixo | Fallback para `stepsCount` no cálculo |
+| Batch com step com 5+ imagens estourando timeout | Médio | `batch_size: 3` steps × ~3 imgs × 10s = 90s — apertado. Se necessário, reduzir para 2 |
+| Rate limit 429 | Médio | Retry com backoff de 5s já existe (linha 84) |
 
