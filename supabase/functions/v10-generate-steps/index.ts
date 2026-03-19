@@ -366,8 +366,8 @@ Retorne APENAS o JSON array.`;
         lesson_id,
         num_steps: steps.length,
         estimated_minutes: estimatedMinutes,
-      c2_fixes: c2c3Result.c2Fixes,
-      c3_fixes: c2c3Result.c3Fixes,
+      c2_fixes: c2Fixes,
+      c3_fixes: c3Fixes,
       },
     });
 
