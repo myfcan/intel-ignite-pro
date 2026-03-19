@@ -201,11 +201,7 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  const trimmed = newTool.trim();
-                  if (trimmed && !tools.includes(trimmed)) {
-                    setTools([...tools, trimmed]);
-                    setNewTool('');
-                  }
+                  addTools();
                 }
               }}
             />
@@ -213,13 +209,7 @@ export function Stage1Score({ pipeline, onUpdate }: Stage1ScoreProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
-                const trimmed = newTool.trim();
-                if (trimmed && !tools.includes(trimmed)) {
-                  setTools([...tools, trimmed]);
-                  setNewTool('');
-                }
-              }}
+              onClick={addTools}
               disabled={!newTool.trim()}
             >
               <Plus className="h-4 w-4" />
