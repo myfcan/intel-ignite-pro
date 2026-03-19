@@ -218,11 +218,11 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     }
   };
 
-  const handleGenerateWithAI = async () => {
+  const handleGenerateWithAI = async (instructions?: string) => {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
-        body: { pipeline_id: pipeline.id, num_steps: 10 },
+        body: { pipeline_id: pipeline.id, num_steps: 10, instructions: instructions || '' },
       });
 
       if (error) {
