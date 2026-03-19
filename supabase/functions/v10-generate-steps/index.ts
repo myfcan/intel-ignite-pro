@@ -274,7 +274,9 @@ Retorne APENAS o JSON array.`;
           app_icon: step.app_icon || null,
           duration_seconds: typeof step.duration_seconds === "number" ? step.duration_seconds : 30,
           frames: step.frames,
-          liv: step.liv,
+          liv: (step.liv && typeof step.liv === 'object' && step.liv.tip !== undefined)
+            ? step.liv
+            : { tip: "", analogy: "", sos: "" },
           warnings: step.warnings || null,
           app_badge_bg: step.app_badge_bg || "#EEF2FF",
           app_badge_color: step.app_badge_color || "#6366F1",

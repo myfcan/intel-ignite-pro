@@ -575,7 +575,7 @@ export function validateFrames(steps: any[]): ValidationResult {
 export function validateStructure(steps: any[]): ValidationResult {
   const errors: string[] = [];
 
-  const phases = new Set(steps.map((s: any) => s.phase_number));
+  const phases = new Set(steps.map((s: any) => s.phase_number ?? s.phase));
   if (phases.size !== 3) {
     errors.push(`${phases.size} fases detectadas (obrigatório 3)`);
   }
