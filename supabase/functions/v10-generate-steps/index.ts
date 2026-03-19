@@ -30,7 +30,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { pipeline_id, num_steps } = await req.json();
+    const { pipeline_id, num_steps, instructions } = await req.json();
 
     if (!pipeline_id || !num_steps) {
       return new Response(
@@ -96,13 +96,17 @@ serve(async (req) => {
     // Extract declared tools from pipeline title/docs
     const declaredTools = (pipeline.tools as string[] || []);
 
+    const instructionsBlock = instructions
+      ? `\n\nINSTRUÇÕES DO INSTRUTOR (prioridade máxima):\n${instructions}\n`
+      : '';
+
     const userMessage = `Gere ${num_steps} passos para a aula "${pipeline.title}" (slug: ${pipeline.slug}).
 
 Ferramentas declaradas: ${declaredTools.length > 0 ? declaredTools.join(', ') : 'Detectar automaticamente do contexto'}
 
 Documentacao/notas do instrutor sobre o app:
 ${pipeline.docs_manual_input || "Nenhuma documentacao fornecida — use seu conhecimento sobre o app."}
-
+${instructionsBlock}
 REGRAS CRÍTICAS (auditoria automática V1-V5):
 - Use APENAS as ferramentas declaradas (V1). Último passo = AILIV.
 - 3 fases obrigatórias (phase_number 1-3), não 5 (V3).

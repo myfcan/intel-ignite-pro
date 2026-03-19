@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { GenerateWithInstructionsModal } from './GenerateWithInstructionsModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,6 +73,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
   const [generating, setGenerating] = useState(false);
   const [deletingLesson, setDeletingLesson] = useState(false);
   const [fixingC2C3, setFixingC2C3] = useState(false);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
 
   // Trail/Course selectors for lesson creation
   const [trails, setTrails] = useState<Array<{ id: string; title: string }>>([]);
@@ -216,11 +218,11 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
     }
   };
 
-  const handleGenerateWithAI = async () => {
+  const handleGenerateWithAI = async (instructions?: string) => {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('v10-generate-steps', {
-        body: { pipeline_id: pipeline.id, num_steps: 10 },
+        body: { pipeline_id: pipeline.id, num_steps: 10, instructions: instructions || '' },
       });
 
       if (error) {
@@ -645,7 +647,7 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
             </Button>
             <Button
               variant="outline"
-              onClick={handleGenerateWithAI}
+              onClick={() => setShowInstructionsModal(true)}
               disabled={generating}
               className="min-h-[44px]"
             >
@@ -817,13 +819,22 @@ export function Stage2Structure({ pipeline, onUpdate }: Stage2StructureProps) {
             </Button>
             <Button
               variant="outline"
-              onClick={handleGenerateWithAI}
+              onClick={() => setShowInstructionsModal(true)}
               disabled={generating || !pipeline.lesson_id}
               className="min-h-[44px] w-full"
             >
               {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               {generating ? 'Gerando passos...' : 'Gerar com IA (10 passos)'}
             </Button>
+            <GenerateWithInstructionsModal
+              open={showInstructionsModal}
+              onClose={() => setShowInstructionsModal(false)}
+              onGenerate={async (instructions) => {
+                await handleGenerateWithAI(instructions);
+                setShowInstructionsModal(false);
+              }}
+              isLoading={generating}
+            />
           </div>
         )}
 
