@@ -471,6 +471,11 @@ export function ImportStepsModal({
                     <p className="font-semibold text-green-800">JSON válido</p>
                     <p className="text-green-600 mt-1">
                       {validation.stepsCount} passos · {validation.framesCount} frames · {validation.phasesCount} fases
+                      {(validation.hasPartA || validation.hasPartC) && (
+                        <span className="ml-1">
+                          · Narração: {[validation.hasPartA && 'Parte A', validation.hasPartC && 'Parte C'].filter(Boolean).join(' + ')}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
