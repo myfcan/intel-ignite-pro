@@ -11,6 +11,24 @@ import type { V10BpaPipeline, V10LessonNarration, V10LessonStep, StepAnchor } fr
 import { AdminAnchorTimeline } from '../AdminAnchorTimeline';
 import { ImportFullScriptModal } from './ImportFullScriptModal';
 
+// Timer component for processing elapsed time
+function ProcessingTimer({ startedAt, isRunning }: { startedAt: number; isRunning: boolean }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!isRunning) return;
+    const interval = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [startedAt, isRunning]);
+
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  return (
+    <p className="text-xs text-muted-foreground">
+      ⏱ {mins > 0 ? `${mins}m ` : ''}{secs}s {isRunning ? 'decorridos' : 'total'}
+    </p>
+  );
+}
+
 interface Stage5NarrationProps {
   pipeline: V10BpaPipeline;
   onUpdate: (updates: Partial<V10BpaPipeline>) => Promise<void>;
@@ -303,6 +321,13 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
 
   // ── Process all steps sequentially ─────────────────────────────────────
   const [processingAll, setProcessingAll] = useState(false);
+  const [processProgress, setProcessProgress] = useState<{
+    total: number;
+    current: number;
+    currentStepTitle: string;
+    results: Array<{ step: number; title: string; status: 'ok' | 'error' | 'pending' | 'processing' }>;
+    startedAt: number;
+  } | null>(null);
 
   const handleProcessAll = useCallback(async () => {
     const stepsWithScript = steps.filter(s => {
@@ -316,12 +341,34 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
     }
 
     setProcessingAll(true);
+    const initialResults = stepsWithScript.map(s => ({
+      step: s.step_number,
+      title: s.title,
+      status: 'pending' as const,
+    }));
+    setProcessProgress({
+      total: stepsWithScript.length,
+      current: 0,
+      currentStepTitle: stepsWithScript[0].title,
+      results: initialResults,
+      startedAt: Date.now(),
+    });
+
     let successCount = 0;
     let errorCount = 0;
 
-    for (const step of stepsWithScript) {
+    for (let i = 0; i < stepsWithScript.length; i++) {
+      const step = stepsWithScript[i];
       const script = editingScripts[step.id] ?? step.narration_script;
       setProcessingStep(step.id);
+      setProcessProgress(prev => prev ? {
+        ...prev,
+        current: i,
+        currentStepTitle: step.title,
+        results: prev.results.map((r, idx) =>
+          idx === i ? { ...r, status: 'processing' as const } : r
+        ),
+      } : null);
 
       try {
         const { data, error } = await supabase.functions.invoke('v10-process-anchors', {
@@ -335,16 +382,35 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
         if (error || data?.error) {
           errorCount++;
           console.error(`Step ${step.step_number} error:`, error || data?.error);
+          setProcessProgress(prev => prev ? {
+            ...prev,
+            results: prev.results.map((r, idx) =>
+              idx === i ? { ...r, status: 'error' as const } : r
+            ),
+          } : null);
         } else {
           successCount++;
+          setProcessProgress(prev => prev ? {
+            ...prev,
+            results: prev.results.map((r, idx) =>
+              idx === i ? { ...r, status: 'ok' as const } : r
+            ),
+          } : null);
         }
       } catch {
         errorCount++;
+        setProcessProgress(prev => prev ? {
+          ...prev,
+          results: prev.results.map((r, idx) =>
+            idx === i ? { ...r, status: 'error' as const } : r
+          ),
+        } : null);
       }
     }
 
     setProcessingStep(null);
     setProcessingAll(false);
+    setProcessProgress(prev => prev ? { ...prev, current: prev.total, currentStepTitle: 'Concluído!' } : null);
 
     toast.success(`Processamento concluído: ${successCount} ok, ${errorCount} erros`);
 
@@ -440,6 +506,72 @@ export function Stage5Narration({ pipeline, onUpdate }: Stage5NarrationProps) {
             {audiosGenerated} gerados de {audiosTotal} total
           </p>
         </div>
+
+        {/* Live processing tracker */}
+        {(processingAll || processProgress) && processProgress && (
+          <div className="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {processingAll && <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />}
+                <span className="font-semibold text-sm text-indigo-800">
+                  {processingAll
+                    ? `Processando áudios... (${processProgress.current + 1}/${processProgress.total})`
+                    : `Concluído! ${processProgress.results.filter(r => r.status === 'ok').length}/${processProgress.total} com sucesso`
+                  }
+                </span>
+              </div>
+              {!processingAll && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setProcessProgress(null)}
+                  className="text-xs h-7"
+                >
+                  Fechar
+                </Button>
+              )}
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-2 w-full overflow-hidden rounded-full bg-indigo-100">
+              <div
+                className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                style={{ width: `${Math.round(((processingAll ? processProgress.current : processProgress.total) / processProgress.total) * 100)}%` }}
+              />
+            </div>
+
+            {/* Current step */}
+            {processingAll && (
+              <p className="text-xs text-indigo-600">
+                ▶ {processProgress.currentStepTitle}
+              </p>
+            )}
+
+            {/* Elapsed time */}
+            <ProcessingTimer startedAt={processProgress.startedAt} isRunning={processingAll} />
+
+            {/* Step results grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto">
+              {processProgress.results.map((r) => (
+                <div
+                  key={r.step}
+                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md ${
+                    r.status === 'ok' ? 'bg-green-100 text-green-700' :
+                    r.status === 'error' ? 'bg-red-100 text-red-700' :
+                    r.status === 'processing' ? 'bg-indigo-100 text-indigo-700' :
+                    'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {r.status === 'ok' && <CheckCircle2 className="h-3 w-3 flex-shrink-0" />}
+                  {r.status === 'error' && <AlertCircle className="h-3 w-3 flex-shrink-0" />}
+                  {r.status === 'processing' && <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />}
+                  {r.status === 'pending' && <span className="h-3 w-3 rounded-full border border-current flex-shrink-0" />}
+                  <span className="truncate">P{r.step}: {r.title}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Metric cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
