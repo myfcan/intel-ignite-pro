@@ -70,7 +70,7 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({
       className="flex-col items-center w-full min-h-full px-6 py-10 relative"
       style={{ display: isActive ? 'flex' : 'none' }}
     >
-      <Confetti isActive={showConfetti} />
+      <style>{`
 
       <style>{`
         @keyframes badge-glow {
