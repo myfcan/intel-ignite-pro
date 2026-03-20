@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import type { V10Lesson, V10UserStreak } from '../../../../types/v10.types';
 import { RecapPage } from './RecapPage';
 import { EngagementPage } from './EngagementPage';
 import { GamificationPage } from './GamificationPage';
 import { ExitButton } from '../shared/ExitButton';
 import { V8LessonRating } from '../../v8/V8LessonRating';
+import { useV7SoundEffects } from '../../v7/cinematic/useV7SoundEffects';
 
 interface PartCScreenProps {
   lesson: V10Lesson;
@@ -34,6 +36,29 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const { playSound } = useV7SoundEffects();
+  const hasPlayedRef = useRef<Record<number, boolean>>({});
+
+  // Sound + confetti triggers per page
+  useEffect(() => {
+    if (hasPlayedRef.current[currentPage]) return;
+    hasPlayedRef.current[currentPage] = true;
+
+    if (currentPage === 1) {
+      playSound('completion');
+      confetti({ particleCount: 100, spread: 90, origin: { y: 0.6 }, zIndex: 9999, colors: ['#6366F1', '#8B5CF6', '#34D399', '#F59E0B', '#EC4899'] });
+    } else if (currentPage === 2) {
+      playSound('level-up');
+    } else if (currentPage === 3) {
+      playSound('combo-hit');
+      const duration = 2500;
+      const end = Date.now() + duration;
+      const interval = setInterval(() => {
+        if (Date.now() > end) return clearInterval(interval);
+        confetti({ particleCount: 40, spread: 100, origin: { x: Math.random(), y: Math.random() * 0.4 }, zIndex: 9999, colors: ['#6366F1', '#8B5CF6', '#34D399', '#F59E0B', '#EC4899', '#3B82F6'] });
+      }, 200);
+    }
+  }, [currentPage, playSound]);
 
   // Build recap items from lesson data
   const recapItems = [

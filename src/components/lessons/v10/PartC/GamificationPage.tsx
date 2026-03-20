@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import type { V10UserStreak } from '../../../../types/v10.types';
-import { Confetti } from './Confetti';
 
 interface GamificationPageProps {
   isActive: boolean;
@@ -28,33 +28,22 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({
   onShare,
   onNextLesson,
 }) => {
-  const [showConfetti, setShowConfetti] = useState(false);
   const hasAutoFired = useRef(false);
-  const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const startConfetti = () => {
-    if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
-    setShowConfetti(true);
-    confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 3500);
+  const fireConfetti = () => {
+    confetti({ particleCount: 80, spread: 100, origin: { y: 0.5 }, zIndex: 9999, colors: ['#6366F1', '#8B5CF6', '#34D399', '#F59E0B', '#EC4899'] });
   };
 
   // Auto-fire confetti when C3 becomes active
   useEffect(() => {
     if (isActive && !hasAutoFired.current) {
       hasAutoFired.current = true;
-      startConfetti();
+      fireConfetti();
     }
   }, [isActive]);
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
-    };
-  }, []);
-
   const handleShare = () => {
-    startConfetti();
+    fireConfetti();
     onShare();
   };
 
@@ -81,8 +70,6 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({
       className="flex-col items-center w-full min-h-full px-6 py-10 relative"
       style={{ display: isActive ? 'flex' : 'none' }}
     >
-      <Confetti isActive={showConfetti} />
-
       <style>{`
         @keyframes badge-glow {
           0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); }
