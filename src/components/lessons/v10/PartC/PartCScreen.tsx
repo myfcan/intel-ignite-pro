@@ -32,6 +32,7 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
   lesson,
   streak,
   audioUrl,
+  isActive = false,
   onNextLesson,
   onExit,
 }) => {
