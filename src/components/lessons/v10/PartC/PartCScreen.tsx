@@ -12,6 +12,7 @@ interface PartCScreenProps {
   lesson: V10Lesson;
   streak: V10UserStreak | null;
   audioUrl: string | null;
+  isActive?: boolean;
   onNextLesson: () => void;
   onExit?: () => void;
 }
@@ -31,6 +32,7 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
   lesson,
   streak,
   audioUrl,
+  isActive = false,
   onNextLesson,
   onExit,
 }) => {
@@ -41,6 +43,7 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
 
   // Sound + confetti triggers per page
   useEffect(() => {
+    if (!isActive) return;
     if (hasPlayedRef.current[currentPage]) return;
     hasPlayedRef.current[currentPage] = true;
 
@@ -58,7 +61,7 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
         confetti({ particleCount: 40, spread: 100, origin: { x: Math.random(), y: Math.random() * 0.4 }, zIndex: 9999, colors: ['#6366F1', '#8B5CF6', '#34D399', '#F59E0B', '#EC4899', '#3B82F6'] });
       }, 200);
     }
-  }, [currentPage, playSound]);
+  }, [currentPage, playSound, isActive]);
 
   // Build recap items from lesson data
   const recapItems = [
