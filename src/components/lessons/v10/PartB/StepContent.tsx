@@ -49,7 +49,7 @@ const StepContent: React.FC<StepContentProps> = ({
         {step.app_name && (
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold"
               style={{
                 backgroundColor: step.app_badge_bg,
                 color: step.app_badge_color,

@@ -32,7 +32,7 @@ const MockupChrome: React.FC<MockupChromeProps> = ({
       </div>
 
       {/* Content body */}
-      <div style={{ padding: 6, minHeight: 120, background: '#FFF' }}>
+      <div style={{ padding: 6, minHeight: 120, background: '#FFF', display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
         {children}
       </div>
     </div>

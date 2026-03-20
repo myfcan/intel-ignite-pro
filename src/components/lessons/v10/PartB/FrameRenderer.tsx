@@ -115,7 +115,7 @@ function renderElement(element: V10Element, index: number, barColor?: string): R
       );
 
     case 'divider':
-      return <hr key={index} className="border-t border-gray-200 my-2" />;
+      return <hr key={index} className="border-t border-gray-200 my-1" />;
 
     case 'shimmer':
       return <ShimmerPlaceholder key={index} height={element.height} />;
