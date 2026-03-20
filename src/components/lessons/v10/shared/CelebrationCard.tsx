@@ -7,27 +7,19 @@ interface CelebrationCardProps {
 
 const CelebrationCard: React.FC<CelebrationCardProps> = ({ text, next }) => {
   return (
-    <div className="rounded-lg p-5 bg-[#ECFDF5] border border-[#A7F3D0] text-center">
-      <div className="flex justify-center mb-3">
-        <div className="w-10 h-10 rounded-full bg-[#34D399] flex items-center justify-center">
-          <svg
-            className="w-6 h-6 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
-      </div>
-      <p className="text-base font-bold text-green-700 leading-snug">{text}</p>
+    <div
+      style={{
+        padding: 16,
+        textAlign: 'center',
+        background: '#ECFDF5',
+        border: '1px solid #A7F3D0',
+        borderRadius: 12,
+      }}
+    >
+      <div style={{ fontSize: 32, marginBottom: 4 }}>✅</div>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#059669' }}>{text}</p>
       {next && (
-        <p className="mt-2 text-sm text-gray-500 leading-relaxed">{next}</p>
+        <p style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>{next}</p>
       )}
     </div>
   );

@@ -20,42 +20,19 @@ const MockupChrome: React.FC<MockupChromeProps> = ({
   return (
     <div className="rounded-xl overflow-hidden shadow-md border border-gray-200">
       {/* Title bar */}
-      <div
-        className="px-2 py-1.5"
-        style={{ backgroundColor: barColor }}
-      >
-        <div className="flex items-center gap-2 mb-0.5">
-          <div className="flex gap-1.5">
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: '#FF5F57' }}
-            />
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: '#FFBD2E' }}
-            />
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: '#28C840' }}
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex-1 bg-white/20 rounded px-2 py-0.5">
-            <span className="text-[9px] font-mono text-white/90 truncate block">
-              {barText}
-            </span>
-          </div>
-        </div>
+      <div style={{ padding: '8px 12px', backgroundColor: barColor }}>
+        <p className="text-white" style={{ fontSize: 11, fontWeight: 700, lineHeight: 1.3 }}>
+          {barText}
+        </p>
         {barSub && (
-          <p className="text-[10px] text-white/70 mt-1 leading-snug">
+          <p className="text-white" style={{ fontSize: 9, opacity: 0.6, lineHeight: 1.3, marginTop: 2 }}>
             {barSub}
           </p>
         )}
       </div>
 
       {/* Content body */}
-      <div className="bg-white p-2 flex flex-col gap-1.5">
+      <div style={{ padding: 6, minHeight: 120, background: '#FFF' }}>
         {children}
       </div>
     </div>

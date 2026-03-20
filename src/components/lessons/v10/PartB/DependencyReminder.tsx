@@ -7,10 +7,16 @@ interface DependencyReminderProps {
 const DependencyReminder: React.FC<DependencyReminderProps> = ({ text }) => {
   return (
     <div
-      className="rounded-lg p-4 bg-indigo-50"
-      style={{ borderLeft: '3px solid #6366F1' }}
+      style={{
+        padding: '6px 10px',
+        fontSize: 10,
+        color: '#4F46E5',
+        background: 'rgba(99,102,241,0.04)',
+        borderLeft: '3px solid #6366F1',
+        borderRadius: '0 6px 6px 0',
+      }}
     >
-      <p className="text-sm text-indigo-700 leading-relaxed">{text}</p>
+      {text}
     </div>
   );
 };

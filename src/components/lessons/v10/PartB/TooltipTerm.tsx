@@ -19,23 +19,33 @@ const TooltipTerm: React.FC<TooltipTermProps> = ({ term, tip }) => {
   }, [visible]);
 
   return (
-    <span className="inline-flex items-center gap-1 relative">
+    <span className="inline-flex items-center relative" style={{ gap: 2 }}>
       <button
         type="button"
         onClick={toggle}
-        className="inline-flex items-center gap-1 min-h-[44px] px-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
+        className="inline-flex items-center min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
+        style={{ gap: 2, padding: '0 2px' }}
       >
-        <span className="text-indigo-600 border-b border-dashed border-indigo-400 text-sm">
+        <span style={{ color: '#6366F1', borderBottom: '1px dashed #6366F1', fontSize: 10 }}>
           {term}
         </span>
-        <span className="text-indigo-400 text-xs select-none" aria-hidden="true">
-          {'\u24D8'}
+        <span style={{ color: '#6366F1', fontSize: 9, fontWeight: 700 }} aria-hidden="true">
+          ⓘ
         </span>
       </button>
       {visible && (
         <span
           role="tooltip"
-          className="inline-block ml-1 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs leading-relaxed max-w-xs shadow-lg"
+          className="inline-block ml-1 shadow-lg"
+          style={{
+            background: '#1E293B',
+            color: '#F8FAFC',
+            padding: '6px 10px',
+            borderRadius: 8,
+            fontSize: 10,
+            width: 200,
+            lineHeight: 1.4,
+          }}
         >
           {tip}
         </span>

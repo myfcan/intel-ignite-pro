@@ -10,14 +10,26 @@ interface MockupButtonProps {
 const MockupButton: React.FC<MockupButtonProps> = ({ label, primary, icon, barColor }) => {
   return (
     <div
-      className={`inline-flex items-center justify-center gap-2 px-3 min-h-[32px] rounded-lg text-xs font-medium transition-colors ${
-        primary
-          ? 'text-white shadow-sm'
-          : 'border border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
-      }`}
-      style={primary ? { backgroundColor: barColor || '#6366F1' } : undefined}
+      className="flex items-center justify-center"
+      style={{
+        padding: 10,
+        fontSize: 12,
+        fontWeight: primary ? 700 : 600,
+        borderRadius: 8,
+        gap: 6,
+        ...(primary
+          ? {
+              background: `linear-gradient(135deg, ${barColor || '#6366F1'}, #8B5CF6)`,
+              color: '#FFF',
+            }
+          : {
+              background: '#FFF',
+              border: '1px solid #D1D5DB',
+              color: '#374151',
+            }),
+      }}
     >
-      {icon && <span className="text-base">{icon}</span>}
+      {icon && <span style={{ fontSize: 14 }}>{icon}</span>}
       <span>{label}</span>
     </div>
   );

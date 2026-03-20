@@ -6,10 +6,18 @@ interface WarningCardProps {
 
 const WarningCard: React.FC<WarningCardProps> = ({ text }) => {
   return (
-    <div className="rounded-lg p-4 bg-[#FEF3C7] border border-[#FDE68A]">
-      <p className="text-sm leading-relaxed" style={{ color: '#92400E' }}>
-        {text}
-      </p>
+    <div
+      style={{
+        padding: '8px 10px',
+        fontSize: 10,
+        color: '#92400E',
+        lineHeight: 1.5,
+        background: '#FEF3C7',
+        border: '1px solid #FDE68A',
+        borderRadius: 8,
+      }}
+    >
+      {text}
     </div>
   );
 };
