@@ -16,7 +16,7 @@ const LIVFab: React.FC<LIVFabProps> = ({ hasWarnings, onClick, pulseMode = 'norm
 
   return (
     <>
-      <div className="absolute z-50 bottom-[8.5rem] flex flex-col items-center gap-3" style={{ right: '23px' }}>
+      <div className="absolute z-50 bottom-[8.5rem] flex flex-col items-center gap-3" style={{ right: '33px' }}>
         {/* LivAvatar — pulsing indicator */}
         <div className="relative">
           {/* Speaking ripple rings — positioned relative to avatar */}
