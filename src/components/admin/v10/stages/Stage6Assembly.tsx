@@ -175,7 +175,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
       }
       if (v2Fixed > 0) fixes.push(`V2 Frames: ${v2Fixed} passos corrigidos`);
 
-      // ── 3. FIX V3 STRUCTURE: celebrations + dependency ──
+      // ── 3. FIX V3 STRUCTURE: phases, AILIV last, celebrations, dependency ──
       // Re-fetch steps after V2 fix
       const { data: stepsAfterV2 } = await supabase
         .from('v10_lesson_steps')
@@ -185,8 +185,56 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
       const stepsV3 = (stepsAfterV2 || []) as any[];
       let v3Fixed = 0;
 
-      // Ensure last step has celebration
+      // ── 3a. FIX PHASES: ensure exactly 3 phases ──
+      const existingPhases = new Set(stepsV3.map((s: any) => s.phase));
+      if (existingPhases.size !== 3 && stepsV3.length >= 3) {
+        const third = Math.ceil(stepsV3.length / 3);
+        const twoThirds = Math.ceil((stepsV3.length * 2) / 3);
+        for (let i = 0; i < stepsV3.length; i++) {
+          const newPhase = i < third ? 1 : i < twoThirds ? 2 : 3;
+          if (stepsV3[i].phase !== newPhase) {
+            await supabase
+              .from('v10_lesson_steps')
+              .update({ phase: newPhase } as any)
+              .eq('id', stepsV3[i].id);
+            stepsV3[i].phase = newPhase;
+            v3Fixed++;
+          }
+        }
+        if (v3Fixed > 0) fixes.push(`Fases redistribuídas em 3`);
+      }
+
+      // ── 3b. FIX LAST STEP: app_name must be AILIV ──
       const lastStep = stepsV3[stepsV3.length - 1];
+      if (lastStep && lastStep.app_name !== 'AILIV') {
+        await supabase
+          .from('v10_lesson_steps')
+          .update({ app_name: 'AILIV' } as any)
+          .eq('id', lastStep.id);
+        lastStep.app_name = 'AILIV';
+        v3Fixed++;
+        fixes.push(`Último passo: app_name → AILIV`);
+      }
+
+      // ── 3c. FIX CELEBRATIONS: ensure 3-5, last has, first doesn't ──
+      // Remove celebration from first step if present
+      if (stepsV3[0]) {
+        const firstFrames = [...(stepsV3[0].frames || [])] as any[];
+        let removedFirst = false;
+        for (const frame of firstFrames) {
+          if (frame.elements) {
+            const before = frame.elements.length;
+            frame.elements = frame.elements.filter((e: any) => e.type !== 'celebration');
+            if (frame.elements.length < before) removedFirst = true;
+          }
+        }
+        if (removedFirst) {
+          await supabase.from('v10_lesson_steps').update({ frames: firstFrames } as any).eq('id', stepsV3[0].id);
+          v3Fixed++;
+        }
+      }
+
+      // Ensure last step has celebration
       if (lastStep) {
         const frames = [...(lastStep.frames || [])] as any[];
         const lastFrame = frames[frames.length - 1];
@@ -219,6 +267,37 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
             });
             await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', curr.id);
             v3Fixed++;
+          }
+        }
+      }
+
+      // If still less than 3 celebrations, add to mid-phase steps
+      const celebCountNow = stepsV3.filter((s: any) =>
+        s.frames?.some((f: any) => f.elements?.some((e: any) => e.type === 'celebration'))
+      ).length;
+      if (celebCountNow < 3 && stepsV3.length >= 5) {
+        const midPoints = [Math.floor(stepsV3.length * 0.33), Math.floor(stepsV3.length * 0.66)];
+        for (const mp of midPoints) {
+          if (mp > 0 && mp < stepsV3.length - 1) {
+            const step = stepsV3[mp];
+            const alreadyHas = step.frames?.some((f: any) => f.elements?.some((e: any) => e.type === 'celebration'));
+            if (!alreadyHas) {
+              const frames = [...(step.frames || [])] as any[];
+              if (frames[0]) {
+                if (!frames[0].elements) frames[0].elements = [];
+                frames[0].elements.push({
+                  type: 'celebration',
+                  text: `Ótimo progresso! Continue assim! 🚀`,
+                  next: `Próximo passo a caminho.`,
+                });
+                await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', step.id);
+                v3Fixed++;
+              }
+              const updatedCount = stepsV3.filter((s: any) =>
+                s.frames?.some((f: any) => f.elements?.some((e: any) => e.type === 'celebration'))
+              ).length;
+              if (updatedCount >= 3) break;
+            }
           }
         }
       }
