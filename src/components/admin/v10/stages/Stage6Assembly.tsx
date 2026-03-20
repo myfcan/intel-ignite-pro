@@ -427,7 +427,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
         introSlides.push({
           lesson_id: lessonId,
           slide_order: tools.length + 2,
-          icon: 'Rocket',
+          icon: '🚀',
           tool_name: null,
           tool_color: '#10B981',
           title: 'Vamos começar!',
