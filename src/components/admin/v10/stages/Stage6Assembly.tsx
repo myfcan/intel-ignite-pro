@@ -413,7 +413,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
           introSlides.push({
             lesson_id: lessonId,
             slide_order: idx + 2,
-            icon: 'Wrench',
+            icon: '🔧',
             tool_name: tool,
             tool_color: toolColors[idx % toolColors.length],
             title: tool,
