@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import type { V10Lesson, V10UserStreak } from '../../../../types/v10.types';
 import { RecapPage } from './RecapPage';
 import { EngagementPage } from './EngagementPage';
 import { GamificationPage } from './GamificationPage';
 import { ExitButton } from '../shared/ExitButton';
 import { V8LessonRating } from '../../v8/V8LessonRating';
+import { useV7SoundEffects } from '../../v7/cinematic/useV7SoundEffects';
 
 interface PartCScreenProps {
   lesson: V10Lesson;
