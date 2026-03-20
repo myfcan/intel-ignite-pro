@@ -12,16 +12,17 @@ const NavBreadcrumb: React.FC<NavBreadcrumbProps> = ({ from, to, how }) => {
       style={{
         padding: '8px 10px',
         fontSize: 10,
-        background: '#F0F4FF',
+        background: 'linear-gradient(135deg, #F0F4FF, #EEF0FF)',
         border: '1px solid #C7D2FE',
         borderRadius: 8,
       }}
     >
       <div className="flex items-center flex-wrap" style={{ gap: 4 }}>
+        <span style={{ fontSize: 11 }}>📁</span>
         <span style={{ fontWeight: 700, color: '#6366F1' }}>{from}</span>
         <svg
           className="shrink-0"
-          style={{ width: 10, height: 10, color: '#A5B4FC' }}
+          style={{ width: 10, height: 10, color: '#A5B4FC', opacity: 0.8 }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
