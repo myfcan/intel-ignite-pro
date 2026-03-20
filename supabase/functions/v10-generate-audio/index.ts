@@ -271,7 +271,7 @@ async function handleStepsAudio(
     // 5. Generate audio
     const audioBuffer = await generateTTSAudio(cleanScript, elevenLabsKey);
 
-    // 5. Upload to storage
+    // 6. Upload to storage
     const storagePath = `v10/${lesson_id}/step_${step.step_number}.mp3`;
     const audioUrl = await uploadAudio(supabase, storagePath, audioBuffer);
 
