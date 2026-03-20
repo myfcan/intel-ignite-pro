@@ -15,22 +15,28 @@ const MockupInput: React.FC<MockupInputProps> = ({
   highlight = false,
   barColor,
 }) => {
-  const highlightColor = barColor || '#818CF8';
+  const highlightColor = barColor || '#6366F1';
+
   return (
-    <div className="flex flex-col gap-0.5">
-      <label className="text-[10px] font-medium text-gray-700">{label}</label>
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: '#374151', marginBottom: 3 }}>
+        {label}
+      </div>
       <div
-        className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${
-          highlight
-            ? 'ring-2'
-            : 'border-gray-200 bg-[#F9FAFB]'
-        }`}
-        style={highlight ? { borderColor: highlightColor, backgroundColor: `${highlightColor}10`, boxShadow: `0 0 0 2px ${highlightColor}20` } : undefined}
+        style={{
+          padding: '8px 10px',
+          fontSize: 11,
+          borderRadius: 8,
+          background: '#F9FAFB',
+          ...(highlight
+            ? { border: `2px solid ${highlightColor}`, boxShadow: `0 0 0 3px ${highlightColor}1A` }
+            : { border: '1px solid #D1D5DB' }),
+        }}
       >
         {value ? (
-          <span className="text-gray-900">{value}</span>
+          <span style={{ color: '#111827' }}>{value}</span>
         ) : (
-          <span className="text-gray-400">{placeholder || ''}</span>
+          <span style={{ color: '#9CA3AF' }}>{placeholder || ''}</span>
         )}
       </div>
     </div>

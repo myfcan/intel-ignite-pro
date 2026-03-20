@@ -16,32 +16,34 @@ const MockupSelect: React.FC<MockupSelectProps> = ({
   barColor,
 }) => {
   const selectedValue = options[selected] ?? '';
-  const highlightColor = barColor || '#818CF8';
+  const highlightColor = barColor || '#6366F1';
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <label className="text-[10px] font-medium text-gray-700">{label}</label>
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: '#374151', marginBottom: 3 }}>
+        {label}
+      </div>
       <div
-        className={`flex items-center justify-between px-2.5 py-1 rounded-md text-xs border transition-colors ${
-          highlight
-            ? 'ring-2'
-            : 'border-gray-200 bg-[#F9FAFB]'
-        }`}
-        style={highlight ? { borderColor: highlightColor, backgroundColor: `${highlightColor}10`, boxShadow: `0 0 0 2px ${highlightColor}20` } : undefined}
+        className="flex items-center justify-between"
+        style={{
+          padding: '8px 10px',
+          fontSize: 11,
+          borderRadius: 8,
+          background: '#F9FAFB',
+          ...(highlight
+            ? { border: `2px solid ${highlightColor}`, boxShadow: `0 0 0 3px ${highlightColor}1A` }
+            : { border: '1px solid #D1D5DB' }),
+        }}
       >
-        <span className="text-gray-900">{selectedValue}</span>
+        <span style={{ color: '#111827' }}>{selectedValue}</span>
         <svg
-          className="w-3 h-3 text-gray-400 shrink-0 ml-2"
+          className="shrink-0"
+          style={{ width: 12, height: 12, color: '#9CA3AF', marginLeft: 8 }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </div>
     </div>
