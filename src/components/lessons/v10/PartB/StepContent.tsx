@@ -34,7 +34,7 @@ const StepContent: React.FC<StepContentProps> = ({
         </span>
 
         {/* Step title */}
-        <h2 className="text-lg font-bold text-gray-900 leading-snug">
+        <h2 className="text-base font-bold text-gray-900 leading-snug">
           {step.title}
         </h2>
 
