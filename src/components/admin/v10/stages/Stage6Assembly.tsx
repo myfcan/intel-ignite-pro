@@ -217,36 +217,49 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
       }
 
       // ── 3c. FIX CELEBRATIONS: ensure 3-5, last has, first doesn't ──
+      const hasCelebration = (step: any) =>
+        step?.frames?.some((f: any) => f.elements?.some((e: any) => e.type === 'celebration'));
+
+      const saveStepFrames = async (stepIndex: number, frames: any[]) => {
+        const step = stepsV3[stepIndex];
+        await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', step.id);
+        stepsV3[stepIndex].frames = frames;
+      };
+
       // Remove celebration from first step if present
-      if (stepsV3[0]) {
+      if (stepsV3[0] && hasCelebration(stepsV3[0])) {
         const firstFrames = [...(stepsV3[0].frames || [])] as any[];
-        let removedFirst = false;
         for (const frame of firstFrames) {
-          if (frame.elements) {
-            const before = frame.elements.length;
-            frame.elements = frame.elements.filter((e: any) => e.type !== 'celebration');
-            if (frame.elements.length < before) removedFirst = true;
-          }
+          if (!Array.isArray(frame.elements)) continue;
+          frame.elements = frame.elements.filter((e: any) => e.type !== 'celebration');
         }
-        if (removedFirst) {
-          await supabase.from('v10_lesson_steps').update({ frames: firstFrames } as any).eq('id', stepsV3[0].id);
-          v3Fixed++;
+        await saveStepFrames(0, firstFrames);
+        v3Fixed++;
+      }
+
+      // Protected celebration steps: phase transitions + last step
+      const protectedCelebrationSteps = new Set<number>();
+      for (let i = 1; i < stepsV3.length; i++) {
+        if (stepsV3[i - 1].phase !== stepsV3[i].phase) {
+          protectedCelebrationSteps.add(stepsV3[i].step_number);
         }
       }
 
       // Ensure last step has celebration
       if (lastStep) {
-        const frames = [...(lastStep.frames || [])] as any[];
+        protectedCelebrationSteps.add(lastStep.step_number);
+        const lastIndex = stepsV3.length - 1;
+        const frames = [...(stepsV3[lastIndex].frames || [])] as any[];
         const lastFrame = frames[frames.length - 1];
         const hasCeleb = lastFrame?.elements?.some((e: any) => e.type === 'celebration');
         if (!hasCeleb && lastFrame) {
-          if (!lastFrame.elements) lastFrame.elements = [];
+          if (!Array.isArray(lastFrame.elements)) lastFrame.elements = [];
           lastFrame.elements.push({
             type: 'celebration',
             text: 'Parabéns! Aula completa! 🎉',
             next: 'Você dominou todas as etapas.',
           });
-          await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', lastStep.id);
+          await saveStepFrames(lastIndex, frames);
           v3Fixed++;
         }
       }
@@ -260,44 +273,63 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
           const firstFrame = frames[0];
           const hasCeleb = firstFrame?.elements?.some((e: any) => e.type === 'celebration');
           if (!hasCeleb && firstFrame) {
+            if (!Array.isArray(firstFrame.elements)) firstFrame.elements = [];
             firstFrame.elements.push({
               type: 'celebration',
               text: `Fase ${prev.phase} concluída! 🎉`,
               next: `Iniciando fase ${curr.phase}.`,
             });
-            await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', curr.id);
+            await saveStepFrames(i, frames);
             v3Fixed++;
           }
         }
       }
 
-      // If still less than 3 celebrations, add to mid-phase steps
-      const celebCountNow = stepsV3.filter((s: any) =>
-        s.frames?.some((f: any) => f.elements?.some((e: any) => e.type === 'celebration'))
-      ).length;
-      if (celebCountNow < 3 && stepsV3.length >= 5) {
-        const midPoints = [Math.floor(stepsV3.length * 0.33), Math.floor(stepsV3.length * 0.66)];
-        for (const mp of midPoints) {
-          if (mp > 0 && mp < stepsV3.length - 1) {
-            const step = stepsV3[mp];
-            const alreadyHas = step.frames?.some((f: any) => f.elements?.some((e: any) => e.type === 'celebration'));
-            if (!alreadyHas) {
-              const frames = [...(step.frames || [])] as any[];
-              if (frames[0]) {
-                if (!frames[0].elements) frames[0].elements = [];
-                frames[0].elements.push({
-                  type: 'celebration',
-                  text: `Ótimo progresso! Continue assim! 🚀`,
-                  next: `Próximo passo a caminho.`,
-                });
-                await supabase.from('v10_lesson_steps').update({ frames } as any).eq('id', step.id);
-                v3Fixed++;
-              }
-              const updatedCount = stepsV3.filter((s: any) =>
-                s.frames?.some((f: any) => f.elements?.some((e: any) => e.type === 'celebration'))
-              ).length;
-              if (updatedCount >= 3) break;
-            }
+      // If less than 3 celebrations, add on strategic middle steps
+      let celebrationSteps = stepsV3.filter((s: any) => hasCelebration(s));
+      if (celebrationSteps.length < 3 && stepsV3.length >= 5) {
+        const middleIndexes = [Math.floor(stepsV3.length * 0.33), Math.floor(stepsV3.length * 0.66)];
+        for (const idx of middleIndexes) {
+          if (idx <= 0 || idx >= stepsV3.length - 1) continue;
+          if (hasCelebration(stepsV3[idx])) continue;
+          const frames = [...(stepsV3[idx].frames || [])] as any[];
+          if (!frames[0]) continue;
+          if (!Array.isArray(frames[0].elements)) frames[0].elements = [];
+          frames[0].elements.push({
+            type: 'celebration',
+            text: 'Ótimo progresso! Continue assim! 🚀',
+            next: 'Próximo passo a caminho.',
+          });
+          await saveStepFrames(idx, frames);
+          v3Fixed++;
+
+          celebrationSteps = stepsV3.filter((s: any) => hasCelebration(s));
+          if (celebrationSteps.length >= 3) break;
+        }
+      }
+
+      // If more than 5 celebrations, remove excess from non-protected steps
+      celebrationSteps = stepsV3.filter((s: any) => hasCelebration(s));
+      if (celebrationSteps.length > 5) {
+        const removableIndexes = stepsV3
+          .map((step: any, idx: number) => ({ step, idx }))
+          .filter(({ step }) => hasCelebration(step) && !protectedCelebrationSteps.has(step.step_number))
+          .sort((a, b) => b.step.step_number - a.step.step_number);
+
+        for (const { idx } of removableIndexes) {
+          if (celebrationSteps.length <= 5) break;
+          const frames = [...(stepsV3[idx].frames || [])] as any[];
+          let changed = false;
+          for (const frame of frames) {
+            if (!Array.isArray(frame.elements)) continue;
+            const before = frame.elements.length;
+            frame.elements = frame.elements.filter((e: any) => e.type !== 'celebration');
+            if (frame.elements.length < before) changed = true;
+          }
+          if (changed) {
+            await saveStepFrames(idx, frames);
+            v3Fixed++;
+            celebrationSteps = stepsV3.filter((s: any) => hasCelebration(s));
           }
         }
       }
