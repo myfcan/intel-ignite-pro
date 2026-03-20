@@ -29,7 +29,7 @@ function renderElement(element: V10Element, index: number, barColor?: string): R
 
     case 'text':
       return (
-        <p key={index} className="text-sm text-gray-800 leading-relaxed">
+        <p key={index} style={{ fontSize: 11, color: '#374151', lineHeight: 1.4 }}>
           {element.content}
         </p>
       );
