@@ -398,7 +398,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
           {
             lesson_id: lessonId,
             slide_order: 1,
-            icon: 'BookOpen',
+            icon: '📖',
             tool_name: null,
             tool_color: '#6366f1',
             title: pipeline.title,
