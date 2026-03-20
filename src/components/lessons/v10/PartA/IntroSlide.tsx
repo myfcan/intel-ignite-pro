@@ -42,9 +42,9 @@ export const IntroSlide: React.FC<IntroSlideProps> = ({ slide, isActive }) => {
         style={gradientStyle}
       >
         {/* Emoji icon */}
-        {slide.icon && (
+        {displayIcon && (
           <div className="text-4xl mb-3" role="img" aria-label={slide.tool_name || 'icon'}>
-            {slide.icon}
+            {displayIcon}
           </div>
         )}
 
