@@ -71,8 +71,6 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({
       style={{ display: isActive ? 'flex' : 'none' }}
     >
       <style>{`
-
-      <style>{`
         @keyframes badge-glow {
           0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); }
           50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.6); }
