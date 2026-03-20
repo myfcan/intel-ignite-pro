@@ -43,6 +43,7 @@ export const PartCScreen: React.FC<PartCScreenProps> = ({
 
   // Sound + confetti triggers per page
   useEffect(() => {
+    if (!isActive) return;
     if (hasPlayedRef.current[currentPage]) return;
     hasPlayedRef.current[currentPage] = true;
 
