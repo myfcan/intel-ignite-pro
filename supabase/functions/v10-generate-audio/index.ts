@@ -263,16 +263,21 @@ async function handleStepsAudio(
     const script = await generateStepScript(step, lovableApiKey, prevStep);
     console.log(`[v10-generate-audio] Step ${step.step_number} script: ${script.length} chars`);
 
-    // 4. Generate audio
-    const audioBuffer = await generateTTSAudio(script, elevenLabsKey);
+    // 4. Clean [ANCHOR:*] tags before sending to TTS
+    const { removeAnchorTags } = await import("../_shared/anchor-utils.ts");
+    const cleanScript = removeAnchorTags(script);
+    console.log(`[v10-generate-audio] Step ${step.step_number} clean script: ${cleanScript.length} chars (removed ${script.length - cleanScript.length} chars of anchor tags)`);
 
-    // 5. Upload to storage
+    // 5. Generate audio
+    const audioBuffer = await generateTTSAudio(cleanScript, elevenLabsKey);
+
+    // 6. Upload to storage
     const storagePath = `v10/${lesson_id}/step_${step.step_number}.mp3`;
     const audioUrl = await uploadAudio(supabase, storagePath, audioBuffer);
 
     const durationSeconds = Math.round(audioBuffer.byteLength / 16000);
 
-    // 6. Update step record with audio_url
+    // 7. Update step record with audio_url
     const { error: updateError } = await supabase
       .from('v10_lesson_steps')
       .update({ audio_url: audioUrl })
