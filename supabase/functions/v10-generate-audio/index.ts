@@ -263,8 +263,13 @@ async function handleStepsAudio(
     const script = await generateStepScript(step, lovableApiKey, prevStep);
     console.log(`[v10-generate-audio] Step ${step.step_number} script: ${script.length} chars`);
 
-    // 4. Generate audio
-    const audioBuffer = await generateTTSAudio(script, elevenLabsKey);
+    // 4. Clean [ANCHOR:*] tags before sending to TTS
+    const { removeAnchorTags } = await import("../_shared/anchor-utils.ts");
+    const cleanScript = removeAnchorTags(script);
+    console.log(`[v10-generate-audio] Step ${step.step_number} clean script: ${cleanScript.length} chars (removed ${script.length - cleanScript.length} chars of anchor tags)`);
+
+    // 5. Generate audio
+    const audioBuffer = await generateTTSAudio(cleanScript, elevenLabsKey);
 
     // 5. Upload to storage
     const storagePath = `v10/${lesson_id}/step_${step.step_number}.mp3`;
