@@ -29,16 +29,20 @@ const MockupSelect: React.FC<MockupSelectProps> = ({
           padding: '8px 10px',
           fontSize: 11,
           borderRadius: 8,
-          background: '#F9FAFB',
+          background: '#F8F9FB',
+          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+          boxShadow: highlight
+            ? `0 0 0 3px ${highlightColor}1A, inset 0 1px 2px rgba(0,0,0,0.04)`
+            : 'inset 0 1px 2px rgba(0,0,0,0.04)',
           ...(highlight
-            ? { border: `2px solid ${highlightColor}`, boxShadow: `0 0 0 3px ${highlightColor}1A` }
+            ? { border: `2px solid ${highlightColor}` }
             : { border: '1px solid #D1D5DB' }),
         }}
       >
         <span style={{ color: '#111827' }}>{selectedValue}</span>
         <svg
           className="shrink-0"
-          style={{ width: 12, height: 12, color: '#9CA3AF', marginLeft: 8 }}
+          style={{ width: 12, height: 12, color: highlightColor, marginLeft: 8, opacity: 0.6 }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
