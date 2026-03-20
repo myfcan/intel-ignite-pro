@@ -10,10 +10,19 @@ interface IntroSlideProps {
  * IntroSlide — Individual intro/context slide for Part A.
  * Hidden when not active using display:none/flex pattern (NO position:absolute).
  */
+const ICON_FALLBACK: Record<string, string> = {
+  Wrench: '🔧', BookOpen: '📖', Rocket: '🚀', Calendar: '📅',
+  Brain: '🧠', Zap: '⚡', Settings: '⚙️', Target: '🎯',
+  Globe: '🌐', Shield: '🛡️', MessageSquare: '💬', Image: '🖼️',
+  Video: '🎬', Code: '💻', Search: '🔍', Users: '👥',
+};
+
 export const IntroSlide: React.FC<IntroSlideProps> = ({ slide, isActive }) => {
   const gradientStyle = slide.tool_color
     ? { background: `linear-gradient(135deg, ${slide.tool_color}, ${adjustColor(slide.tool_color, 30)})` }
     : { background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' };
+
+  const displayIcon = slide.icon ? (ICON_FALLBACK[slide.icon] || slide.icon) : null;
 
   return (
     <div
@@ -33,9 +42,9 @@ export const IntroSlide: React.FC<IntroSlideProps> = ({ slide, isActive }) => {
         style={gradientStyle}
       >
         {/* Emoji icon */}
-        {slide.icon && (
+        {displayIcon && (
           <div className="text-4xl mb-3" role="img" aria-label={slide.tool_name || 'icon'}>
-            {slide.icon}
+            {displayIcon}
           </div>
         )}
 

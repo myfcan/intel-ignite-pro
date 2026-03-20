@@ -398,7 +398,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
           {
             lesson_id: lessonId,
             slide_order: 1,
-            icon: 'BookOpen',
+            icon: '📖',
             tool_name: null,
             tool_color: '#6366f1',
             title: pipeline.title,
@@ -413,7 +413,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
           introSlides.push({
             lesson_id: lessonId,
             slide_order: idx + 2,
-            icon: 'Wrench',
+            icon: '🔧',
             tool_name: tool,
             tool_color: toolColors[idx % toolColors.length],
             title: tool,
@@ -427,7 +427,7 @@ export function Stage6Assembly({ pipeline, onUpdate, onNavigateStage }: Stage6As
         introSlides.push({
           lesson_id: lessonId,
           slide_order: tools.length + 2,
-          icon: 'Rocket',
+          icon: '🚀',
           tool_name: null,
           tool_color: '#10B981',
           title: 'Vamos começar!',
