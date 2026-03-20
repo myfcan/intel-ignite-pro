@@ -28,33 +28,22 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({
   onShare,
   onNextLesson,
 }) => {
-  const [showConfetti, setShowConfetti] = useState(false);
   const hasAutoFired = useRef(false);
-  const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const startConfetti = () => {
-    if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
-    setShowConfetti(true);
-    confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 3500);
+  const fireConfetti = () => {
+    confetti({ particleCount: 80, spread: 100, origin: { y: 0.5 }, zIndex: 9999, colors: ['#6366F1', '#8B5CF6', '#34D399', '#F59E0B', '#EC4899'] });
   };
 
   // Auto-fire confetti when C3 becomes active
   useEffect(() => {
     if (isActive && !hasAutoFired.current) {
       hasAutoFired.current = true;
-      startConfetti();
+      fireConfetti();
     }
   }, [isActive]);
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current);
-    };
-  }, []);
-
   const handleShare = () => {
-    startConfetti();
+    fireConfetti();
     onShare();
   };
 
