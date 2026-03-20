@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import type { V10UserStreak } from '../../../../types/v10.types';
-import { Confetti } from './Confetti';
 
 interface GamificationPageProps {
   isActive: boolean;
