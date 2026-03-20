@@ -12,6 +12,7 @@ interface PartCScreenProps {
   lesson: V10Lesson;
   streak: V10UserStreak | null;
   audioUrl: string | null;
+  isActive?: boolean;
   onNextLesson: () => void;
   onExit?: () => void;
 }
