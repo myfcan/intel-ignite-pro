@@ -29,7 +29,7 @@ function renderElement(element: V10Element, index: number, barColor?: string): R
 
     case 'text':
       return (
-        <p key={index} className="text-sm text-gray-800 leading-relaxed">
+        <p key={index} style={{ fontSize: 11, color: '#374151', lineHeight: 1.4 }}>
           {element.content}
         </p>
       );
@@ -115,7 +115,7 @@ function renderElement(element: V10Element, index: number, barColor?: string): R
       );
 
     case 'divider':
-      return <hr key={index} className="border-t border-gray-200 my-2" />;
+      return <hr key={index} className="border-t border-gray-200 my-1" />;
 
     case 'shimmer':
       return <ShimmerPlaceholder key={index} height={element.height} />;

@@ -34,7 +34,7 @@ const StepContent: React.FC<StepContentProps> = ({
         </span>
 
         {/* Step title */}
-        <h2 className="text-lg font-bold text-gray-900 leading-snug">
+        <h2 className="text-base font-bold text-gray-900 leading-snug">
           {step.title}
         </h2>
 
@@ -49,7 +49,7 @@ const StepContent: React.FC<StepContentProps> = ({
         {step.app_name && (
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold"
               style={{
                 backgroundColor: step.app_badge_bg,
                 color: step.app_badge_color,
