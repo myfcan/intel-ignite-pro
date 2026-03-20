@@ -277,7 +277,7 @@ async function handleStepsAudio(
 
     const durationSeconds = Math.round(audioBuffer.byteLength / 16000);
 
-    // 6. Update step record with audio_url
+    // 7. Update step record with audio_url
     const { error: updateError } = await supabase
       .from('v10_lesson_steps')
       .update({ audio_url: audioUrl })
