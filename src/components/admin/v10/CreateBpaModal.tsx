@@ -192,8 +192,8 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
         };
 
     const payload = {
-      title: title.trim(),
-      slug: slug.trim() || toKebabCase(title),
+      title: title.trim().slice(0, 200),
+      slug: (slug.trim() || toKebabCase(title)).slice(0, 120),
       status: 'draft' as const,
       current_stage: 1,
       ...initialScores,
