@@ -164,6 +164,12 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
       return;
     }
 
+    // Guard against pasted conversations as title
+    if (title.trim().length > 200) {
+      toast.error('O título deve ter no máximo 200 caracteres.');
+      return;
+    }
+
     setSubmitting(true);
 
     // If we have preview data, use those scores as initial values
