@@ -1,51 +1,60 @@
 
+## Plano corrigido (robusto): impedir narração de `[ANCHOR:*]` no Pipeline V10
 
-## Plano: Adicionar Som de Sucesso + Confetti nas Telas de Conclusão (Part C)
+### Diagnóstico real (com evidência)
+1. **Existe um gap no backend hoje**:  
+   em `supabase/functions/v10-generate-audio/index.ts`, o fluxo de **Part A/C** chama TTS com `script` bruto (`generateTTSAudio(script, ...)`), sem sanitizar.
+2. No mesmo arquivo, o fluxo de **steps** já sanitiza (`removeAnchorTags`) antes do TTS.
+3. No banco da aula atual (`Automação com Calendly e GPT 3.0`), `v10_lesson_narrations` (partes A e C) está com tags `[ANCHOR:*]` no `script_text`, e os áudios foram gerados recentemente — logo, se esse texto vai cru para TTS, ele pode ser narrado.
 
-### Problema
-As telas de conclusão (Part C) não têm som de sucesso nem confetti visível. O confetti só existe na C3 (GamificationPage) usando CSS básico, e não há nenhum som em nenhuma tela. A experiência é "muda e sem graça".
+---
 
-### Solução
+### Implementação (o que será feito)
 
-**1. `src/components/lessons/v10/PartC/PartCScreen.tsx`** — Adicionar som + confetti canvas
-- Importar `useV7SoundEffects` de `../../../v7/cinematic/useV7SoundEffects`
-- Importar `canvas-confetti`
-- Ao entrar em C1 (RecapPage): disparar som `completion` + confetti (`canvas-confetti` com particleCount: 100, spread: 90)
-- Ao entrar em C2 (EngagementPage): disparar som `level-up`
-- Ao entrar em C3 (GamificationPage): disparar som `combo-hit`
+1. **Fechar o gap no `v10-generate-audio` (Part A/C)**
+   - Em `handlePartNarration`, aplicar sanitização **antes** de chamar ElevenLabs:
+     - `cleanScript = removeAnchorTags(script)`
+     - TTS passa a usar `cleanScript`, nunca `script` bruto.
+   - Preservar `script_text` original no banco (anchors continuam disponíveis para lógica/auditoria).
 
-**2. `src/components/lessons/v10/PartC/RecapPage.tsx`** — Receber prop `onEnter` e disparar ao montar
-- Adicionar prop `onEnter?: () => void`
-- Chamar `onEnter` no primeiro render quando `isActive=true`
+2. **Blindagem de sanitização para casos reais (futuras aulas)**
+   - Em `supabase/functions/_shared/anchor-utils.ts`, separar regex de:
+     - **parse** (estrito para tipos válidos)
+     - **remove** (tolerante para variações de formatação, ex.: espaços/case)
+   - Objetivo: mesmo tag fora do formato ideal não pode “vazar” para narração.
 
-**3. `src/components/lessons/v10/PartC/EngagementPage.tsx`** — Receber e disparar `onEnter`
-- Mesmo padrão: prop `onEnter?: () => void`
+3. **Padronizar uso da sanitização nos dois caminhos de áudio**
+   - `v10-generate-audio` (Part A/C e steps) e `v10-process-anchors` passam a usar a mesma lógica de limpeza compartilhada.
+   - Evita regressão por divergência de implementação entre funções.
 
-**4. `src/components/lessons/v10/PartC/GamificationPage.tsx`** — Trocar Confetti CSS por canvas-confetti
-- Substituir o componente `<Confetti>` CSS pelo `canvas-confetti` (mesmo que V8 usa)
-- Manter o auto-fire ao entrar na página
-- Adicionar som `combo-hit` ao entrar
+4. **Observabilidade no log do pipeline**
+   - Incluir no `v10_bpa_pipeline_log` metadados de sanitização:
+     - `script_length_original`
+     - `script_length_clean`
+     - `anchor_tags_removed`
+   - Isso dá prova objetiva de que a limpeza ocorreu em cada geração.
 
-### Abordagem alternativa (mais simples)
-Em vez de passar props onEnter, centralizar tudo no `PartCScreen.tsx` usando `useEffect` no `currentPage`:
+5. **Remediação imediata da aula já afetada**
+   - Após o patch, regenerar **Part A e Part C** da aula atual no Stage 5 (ou chamada direta da função), para substituir os MP3 já contaminados.
+   - Steps não precisam retrabalho se já vieram via `v10-process-anchors` com limpeza correta.
 
-```
-useEffect(() => {
-  if (currentPage === 1) { playSound('completion'); confetti(...); }
-  if (currentPage === 2) { playSound('level-up'); }
-  if (currentPage === 3) { playSound('combo-hit'); confetti(...intenso...); }
-}, [currentPage]);
-```
+6. **Validação final (obrigatória)**
+   - Teste técnico: gerar áudio de teste com texto contendo anchors e confirmar no retorno/log que houve remoção.
+   - Teste funcional end-to-end no player:
+     - abrir a aula no mobile (viewport atual),
+     - ouvir Part A/C e confirmar ausência total de “anchor/anxhor/...”
+     - validar que progresso da aula segue normal.
 
-Isso é mais limpo e afeta Pipeline V10 automaticamente porque o mesmo componente é usado.
+---
 
-### Arquivos afetados
-- `src/components/lessons/v10/PartC/PartCScreen.tsx` — centralizar sons e confetti
-- `src/components/lessons/v10/PartC/GamificationPage.tsx` — trocar Confetti CSS por canvas-confetti
+### Arquivos impactados
+- `supabase/functions/v10-generate-audio/index.ts`
+- `supabase/functions/_shared/anchor-utils.ts`
+- (opcional para observabilidade extra) util/log helper dentro de `v10-generate-audio`
 
-### Resultado
-- C1: confetti + som "completion" ao entrar
-- C2: som "level-up" ao transicionar
-- C3: confetti intenso + som "combo-hit" ao chegar na gamificação
-- Funciona tanto na aula quanto no Pipeline V10
+---
 
+### Critério de aceite
+- Nenhum áudio novo (Part A/C/steps) narra tokens de controle `[ANCHOR:*]`.
+- Anchors continuam preservados no script para uso lógico.
+- Aula atual reprocessada e validada sem vazamento de tags.
