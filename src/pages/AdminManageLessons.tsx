@@ -728,7 +728,7 @@ export default function AdminManageLessons() {
                             {trail.trail_type && <Badge variant="outline" className="text-xs">{trail.trail_type}</Badge>}
                           </CardTitle>
                           <CardDescription className="text-xs">
-                            {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length, 0) + trail.v10Lessons.length} aula(s)
+                            {trail.courses.length} jornada(s) • {trail.courses.reduce((acc, c) => acc + c.lessons.length + (c.v10Lessons?.length || 0), 0) + trail.v10Lessons.length} aula(s)
                             {trail.v10Lessons.length > 0 && (
                               <span className="text-emerald-500 ml-2">🟢 {trail.v10Lessons.length} V10</span>
                             )}
