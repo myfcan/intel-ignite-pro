@@ -107,6 +107,24 @@ export type V10ElementShimmer = {
   height: number;
 };
 
+export type V10ElementButtonPrimary = {
+  type: 'button_primary';
+  label?: string;
+  text?: string;
+  icon?: string;
+};
+
+export type V10ElementGridCards = {
+  type: 'grid_cards';
+  cards: Array<{
+    icon: string;
+    label: string;
+    connected?: boolean;
+  }>;
+  button_label?: string;
+  button_color?: string;
+};
+
 export type V10Element =
   | V10ElementChromeHeader
   | V10ElementText
