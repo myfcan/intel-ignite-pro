@@ -172,6 +172,110 @@ function renderElement(element: V10Element, index: number, barColor?: string): R
         </div>
       );
 
+    case 'checklist':
+      return (
+        <div key={index} style={{
+          background: '#F9FAFB',
+          border: '1px solid #E5E7EB',
+          borderRadius: 10,
+          padding: '10px 12px',
+          display: 'flex',
+          flexDirection: 'column' as const,
+          gap: 6,
+        }}>
+          {element.title && (
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#374151', marginBottom: 2 }}>
+              {element.title}
+            </p>
+          )}
+          {(element.items || []).map((item, i) => (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column' as const, gap: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{
+                  width: 16, height: 16, borderRadius: 4, flexShrink: 0, marginTop: 1,
+                  border: item.checked ? 'none' : '1.5px solid #D1D5DB',
+                  background: item.checked ? '#34D399' : '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {item.checked && <span style={{ color: '#fff', fontSize: 9, fontWeight: 800 }}>✓</span>}
+                </span>
+                <span style={{ fontSize: 11, color: item.checked ? '#6B7280' : '#111827', lineHeight: 1.4 }}>
+                  {item.text}
+                </span>
+              </div>
+              {!item.checked && item.warning && (
+                <p style={{ fontSize: 9, color: '#F59E0B', marginLeft: 24, lineHeight: 1.3 }}>
+                  ⚠️ {item.warning}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+
+    case 'modal_overlay':
+      return (
+        <div key={index} style={{
+          position: 'relative' as const,
+          background: 'rgba(0,0,0,0.35)',
+          borderRadius: 10,
+          padding: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 14,
+            padding: '16px 14px',
+            width: '100%',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            display: 'flex',
+            flexDirection: 'column' as const,
+            gap: 8,
+          }}>
+            {element.icon && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 18 }}>{element.icon}</span>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{element.title}</p>
+              </div>
+            )}
+            {!element.icon && (
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{element.title}</p>
+            )}
+            {(element.items || []).map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%', background: '#34D399',
+                  flexShrink: 0, marginTop: 4,
+                }} />
+                <span style={{ fontSize: 10, color: '#374151', lineHeight: 1.5 }}>{item}</span>
+              </div>
+            ))}
+            {element.primary_button && (
+              <div style={{
+                background: '#22C55E',
+                color: '#fff',
+                borderRadius: 8,
+                padding: '8px 0',
+                textAlign: 'center' as const,
+                fontSize: 11,
+                fontWeight: 700,
+                marginTop: 4,
+                animation: element.highlight_button ? 'pulse 1.5s infinite' : undefined,
+              }}>
+                {element.primary_button}
+              </div>
+            )}
+            {element.cancel_button && (
+              <p style={{ textAlign: 'center' as const, fontSize: 10, color: '#9CA3AF', cursor: 'pointer' }}>
+                {element.cancel_button}
+              </p>
+            )}
+          </div>
+        </div>
+      );
+
     default:
       console.warn(`[FrameRenderer] Unknown element type: ${(element as V10Element).type}`);
       return null;
