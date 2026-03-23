@@ -69,6 +69,17 @@ function renderElement(element: V10Element, index: number, barColor?: string): R
         />
       );
 
+    case 'button_primary':
+      return (
+        <MockupButton
+          key={index}
+          label={element.text || element.label || ''}
+          primary={true}
+          icon={element.icon}
+          barColor={barColor}
+        />
+      );
+
     case 'warning':
       return <WarningCard key={index} text={element.text} />;
 
