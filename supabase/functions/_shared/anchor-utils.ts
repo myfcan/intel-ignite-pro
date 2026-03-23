@@ -88,7 +88,8 @@ export function parseAnchorTags(script: string): AnchorTag[] {
  * Removes all [ANCHOR:*] tags from text, producing clean text for ElevenLabs.
  */
 export function removeAnchorTags(script: string): string {
-  return script.replace(ANCHOR_TAG_REGEX, '').replace(/\n{3,}/g, '\n\n').trim();
+  // Use tolerant regex to catch any variation of [ANCHOR:*] tags
+  return script.replace(ANCHOR_REMOVE_REGEX, '').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 // ─── Match Algorithm ─────────────────────────────────────────────────────────
