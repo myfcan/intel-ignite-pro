@@ -235,9 +235,46 @@ export default function AdminManageLessons() {
         const { error } = await supabase.from('lessons').delete().in('id', Array.from(selectedLessons));
         if (error) throw error;
       }
-      // Delete V10 lessons
+      // Delete V10 lessons (cascade: delete dependent rows first)
       if (selectedV10Lessons.size > 0) {
-        const { error } = await (supabase as any).from('v10_lessons').delete().in('id', Array.from(selectedV10Lessons));
+        const v10Ids = Array.from(selectedV10Lessons);
+        
+        // 1. Get step IDs for anchor cleanup
+        const { data: stepRows } = await (supabase as any)
+          .from('v10_lesson_steps')
+          .select('id')
+          .in('lesson_id', v10Ids);
+        const stepIds = (stepRows || []).map((s: any) => s.id);
+        
+        // 2. Delete anchors (FK → steps)
+        if (stepIds.length > 0) {
+          await (supabase as any).from('v10_lesson_step_anchors').delete().in('step_id', stepIds);
+        }
+        
+        // 3. Get pipeline IDs for log cleanup
+        const { data: pipelineRows } = await (supabase as any)
+          .from('v10_bpa_pipeline')
+          .select('id')
+          .in('lesson_id', v10Ids);
+        const pipelineIds = (pipelineRows || []).map((p: any) => p.id);
+        
+        // 4. Delete pipeline logs (FK → pipeline)
+        if (pipelineIds.length > 0) {
+          await (supabase as any).from('v10_bpa_pipeline_log').delete().in('pipeline_id', pipelineIds);
+        }
+        
+        // 5. Delete all direct dependents of v10_lessons
+        await Promise.all([
+          (supabase as any).from('v10_lesson_steps').delete().in('lesson_id', v10Ids),
+          (supabase as any).from('v10_lesson_narrations').delete().in('lesson_id', v10Ids),
+          (supabase as any).from('v10_lesson_intro_slides').delete().in('lesson_id', v10Ids),
+          (supabase as any).from('v10_user_lesson_progress').delete().in('lesson_id', v10Ids),
+          (supabase as any).from('v10_user_achievements').delete().in('lesson_id', v10Ids),
+          (supabase as any).from('v10_bpa_pipeline').delete().in('lesson_id', v10Ids),
+        ]);
+        
+        // 6. Finally delete the lesson itself
+        const { error } = await (supabase as any).from('v10_lessons').delete().in('id', v10Ids);
         if (error) throw error;
       }
       toast({ title: `${totalSelected} lição(ões) deletada(s)` });
