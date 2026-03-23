@@ -1,0 +1,1 @@
+UPDATE v10_bpa_pipeline SET title = 'Supernormal', slug = 'supernormal' WHERE id = '9f3b318f-dfc7-453b-92a8-cfd6df6a4ce2';

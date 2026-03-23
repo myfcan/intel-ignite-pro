@@ -164,6 +164,12 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
       return;
     }
 
+    // Guard against pasted conversations as title
+    if (title.trim().length > 200) {
+      toast.error('O título deve ter no máximo 200 caracteres.');
+      return;
+    }
+
     setSubmitting(true);
 
     // If we have preview data, use those scores as initial values
@@ -186,8 +192,8 @@ export function CreateBpaModal({ open, onOpenChange, onCreated }: CreateBpaModal
         };
 
     const payload = {
-      title: title.trim(),
-      slug: slug.trim() || toKebabCase(title),
+      title: title.trim().slice(0, 200),
+      slug: (slug.trim() || toKebabCase(title)).slice(0, 120),
       status: 'draft' as const,
       current_stage: 1,
       ...initialScores,
