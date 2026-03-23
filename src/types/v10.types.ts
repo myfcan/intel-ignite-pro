@@ -76,7 +76,8 @@ export type V10ElementCelebration = {
 export type V10ElementTooltipTerm = {
   type: 'tooltip_term';
   term: string;
-  tip: string;
+  tip?: string;
+  definition?: string;
 };
 
 export type V10ElementImage = {
@@ -106,6 +107,24 @@ export type V10ElementShimmer = {
   height: number;
 };
 
+export type V10ElementButtonPrimary = {
+  type: 'button_primary';
+  label?: string;
+  text?: string;
+  icon?: string;
+};
+
+export type V10ElementGridCards = {
+  type: 'grid_cards';
+  cards: Array<{
+    icon: string;
+    label: string;
+    connected?: boolean;
+  }>;
+  button_label?: string;
+  button_color?: string;
+};
+
 export type V10Element =
   | V10ElementChromeHeader
   | V10ElementText
@@ -121,7 +140,9 @@ export type V10Element =
   | V10ElementTable
   | V10ElementCodeBlock
   | V10ElementDivider
-  | V10ElementShimmer;
+  | V10ElementShimmer
+  | V10ElementButtonPrimary
+  | V10ElementGridCards;
 
 // ------------------------------------------------------------
 // V10Frame — A single frame within a lesson step
