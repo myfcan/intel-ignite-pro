@@ -224,6 +224,8 @@ async function handlePartNarration(
     audio_url: audioUrl,
     duration_seconds: durationSeconds,
     script_length: script.length,
+    script_length_clean: cleanScript.length,
+    anchor_tags_removed: anchorTagsRemoved,
   };
 }
 
