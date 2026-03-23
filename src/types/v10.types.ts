@@ -140,7 +140,9 @@ export type V10Element =
   | V10ElementTable
   | V10ElementCodeBlock
   | V10ElementDivider
-  | V10ElementShimmer;
+  | V10ElementShimmer
+  | V10ElementButtonPrimary
+  | V10ElementGridCards;
 
 // ------------------------------------------------------------
 // V10Frame — A single frame within a lesson step

@@ -106,7 +106,7 @@ function renderElement(element: V10Element, index: number, barColor?: string): R
       );
 
     case 'tooltip_term':
-      return <TooltipTerm key={index} term={element.term} tip={element.tip} />;
+      return <TooltipTerm key={index} term={element.term} tip={element.tip || element.definition || ''} />;
 
     case 'image':
       return <MockupImage key={index} src={element.src} alt={element.alt} />;
