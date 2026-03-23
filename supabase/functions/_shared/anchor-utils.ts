@@ -43,6 +43,9 @@ const VALID_ANCHOR_TYPES: AnchorType[] = [
 
 const ANCHOR_TAG_REGEX = /\[ANCHOR:(\w+)\]\n?/g;
 
+// Tolerant regex for removal — catches variations in casing, extra spaces, brackets
+const ANCHOR_REMOVE_REGEX = /\[\s*[Aa][Nn][Cc][Hh][Oo][Rr]\s*:\s*\w+\s*\]\n?/g;
+
 // Number of words to extract after each tag for match_phrase
 const PHRASE_WORD_COUNT = 6;
 
