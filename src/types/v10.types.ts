@@ -76,7 +76,8 @@ export type V10ElementCelebration = {
 export type V10ElementTooltipTerm = {
   type: 'tooltip_term';
   term: string;
-  tip: string;
+  tip?: string;
+  definition?: string;
 };
 
 export type V10ElementImage = {
