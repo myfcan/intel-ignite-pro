@@ -186,8 +186,14 @@ async function handlePartNarration(
     }
   }
 
-  // 4. Generate audio via ElevenLabs
-  const audioBuffer = await generateTTSAudio(script, elevenLabsKey);
+  // 4. Sanitize [ANCHOR:*] tags before sending to TTS
+  const { removeAnchorTags } = await import("../_shared/anchor-utils.ts");
+  const cleanScript = removeAnchorTags(script);
+  const anchorTagsRemoved = script.length - cleanScript.length;
+  console.log(`[v10-generate-audio] Part ${part} sanitized: ${script.length} → ${cleanScript.length} chars (removed ${anchorTagsRemoved} chars of anchor tags)`);
+
+  // 5. Generate audio via ElevenLabs
+  const audioBuffer = await generateTTSAudio(cleanScript, elevenLabsKey);
 
   // 5. Upload to storage
   const storagePath = `v10/${lesson_id}/narration_${part.toLowerCase()}.mp3`;
@@ -218,6 +224,8 @@ async function handlePartNarration(
     audio_url: audioUrl,
     duration_seconds: durationSeconds,
     script_length: script.length,
+    script_length_clean: cleanScript.length,
+    anchor_tags_removed: anchorTagsRemoved,
   };
 }
 
