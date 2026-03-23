@@ -441,3 +441,31 @@ export interface AnchorEvent {
   timestamp: number;
   fired: boolean;
 }
+
+// ------------------------------------------------------------
+// NEW: V10ElementChecklist — Pre-flight checklist
+// ------------------------------------------------------------
+
+export type V10ElementChecklist = {
+  type: 'checklist';
+  title?: string;
+  items: Array<{
+    text: string;
+    checked?: boolean;
+    warning?: string; // shown if not checked
+  }>;
+};
+
+// ------------------------------------------------------------
+// NEW: V10ElementModalOverlay — Simulates a popup/modal
+// ------------------------------------------------------------
+
+export type V10ElementModalOverlay = {
+  type: 'modal_overlay';
+  icon?: string;
+  title: string;
+  items?: string[];         // bullet points inside modal
+  primary_button?: string;  // green CTA button
+  cancel_button?: string;   // cancel link
+  highlight_button?: boolean; // pulse animation on primary
+};
