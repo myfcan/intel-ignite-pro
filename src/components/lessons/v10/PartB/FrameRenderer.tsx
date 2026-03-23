@@ -131,6 +131,47 @@ function renderElement(element: V10Element, index: number, barColor?: string): R
     case 'shimmer':
       return <ShimmerPlaceholder key={index} height={element.height} />;
 
+    case 'grid_cards':
+      return (
+        <div key={index} style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 8,
+          marginTop: 4,
+        }}>
+          {(element.cards || []).map((card, i) => (
+            <div key={i} style={{
+              background: '#fff',
+              border: '1px solid #E5E7EB',
+              borderRadius: 10,
+              padding: '10px 8px',
+              display: 'flex',
+              flexDirection: 'column' as const,
+              alignItems: 'flex-start',
+              gap: 6,
+            }}>
+              <span style={{ fontSize: 16 }}>{card.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#111827' }}>
+                {card.label}
+              </span>
+              <div style={{
+                width: '100%',
+                background: card.connected ? '#D1FAE5' : '#22C55E',
+                color: card.connected ? '#059669' : '#fff',
+                borderRadius: 6,
+                padding: '4px 0',
+                textAlign: 'center' as const,
+                fontSize: 10,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}>
+                {card.connected ? '✓ Connected' : (element.button_label || 'Add')}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+
     default:
       console.warn(`[FrameRenderer] Unknown element type: ${(element as V10Element).type}`);
       return null;
