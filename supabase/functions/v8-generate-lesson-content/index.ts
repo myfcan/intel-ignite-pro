@@ -326,7 +326,7 @@ SCHEMAS POR TIPO:
 
 drag-drop: { items: [{ id, text, category }], categories: [{ id, title }], feedback: { correct, incorrect } }
 fill-in-blanks: { sentences: [{ id, text (use _______ como placeholder), correctAnswers: [], hint }], feedback: { allCorrect, someCorrect, needsReview } }
-scenario-selection: { scenarios: [{ id, situation, options: [], correctAnswer, explanation }] }
+scenario-selection: { scenarios: [{ id, situation (máx 80 chars), options: [] (cada opção máx 50 chars), correctAnswer, explanation }] }
 true-false: { statements: [{ id, text, correct: boolean, explanation }], feedback: { perfect, good, needsReview } }
 platform-match: { scenarios: [{ id, text, correctPlatform, emoji }], platforms: [{ id, name, icon, color }] }
 data-collection: { scenario: { id, emoji, platform, situation, dataPoints: [{ id, label, isCorrect, explanation }], context } }
