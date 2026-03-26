@@ -326,7 +326,7 @@ SCHEMAS POR TIPO:
 
 drag-drop: { items: [{ id, text, category }], categories: [{ id, title }], feedback: { correct, incorrect } }
 fill-in-blanks: { sentences: [{ id, text (use _______ como placeholder), correctAnswers: [], hint }], feedback: { allCorrect, someCorrect, needsReview } }
-scenario-selection: { scenarios: [{ id, situation, options: [], correctAnswer, explanation }] }
+scenario-selection: { scenarios: [{ id, situation (máx 80 chars), options: [] (cada opção máx 50 chars), correctAnswer, explanation }] }
 true-false: { statements: [{ id, text, correct: boolean, explanation }], feedback: { perfect, good, needsReview } }
 platform-match: { scenarios: [{ id, text, correctPlatform, emoji }], platforms: [{ id, name, icon, color }] }
 data-collection: { scenario: { id, emoji, platform, situation, dataPoints: [{ id, label, isCorrect, explanation }], context } }
@@ -422,12 +422,18 @@ TIPOS DISPONÍVEIS E SCHEMAS:
 - complete-sentence: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], options: ["opção1", "opção2", "opção3", "resposta"] }] }
 - multiple-choice: { question: "pergunta clara sobre o conceito", options: [{ id: "opt-1", text: "alternativa A", isCorrect: true }, { id: "opt-2", text: "alternativa B", isCorrect: false }, { id: "opt-3", text: "alternativa C", isCorrect: false }], explanation: "explicação da resposta correta", feedback: { perfect: "...", good: "...", needsReview: "..." } }
 - flipcard-quiz: { cards: [{ id: "card-1", front: { label: "Conceito X", color: "#6366f1" }, back: { text: "explicação" }, options: [{ id: "opt-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
-- scenario-selection: { scenarios: [{ id: "sc-1", situation: "descrição do cenário", options: ["opção A", "opção B", "opção C"], correctAnswer: "opção A", explanation: "..." }] }
+- scenario-selection: { scenarios: [{ id: "sc-1", situation: "descrição do cenário (máx 80 chars)", options: ["opção curta A (máx 50 chars)", "opção curta B", "opção curta C"], correctAnswer: "opção curta A", explanation: "..." }] }. IMPORTANTE: as options devem ser CURTAS (máx 50 caracteres cada) para caber em telas mobile. A situation também deve ser concisa (máx 80 chars).
 - platform-match: { scenarios: [{ id: "pm-1", text: "caso de uso", correctPlatform: "ChatGPT", emoji: "🤖" }], platforms: [{ id: "plat-1", name: "ChatGPT", icon: "🤖", color: "#10a37f" }, { id: "plat-2", name: "Midjourney", icon: "🎨", color: "#5865f2" }] }
 - timed-quiz: { timePerQuestion: 15, bonusPerSecondLeft: 2, timeoutPenalty: "skip", visualTheme: "cyber", questions: [{ id: "tq-1", question: "pergunta", options: [{ id: "tqo-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
 
 Gere IDs únicos para todos os elementos.
 Gere 2 statements/sentences/cards/questions por exercício (máximo 2 para timed-quiz).
+
+COMPACIDADE MOBILE (OBRIGATÓRIO):
+- Todos os textos de opções/alternativas devem ter NO MÁXIMO 50 caracteres. Textos longos quebram o layout mobile.
+- Situations e descriptions devem ter NO MÁXIMO 80 caracteres.
+- Títulos de exercícios devem ter NO MÁXIMO 40 caracteres.
+- Prefira frases diretas e objetivas. Evite descrições longas ou rebuscadas.
 
 FEEDBACK OBRIGATÓRIO:
 - CADA exercício DEVE ter "successMessage" (parabéns contextual, 1-2 frases) e "tryAgainMessage" (dica para tentar novamente, 1-2 frases).
