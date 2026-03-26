@@ -1611,11 +1611,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             </aside>
             
             <main className={`space-y-4 sm:space-y-6 min-w-0 transition-opacity duration-500`}>
-              {lessonData.sections
-                .map((section, originalIndex) => ({ section, originalIndex }))
-                .map(({ section, originalIndex }) => {
-                  // 🎬 V5 SEGMENTOS: Construir segmentos para esta seção
-                  const sectionSegments = buildSegmentsForSection(originalIndex);
+              {lessonData.sections.map((section, originalIndex) => {
+                  // 🎬 V5 SEGMENTOS: Segments já pré-calculados em memo
+                  const sectionSegments = segmentsBySection[originalIndex] ?? [];
                   const textSegmentId = `section-${originalIndex}-text`;
                   const isTextActive = currentSection === originalIndex && activeSegmentId === textSegmentId;
                   const isCardActive = (cardIdx: number) =>
