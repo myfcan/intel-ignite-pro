@@ -186,7 +186,21 @@ export const useV8Player = (lessonData: V8LessonData) => {
     for (let i = 0; i < lessonData.sections.length; i++) {
       const sectionTitle = lessonData.sections[i]?.title || '';
       const sectionContent = (lessonData.sections[i]?.content || '').trim();
-      const markerFallbackExercise = createFallbackInlineExercise(i, sectionTitle, sectionContent);
+
+      // Detect if this section is ONLY a marker (e.g. "[EXERCISE:multiple-choice]")
+      const isMarkerOnly = EXERCISE_MARKER_REGEX.test(sectionContent) && sectionContent.length < 50;
+
+      // Check for real (DB-stored) inline exercises at this section index
+      const realExercisesAtSection = inlineExerciseMap.get(i) || [];
+
+      // Only use fallback if NO real exercises exist at this section
+      const markerFallbackExercise = realExercisesAtSection.length === 0
+        ? createFallbackInlineExercise(i, sectionTitle, sectionContent)
+        : null;
+
+      const effectiveInlineExercises = realExercisesAtSection.length > 0
+        ? realExercisesAtSection
+        : (markerFallbackExercise ? [markerFallbackExercise] : []);
 
       // Skip short residual sections (<100 chars) only if there are absolutely no interactions
       const hasInteractions =
@@ -194,15 +208,19 @@ export const useV8Player = (lessonData: V8LessonData) => {
         playgroundMap.has(i) ||
         insightMap.has(i) ||
         completeSentenceMap.has(i) ||
-        inlineExerciseMap.has(i) ||
-        Boolean(markerFallbackExercise);
+        effectiveInlineExercises.length > 0;
 
       if (sectionContent.length < 100 && sectionContent.length > 0 && !hasInteractions) {
-        console.log(`[useV8Player] Skipping short residual section ${i}: "${lessonData.sections[i]?.title}" (${sectionContent.length} chars)`);
+        console.log(`[useV8Player] Skipping short residual section ${i}: "${sectionTitle}" (${sectionContent.length} chars)`);
         continue;
       }
 
-      items.push({ type: "section", index: i });
+      // If section is marker-only, skip the section card but still render its interactions
+      if (!isMarkerOnly) {
+        items.push({ type: "section", index: i });
+      } else {
+        console.log(`[useV8Player] Marker-only section ${i}: "${sectionTitle}" — skipping section card, rendering exercise directly`);
+      }
 
       const completeSentences = completeSentenceMap.get(i);
       if (completeSentences) {
@@ -210,11 +228,6 @@ export const useV8Player = (lessonData: V8LessonData) => {
           items.push({ type: "complete-sentence", completeSentence: cs });
         }
       }
-
-      const inlineExercisesAtSection = inlineExerciseMap.get(i) || [];
-      const effectiveInlineExercises = markerFallbackExercise
-        ? [...inlineExercisesAtSection, markerFallbackExercise]
-        : inlineExercisesAtSection;
 
       const hasExerciseAtSection = effectiveInlineExercises.length > 0;
 
