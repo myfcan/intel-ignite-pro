@@ -199,7 +199,7 @@ export default function AdminV8Create() {
   useEffect(() => {
     (async () => {
       const [t, c] = await Promise.all([
-        supabase.from('trails').select('id, title, trail_type').order('order_index'),
+        supabase.from('trails').select('id, title, trail_type').eq('is_active', true).order('order_index'),
         supabase.from('courses').select('id, trail_id, title').order('order_index'),
       ]);
       if (t.data) setTrails(t.data);
