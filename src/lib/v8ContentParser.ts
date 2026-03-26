@@ -125,23 +125,26 @@ export function parseFullContent(rawText: string): ParseResult {
     if (isEmpty) {
       console.log(`[v8Parser] → PRUNED (empty): "${parsedSections[i].title}"`);
       removedIndices.push(i);
-    } else if (isShortResidual && (hasQuiz || hasPlayground)) {
-      // P5: Merge short residual content into quiz or discard
+    } else if (isShortResidual) {
+      // P5: Short residual — merge into quiz question or append to previous section
       if (hasQuiz) {
         for (const q of quizzesWithIndex) {
           if (q.afterSectionIndex === i) {
             if (!q.quiz.question || q.quiz.question.trim().length === 0) {
               q.quiz.question = contentTrimmed;
-            } else {
-              const residualPrefix = contentTrimmed.slice(0, 30).toLowerCase();
-              const questionPrefix = q.quiz.question.slice(0, 30).toLowerCase();
-              void residualPrefix;
-              void questionPrefix;
             }
           }
         }
       }
-      console.log(`[v8Parser] → PRUNED (short+interaction): "${parsedSections[i].title}"`);
+      // Merge residual text into previous kept section if possible
+      if (keptSections.length > 0 && !hasQuiz) {
+        const prev = keptSections[keptSections.length - 1];
+        prev.content = prev.content.trimEnd() + '\n\n' + contentTrimmed;
+        console.log(`[v8Parser] → MERGED into prev section: "${parsedSections[i].title}" → "${prev.title}"`);
+      } else {
+        console.log(`[v8Parser] → PRUNED (short residual): "${parsedSections[i].title}"`);
+      }
+      // Remap any interactions that pointed at this section to the previous kept section
       removedIndices.push(i);
     } else {
       keptSections.push(parsedSections[i]);
