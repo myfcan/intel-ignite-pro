@@ -55,6 +55,8 @@ interface Segment {
   cardConfig?: any;
 }
 
+const UI_TIME_UPDATE_GRANULARITY_SECONDS = 0.12;
+
 /**
  * 🚀 GUIDED LESSON V5 - EXPERIENCE CARDS ANIMADOS
  *
@@ -203,11 +205,15 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     return segments;
   };
 
-  // Memoizar segmentos da seção atual
-  // 🆕 Inclui sectionAudioDuration para recalcular quando a duração do áudio mudar
+  // Memoizar segmentos de TODAS as seções para evitar recalcular em cada render
+  const segmentsBySection = useMemo(() => {
+    return lessonData.sections.map((_, index) => buildSegmentsForSection(index));
+  }, [lessonData.sections, lessonData.experienceCards, sectionAudioDuration]);
+
+  // Segmentos da seção atual (já pré-calculados)
   const currentSectionSegments = useMemo(() => {
-    return buildSegmentsForSection(currentSection);
-  }, [currentSection, lessonData.sections, lessonData.experienceCards, sectionAudioDuration]);
+    return segmentsBySection[currentSection] ?? [];
+  }, [segmentsBySection, currentSection]);
 
   /**
    * 🎬 Calcular segmento ativo baseado no tempo atual do áudio
@@ -710,7 +716,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     
     const syncLoop = () => {
       const currentTime = audio.currentTime;
-      setCurrentTime(currentTime);
+      setCurrentTime((prevTime) =>
+        Math.abs(currentTime - prevTime) >= UI_TIME_UPDATE_GRANULARITY_SECONDS ? currentTime : prevTime
+      );
       
       if (duration > 0) {
         const progress = Math.round((currentTime / duration) * 100);
@@ -1347,13 +1355,6 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     onComplete({ audioProgress: maxAudioProgress });
   };
 
-  console.log('🔍 [V5-RENDER] Fase atual:', currentPhase, {
-    hasExercises: !!lessonData.exercisesConfig,
-    exercisesCount: lessonData.exercisesConfig?.length || 0,
-    showEndCard,
-    currentSection,
-    totalSections: lessonData.sections.length
-  });
 
   // 🚀 NOTA: playground-real foi removido - PlaygroundBridge agora é o único playground
   // e vai direto para exercícios após completar
@@ -1610,11 +1611,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             </aside>
             
             <main className={`space-y-4 sm:space-y-6 min-w-0 transition-opacity duration-500`}>
-              {lessonData.sections
-                .map((section, originalIndex) => ({ section, originalIndex }))
-                .map(({ section, originalIndex }) => {
-                  // 🎬 V5 SEGMENTOS: Construir segmentos para esta seção
-                  const sectionSegments = buildSegmentsForSection(originalIndex);
+              {lessonData.sections.map((section, originalIndex) => {
+                  // 🎬 V5 SEGMENTOS: Segments já pré-calculados em memo
+                  const sectionSegments = segmentsBySection[originalIndex] ?? [];
                   const textSegmentId = `section-${originalIndex}-text`;
                   const isTextActive = currentSection === originalIndex && activeSegmentId === textSegmentId;
                   const isCardActive = (cardIdx: number) =>
@@ -1711,9 +1710,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                       const originalCardIndex = cardSegment.cardIndex ?? 0;
                       const isThisCardActive = isCardActive(originalCardIndex);
                       
-                      // 🔍 DEBUG: Log para verificar cada card
                       const isValid = isValidCardEffectType(cardType);
-                      console.log(`🎬 [V5-CARD-RENDER] Seção ${originalIndex} Card ${originalCardIndex}: type="${cardType}" | isValid=${isValid} | cardConfig=`, cardConfig);
 
                       return (
                         <div
