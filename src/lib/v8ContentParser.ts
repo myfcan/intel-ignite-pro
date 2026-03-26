@@ -107,8 +107,10 @@ export function parseFullContent(rawText: string): ParseResult {
 
   // 6.2. Prune ghost sections (empty content after removing [QUIZ]/[PLAYGROUND] blocks)
   // Also detect short residual content (<100 chars) when section has a quiz — merge/hide
+  // IMPORTANT: Sections containing [EXERCISE:*] markers are NEVER pruned (they carry interaction intent)
   const sectionHasQuiz = new Set(quizzesWithIndex.map(q => q.afterSectionIndex));
   const sectionHasPlayground = new Set(playgroundsWithIndex.map(p => p.afterSectionIndex));
+  const EXERCISE_MARKER_RE = /\[EXERCISE:([a-z-]+)\]/i;
 
   const removedIndices: number[] = [];
   const keptSections: typeof parsedSections = [];
@@ -119,12 +121,17 @@ export function parseFullContent(rawText: string): ParseResult {
     const isShortResidual = contentTrimmed.length < 100 && contentTrimmed.length > 0;
     const hasQuiz = sectionHasQuiz.has(i);
     const hasPlayground = sectionHasPlayground.has(i);
+    const hasExerciseMarker = EXERCISE_MARKER_RE.test(contentTrimmed);
 
-    console.log(`[v8Parser] Section ${i} "${parsedSections[i].title}": len=${contentTrimmed.length}, empty=${isEmpty}, shortResidual=${isShortResidual}, hasQuiz=${hasQuiz}, hasPG=${hasPlayground}`);
+    console.log(`[v8Parser] Section ${i} "${parsedSections[i].title}": len=${contentTrimmed.length}, empty=${isEmpty}, shortResidual=${isShortResidual}, hasQuiz=${hasQuiz}, hasPG=${hasPlayground}, hasExMarker=${hasExerciseMarker}`);
 
     if (isEmpty) {
       console.log(`[v8Parser] → PRUNED (empty): "${parsedSections[i].title}"`);
       removedIndices.push(i);
+    } else if (hasExerciseMarker) {
+      // NEVER prune sections with exercise markers — they carry interaction intent
+      keptSections.push(parsedSections[i]);
+      console.log(`[v8Parser] → KEPT (exercise marker): "${parsedSections[i].title}"`);
     } else if (isShortResidual) {
       // P5: Short residual — merge into quiz question or append to previous section
       if (hasQuiz) {
