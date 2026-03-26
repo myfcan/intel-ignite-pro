@@ -205,11 +205,15 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     return segments;
   };
 
-  // Memoizar segmentos da seção atual
-  // 🆕 Inclui sectionAudioDuration para recalcular quando a duração do áudio mudar
+  // Memoizar segmentos de TODAS as seções para evitar recalcular em cada render
+  const segmentsBySection = useMemo(() => {
+    return lessonData.sections.map((_, index) => buildSegmentsForSection(index));
+  }, [lessonData.sections, lessonData.experienceCards, sectionAudioDuration]);
+
+  // Segmentos da seção atual (já pré-calculados)
   const currentSectionSegments = useMemo(() => {
-    return buildSegmentsForSection(currentSection);
-  }, [currentSection, lessonData.sections, lessonData.experienceCards, sectionAudioDuration]);
+    return segmentsBySection[currentSection] ?? [];
+  }, [segmentsBySection, currentSection]);
 
   /**
    * 🎬 Calcular segmento ativo baseado no tempo atual do áudio
