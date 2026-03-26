@@ -716,7 +716,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     
     const syncLoop = () => {
       const currentTime = audio.currentTime;
-      setCurrentTime(currentTime);
+      setCurrentTime((prevTime) =>
+        Math.abs(currentTime - prevTime) >= UI_TIME_UPDATE_GRANULARITY_SECONDS ? currentTime : prevTime
+      );
       
       if (duration > 0) {
         const progress = Math.round((currentTime / duration) * 100);
