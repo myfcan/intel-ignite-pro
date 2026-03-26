@@ -1233,37 +1233,6 @@ export default function AdminV8Create() {
     updatedQuizzes: V8InlineQuiz[],
     updatedPlaygrounds: V8InlinePlayground[]
   ) => {
-    // Materialize [EXERCISE:*] markers from sections into inlineExercises
-    const MARKER_REGEX = /\[EXERCISE:([a-z-]+)\]/i;
-    const materializedExercises: Array<{
-      id: string;
-      afterSectionIndex: number;
-      type: string;
-      title: string;
-      instruction: string;
-      data: Record<string, any>;
-    }> = [];
-
-    for (let i = 0; i < updatedSections.length; i++) {
-      const content = (updatedSections[i]?.content || '').trim();
-      const match = content.match(MARKER_REGEX);
-      if (match && content.length < 50) {
-        // This section is a marker-only section — the exercise goes afterSectionIndex = i-1
-        // (the section BEFORE the marker, since the marker section itself has no content)
-        const prevIndex = Math.max(0, i - 1);
-        const prevTitle = updatedSections[prevIndex]?.title || '';
-        const cleanTitle = prevTitle.replace(/^Seção\s*\d+\s*[—-]\s*/i, '').trim() || 'Exercício';
-        materializedExercises.push({
-          id: `inline-ex-${String(materializedExercises.length + 1).padStart(2, '0')}`,
-          afterSectionIndex: prevIndex,
-          type: match[1].toLowerCase(),
-          title: cleanTitle,
-          instruction: 'Responda com base no conteúdo da seção.',
-          data: { _placeholder: true, _type: match[1].toLowerCase() },
-        });
-      }
-    }
-
     const data: V8LessonData = {
       contentVersion: "v8",
       title: lessonTitle,
@@ -1271,19 +1240,14 @@ export default function AdminV8Create() {
       sections: updatedSections,
       inlineQuizzes: updatedQuizzes,
       inlinePlaygrounds: updatedPlaygrounds,
-      inlineExercises: materializedExercises.length > 0 ? materializedExercises as any : undefined,
       exercises: [],
     };
-
-    if (materializedExercises.length > 0) {
-      console.log(`[AdminV8Create] Materialized ${materializedExercises.length} inline exercises from markers:`, materializedExercises.map(e => `${e.type}@section${e.afterSectionIndex}`));
-    }
 
     setJsonText(JSON.stringify(data, null, 2));
     setEditorMode("json");
     setValidation(null);
     setStep("edit");
-    toast({ title: "✅ Setup aplicado!", description: `JSON atualizado${materializedExercises.length > 0 ? ` — ${materializedExercises.length} exercícios materializados` : ''} — valide para continuar` });
+    toast({ title: "✅ Setup aplicado!", description: "JSON atualizado — valide para continuar" });
   }, [lessonTitle, toast]);
 
   const toggleAudioPreview = (url: string) => {

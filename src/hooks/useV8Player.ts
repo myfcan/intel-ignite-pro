@@ -20,110 +20,6 @@ export type TimelineItem =
 
 const EXERCISE_MARKER_REGEX = /\[EXERCISE:([a-z-]+)\]/i;
 
-const createFallbackInlineExercise = (sectionIndex: number, sectionTitle: string, rawSectionContent: string): V8InlineExercise | null => {
-  const markerMatch = rawSectionContent.match(EXERCISE_MARKER_REGEX);
-  if (!markerMatch) return null;
-
-  const markerType = markerMatch[1].toLowerCase();
-  const cleanedTitle = sectionTitle.replace(/^Seção\s*\d+\s*[—-]\s*/i, '').trim() || 'conteúdo';
-
-  const base = {
-    id: `inline-marker-${sectionIndex + 1}-${markerType}`,
-    afterSectionIndex: sectionIndex,
-    title: cleanedTitle,
-    instruction: 'Responda com base no conteúdo da seção.',
-    successMessage: 'Boa! Você aplicou o conceito da seção.',
-    tryAgainMessage: 'Quase lá — revise a seção e tente novamente.',
-  } as const;
-
-  switch (markerType) {
-    case 'multiple-choice':
-      return {
-        ...base,
-        type: 'multiple-choice',
-        data: {
-          question: `Qual alternativa melhor representa "${cleanedTitle}"?`,
-          options: [
-            { id: 'a', text: 'Definir critério claro antes de pedir resposta', isCorrect: true },
-            { id: 'b', text: 'Pedir algo genérico e confiar no acaso', isCorrect: false },
-            { id: 'c', text: 'Aumentar o texto sem melhorar a ação', isCorrect: false },
-          ],
-          explanation: 'Critério explícito aumenta clareza, ação e adequação.',
-        },
-      };
-
-    case 'true-false':
-      return {
-        ...base,
-        type: 'true-false',
-        data: {
-          statements: [
-            {
-              id: 's1',
-              text: 'Sem critério, a resposta tende a ficar genérica.',
-              correct: true,
-              explanation: 'Critérios reduzem respostas vagas e aumentam utilidade prática.',
-            },
-          ],
-          feedback: {
-            perfect: 'Perfeito!',
-            good: 'Bom trabalho!',
-            needsReview: 'Revise o conteúdo da seção.',
-          },
-        },
-      };
-
-    case 'flipcard-quiz':
-      return {
-        ...base,
-        type: 'flipcard-quiz',
-        data: {
-          cards: [
-            {
-              id: 'card-1',
-              front: { label: 'Clareza', icon: 'Target', color: 'cyan' },
-              back: { text: 'Qual opção representa clareza em uma mensagem?' },
-              options: [
-                { id: 'o1', text: 'Pedido explícito e fácil de entender', isCorrect: true },
-                { id: 'o2', text: 'Frase longa e ambígua', isCorrect: false },
-              ],
-              explanation: 'Clareza significa entendimento rápido e sem ambiguidade.',
-            },
-          ],
-        },
-      };
-
-    case 'platform-match':
-      return {
-        ...base,
-        type: 'platform-match',
-        data: {
-          scenarios: [
-            { id: 'sc1', text: 'Pedir reescrita com tom profissional', correctPlatform: 'p1', emoji: '✍️' },
-          ],
-          platforms: [
-            { id: 'p1', name: 'GPT', icon: '🤖', color: '#4F46E5' },
-            { id: 'p2', name: 'Planilha', icon: '📊', color: '#16A34A' },
-          ],
-        },
-      };
-
-    default:
-      return {
-        ...base,
-        type: 'multiple-choice',
-        data: {
-          question: `Com base em "${cleanedTitle}", qual é a melhor prática?`,
-          options: [
-            { id: 'a', text: 'Definir critério e revisar antes da versão final', isCorrect: true },
-            { id: 'b', text: 'Responder sem objetivo claro', isCorrect: false },
-          ],
-          explanation: 'Usar critério + revisão melhora a qualidade da resposta.',
-        },
-      };
-  }
-};
-
 export const useV8Player = (lessonData: V8LessonData) => {
   const [state, setState] = useState<V8PlayerState>({
     currentIndex: 0,
@@ -190,17 +86,9 @@ export const useV8Player = (lessonData: V8LessonData) => {
       // Detect if this section is ONLY a marker (e.g. "[EXERCISE:multiple-choice]")
       const isMarkerOnly = EXERCISE_MARKER_REGEX.test(sectionContent) && sectionContent.length < 50;
 
-      // Check for real (DB-stored) inline exercises at this section index
+      // Use only real (DB-stored) inline exercises — no fallback generation
       const realExercisesAtSection = inlineExerciseMap.get(i) || [];
-
-      // Only use fallback if NO real exercises exist at this section
-      const markerFallbackExercise = realExercisesAtSection.length === 0
-        ? createFallbackInlineExercise(i, sectionTitle, sectionContent)
-        : null;
-
-      const effectiveInlineExercises = realExercisesAtSection.length > 0
-        ? realExercisesAtSection
-        : (markerFallbackExercise ? [markerFallbackExercise] : []);
+      const effectiveInlineExercises = realExercisesAtSection;
 
       // Skip short residual sections (<100 chars) only if there are absolutely no interactions
       const hasInteractions =
