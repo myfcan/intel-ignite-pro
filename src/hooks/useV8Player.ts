@@ -184,13 +184,24 @@ export const useV8Player = (lessonData: V8LessonData) => {
     // DEDUP: If a quiz already exists at a given sectionIndex, skip inline exercises at that same index
     // to avoid redundant interactions on the same topic.
     for (let i = 0; i < lessonData.sections.length; i++) {
-      // Skip short residual sections (<100 chars) with no interactions attached
+      const sectionTitle = lessonData.sections[i]?.title || '';
       const sectionContent = (lessonData.sections[i]?.content || '').trim();
-      const hasInteractions = quizMap.has(i) || playgroundMap.has(i) || insightMap.has(i) || completeSentenceMap.has(i) || inlineExerciseMap.has(i);
+      const markerFallbackExercise = createFallbackInlineExercise(i, sectionTitle, sectionContent);
+
+      // Skip short residual sections (<100 chars) only if there are absolutely no interactions
+      const hasInteractions =
+        quizMap.has(i) ||
+        playgroundMap.has(i) ||
+        insightMap.has(i) ||
+        completeSentenceMap.has(i) ||
+        inlineExerciseMap.has(i) ||
+        Boolean(markerFallbackExercise);
+
       if (sectionContent.length < 100 && sectionContent.length > 0 && !hasInteractions) {
         console.log(`[useV8Player] Skipping short residual section ${i}: "${lessonData.sections[i]?.title}" (${sectionContent.length} chars)`);
         continue;
       }
+
       items.push({ type: "section", index: i });
 
       const completeSentences = completeSentenceMap.get(i);
@@ -200,13 +211,15 @@ export const useV8Player = (lessonData: V8LessonData) => {
         }
       }
 
-      const hasExerciseAtSection = inlineExerciseMap.has(i);
+      const inlineExercisesAtSection = inlineExerciseMap.get(i) || [];
+      const effectiveInlineExercises = markerFallbackExercise
+        ? [...inlineExercisesAtSection, markerFallbackExercise]
+        : inlineExercisesAtSection;
 
-      const inlineExercises = inlineExerciseMap.get(i);
-      if (inlineExercises) {
-        for (const ex of inlineExercises) {
-          items.push({ type: "inline-exercise", exercise: ex });
-        }
+      const hasExerciseAtSection = effectiveInlineExercises.length > 0;
+
+      for (const ex of effectiveInlineExercises) {
+        items.push({ type: "inline-exercise", exercise: ex });
       }
 
       const playgrounds = playgroundMap.get(i);
