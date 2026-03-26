@@ -1355,13 +1355,6 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     onComplete({ audioProgress: maxAudioProgress });
   };
 
-  console.log('🔍 [V5-RENDER] Fase atual:', currentPhase, {
-    hasExercises: !!lessonData.exercisesConfig,
-    exercisesCount: lessonData.exercisesConfig?.length || 0,
-    showEndCard,
-    currentSection,
-    totalSections: lessonData.sections.length
-  });
 
   // 🚀 NOTA: playground-real foi removido - PlaygroundBridge agora é o único playground
   // e vai direto para exercícios após completar
