@@ -205,7 +205,22 @@ export function parseFullContent(rawText: string): ParseResult {
     }));
 
   // 10. Parse exercise markers [EXERCISE:tipo] with section context
-  const exerciseMarkersWithIndex = parseExerciseMarkersWithSections(rawText, keptSections.map(s => s.content));
+  // Use parsedSections (pre-pruning) to capture markers even in marker-only sections,
+  // then remap indices to post-pruning positions
+  const rawMarkersPrePrune = parseExerciseMarkersWithSections(rawText, parsedSections.map(s => s.content));
+  const exerciseMarkersWithIndex = rawMarkersPrePrune
+    .map(m => {
+      const remappedIdx = indexRemap.get(m.afterSectionIndex);
+      if (remappedIdx === undefined) {
+        // Marker was in a pruned section — find nearest previous kept section
+        let fallbackIdx = m.afterSectionIndex - 1;
+        while (fallbackIdx >= 0 && !indexRemap.has(fallbackIdx)) fallbackIdx--;
+        const finalIdx = fallbackIdx >= 0 ? indexRemap.get(fallbackIdx)! : 0;
+        console.log(`[v8Parser] Exercise marker "${m.type}" at pruned section ${m.afterSectionIndex} → remapped to ${finalIdx}`);
+        return { afterSectionIndex: finalIdx, type: m.type };
+      }
+      return { afterSectionIndex: remappedIdx, type: m.type };
+    });
   const exerciseMarkerTypes = exerciseMarkersWithIndex.map(m => m.type);
 
   return {
