@@ -55,6 +55,8 @@ interface Segment {
   cardConfig?: any;
 }
 
+const UI_TIME_UPDATE_GRANULARITY_SECONDS = 0.12;
+
 /**
  * 🚀 GUIDED LESSON V5 - EXPERIENCE CARDS ANIMADOS
  *
