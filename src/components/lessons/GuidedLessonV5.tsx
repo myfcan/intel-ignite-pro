@@ -1710,9 +1710,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                       const originalCardIndex = cardSegment.cardIndex ?? 0;
                       const isThisCardActive = isCardActive(originalCardIndex);
                       
-                      // 🔍 DEBUG: Log para verificar cada card
                       const isValid = isValidCardEffectType(cardType);
-                      console.log(`🎬 [V5-CARD-RENDER] Seção ${originalIndex} Card ${originalCardIndex}: type="${cardType}" | isValid=${isValid} | cardConfig=`, cardConfig);
 
                       return (
                         <div
