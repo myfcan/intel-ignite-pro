@@ -86,17 +86,9 @@ export const useV8Player = (lessonData: V8LessonData) => {
       // Detect if this section is ONLY a marker (e.g. "[EXERCISE:multiple-choice]")
       const isMarkerOnly = EXERCISE_MARKER_REGEX.test(sectionContent) && sectionContent.length < 50;
 
-      // Check for real (DB-stored) inline exercises at this section index
+      // Use only real (DB-stored) inline exercises — no fallback generation
       const realExercisesAtSection = inlineExerciseMap.get(i) || [];
-
-      // Only use fallback if NO real exercises exist at this section
-      const markerFallbackExercise = realExercisesAtSection.length === 0
-        ? createFallbackInlineExercise(i, sectionTitle, sectionContent)
-        : null;
-
-      const effectiveInlineExercises = realExercisesAtSection.length > 0
-        ? realExercisesAtSection
-        : (markerFallbackExercise ? [markerFallbackExercise] : []);
+      const effectiveInlineExercises = realExercisesAtSection;
 
       // Skip short residual sections (<100 chars) only if there are absolutely no interactions
       const hasInteractions =
