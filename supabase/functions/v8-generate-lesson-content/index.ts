@@ -328,7 +328,7 @@ drag-drop: { items: [{ id, text, category }], categories: [{ id, title }], feedb
 fill-in-blanks: { sentences: [{ id, text (use _______ como placeholder), correctAnswers: [], hint }], feedback: { allCorrect, someCorrect, needsReview } }
 scenario-selection: { scenarios: [{ id, situation (máx 80 chars), options: [] (cada opção máx 50 chars), correctAnswer, explanation }] }
 true-false: { statements: [{ id, text, correct: boolean, explanation }], feedback: { perfect, good, needsReview } }
-platform-match: { scenarios: [{ id, text, correctPlatform, emoji }], platforms: [{ id, name, icon, color }] }
+platform-match: { scenarios: [{ id, text (máx 60 chars), correctPlatform, emoji }], platforms: [{ id, name (máx 40 chars — use nomes curtos como "Verificar fontes", NÃO frases longas), icon, color }] }. IMPORTANTE: platform.name deve ser CURTO (rótulo de botão, não uma frase completa).
 data-collection: { scenario: { id, emoji, platform, situation, dataPoints: [{ id, label, isCorrect, explanation }], context } }
 complete-sentence: { sentences: [{ id, text (use _______ como placeholder), correctAnswers: [], options: [] }] }
 multiple-choice: { question, options: [], correctAnswer, explanation }
