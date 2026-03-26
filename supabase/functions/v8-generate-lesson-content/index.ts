@@ -429,6 +429,12 @@ TIPOS DISPONÍVEIS E SCHEMAS:
 Gere IDs únicos para todos os elementos.
 Gere 2 statements/sentences/cards/questions por exercício (máximo 2 para timed-quiz).
 
+COMPACIDADE MOBILE (OBRIGATÓRIO):
+- Todos os textos de opções/alternativas devem ter NO MÁXIMO 50 caracteres. Textos longos quebram o layout mobile.
+- Situations e descriptions devem ter NO MÁXIMO 80 caracteres.
+- Títulos de exercícios devem ter NO MÁXIMO 40 caracteres.
+- Prefira frases diretas e objetivas. Evite descrições longas ou rebuscadas.
+
 FEEDBACK OBRIGATÓRIO:
 - CADA exercício DEVE ter "successMessage" (parabéns contextual, 1-2 frases) e "tryAgainMessage" (dica para tentar novamente, 1-2 frases).
 - O successMessage deve referenciar o conceito testado. Ex: "Ótimo! Você dominou a diferença entre prompts vagos e específicos."
