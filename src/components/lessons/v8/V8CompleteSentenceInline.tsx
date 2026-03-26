@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CheckCircle2, Puzzle, RotateCcw } from "lucide-react";
+import { ArrowRight, CheckCircle2, Puzzle, RotateCcw, Sparkles } from "lucide-react";
 import { V8InlineCompleteSentence } from "@/types/v8Lesson";
 import { scheduleCTAScroll } from "./v8ScrollUtils";
 import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
@@ -31,13 +31,6 @@ const shuffle = <T,>(input: T[]) => {
  *
  * Renders ONE sentence with MULTIPLE inline blanks.
  * The user fills each blank by tapping a blank slot then picking a word from the shuffled word bank.
- *
- * Data contract (from pipeline):
- *   sentences[0].text = "Planeje para _______ com €40/dia para _______ e €50 para _______"
- *   sentences[0].correctAnswers = ["um casal", "refeições", "atrações"]  (ordered by blank position)
- *   sentences[0].options = ["um casal", "refeições", "atrações", "Gótico", "€30"]  (all chips including distractors)
- *
- * Legacy compat: if data has multiple sentences (old format), we join them into one prompt view.
  */
 export const V8CompleteSentenceInline = ({
   completeSentence,
@@ -49,12 +42,10 @@ export const V8CompleteSentenceInline = ({
   const { playSound } = useV7SoundEffects(0.6, true);
   const { audioLocked, justUnlocked, onAudioEnded } = useAudioFirstLock(completeSentence.audioUrl, isActiveAudio);
 
-  // Normalize: merge all sentences into a single prompt with N blanks
   const { promptParts, correctAnswers, wordBank } = useMemo(() => {
     const sentences = completeSentence.sentences;
 
     if (sentences.length === 1) {
-      // V8-C01: 1 sentence, exactly 4 blanks, chips = correctAnswers only (shuffled)
       const parts = sentences[0].text.split("_______");
       const correct = sentences[0].correctAnswers || [];
       return {
@@ -64,7 +55,6 @@ export const V8CompleteSentenceInline = ({
       };
     }
 
-    // Legacy: multiple sentences with 1 blank each → join into 1 prompt
     let combinedText = "";
     const allCorrect: string[] = [];
     const allChips = new Set<string>();
@@ -96,7 +86,6 @@ export const V8CompleteSentenceInline = ({
   const [results, setResults] = useState<boolean[]>([]);
   const ctaRef = useRef<HTMLButtonElement>(null);
 
-  // Reset on data change
   useEffect(() => {
     setFills(Array(blankCount).fill(null));
     setActiveBlank(0);
@@ -109,7 +98,6 @@ export const V8CompleteSentenceInline = ({
     return scheduleCTAScroll(() => ctaRef.current);
   }, [submitted, isActive]);
 
-  // Auto-advance active blank to next empty
   useEffect(() => {
     if (submitted || audioLocked) return;
     if (activeBlank !== null && fills[activeBlank] !== null) {
@@ -121,26 +109,17 @@ export const V8CompleteSentenceInline = ({
   const handleWordSelect = useCallback(
     (word: string) => {
       if (submitted || audioLocked) return;
-
       setFills((prev) => {
         const next = [...prev];
-
-        // If this word is already placed somewhere, remove it
         const existingIdx = next.indexOf(word);
         if (existingIdx >= 0) {
           next[existingIdx] = null;
-          if (existingIdx === activeBlank) {
-            // Deselect from active blank
-            return next;
-          }
+          if (existingIdx === activeBlank) return next;
         }
-
-        // Place in active blank
         const target = activeBlank ?? next.findIndex((f) => f === null);
         if (target >= 0 && target < next.length) {
           next[target] = word;
         }
-
         return next;
       });
     },
@@ -151,7 +130,6 @@ export const V8CompleteSentenceInline = ({
     (idx: number) => {
       if (submitted || audioLocked) return;
       if (fills[idx] !== null) {
-        // Remove word from this blank
         setFills((prev) => {
           const next = [...prev];
           next[idx] = null;
@@ -172,13 +150,11 @@ export const V8CompleteSentenceInline = ({
     });
     setResults(res);
     setSubmitted(true);
-
     const correctCount = res.filter(Boolean).length;
     const score = Math.round((correctCount / blankCount) * 100);
     if (score >= PASS_SCORE) playSound("success");
     else playSound("error");
     onScore?.(score);
-
   }, [fills, correctAnswers, blankCount, onScore, playSound]);
 
   const handleRetry = useCallback(() => {
@@ -193,25 +169,25 @@ export const V8CompleteSentenceInline = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.35 }}
-      className="flex flex-col gap-5 pb-8"
+      className="flex flex-col gap-4 pb-6"
     >
       {/* Badge */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-50 border border-cyan-200">
-          <Puzzle className="w-3.5 h-3.5 text-cyan-600" />
-          <span className="text-[11px] font-semibold text-cyan-700 uppercase tracking-wider">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
+          <Puzzle className="w-3 h-3 text-primary" />
+          <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
             Monte o Prompt
           </span>
         </div>
       </div>
 
       {/* Title & instruction */}
-      <div>
-        <h3 className="text-lg font-bold text-slate-900">{completeSentence.title}</h3>
-        <p className="text-sm text-slate-500 mt-1">{completeSentence.instruction}</p>
+      <div className="space-y-0.5">
+        <h3 className="text-base sm:text-lg font-bold text-foreground leading-snug">{completeSentence.title}</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground">{completeSentence.instruction}</p>
       </div>
 
       {/* Audio */}
@@ -220,46 +196,46 @@ export const V8CompleteSentenceInline = ({
       )}
       {audioLocked && !submitted && <V8AudioLockOverlay />}
 
-      {/* Single prompt with inline blanks */}
+      {/* Prompt with inline blanks */}
       <div
-        className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-indigo-400/60 ring-offset-2 rounded-xl animate-pulse" : ""}`}
+        className={`transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"} ${justUnlocked ? "ring-2 ring-primary/40 ring-offset-2 rounded-2xl animate-pulse" : ""}`}
       >
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-          <p className="text-base leading-[2.2] text-slate-900 font-medium">
+        <div className="rounded-2xl border border-border bg-gradient-to-br from-muted/40 to-muted/20 p-3.5 sm:p-5 shadow-sm">
+          <p className="text-[13px] sm:text-base leading-[2.4] sm:leading-[2.2] text-foreground font-medium">
             {promptParts.map((part, i) => (
               <span key={i}>
-                {part}
+                {part.trim()}{" "}
                 {i < blankCount && (
                   <button
                     type="button"
                     onClick={() => handleBlankTap(i)}
-                    className={`inline-flex items-center justify-center min-w-[70px] px-2.5 py-0.5 mx-1 rounded-lg border-2 font-semibold text-center transition-all align-baseline ${
+                    className={`inline-flex items-center justify-center min-w-[60px] sm:min-w-[72px] px-2 py-0.5 mx-0.5 rounded-lg border-2 font-semibold text-xs sm:text-sm text-center transition-all align-baseline ${
                       submitted
                         ? results[i]
-                          ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-                          : "border-red-400 bg-red-50 text-red-700"
+                          ? "border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/30 dark:text-emerald-300"
+                          : "border-destructive/60 bg-destructive/5 text-destructive"
                         : fills[i]
                           ? activeBlank === i
-                            ? "border-indigo-500 bg-indigo-100 text-indigo-700 ring-2 ring-indigo-300"
-                            : "border-indigo-400 bg-indigo-50 text-indigo-700"
+                            ? "border-primary bg-primary/15 text-primary ring-2 ring-primary/30"
+                            : "border-primary/60 bg-primary/5 text-primary"
                           : activeBlank === i
-                            ? "border-indigo-400 bg-indigo-50/50 text-indigo-400 ring-2 ring-indigo-300 border-dashed"
-                            : "border-dashed border-slate-300 bg-white text-slate-400"
+                            ? "border-primary/50 bg-primary/5 text-primary/40 ring-2 ring-primary/20 border-dashed"
+                            : "border-dashed border-muted-foreground/25 bg-background text-muted-foreground/40"
                     }`}
                   >
                     {submitted && !results[i] ? (
-                      <span>
-                        <span className="line-through opacity-60">{fills[i]}</span>
+                      <span className="text-[11px] sm:text-xs">
+                        <span className="line-through opacity-50">{fills[i]}</span>
                         {" → "}
-                        <span className="text-emerald-600 font-bold">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                           {correctAnswers[i]}
                         </span>
                       </span>
                     ) : (
-                      fills[i] || "___"
+                      <span className="text-xs sm:text-sm">{fills[i] || "___"}</span>
                     )}
                   </button>
-                )}
+                )}{" "}
               </span>
             ))}
           </p>
@@ -268,26 +244,27 @@ export const V8CompleteSentenceInline = ({
 
       {/* Word bank */}
       {!submitted && (
-        <div className={`space-y-2 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Palavras — toque na lacuna e depois na palavra
+        <div className={`space-y-1.5 transition-all duration-300 ${audioLocked ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            Toque na lacuna e depois na palavra
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {wordBank.map((word) => {
               const isUsed = fills.includes(word);
               return (
-                <button
+                <motion.button
                   key={word}
                   onClick={() => handleWordSelect(word)}
                   disabled={audioLocked}
-                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  whileTap={{ scale: 0.95 }}
+                  className={`px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                     isUsed
-                      ? "bg-slate-200 text-slate-400 border border-slate-200 scale-95"
-                      : "bg-white text-slate-700 border border-slate-300 hover:border-indigo-400 hover:bg-indigo-50 shadow-sm"
+                      ? "bg-muted text-muted-foreground/40 border border-muted scale-95"
+                      : "bg-background text-foreground border border-border hover:border-primary hover:bg-primary/5 shadow-sm"
                   }`}
                 >
                   {word}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -298,12 +275,13 @@ export const V8CompleteSentenceInline = ({
       <AnimatePresence>
         {!submitted && allFilled && !audioLocked && (
           <motion.button
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             onClick={handleSubmit}
-            className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
           >
+            <Sparkles className="w-4 h-4" />
             Verificar Respostas
           </motion.button>
         )}
@@ -312,17 +290,17 @@ export const V8CompleteSentenceInline = ({
       {/* Result feedback */}
       {submitted && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-3"
+          className="space-y-2.5"
         >
-          <div className={`flex items-center gap-2 p-4 rounded-xl border ${
+          <div className={`flex items-center gap-2 p-3 rounded-xl border ${
             correctCount === blankCount
-              ? "border-emerald-200 bg-emerald-50"
-              : "border-amber-200 bg-amber-50"
+              ? "border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-50/50 dark:from-emerald-950/30 dark:to-emerald-950/10 dark:border-emerald-800"
+              : "border-amber-200 bg-gradient-to-r from-amber-50 to-amber-50/50 dark:from-amber-950/30 dark:to-amber-950/10 dark:border-amber-800"
           }`}>
-            <CheckCircle2 className={`w-5 h-5 ${correctCount === blankCount ? "text-emerald-500" : "text-amber-500"}`} />
-            <span className={`text-sm font-semibold ${correctCount === blankCount ? "text-emerald-700" : "text-amber-700"}`}>
+            <CheckCircle2 className={`w-4 h-4 ${correctCount === blankCount ? "text-emerald-500" : "text-amber-500"}`} />
+            <span className={`text-xs sm:text-sm font-bold ${correctCount === blankCount ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
               {correctCount}/{blankCount} acertos!
             </span>
           </div>
@@ -332,19 +310,19 @@ export const V8CompleteSentenceInline = ({
               {correctCount < blankCount && (
                 <button
                   onClick={handleRetry}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-border text-xs sm:text-sm font-semibold text-foreground hover:bg-muted transition-colors"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-3.5 h-3.5" />
                   Tentar Novamente
                 </button>
               )}
               <button
                 ref={ctaRef}
                 onClick={onContinue}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs sm:text-sm font-bold hover:opacity-90 transition-opacity"
               >
                 Continuar Aula
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
