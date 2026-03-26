@@ -78,6 +78,13 @@ export const useV8Player = (lessonData: V8LessonData) => {
     // DEDUP: If a quiz already exists at a given sectionIndex, skip inline exercises at that same index
     // to avoid redundant interactions on the same topic.
     for (let i = 0; i < lessonData.sections.length; i++) {
+      // Skip short residual sections (<100 chars) with no interactions attached
+      const sectionContent = (lessonData.sections[i]?.content || '').trim();
+      const hasInteractions = quizMap.has(i) || playgroundMap.has(i) || insightMap.has(i) || completeSentenceMap.has(i) || inlineExerciseMap.has(i);
+      if (sectionContent.length < 100 && sectionContent.length > 0 && !hasInteractions) {
+        console.log(`[useV8Player] Skipping short residual section ${i}: "${lessonData.sections[i]?.title}" (${sectionContent.length} chars)`);
+        continue;
+      }
       items.push({ type: "section", index: i });
 
       const completeSentences = completeSentenceMap.get(i);
