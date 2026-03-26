@@ -109,7 +109,7 @@ export function ScenarioSelectionExercise({
       </div>
 
       {isSimpleChoice ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-2 sm:gap-3">
           {scenarioList.map((sc) => {
             const isSelected = selectedAnswer === sc.id;
             let borderStyle = 'border-border hover:border-primary/50';
@@ -117,6 +117,8 @@ export function ScenarioSelectionExercise({
               borderStyle = 'border-success bg-success/5';
             } else if (showExplanation && isSelected && !sc.isCorrect) {
               borderStyle = 'border-destructive bg-destructive/5';
+            } else if (showExplanation && sc.isCorrect) {
+              borderStyle = 'border-success/40 bg-success/5';
             } else if (isSelected) {
               borderStyle = 'border-primary bg-primary/5';
             }
@@ -132,22 +134,29 @@ export function ScenarioSelectionExercise({
                       const correct = sc.isCorrect || false;
                       if (correct) playSound('quiz-correct');
                       else playSound('quiz-wrong');
-                      // Report immediately — parent owns navigation
                       onComplete(correct ? 100 : 0);
                     }, 100);
                   }
                 }}
                 disabled={showExplanation}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${borderStyle} ${
+                className={`px-3 py-2.5 sm:p-4 rounded-xl border-2 transition-all text-left ${borderStyle} ${
                   showExplanation ? 'cursor-not-allowed' : 'cursor-pointer'
                 }`}
               >
-                <div className="flex items-start gap-2">
-                  <span className="text-2xl flex-shrink-0">{sc.emoji}</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg sm:text-2xl flex-shrink-0">{sc.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1 break-words">{sc.title}</h4>
-                    <p className="text-xs text-muted-foreground break-words line-clamp-2">{sc.description}</p>
+                    <h4 className="font-semibold text-xs sm:text-base leading-snug break-words">{sc.title}</h4>
+                    {sc.description && (
+                      <p className="text-[11px] sm:text-xs text-muted-foreground break-words line-clamp-1 mt-0.5">{sc.description}</p>
+                    )}
                   </div>
+                  {showExplanation && isSelected && sc.isCorrect && (
+                    <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
+                  )}
+                  {showExplanation && isSelected && !sc.isCorrect && (
+                    <XCircle className="w-4 h-4 text-destructive flex-shrink-0" />
+                  )}
                 </div>
               </button>
             );
