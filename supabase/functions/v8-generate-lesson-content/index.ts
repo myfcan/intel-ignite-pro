@@ -750,22 +750,29 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
     }
 
     const interactionAssignments: Array<{ sectionIndex: number; type: string }> = [];
+    let lastAssignedType = '';
     for (let i = 2; i < sections.length; i++) {
       // Skip if section has manual quiz/playground, or is reserved for Coursiv/Playground
       if (sectionsWithQuiz.has(i) || sectionsWithPlayground.has(i)) continue;
       if (i === coursivTargetIdx || i === lastIdx) continue;
 
-      // Priority: manual marker > V8_C01_MAP pool
+      // Priority: manual marker > contract map pool
       const manualType = manualExerciseMap.get(i);
       if (manualType) {
         interactionAssignments.push({ sectionIndex: i, type: manualType });
+        lastAssignedType = manualType;
         continue;
       }
 
       const pool = activeMap[i];
-      if (!pool) continue; // No mapping for this index (sections 7+ beyond coursiv/playground)
+      if (!pool) continue; // No mapping for this index
 
-      const selectedType = pool[Math.floor(Math.random() * pool.length)];
+      // Anti-repetition: avoid same type consecutively
+      let selectedType = pool[Math.floor(Math.random() * pool.length)];
+      if (selectedType === lastAssignedType && pool.length > 1) {
+        selectedType = pool.find(t => t !== lastAssignedType) || selectedType;
+      }
+      lastAssignedType = selectedType;
       interactionAssignments.push({ sectionIndex: i, type: selectedType });
     }
 
