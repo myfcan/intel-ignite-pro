@@ -1319,16 +1319,39 @@ Cada frase deve ter no máximo 25 palavras. Seja direto e inspirador.`;
       }
     }
 
-    // ── 4. Generate final exercises (2-4 from 10 types) ──
+    // ── 4. Generate final exercises (conditional count by pattern) ──
+    const finalExerciseMin = isCompactPattern ? 1 : 2;
+    const finalExerciseMax = isCompactPattern ? 2 : 4;
     let generatedExercises: any[] = [];
     if (manualExercises.length === 0) {
-      progress.push("Gerando exercícios finais...");
+      progress.push(`Gerando exercícios finais (${finalExerciseMin}-${finalExerciseMax})...`);
+
+      // Build conditional tools with adjusted min/max
+      const conditionalExerciseTools = [{
+        type: "function",
+        function: {
+          ...EXERCISE_TOOLS[0].function,
+          description: `Generate ${finalExerciseMin}-${finalExerciseMax} final exercises for the lesson, choosing the best types based on content context. Vary types - don't repeat.`,
+          parameters: {
+            ...EXERCISE_TOOLS[0].function.parameters,
+            properties: {
+              ...EXERCISE_TOOLS[0].function.parameters.properties,
+              exercises: {
+                ...EXERCISE_TOOLS[0].function.parameters.properties.exercises,
+                minItems: finalExerciseMin,
+                maxItems: finalExerciseMax,
+              },
+            },
+          },
+        },
+      }];
+
       try {
         const exerciseResult = await callAI(
           LOVABLE_API_KEY,
           EXERCISE_SYSTEM_PROMPT,
-          `Analise o conteúdo completo desta aula "${lessonTitle}" e gere 2-4 exercícios finais variados:\n\n${contentSummary}`,
-          EXERCISE_TOOLS,
+          `Analise o conteúdo completo desta aula "${lessonTitle}" e gere ${finalExerciseMin}-${finalExerciseMax} exercícios finais variados:\n\n${contentSummary}`,
+          conditionalExerciseTools,
           "generate_exercises",
         );
 
