@@ -669,13 +669,34 @@ serve(async (req) => {
       6: ['fill-in-blanks', 'scenario-selection'],
     };
 
+    // ─── V8-B* Maps (compact: 7 seções, exercícios em índices 2-4 apenas) ───
+    const V8_B01_MAP: Record<number, string[]> = {
+      2: ['scenario-selection', 'flipcard-quiz'],
+      3: ['true-false', 'timed-quiz'],
+      4: ['platform-match', 'fill-in-blanks'],
+    };
+    const V8_B02_MAP: Record<number, string[]> = {
+      2: ['timed-quiz', 'multiple-choice'],
+      3: ['platform-match', 'flipcard-quiz'],
+      4: ['scenario-selection', 'complete-sentence'],
+    };
+    const V8_B03_MAP: Record<number, string[]> = {
+      2: ['flipcard-quiz', 'scenario-selection'],
+      3: ['fill-in-blanks', 'timed-quiz'],
+      4: ['true-false', 'platform-match'],
+    };
+
     const PATTERN_MAPS: Record<string, Record<number, string[]>> = {
       'V8-C01': V8_C01_MAP,
       'V8-C02': V8_C02_MAP,
       'V8-C03': V8_C03_MAP,
+      'V8-B01': V8_B01_MAP,
+      'V8-B02': V8_B02_MAP,
+      'V8-B03': V8_B03_MAP,
     };
-    const patternNames = ['V8-C01', 'V8-C02', 'V8-C03'] as const;
-    const selectedPattern = requestedPattern || patternNames[Math.abs(orderIndex) % 3];
+    const patternNames = ['V8-C01', 'V8-B01', 'V8-C02', 'V8-B02', 'V8-C03', 'V8-B03'] as const;
+    const selectedPattern = requestedPattern || patternNames[Math.abs(orderIndex) % 6];
+    const isCompactPattern = selectedPattern.startsWith('V8-B');
     const activeMap = PATTERN_MAPS[selectedPattern] || V8_C01_MAP;
     console.log(`[v8-generate] Pattern: ${selectedPattern} (orderIndex=${orderIndex})`);
 
