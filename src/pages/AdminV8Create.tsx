@@ -936,11 +936,12 @@ export default function AdminV8Create() {
       setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'running' as const } : s));
       addLog('info', 'Montando JSON final...');
 
-      // === Hard Gate V8-C01: Validação de integridade estrutural ===
+      // === Hard Gate: Validação de integridade estrutural (condicional por pattern) ===
       const preFinalSections = result.sections || parsed.sections;
-      if (preFinalSections.length < 9) {
-        addLog('error', `V8-C01 VIOLATION: apenas ${preFinalSections.length} seções (esperado ≥ 9)`);
-        throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo 9)`);
+      const minSections = isCompactPattern ? 7 : 9;
+      if (preFinalSections.length < minSections) {
+        addLog('error', `${selectedPattern} VIOLATION: apenas ${preFinalSections.length} seções (esperado ≥ ${minSections})`);
+        throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo ${minSections})`);
       }
       if (preFinalSections[0]?.title !== "Abertura") {
         addLog('error', `V8-C01 VIOLATION: Section 0 não é "Abertura" (é "${preFinalSections[0]?.title}")`);
