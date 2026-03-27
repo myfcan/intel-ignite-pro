@@ -717,6 +717,21 @@ Formule perguntas que apresentem algo INCORRETO ou SUBÓTIMO para o aluno detect
 Use frases como: "O que está errado em...", "Qual o problema de...", "Por que este prompt falha?", "Identifique a falha...".
 Exemplo de pergunta: "Este prompt parece bom, mas tem um erro comum. Qual é?"
 IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-B01': `ÂNGULO PEDAGÓGICO — COMPARAÇÃO:
+Formule perguntas que peçam ao aluno COMPARAR duas abordagens, ferramentas ou resultados.
+Use frases como: "Compare X com Y", "Qual a diferença entre...", "Qual abordagem gera melhor resultado?", "O que muda quando..."
+Tom: direto, provocativo, sem rodeios.
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-B02': `ÂNGULO PEDAGÓGICO — DEBATE:
+Formule perguntas que apresentem DOIS LADOS de uma questão para o aluno defender ou refutar.
+Use frases como: "Defenda ou refute:", "Qual lado você escolhe?", "Um colega disse X — você concorda?", "Argumente a favor ou contra..."
+Tom: provocativo, estimulando pensamento crítico.
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-B03': `ÂNGULO PEDAGÓGICO — PROVOCAÇÃO:
+Formule perguntas que DESAFIEM crenças comuns ou erros populares sobre o tema.
+Use frases como: "E se eu te dissesse que...", "A maioria erra porque...", "Parece óbvio, mas...", "Mito ou verdade?"
+Tom: ousado, contra-intuitivo, memorável.
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
     };
     const angleInstruction = PEDAGOGICAL_ANGLES[selectedPattern] || PEDAGOGICAL_ANGLES['V8-C01'];
 
