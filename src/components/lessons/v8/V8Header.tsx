@@ -38,6 +38,7 @@ export const V8Header = ({
   reportContext,
 }: V8HeaderProps) => {
   const [showNav, setShowNav] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
   const progress = totalSteps > 0 ? ((currentIndex + 1) / totalSteps) * 100 : 0;
 
   return (
