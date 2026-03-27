@@ -975,8 +975,9 @@ export default function AdminV8Create() {
         + (finalData.inlineCompleteSentences?.length || 0) 
         + finalData.inlineQuizzes.length;
 
-      if (totalInteractions < 2 && finalData.sections.length >= 5) {
-        addLog('error', `V8-C01 VIOLATION: apenas ${totalInteractions} interações para ${finalData.sections.length} seções`);
+      const minInteractions = isCompactPattern ? 2 : 2;
+      if (totalInteractions < minInteractions && finalData.sections.length >= 5) {
+        addLog('error', `${selectedPattern} VIOLATION: apenas ${totalInteractions} interações para ${finalData.sections.length} seções`);
       }
 
       setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'completed' as const, message: `${finalData.sections.length} seções` } : s));
