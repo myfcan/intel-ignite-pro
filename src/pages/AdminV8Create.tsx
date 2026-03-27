@@ -651,7 +651,7 @@ export default function AdminV8Create() {
     } finally {
       setIsGeneratingContent(false);
     }
-  }, [genTitle, genObjectives, genVariation, lessonTitle, toast, sectionsToMarkdown]);
+  }, [genTitle, genObjectives, genVariation, lessonTitle, toast, sectionsToMarkdown, selectedCourseId, addLog]);
 
   // ─── Model 2: Generate Variations ───
   const handleGenerateVariations = useCallback(async () => {
