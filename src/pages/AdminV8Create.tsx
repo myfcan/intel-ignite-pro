@@ -845,6 +845,7 @@ export default function AdminV8Create() {
             generateImages: false,
             lessonTitle: parsed.title,
             orderIndex: nextOrderIndex,
+            contractPattern: selectedPattern,
           }),
         }
       );
