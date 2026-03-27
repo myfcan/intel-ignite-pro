@@ -2,6 +2,16 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, List } from "lucide-react";
 import { V8ReportButton } from "./V8ReportButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface V8HeaderProps {
   title: string;
@@ -28,6 +38,7 @@ export const V8Header = ({
   reportContext,
 }: V8HeaderProps) => {
   const [showNav, setShowNav] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
   const progress = totalSteps > 0 ? ((currentIndex + 1) / totalSteps) * 100 : 0;
 
   return (
@@ -46,8 +57,8 @@ export const V8Header = ({
         {/* Header content */}
         <div className="flex items-center gap-3 px-4 py-3 max-w-2xl mx-auto">
           <button
-            onClick={onBack}
-            className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors flex-shrink-0"
+            onClick={() => setShowExitModal(true)}
+            className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
             aria-label="Voltar"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -110,6 +121,32 @@ export const V8Header = ({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Exit confirmation modal */}
+      <AlertDialog open={showExitModal} onOpenChange={setShowExitModal}>
+        <AlertDialogContent className="max-w-[340px] rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-lg">
+              Sair da aula?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-sm text-muted-foreground">
+              Seu progresso foi salvo automaticamente. Você poderá continuar de onde parou a qualquer momento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogCancel className="w-full rounded-xl border-border text-foreground font-medium">
+              Continuar aula
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onBack()}
+              className="w-full rounded-xl font-medium text-white"
+              style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
+            >
+              Sair da aula
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
