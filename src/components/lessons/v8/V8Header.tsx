@@ -121,6 +121,32 @@ export const V8Header = ({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Exit confirmation modal */}
+      <AlertDialog open={showExitModal} onOpenChange={setShowExitModal}>
+        <AlertDialogContent className="max-w-[340px] rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-lg">
+              Sair da aula?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-sm text-muted-foreground">
+              Seu progresso foi salvo automaticamente. Você poderá continuar de onde parou a qualquer momento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogCancel className="w-full rounded-xl border-border text-foreground font-medium">
+              Continuar aula
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onBack()}
+              className="w-full rounded-xl font-medium text-white"
+              style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
+            >
+              Sair da aula
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
