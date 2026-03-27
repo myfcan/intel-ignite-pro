@@ -33,20 +33,20 @@ function sanitizeAnchors(anchors: string[]): string[] {
     .filter((a) => a.length > 0 && a.length < 200);
 }
 
-// Validate and pad a single variation's sections to exactly 9
-function validateVariationSections(sections: any[], leverName: string): any[] {
+// Validate and pad a single variation's sections to target count
+function validateVariationSections(sections: any[], leverName: string, targetSectionCount = 9): any[] {
   const result = [...sections];
 
-  // Pad to 9 if needed
-  while (result.length < 9) {
+  // Pad to target if needed
+  while (result.length < targetSectionCount) {
     result.push({
       title: `Seção ${result.length + 1}`,
       content: `[Seção placeholder — variação ${leverName} não gerou esta seção. Regere.]`,
     });
   }
 
-  // Trim to 9
-  result.length = 9;
+  // Trim to target
+  result.length = targetSectionCount;
 
   // Force section 0 to be "Abertura"
   if (result[0] && !result[0].title.toLowerCase().includes("abertura")) {
