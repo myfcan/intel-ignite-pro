@@ -669,13 +669,34 @@ serve(async (req) => {
       6: ['fill-in-blanks', 'scenario-selection'],
     };
 
+    // ─── V8-B* Maps (compact: 7 seções, exercícios em índices 2-4 apenas) ───
+    const V8_B01_MAP: Record<number, string[]> = {
+      2: ['scenario-selection', 'flipcard-quiz'],
+      3: ['true-false', 'timed-quiz'],
+      4: ['platform-match', 'fill-in-blanks'],
+    };
+    const V8_B02_MAP: Record<number, string[]> = {
+      2: ['timed-quiz', 'multiple-choice'],
+      3: ['platform-match', 'flipcard-quiz'],
+      4: ['scenario-selection', 'complete-sentence'],
+    };
+    const V8_B03_MAP: Record<number, string[]> = {
+      2: ['flipcard-quiz', 'scenario-selection'],
+      3: ['fill-in-blanks', 'timed-quiz'],
+      4: ['true-false', 'platform-match'],
+    };
+
     const PATTERN_MAPS: Record<string, Record<number, string[]>> = {
       'V8-C01': V8_C01_MAP,
       'V8-C02': V8_C02_MAP,
       'V8-C03': V8_C03_MAP,
+      'V8-B01': V8_B01_MAP,
+      'V8-B02': V8_B02_MAP,
+      'V8-B03': V8_B03_MAP,
     };
-    const patternNames = ['V8-C01', 'V8-C02', 'V8-C03'] as const;
-    const selectedPattern = requestedPattern || patternNames[Math.abs(orderIndex) % 3];
+    const patternNames = ['V8-C01', 'V8-B01', 'V8-C02', 'V8-B02', 'V8-C03', 'V8-B03'] as const;
+    const selectedPattern = requestedPattern || patternNames[Math.abs(orderIndex) % 6];
+    const isCompactPattern = selectedPattern.startsWith('V8-B');
     const activeMap = PATTERN_MAPS[selectedPattern] || V8_C01_MAP;
     console.log(`[v8-generate] Pattern: ${selectedPattern} (orderIndex=${orderIndex})`);
 
@@ -696,6 +717,21 @@ Formule perguntas que apresentem algo INCORRETO ou SUBÓTIMO para o aluno detect
 Use frases como: "O que está errado em...", "Qual o problema de...", "Por que este prompt falha?", "Identifique a falha...".
 Exemplo de pergunta: "Este prompt parece bom, mas tem um erro comum. Qual é?"
 IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-B01': `ÂNGULO PEDAGÓGICO — COMPARAÇÃO:
+Formule perguntas que peçam ao aluno COMPARAR duas abordagens, ferramentas ou resultados.
+Use frases como: "Compare X com Y", "Qual a diferença entre...", "Qual abordagem gera melhor resultado?", "O que muda quando..."
+Tom: direto, provocativo, sem rodeios.
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-B02': `ÂNGULO PEDAGÓGICO — DEBATE:
+Formule perguntas que apresentem DOIS LADOS de uma questão para o aluno defender ou refutar.
+Use frases como: "Defenda ou refute:", "Qual lado você escolhe?", "Um colega disse X — você concorda?", "Argumente a favor ou contra..."
+Tom: provocativo, estimulando pensamento crítico.
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
+      'V8-B03': `ÂNGULO PEDAGÓGICO — PROVOCAÇÃO:
+Formule perguntas que DESAFIEM crenças comuns ou erros populares sobre o tema.
+Use frases como: "E se eu te dissesse que...", "A maioria erra porque...", "Parece óbvio, mas...", "Mito ou verdade?"
+Tom: ousado, contra-intuitivo, memorável.
+IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você só muda o ÂNGULO e a FORMULAÇÃO da pergunta, nunca o tipo do widget.`,
     };
     const angleInstruction = PEDAGOGICAL_ANGLES[selectedPattern] || PEDAGOGICAL_ANGLES['V8-C01'];
 
@@ -714,22 +750,29 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
     }
 
     const interactionAssignments: Array<{ sectionIndex: number; type: string }> = [];
+    let lastAssignedType = '';
     for (let i = 2; i < sections.length; i++) {
       // Skip if section has manual quiz/playground, or is reserved for Coursiv/Playground
       if (sectionsWithQuiz.has(i) || sectionsWithPlayground.has(i)) continue;
       if (i === coursivTargetIdx || i === lastIdx) continue;
 
-      // Priority: manual marker > V8_C01_MAP pool
+      // Priority: manual marker > contract map pool
       const manualType = manualExerciseMap.get(i);
       if (manualType) {
         interactionAssignments.push({ sectionIndex: i, type: manualType });
+        lastAssignedType = manualType;
         continue;
       }
 
       const pool = activeMap[i];
-      if (!pool) continue; // No mapping for this index (sections 7+ beyond coursiv/playground)
+      if (!pool) continue; // No mapping for this index
 
-      const selectedType = pool[Math.floor(Math.random() * pool.length)];
+      // Anti-repetition: avoid same type consecutively
+      let selectedType = pool[Math.floor(Math.random() * pool.length)];
+      if (selectedType === lastAssignedType && pool.length > 1) {
+        selectedType = pool.find(t => t !== lastAssignedType) || selectedType;
+      }
+      lastAssignedType = selectedType;
       interactionAssignments.push({ sectionIndex: i, type: selectedType });
     }
 
@@ -1276,16 +1319,39 @@ Cada frase deve ter no máximo 25 palavras. Seja direto e inspirador.`;
       }
     }
 
-    // ── 4. Generate final exercises (2-4 from 10 types) ──
+    // ── 4. Generate final exercises (conditional count by pattern) ──
+    const finalExerciseMin = isCompactPattern ? 1 : 2;
+    const finalExerciseMax = isCompactPattern ? 2 : 4;
     let generatedExercises: any[] = [];
     if (manualExercises.length === 0) {
-      progress.push("Gerando exercícios finais...");
+      progress.push(`Gerando exercícios finais (${finalExerciseMin}-${finalExerciseMax})...`);
+
+      // Build conditional tools with adjusted min/max
+      const conditionalExerciseTools = [{
+        type: "function",
+        function: {
+          ...EXERCISE_TOOLS[0].function,
+          description: `Generate ${finalExerciseMin}-${finalExerciseMax} final exercises for the lesson, choosing the best types based on content context. Vary types - don't repeat.`,
+          parameters: {
+            ...EXERCISE_TOOLS[0].function.parameters,
+            properties: {
+              ...EXERCISE_TOOLS[0].function.parameters.properties,
+              exercises: {
+                ...EXERCISE_TOOLS[0].function.parameters.properties.exercises,
+                minItems: finalExerciseMin,
+                maxItems: finalExerciseMax,
+              },
+            },
+          },
+        },
+      }];
+
       try {
         const exerciseResult = await callAI(
           LOVABLE_API_KEY,
           EXERCISE_SYSTEM_PROMPT,
-          `Analise o conteúdo completo desta aula "${lessonTitle}" e gere 2-4 exercícios finais variados:\n\n${contentSummary}`,
-          EXERCISE_TOOLS,
+          `Analise o conteúdo completo desta aula "${lessonTitle}" e gere ${finalExerciseMin}-${finalExerciseMax} exercícios finais variados:\n\n${contentSummary}`,
+          conditionalExerciseTools,
           "generate_exercises",
         );
 

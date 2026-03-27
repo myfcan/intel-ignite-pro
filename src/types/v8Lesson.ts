@@ -160,7 +160,7 @@ export interface V8LessonData {
   contentVersion: 'v8';
   title: string;
   description?: string;
-  contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03';
+  contractPattern?: 'V8-C01' | 'V8-C02' | 'V8-C03' | 'V8-B01' | 'V8-B02' | 'V8-B03';
   narrativeVariation?: 'everyday' | 'professional' | 'curiosity' | 'variations-editor';
   variationLever?: string;
   sections: V8Section[];

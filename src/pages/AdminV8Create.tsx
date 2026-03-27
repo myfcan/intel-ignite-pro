@@ -596,6 +596,20 @@ export default function AdminV8Create() {
 
       const objectives = genObjectives.split("\n").map(l => l.trim()).filter(Boolean);
 
+      // Pre-calculate pattern to determine structure variant
+      let preOrderIndex = 0;
+      if (selectedCourseId) {
+        const { count } = await supabase
+          .from("lessons")
+          .select("id", { count: "exact", head: true })
+          .eq("course_id", selectedCourseId);
+        preOrderIndex = count ?? 0;
+      }
+      const prePatternNames = ['V8-C01', 'V8-B01', 'V8-C02', 'V8-B02', 'V8-C03', 'V8-B03'];
+      const preSelectedPattern = prePatternNames[preOrderIndex % 6];
+      const preIsCompact = preSelectedPattern.startsWith('V8-B');
+      addLog('info', `Pré-calculado: pattern=${preSelectedPattern}, structure=${preIsCompact ? 'compact (7 seções)' : 'standard (9 seções)'}`);
+
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-raw-content`,
         {
@@ -609,6 +623,7 @@ export default function AdminV8Create() {
             title: titleToUse,
             objectives,
             variationStyle: genVariation,
+            structureVariant: preIsCompact ? "compact" : "standard",
           }),
         }
       );
@@ -636,7 +651,7 @@ export default function AdminV8Create() {
     } finally {
       setIsGeneratingContent(false);
     }
-  }, [genTitle, genObjectives, genVariation, lessonTitle, toast, sectionsToMarkdown]);
+  }, [genTitle, genObjectives, genVariation, lessonTitle, toast, sectionsToMarkdown, selectedCourseId, addLog]);
 
   // ─── Model 2: Generate Variations ───
   const handleGenerateVariations = useCallback(async () => {
@@ -808,9 +823,10 @@ export default function AdminV8Create() {
           .eq("course_id", selectedCourseId);
         nextOrderIndex = count ?? 0;
       }
-      const patternNames = ['V8-C01', 'V8-C02', 'V8-C03'];
-      const selectedPattern = patternNames[nextOrderIndex % 3];
-      addLog('info', `Padrão de exercícios: ${selectedPattern} (orderIndex=${nextOrderIndex})`);
+      const patternNames = ['V8-C01', 'V8-B01', 'V8-C02', 'V8-B02', 'V8-C03', 'V8-B03'];
+      const selectedPattern = patternNames[nextOrderIndex % 6];
+      const isCompactPattern = selectedPattern.startsWith('V8-B');
+      addLog('info', `Padrão de exercícios: ${selectedPattern} (orderIndex=${nextOrderIndex}, ${isCompactPattern ? 'compact/7 seções' : 'standard/9 seções'})`);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-lesson-content`,
@@ -829,6 +845,7 @@ export default function AdminV8Create() {
             generateImages: false,
             lessonTitle: parsed.title,
             orderIndex: nextOrderIndex,
+            contractPattern: selectedPattern,
           }),
         }
       );
@@ -935,11 +952,12 @@ export default function AdminV8Create() {
       setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'running' as const } : s));
       addLog('info', 'Montando JSON final...');
 
-      // === Hard Gate V8-C01: Validação de integridade estrutural ===
+      // === Hard Gate: Validação de integridade estrutural (condicional por pattern) ===
       const preFinalSections = result.sections || parsed.sections;
-      if (preFinalSections.length < 9) {
-        addLog('error', `V8-C01 VIOLATION: apenas ${preFinalSections.length} seções (esperado ≥ 9)`);
-        throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo 9)`);
+      const minSections = isCompactPattern ? 7 : 9;
+      if (preFinalSections.length < minSections) {
+        addLog('error', `${selectedPattern} VIOLATION: apenas ${preFinalSections.length} seções (esperado ≥ ${minSections})`);
+        throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo ${minSections})`);
       }
       if (preFinalSections[0]?.title !== "Abertura") {
         addLog('error', `V8-C01 VIOLATION: Section 0 não é "Abertura" (é "${preFinalSections[0]?.title}")`);
@@ -973,8 +991,9 @@ export default function AdminV8Create() {
         + (finalData.inlineCompleteSentences?.length || 0) 
         + finalData.inlineQuizzes.length;
 
-      if (totalInteractions < 2 && finalData.sections.length >= 5) {
-        addLog('error', `V8-C01 VIOLATION: apenas ${totalInteractions} interações para ${finalData.sections.length} seções`);
+      const minInteractions = isCompactPattern ? 2 : 2;
+      if (totalInteractions < minInteractions && finalData.sections.length >= 5) {
+        addLog('error', `${selectedPattern} VIOLATION: apenas ${totalInteractions} interações para ${finalData.sections.length} seções`);
       }
 
       setPipelineSteps(prev => prev.map(s => s.id === 'build-json' ? { ...s, status: 'completed' as const, message: `${finalData.sections.length} seções` } : s));
