@@ -1,0 +1,525 @@
+# MegaLens AI — Master Plan Estratégico v1.0
+### Documento consolidado de estratégia, posicionamento, UX, social e GTM
+**Data:** Março 2026 | **Autor:** Fernando Canuto + Claude (Sessão estratégica)
+
+---
+
+## Índice
+1. [Síntese de Pesquisa](#1-síntese-de-pesquisa)
+2. [Estratégia de Posicionamento](#2-estratégia-de-posicionamento)
+3. [Landing Page — Auditoria e Recomendações](#3-landing-page--auditoria-e-recomendações)
+4. [Arquitetura Mobile (Responsivo)](#4-arquitetura-mobile-responsivo)
+5. [Estratégia Social — "Dar Vida ao App"](#5-estratégia-social--dar-vida-ao-app)
+6. [Guia de Onboarding](#6-guia-de-onboarding)
+7. [Estratégia GTM (Go To Market)](#7-estratégia-gtm-go-to-market)
+8. [Posicionamento Técnico — Comunicar Superioridade sem Parecer Scam](#8-posicionamento-técnico--comunicar-superioridade-sem-parecer-scam)
+9. [Copy Bank — Frases, Headlines e CTAs Aprovados](#9-copy-bank--frases-headlines-e-ctas-aprovados)
+10. [Tarefas Pendentes](#10-tarefas-pendentes)
+
+---
+
+## 1. Síntese de Pesquisa
+
+### 6 Temas Principais Identificados
+
+**TEMA 1 — O mercado existe, mas é tecnicamente fraco**
+O mercado de lottery software vale $1.23B com CAGR de 8.5%. Porém, a esmagadora maioria dos competidores são contadores de frequência (hot/cold numbers) disfarçados de "AI". Ferramentas como Lotto Champ usam testimoniais falsos, criadores anônimos e zero metodologia transparente. MegaLens tem superioridade técnica genuína com o NEXUS Engine (Motor 3.5) — pipeline de 8 estágios com 3 agentes AI reais (Momentum, Markov, K-Means), Random Forest (25 árvores), Bayesian (6 fatores), Anomaly Detection, Smart Pool e Wheeling Engine.
+
+**TEMA 2 — Jogadores compram estrutura psicológica, não previsão**
+O insight central: ninguém acredita de verdade que vai "prever" os números. O que o jogador quer é **não jogar no escuro**. A proposta de valor real é transformar um gasto impulsivo ($1,038/ano em média) num jogo com estrutura, dados e análise. "Eu joguei com inteligência" > "Eu tentei prever."
+
+**TEMA 3 — Confiança é a barreira #1**
+O mercado está contaminado com scams. Cada claim ousado que MegaLens fizer vai ser comparado com os golpes. A estratégia precisa ser transparência radical: metodologia aberta, pipeline visível, criador público (Fernando), ferramenta free (X-Ray) que prova valor antes de pedir dinheiro.
+
+**TEMA 4 — Social/gamificação é oportunidade sem competição**
+Nenhum competidor oferece social. Zero. MegaLens tem Feed, Leagues, Challenges, Arena, Streaks, Badges, H2H — é um diferencial completamente inexplorado pelo mercado. Mas precisa de vida (ciclo de conteúdo, variedade no feed, promoção da Arena).
+
+**TEMA 5 — Preço é defensável se o valor for claro**
+$14.99/mo (PRO) e $24.99/mo (ELITE) são defensáveis quando posicionados corretamente: "Menos que 3 tickets de Powerball por mês." O cupom XRAY80 ($2.99 primeiro mês) reduz a barreira. Considerar tier adicional de $4.99 para expandir base.
+
+**TEMA 6 — Jogo responsável é diferencial inexplorado**
+Nenhum competidor fala em jogo responsável. Budget Simulator + limites + tracking transforma MegaLens de "ferramenta de apostas" em "ferramenta de jogo inteligente." Isso é posicionamento, não só feature.
+
+### 9 Recomendações Priorizadas
+
+1. **Matar a palavra "predict/prediction"** em toda a comunicação → substituir por "analyze", "optimize", "structure"
+2. **X-Ray como prova de valor** — ferramenta free que demonstra capacidade antes de pedir dinheiro/signup
+3. **Transparência do pipeline** — mostrar os 8 estágios em tempo real durante a geração
+4. **Budget Simulator antes do Pricing** na landing page (mostra valor antes de pedir dinheiro)
+5. **Ciclo social sincronizado com sorteios** — conteúdo diferente em cada fase (Pre-Draw, Draw, Post-Draw, Cooldown)
+6. **Onboarding contextual** — tooltips que aparecem sincronizados com eventos reais (primeiro sorteio, primeiro resultado)
+7. **Testimonials reais** — substituir fotos stock por verified hits reais da plataforma
+8. **"How is this different from scams?"** no FAQ — responder de frente, com honestidade
+9. **Jogo responsável como posicionamento** — não é disclaimer, é feature principal
+
+---
+
+## 2. Estratégia de Posicionamento
+
+### Slogan Principal
+> **"Stop Quick Pick. Play Smart."**
+
+Substitui o anterior "Stop guessing. Start knowing." que implica certeza/previsão.
+
+### Mensagem Raiz
+> "You already spend money on lottery. Play in the dark or with structure?"
+
+### 3 Pilares de Comunicação
+
+**PILAR 1 — ESTRUTURA > SORTE**
+Não prevemos o futuro. Analisamos 5,500+ sorteios reais com ciência de dados real. O resultado: jogadas com mais cobertura, mais estrutura, mais inteligência que Quick Pick.
+
+**PILAR 2 — TRANSPARÊNCIA RADICAL**
+Metodologia aberta. Pipeline visível. Sem algoritmos secretos. Sem promessas de ganho. Teste grátis com X-Ray antes de gastar um centavo.
+
+**PILAR 3 — JOGUE MELHOR, GASTE MENOS**
+Estrutura dá 15x mais cobertura que Quick Pick. Budget Simulator garante que você nunca gaste mais do que planejou. 92% de cobertura de pares.
+
+### O Que Nunca Dizer
+- ❌ "Predict" / "Prediction" / "Prevemos"
+- ❌ "#1 AI-Powered" (claim não verificável)
+- ❌ "Guaranteed" / "Garantido"
+- ❌ "Secret algorithm" / "Algoritmo secreto"
+- ❌ "Win more" / "Ganhe mais"
+
+### O Que Sempre Dizer
+- ✅ "Analyze" / "Optimize" / "Structure"
+- ✅ "Data-driven" / "Based on 5,500+ real draws"
+- ✅ "Play smarter, not harder"
+- ✅ "15x more coverage than Quick Pick"
+- ✅ "Free to test. No signup required."
+
+---
+
+## 3. Landing Page — Auditoria e Recomendações
+
+### Seção por Seção
+
+**HERO**
+- **Problema:** "#1 AI-POWERED" é claim não verificável num mercado cheio de scams
+- **Recomendação:** Headline → **"STOP QUICK PICK. PLAY SMART."**
+- Sub-headline → "AI-powered number analysis based on 5,500+ real draws. Not a guess. A strategy."
+- CTA principal → "Test Your Numbers Free →" (leva ao X-Ray)
+- CTA secundário → "See How It Works"
+
+**X-RAY (Free Tool)**
+- **Status:** Excelente como está
+- **Adicionar:** "Free. No signup required. No credit card." de forma explícita
+- **Nota estratégica:** X-Ray é a entrada do funnel. Prova valor antes de pedir qualquer coisa.
+- **Decisão:** X-Ray NÃO precisa de tab própria no mobile — vive dentro de My Plays como ferramenta integrada
+
+**PAIN POINTS**
+- **Problema:** "Why do they win and you don't?" implica que MegaLens faz você ganhar
+- **Recomendação:** → **"You already spend the money. Why not spend it smarter?"**
+- Foco em: Quick Pick é aleatório, sem estrutura, sem análise, sem cobertura otimizada
+
+**AI ENGINE**
+- **Problema:** Usa "PREDICT" no headline
+- **Recomendação:** → **"DON'T JUST PLAY. PLAY WITH DATA."**
+- Mostrar pipeline visual dos 8 estágios do NEXUS Engine
+- Enfatizar: "3 AI engines work together" (não separadas/escolhidas pelo usuário)
+
+**PREDICTION SHOWCASE**
+- **Problema:** "CONFIDENCE SCORE" implica confiança na previsão
+- **Recomendação:** → **"OPTIMIZATION SCORE"**
+- Adicionar disclaimer: "This score measures coverage optimization and pattern alignment, not probability of winning."
+
+**AGENTES**
+- **Problema:** Usa "prediction" na copy
+- **Recomendação:** Substituir por "data, patterns, and structure"
+- Manter visual dos 3 agentes mas enfatizar que trabalham JUNTOS (não são escolhidos)
+- "3 specialized AI engines analyze every draw from different angles — then combine their findings"
+
+**FEATURES**
+- **Status:** Bom como está
+- **Ajuste:** Garantir que nenhuma feature use linguagem de "prediction"
+
+**NEXUS ENGINE (Detalhe Técnico)**
+- **Status:** Bom para credibilidade
+- **Ajuste:** Adicionar tradução "para humanos" ao lado de cada termo técnico
+
+**BUDGET SIMULATOR**
+- **Decisão crítica:** **MOVER ANTES DO PRICING**
+- **Razão:** Mostra o valor e o controle antes de pedir dinheiro
+- **Copy:** "Set your limit. Play within it. Never spend more than you planned."
+
+**SOCIAL**
+- **Ajuste:** Adicionar benefit emocional
+- **Copy:** → "Not playing alone. Compete. Compare. Climb."
+- Mostrar: Leagues, Challenges, Feed — enfatizar comunidade
+
+**HOW IT WORKS**
+- **Recomendação:** Simplificar para 4 passos:
+  1. **Scan** → "Analyze any number with X-Ray (free)"
+  2. **Generate** → "Get AI-optimized plays from NEXUS Engine"
+  3. **Track** → "See exactly how you did with ForensicAnalysis"
+  4. **Compete** → "Join leagues, challenge friends, climb rankings"
+
+**PRICING**
+- **Posicionamento:** "Less than 3 Powerball tickets per month"
+- **Manter:** XRAY80 coupon ($2.99 primeiro mês) com destaque
+- **Considerar:** Tier de $4.99 para ampliar base
+- **Tiers:** Free (X-Ray) → PRO $14.99/mo (40 credits/week) → ELITE $24.99/mo (80 credits/week)
+- **50% off primeiro mês** em destaque
+
+**TESTIMONIALS**
+- **Problema:** Fotos stock parecem fake num mercado cheio de testimoniais falsos
+- **Recomendação:** Substituir por **Verified Hits reais** da plataforma
+- Formato: Screenshot real do ForensicAnalysis mostrando resultado + quote do usuário
+- Alternativa: "Community Results" — dados agregados reais (ex: "Last week, MegaLens players matched 45% more numbers than Quick Pick average")
+
+**FAQ**
+- **Adicionar obrigatoriamente:**
+  - "Does AI really improve my odds?" → Resposta honesta sobre o que MegaLens faz e não faz
+  - "How is this different from lottery scam sites?" → Resposta direta: metodologia aberta, criador público, ferramenta free, sem promessas de ganho
+
+### Ordem das Seções (Recomendada)
+1. Hero
+2. X-Ray (Free Tool — prova de valor imediata)
+3. Pain Points (por que jogar sem estrutura é desperdiçar dinheiro)
+4. AI Engine + Agentes (como funciona)
+5. Features
+6. NEXUS Engine (detalhe técnico para quem quer mais)
+7. **Budget Simulator** ← movido para antes do pricing
+8. Social
+9. How It Works (resumo em 4 passos)
+10. Pricing
+11. Testimonials (verified hits reais)
+12. FAQ
+
+---
+
+## 4. Arquitetura Mobile (Responsivo)
+
+### Premissas (baseadas em dados 2024-2026)
+- **Persona:** Homem 45-54 (50%), Gen X, $40-80k/ano
+- **Gen X é tech-capable:** 98% tem smartphone, usa DraftKings/TikTok/Instagram fluentemente (Sprout Social 2025, eMarketer 2025, Statista 2025)
+- **NÃO aplicar padrões de "elderly UX"** — Gen X não é idoso, é digitalmente fluente
+- **Princípio:** Navegação previsível, estrutura estável, conteúdo dinâmico (como DraftKings)
+
+### Estrutura: 4 Bottom Tabs (Fixos)
+
+```
+┌─────────────────────────────────────────────┐
+│                                             │
+│              CONTEÚDO DA TAB                │
+│                                             │
+├─────────┬───────────┬──────────┬────────────┤
+│  HOME   │ MY PLAYS  │  SOCIAL  │  PROFILE   │
+│   🏠    │    🎯     │   👥     │    👤      │
+└─────────┴───────────┴──────────┴────────────┘
+```
+
+### TAB 1 — HOME
+**Função:** Dashboard dinâmico (conteúdo muda, estrutura estável — como DraftKings)
+- Countdown para próximo sorteio + jackpot
+- Quick actions: "Generate MegaPlays" | "Check Results"
+- Cards dinâmicos: último resultado, streak atual, league position
+- Conteúdo muda baseado no ciclo do sorteio (Pre-Draw vs Post-Draw)
+
+### TAB 2 — MY PLAYS
+**Função:** Tudo sobre as jogadas do usuário
+- Lista de MegaPlays geradas (Nexus)
+- X-Ray integrado (não tem tab própria)
+- ForensicAnalysis (My Results)
+- Fluxo de geração: 3 Engines Working → Analysis Before Reveal → Congratulations
+- Histórico de jogadas
+
+### TAB 3 — SOCIAL
+**Função:** Comunidade, competição, engajamento
+- Feed (All Activity / Hits / Following)
+- Challenges (H2H, Over/Under)
+- Arena (Predict the Ball, Prediction Tournament, Polls)
+- Leagues com promoção/relegação
+- Streaks e Badges
+
+### TAB 4 — PROFILE
+**Função:** Identidade do jogador + configurações
+- **Best Hit** (substitui "0% RATE" em vermelho — reframe positivo)
+- Next milestone / badge progress
+- Budget (quando construído)
+- Configurações, plano, créditos
+- Stats pessoais
+
+### Princípios de UI Mobile
+- Touch targets: 48px mínimo
+- Fontes: 18-20px para texto principal
+- Sem gestos escondidos (swipe para ações, etc.)
+- Thumb-first: ações principais no terço inferior da tela
+- Navegação bottom tab SEMPRE visível (não some com scroll)
+
+### Decisões Chave
+- **X-Ray NÃO tem tab própria** → vive dentro de My Plays (é ferramenta free, não destino principal)
+- **Budget vive dentro de Profile** (quando construído)
+- **Arena promovida no Home** durante Pre-Draw (não escondida na 5ª tab com 0 participantes)
+- **Conteúdo existente (dados, design das telas) NÃO muda** — só a casca e navegação responsiva
+
+---
+
+## 5. Estratégia Social — "Dar Vida ao App"
+
+### Diagnóstico
+O app tem features sociais excelentes (Feed, Leagues, Challenges, Arena, Streaks, Badges) mas falta **vida**:
+- Feed é 90% posts de resultado no mesmo formato
+- Arena escondida na 5ª tab com 0 participantes
+- Profile mostra "0% RATE" em vermelho (desmoralizante)
+- Sem variedade de conteúdo no feed
+- Sem ciclo de engajamento sincronizado com os sorteios
+
+### Solução: Draw Lifecycle Cycle
+
+**FASE 1 — PRE-DRAW (24h antes do sorteio)**
+- Arena ganha visibilidade no Home (card promovido)
+- Predict the Ball, Polls ativas
+- Push notification: "Powerball in 24h — Are you ready?"
+- Feed mostra: predictions, estratégias, challenge invites
+- Engagement peak: preparação e antecipação
+
+**FASE 2 — DRAW NIGHT**
+- Countdown no Home
+- Live participation tracking ("2,847 players watching")
+- Antecipação máxima
+- Feed: últimas predictions, "who's playing tonight?"
+
+**FASE 3 — POST-DRAW (0-4h após sorteio)**
+- **ForensicAnalysis automático** — "How Close Did You Get?"
+- Feed EXPLODE com conteúdo variado:
+  - Verified hits
+  - "Your Best Shot" cards
+  - League movements
+  - Challenge results
+  - Community stats summary
+- Push: "Results are in! See how you did →"
+
+**FASE 4 — COOLDOWN (dia seguinte)**
+- League table movements
+- Streak updates
+- Badge unlocks
+- H2H challenges para próximo sorteio
+- Daily pulse: "Community hit rate last night: 45%"
+- **Repeat cycle**
+
+### Variedade no Feed (substituir monotonia)
+O feed precisa de tipos variados de conteúdo:
+- 🎯 Resultado de jogada (atual, mas não 90%)
+- ⚔️ Resultado de challenge (H2H, Over/Under)
+- 🏟️ Arena outcomes (Predict the Ball, Tournament)
+- 🏆 Promoções de league ("João subiu para Gold!")
+- 🏅 Badge unlocks
+- 🔥 Streak milestones ("Maria: 15-day streak!")
+- 📊 Community stats post-draw
+- 💡 Smart tips (magnetic pairs, hot numbers context)
+
+### Novas Features Propostas
+- **Agent Wars** — leaderboard semanal de qual agente (Momentum/Markov/K-Means) teve melhor performance
+- **Streak Zone** — widget no Home mostrando streaks ativos de 7+ dias
+- **Post-Draw Community Summary** — card automático com stats agregados (gerado automaticamente)
+- **Golden Play como evento social** — notification + feed post quando alguém gera Golden Play
+
+### Profile Card — Redesign
+**Antes:** "0% RATE" em vermelho (desmoralizante, faz usuário querer sair)
+**Depois:**
+- **Best Hit:** "4/5 + Powerball" (celebra a melhor jogada, não o fracasso)
+- Next milestone: "2 more hits to Silver Badge"
+- Streak atual
+- League position
+- Foco em progresso e celebração, não em taxa de fracasso
+
+---
+
+## 6. Guia de Onboarding
+
+### Princípio
+Não mostrar tudo de uma vez. Desdobrar contextualmente, sincronizado com eventos reais da primeira semana.
+
+### Fluxo em 5 Passos (Spread Across First Week)
+
+**PASSO 1 — Welcome (Dia 1, ao abrir o app)**
+- Mostrar próximos sorteios com countdown
+- Tooltip: "This is your Home. Next draw in X hours."
+- CTA: "Let's generate your first MegaPlays →"
+
+**PASSO 2 — First Generate (Dia 1, ao gerar)**
+- Guia step-by-step pelo fluxo de geração
+- Tooltip em cada etapa: "3 AI engines are analyzing..." → "Review before reveal..." → "Your MegaPlays are ready!"
+- Mostrar o que cada parte significa sem overwhelm
+
+**PASSO 3 — Understand the Engines (Dia 1, pós-geração)**
+- Explainer de 30 segundos (não modal longo)
+- "3 specialized engines worked together on your plays:"
+  - Hot/Momentum: trends from recent draws
+  - Transition/Markov: number sequence patterns
+  - Pattern/K-Means: statistical clusters
+- "They don't work alone. They cross-check each other."
+
+**PASSO 4 — Post-Draw (Automático, após primeiro sorteio)**
+- ForensicAnalysis aparece automaticamente
+- Tooltip: "This is your ForensicAnalysis — see exactly how close you got"
+- Highlight: "Your Best Shot", "You vs The Average"
+- CTA: "Generate new plays for next draw →"
+
+**PASSO 5 — Discover Social (Dia 3-4)**
+- Intro a Leagues, Streaks, Badges
+- Tooltip: "You're in Bronze League. Win challenges to climb."
+- Mostrar um challenge ativo para participar
+- CTA: "Challenge someone →"
+
+### Regras do Onboarding
+- Máximo 1 tooltip por tela
+- Nunca bloquear a interface (tooltip pode ser fechado)
+- Sincronizar com eventos reais (não com tempo arbitrário)
+- Se o usuário pular, não repetir (marcar como visto)
+- Progress indicator sutil: "Step 2 of 5"
+
+---
+
+## 7. Estratégia GTM (Go To Market)
+
+### Funil Completo
+
+```
+AWARENESS → INTEREST → CONSIDERATION → TRIAL → ACTIVATION → RETENTION → ADVOCACY
+```
+
+1. **Awareness:** Reddit posts educativos + YouTube shorts com X-Ray
+2. **Interest:** X-Ray free tool (sem signup, sem cartão)
+3. **Consideration:** Landing page com transparência radical + FAQ honesto
+4. **Trial:** Cupom XRAY80 → $2.99 primeiro mês
+5. **Activation:** Primeira geração + primeiro ForensicAnalysis pós-sorteio
+6. **Retention:** Social loop (leagues, challenges, streaks) + Draw Lifecycle Cycle
+7. **Advocacy:** Verified hits compartilhados + "Community Results"
+
+### Métrica Chave (North Star)
+> X-Ray → Signup → First Generate → First ForensicAnalysis → Second Generate
+
+Se o usuário chega ao "Second Generate", está retido. O loop fechou.
+
+### Canal 1 — Reddit
+- **Onde:** r/lottery, r/dataisbeautiful, r/statistics
+- **Abordagem:** Educativo, data-heavy, sem promoção direta
+- **Formato:** "I analyzed 5,500+ Powerball draws. Here's what I found about [topic]"
+- **Frequência:** 2-3 posts/semana
+- **Regra:** NUNCA vender diretamente. Educar. Link para X-Ray só se perguntarem.
+
+### Canal 2 — YouTube
+- **Formato:** Shorts de 60-90 segundos
+- **Conteúdo:** X-Ray analisando números populares, desmistificando "estratégias" comuns
+- **Exemplo:** "Everyone plays 7-11-23. Here's what the data actually says about these numbers."
+- **CTA:** "Try it yourself — link in bio" (X-Ray)
+
+### Canal 3 — X-Ray Funnel Optimization
+- X-Ray é a porta de entrada
+- Otimizar: tempo de carregamento, clareza do resultado, CTA pós-análise
+- Pós-análise: "Want AI-optimized plays based on this analysis? → Try MegaLens PRO"
+- Tracking: X-Ray usage → Signup conversion → First generate conversion
+
+---
+
+## 8. Posicionamento Técnico — Comunicar Superioridade sem Parecer Scam
+
+### Framework: "Show, Don't Claim"
+
+| ❌ Não Fazer | ✅ Fazer |
+|---|---|
+| "Our AI predicts winning numbers" | "3 AI engines analyze 5,500+ draws together" |
+| "Random Forest with 25 trees" (jargão) | "3 AI engines that cross-check each other" |
+| "#1 AI-Powered Lottery Tool" | "The only lottery tool that shows you exactly how it works" |
+| "Secret proprietary algorithm" | "Open methodology. See every step of the analysis." |
+| "Guaranteed results" | "15x more coverage than Quick Pick" |
+
+### Tradução Técnica para Usuários Normais
+
+| Termo Técnico | Tradução para o Usuário |
+|---|---|
+| Random Forest (25 árvores) | "3 AI engines that cross-check each other" |
+| Bayesian Scoring (6 fatores) | "6-factor quality score for every play" |
+| Wheeling Engine | "Mathematical coverage that maximizes your numbers" |
+| Anomaly Detection | "Auto-adjusts after unusual draws" |
+| Magnetic Pairs | "Number pairs that appear together 1.4x more than random chance" |
+| K-Means Clustering | "Pattern recognition across thousands of draws" |
+| Markov Chain | "Analyzes which numbers tend to follow which" |
+
+### Prova Visual (não verbal)
+- **Durante a geração:** Mostrar pipeline ao vivo (3 Engines Working → Analysis → Result)
+- **ForensicAnalysis:** Prova pós-jogo ("You played 6x smarter than Quick Pick")
+- **Comparison Table na landing page:** Quick Pick vs Hot/Cold Tools vs MegaLens
+  - Quick Pick: 0 analysis, random, no coverage optimization
+  - Hot/Cold: 1 factor (frequency), no AI, no structure
+  - MegaLens: 8-stage pipeline, 3 AI engines, 6-factor scoring, coverage optimization
+
+---
+
+## 9. Copy Bank — Frases, Headlines e CTAs Aprovados
+
+### Headlines
+- "Stop Quick Pick. Play Smart."
+- "Don't guess. Analyze."
+- "Don't just play. Play with data."
+- "You already spend $1,038/year on lottery. Here's what goes wrong without a plan."
+- "Not playing alone. Compete. Compare. Climb."
+- "You're not playing alone."
+
+### CTAs
+- "Test Your Numbers Free →" (X-Ray)
+- "Generate Your First MegaPlays"
+- "See How You Did" (ForensicAnalysis)
+- "Challenge Someone →" (Social)
+- "Set Your Budget →" (Budget Simulator)
+- "See How It Works"
+
+### Frases de Posicionamento
+- "We don't predict the future. We analyze the past with real data science."
+- "Play with structure, not in the dark."
+- "15x more coverage than Quick Pick"
+- "92% pair coverage"
+- "You played 6x smarter than Quick Pick"
+- "Free to test. No signup required. No credit card."
+- "Less than 3 Powerball tickets per month."
+- "3 AI engines work together on every play — Momentum + Markov + Clustering"
+- "Set your limit. Play within it. Never spend more than you planned."
+
+### Frases para FAQ
+- "Does AI really improve my odds?" → "No tool can change the mathematical odds of lottery. What MegaLens does is optimize HOW you play — better number coverage, smarter combinations, structured approach instead of random picks."
+- "How is this different from scam sites?" → "We show our methodology. We have a free tool you can test without signing up. Our creator is public. We don't promise wins. We promise structure."
+
+---
+
+## 10. Tarefas Pendentes
+
+### Prioridade Alta
+- [ ] **Mapear fluxos mobile dentro de cada tab** — como cada tela desktop existente se adapta para as 4 tabs no mobile (respeitando design existente, só casca e navegação)
+- [ ] **Landing page copy rewrites** — implementar as recomendações seção por seção
+- [ ] **Reordenar seções da landing page** — Budget Simulator antes de Pricing
+- [ ] **Substituir testimonials** — trocar fotos stock por verified hits reais
+
+### Prioridade Média
+- [ ] **Social: implementar variedade no feed** — tipos diferentes de conteúdo (challenges, arena, badges, streaks)
+- [ ] **Social: promover Arena no Home durante Pre-Draw** — card dinâmico
+- [ ] **Social: redesign do Profile card** — Best Hit em vez de "0% RATE"
+- [ ] **Implementar Draw Lifecycle Cycle** — Pre-Draw → Draw → Post-Draw → Cooldown
+- [ ] **Onboarding contextual** — tooltips sincronizados com primeira semana
+
+### Prioridade Futura
+- [ ] **Budget page design** — ainda não foi criada
+- [ ] **GTM Reddit strategy** — posts educativos no r/lottery
+- [ ] **GTM YouTube shorts** — X-Ray demos de 60-90s
+- [ ] **X-Ray funnel optimization** — tracking e CTA pós-análise
+- [ ] **Considerar tier de $4.99** — expandir base de usuários
+- [ ] **Agent Wars feature** — leaderboard semanal de performance dos agentes
+
+---
+
+## Referência Técnica Rápida
+
+| Item | Detalhe |
+|---|---|
+| **Stack** | Next.js 16 + TypeScript + Tailwind + Framer Motion (Lovable), Supabase, Stripe, Vercel |
+| **NEXUS Engine** | Motor 3.5 — 8 estágios, 3 agentes AI (Momentum/Markov/K-Means), Random Forest (25 trees), Bayesian (6 factors), Anomaly Detection, Smart Pool, Wheeling Engine |
+| **Jogos** | Powerball (5 de 1-69 + 1 de 1-26) · Mega Millions (5 de 1-70 + 1 de 1-24) |
+| **Créditos** | Plan credits (40/week PRO, 80 ELITE) + Bonus credits (gamification, 30-day expiry, FIFO) |
+| **Pricing** | Free / PRO $14.99/mo / ELITE $24.99/mo · 50% off primeiro mês |
+| **Persona** | Homem 45-54 (50%), Gen X, $40-80k/ano, joga PB/MM semanalmente |
+
+---
+
+*Documento gerado em Março 2026. Este é um documento vivo — será atualizado conforme o projeto evolui.*
