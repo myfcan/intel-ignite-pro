@@ -30,6 +30,8 @@ const Auth = () => {
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
 
   // Signup state
   const [signupEmail, setSignupEmail] = useState("");
