@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Brain, AlertCircle } from "lucide-react";
+import { Loader2, Brain, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { usePrefetchMainPages } from "@/hooks/usePrefetch";
 import { AuthBackground3D } from "@/components/backgrounds";
 import { Alert, AlertDescription } from "@/components/ui/alert";
