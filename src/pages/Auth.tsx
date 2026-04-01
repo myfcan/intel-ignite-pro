@@ -36,6 +36,7 @@ const Auth = () => {
   // Signup state
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [signupName, setSignupName] = useState("");
 
   useEffect(() => {
