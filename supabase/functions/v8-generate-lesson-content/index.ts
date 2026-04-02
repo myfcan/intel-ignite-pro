@@ -980,8 +980,128 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           return { ...ex, data: d };
         };
 
+        // ── TRUE-FALSE RESCUE: Ensure ≥2 statements with correct fields ──
+        const rescueTrueFalse = (ex: any): any => {
+          if (ex.type !== 'true-false') return ex;
+          const d = ex.data || {};
+          if (!Array.isArray(d.statements)) return ex;
+          d.statements = d.statements.filter((s: any) => s && typeof s.text === 'string' && s.text.length > 0);
+          for (const stmt of d.statements) {
+            if (typeof stmt.correct !== 'boolean') stmt.correct = true;
+            if (!stmt.explanation) stmt.explanation = 'Revise o conteúdo da seção para entender melhor.';
+            if (!stmt.id) stmt.id = `stmt-rescue-${Math.random().toString(36).slice(2, 6)}`;
+          }
+          if (d.statements.length < 2) {
+            console.warn(`[v8-generate] TRUE-FALSE RESCUE: only ${d.statements.length} valid statements`);
+          }
+          if (!d.feedback) d.feedback = { perfect: 'Perfeito!', good: 'Bom trabalho!', needsReview: 'Revise o conteúdo' };
+          return { ...ex, data: d };
+        };
+
+        // ── SCENARIO-SELECTION RESCUE: Ensure scenarios have options + correctAnswer ──
+        const rescueScenarioSelection = (ex: any): any => {
+          if (ex.type !== 'scenario-selection') return ex;
+          const d = ex.data || {};
+          if (!Array.isArray(d.scenarios)) return ex;
+          d.scenarios = d.scenarios.filter((sc: any) => {
+            if (!sc || typeof sc !== 'object') return false;
+            // Must have situation or title, and options
+            const hasSituation = typeof sc.situation === 'string' && sc.situation.length > 0;
+            const hasOptions = Array.isArray(sc.options) && sc.options.length >= 2;
+            if (!hasSituation && !hasOptions) {
+              console.warn(`[v8-generate] SCENARIO RESCUE: rejected empty scenario ${sc.id}`);
+              return false;
+            }
+            return true;
+          });
+          for (const sc of d.scenarios) {
+            if (!sc.id) sc.id = `sc-rescue-${Math.random().toString(36).slice(2, 6)}`;
+            if (!Array.isArray(sc.options) || sc.options.length < 2) {
+              sc.options = sc.options || [];
+              while (sc.options.length < 3) {
+                sc.options.push(`Opção ${sc.options.length + 1}`);
+              }
+              console.warn(`[v8-generate] SCENARIO RESCUE: padded options for ${sc.id}`);
+            }
+            if (!sc.correctAnswer || !sc.options.includes(sc.correctAnswer)) {
+              sc.correctAnswer = sc.options[0];
+              console.warn(`[v8-generate] SCENARIO RESCUE: fixed correctAnswer for ${sc.id}`);
+            }
+            if (!sc.explanation) sc.explanation = 'Revise o conteúdo da seção.';
+          }
+          return { ...ex, data: d };
+        };
+
+        // ── PLATFORM-MATCH RESCUE: Ensure scenarios + platforms exist ──
+        const rescuePlatformMatch = (ex: any): any => {
+          if (ex.type !== 'platform-match') return ex;
+          const d = ex.data || {};
+          if (!Array.isArray(d.scenarios)) d.scenarios = [];
+          if (!Array.isArray(d.platforms)) d.platforms = [];
+          // Ensure each scenario has required fields
+          d.scenarios = d.scenarios.filter((sc: any) => sc && typeof sc.text === 'string' && sc.text.length > 0);
+          for (const sc of d.scenarios) {
+            if (!sc.id) sc.id = `pm-rescue-${Math.random().toString(36).slice(2, 6)}`;
+            if (!sc.emoji) sc.emoji = '🔹';
+            if (!sc.correctPlatform && d.platforms.length > 0) {
+              sc.correctPlatform = d.platforms[0].name;
+              console.warn(`[v8-generate] PLATFORM-MATCH RESCUE: assigned default platform for ${sc.id}`);
+            }
+          }
+          // Ensure platforms have required fields
+          for (const p of d.platforms) {
+            if (!p.id) p.id = `plat-rescue-${Math.random().toString(36).slice(2, 6)}`;
+            if (!p.icon) p.icon = '🔹';
+            if (!p.color) p.color = '#6366f1';
+          }
+          return { ...ex, data: d };
+        };
+
+        // ── COMPLETE-SENTENCE RESCUE: Ensure sentences have options ──
+        const rescueCompleteSentence = (ex: any): any => {
+          if (ex.type !== 'complete-sentence') return ex;
+          const d = ex.data || {};
+          if (!Array.isArray(d.sentences)) return ex;
+          for (const sent of d.sentences) {
+            if (!sent.id) sent.id = `sent-rescue-${Math.random().toString(36).slice(2, 6)}`;
+            if (!Array.isArray(sent.correctAnswers) || sent.correctAnswers.length === 0) {
+              sent.correctAnswers = ['resposta'];
+              console.warn(`[v8-generate] COMPLETE-SENTENCE RESCUE: no correctAnswers for ${sent.id}`);
+            }
+            // Ensure options include the correct answer + distractors
+            if (!Array.isArray(sent.options) || sent.options.length < 2) {
+              const correct = sent.correctAnswers[0];
+              sent.options = [correct, 'Nenhuma das anteriores', 'Não se aplica', 'Outra opção'];
+              // Shuffle
+              for (let i = sent.options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [sent.options[i], sent.options[j]] = [sent.options[j], sent.options[i]];
+              }
+              console.warn(`[v8-generate] COMPLETE-SENTENCE RESCUE: padded options for ${sent.id}`);
+            }
+          }
+          return { ...ex, data: d };
+        };
+
+        // ── FILL-IN-BLANKS RESCUE: Ensure sentences have hints ──
+        const rescueFillInBlanks = (ex: any): any => {
+          if (ex.type !== 'fill-in-blanks') return ex;
+          const d = ex.data || {};
+          if (!Array.isArray(d.sentences)) return ex;
+          for (const sent of d.sentences) {
+            if (!sent.id) sent.id = `fib-rescue-${Math.random().toString(36).slice(2, 6)}`;
+            if (!Array.isArray(sent.correctAnswers) || sent.correctAnswers.length === 0) {
+              sent.correctAnswers = ['resposta'];
+              console.warn(`[v8-generate] FILL-IN-BLANKS RESCUE: no correctAnswers for ${sent.id}`);
+            }
+            if (!sent.hint) sent.hint = 'Pense no conceito principal desta seção.';
+          }
+          if (!d.feedback) d.feedback = { allCorrect: 'Perfeito!', someCorrect: 'Quase lá!', needsReview: 'Revise o conteúdo' };
+          return { ...ex, data: d };
+        };
+
         generatedInlineExercises = (exResult.exercises || [])
-          .map((ex: any, idx: number) => rescueTimedQuiz(rescueFlipCardQuiz(rescueMultipleChoice(normalizeExerciseData({
+          .map((ex: any, idx: number) => rescueFillInBlanks(rescueCompleteSentence(rescuePlatformMatch(rescueScenarioSelection(rescueTrueFalse(rescueTimedQuiz(rescueFlipCardQuiz(rescueMultipleChoice(normalizeExerciseData({
             ...ex,
             id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
             title: sanitizeV8Text(ex.title || ''),
