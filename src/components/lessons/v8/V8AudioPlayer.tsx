@@ -10,6 +10,10 @@ interface V8AudioPlayerProps {
   onPlay?: () => void;
   onPause?: () => void;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
+  /** Total lesson duration (sum of all sections). When provided, the timer shows lesson-level time. */
+  totalLessonDuration?: number;
+  /** Cumulative duration of all previous sections, so currentTime offsets correctly. */
+  elapsedBefore?: number;
 }
 
 const PLAYBACK_RATES = [1, 1.25, 1.5, 2] as const;
@@ -22,6 +26,8 @@ export const V8AudioPlayer = ({
   onPlay,
   onPause,
   onTimeUpdate,
+  totalLessonDuration,
+  elapsedBefore = 0,
 }: V8AudioPlayerProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -151,7 +157,11 @@ export const V8AudioPlayer = ({
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // When lesson-level duration is provided, show cumulative time
+  const showTotalDuration = totalLessonDuration && totalLessonDuration > 0;
+  const displayCurrent = showTotalDuration ? elapsedBefore + currentTime : currentTime;
+  const displayDuration = showTotalDuration ? totalLessonDuration : duration;
+  const progress = displayDuration > 0 ? (displayCurrent / displayDuration) * 100 : 0;
 
   return (
     <div className="w-full flex items-center gap-3 h-12 px-3.5 rounded-xl border border-slate-200 bg-slate-50">
@@ -213,7 +223,7 @@ export const V8AudioPlayer = ({
 
       {/* Time */}
       <span className="text-[11px] font-mono text-slate-500 tabular-nums flex-shrink-0 min-w-[52px] text-center">
-        {autoPlay && !isLoaded ? "..." : `${formatTime(currentTime)}/${formatTime(duration)}`}
+        {autoPlay && !isLoaded ? "..." : `${formatTime(displayCurrent)}/${formatTime(displayDuration)}`}
       </span>
 
       {/* Speed */}

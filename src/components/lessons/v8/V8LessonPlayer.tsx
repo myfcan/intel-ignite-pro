@@ -90,6 +90,21 @@ export const V8LessonPlayer = ({
     return section.audioUrl ?? null;
   }, [state.phase, currentItem, lessonData.sections]);
 
+  // Total lesson audio duration (sum of all section durations)
+  const totalLessonDuration = useMemo(() => {
+    return lessonData.sections.reduce((sum, s) => sum + (s.audioDurationSeconds || 0), 0);
+  }, [lessonData.sections]);
+
+  // Elapsed audio time from all sections before the current one
+  const elapsedBefore = useMemo(() => {
+    if (!currentItem || currentItem.type !== "section") return 0;
+    let elapsed = 0;
+    for (let i = 0; i < currentItem.index; i++) {
+      elapsed += lessonData.sections[i]?.audioDurationSeconds || 0;
+    }
+    return elapsed;
+  }, [currentItem, lessonData.sections]);
+
   // Preload next timeline item's audio to eliminate latency
   const nextAudioUrl = useMemo(() => {
     if (state.phase !== "content") return null;
@@ -375,6 +390,8 @@ export const V8LessonPlayer = ({
                   audioUrl={currentSectionAudioUrl}
                   autoPlay={state.mode === "listen"}
                   onEnded={advance}
+                  totalLessonDuration={totalLessonDuration}
+                  elapsedBefore={elapsedBefore}
                 />
               </div>
             )}
