@@ -95,7 +95,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
 
   // Handle timeout
   useEffect(() => {
-    if (timerState === 'timeout' && !selectedOptionId) {
+    if (timerState === 'timeout' && !selectedOptionId && currentQuestion) {
       if (timerRef.current) clearInterval(timerRef.current);
       playSound('timer-buzzer');
       setShowTimeoutFlash(true);
