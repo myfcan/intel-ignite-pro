@@ -172,6 +172,18 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
     }
   }, [currentQuestionIndex, questions.length, playSound, onComplete]);
 
+  // Guard: no valid questions (after all hooks)
+  if (!hasValidQuestions || !currentQuestion) {
+    return (
+      <div className="w-full max-w-lg mx-auto py-8 text-center space-y-4">
+        <p className="text-muted-foreground text-sm">Exercício indisponível</p>
+        <button onClick={() => onComplete(100)} className="px-6 py-2 rounded-lg bg-primary text-primary-foreground font-medium">
+          Continuar
+        </button>
+      </div>
+    );
+  }
+
   const progressPercent = (timeLeft / effectiveTime) * 100;
 
   const barGradient = {
