@@ -43,18 +43,6 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
   const currentQuestion = hasValidQuestions ? questions[currentQuestionIndex] : null;
   const effectiveTime = currentQuestion?.timeOverride ?? timePerQuestion;
 
-  // Guard: no valid questions (after all hooks)
-  if (!hasValidQuestions) {
-    return (
-      <div className="w-full max-w-lg mx-auto py-8 text-center space-y-4">
-        <p className="text-muted-foreground text-sm">Exercício indisponível</p>
-        <button onClick={() => onComplete(100)} className="px-6 py-2 rounded-lg bg-primary text-primary-foreground font-medium">
-          Continuar
-        </button>
-      </div>
-    );
-  }
-
   // Start timer on mount / new question
   useEffect(() => {
     if (timerState === 'waiting') {
