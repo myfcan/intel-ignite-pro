@@ -223,7 +223,7 @@ export const V8AudioPlayer = ({
 
       {/* Time */}
       <span className="text-[11px] font-mono text-slate-500 tabular-nums flex-shrink-0 min-w-[52px] text-center">
-        {autoPlay && !isLoaded ? "..." : `${formatTime(currentTime)}/${formatTime(duration)}`}
+        {autoPlay && !isLoaded ? "..." : `${formatTime(displayCurrent)}/${formatTime(displayDuration)}`}
       </span>
 
       {/* Speed */}
