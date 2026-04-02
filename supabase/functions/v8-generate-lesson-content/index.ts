@@ -1101,14 +1101,17 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
         };
 
         generatedInlineExercises = (exResult.exercises || [])
-          .map((ex: any, idx: number) => rescueFillInBlanks(rescueCompleteSentence(rescuePlatformMatch(rescueScenarioSelection(rescueTrueFalse(rescueTimedQuiz(rescueFlipCardQuiz(rescueMultipleChoice(normalizeExerciseData({
-            ...ex,
-            id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
-            title: sanitizeV8Text(ex.title || ''),
-            instruction: sanitizeV8Text(ex.instruction || ''),
-            successMessage: sanitizeV8Text(ex.successMessage || ''),
-            tryAgainMessage: sanitizeV8Text(ex.tryAgainMessage || ''),
-          })))))
+          .map((ex: any, idx: number) => {
+            const base = normalizeExerciseData({
+              ...ex,
+              id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
+              title: sanitizeV8Text(ex.title || ''),
+              instruction: sanitizeV8Text(ex.instruction || ''),
+              successMessage: sanitizeV8Text(ex.successMessage || ''),
+              tryAgainMessage: sanitizeV8Text(ex.tryAgainMessage || ''),
+            });
+            return rescueFillInBlanks(rescueCompleteSentence(rescuePlatformMatch(rescueScenarioSelection(rescueTrueFalse(rescueTimedQuiz(rescueFlipCardQuiz(rescueMultipleChoice(base))))))));
+          })
           .filter((ex: any) => {
             const requiredKeys = INLINE_REQUIRED_DATA_KEYS[ex.type];
             if (!requiredKeys) {
