@@ -19,7 +19,8 @@ const LETTER_BADGES = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 export function TimedQuizExercise({ title, instruction, data, onComplete }: TimedQuizExerciseProps) {
   const { timePerQuestion, bonusPerSecondLeft, timeoutPenalty, feedback } = data;
-  const questions = (data.questions || []).slice(0, MAX_QUESTIONS);
+  const questions = (data.questions || []).filter(q => q.options && q.options.length >= 2).slice(0, MAX_QUESTIONS);
+  const hasValidQuestions = questions.length > 0;
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(timePerQuestion);
@@ -39,7 +40,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
   const resultsRef = useRef<Array<{ correct: boolean; bonus: number }>>([]);
   const isCorrectRef = useRef<boolean | null>(null);
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const currentQuestion = hasValidQuestions ? questions[currentQuestionIndex] : null;
   const effectiveTime = currentQuestion?.timeOverride ?? timePerQuestion;
 
   // Start timer on mount / new question
@@ -94,7 +95,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
 
   // Handle timeout
   useEffect(() => {
-    if (timerState === 'timeout' && !selectedOptionId) {
+    if (timerState === 'timeout' && !selectedOptionId && currentQuestion) {
       if (timerRef.current) clearInterval(timerRef.current);
       playSound('timer-buzzer');
       setShowTimeoutFlash(true);
@@ -119,7 +120,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
     setTimerState('answered');
     setSelectedOptionId(optionId);
 
-    const option = currentQuestion.options.find(o => o.id === optionId);
+    const option = currentQuestion?.options.find(o => o.id === optionId);
     const correct = option?.isCorrect ?? false;
     setIsCorrect(correct);
     isCorrectRef.current = correct;
@@ -170,6 +171,18 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
       onComplete(finalPercent);
     }
   }, [currentQuestionIndex, questions.length, playSound, onComplete]);
+
+  // Guard: no valid questions (after all hooks)
+  if (!hasValidQuestions || !currentQuestion) {
+    return (
+      <div className="w-full max-w-lg mx-auto py-8 text-center space-y-4">
+        <p className="text-muted-foreground text-sm">Exercício indisponível</p>
+        <button onClick={() => onComplete(100)} className="px-6 py-2 rounded-lg bg-primary text-primary-foreground font-medium">
+          Continuar
+        </button>
+      </div>
+    );
+  }
 
   const progressPercent = (timeLeft / effectiveTime) * 100;
 
