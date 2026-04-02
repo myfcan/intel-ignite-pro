@@ -120,7 +120,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
     setTimerState('answered');
     setSelectedOptionId(optionId);
 
-    const option = currentQuestion.options.find(o => o.id === optionId);
+    const option = currentQuestion?.options.find(o => o.id === optionId);
     const correct = option?.isCorrect ?? false;
     setIsCorrect(correct);
     isCorrectRef.current = correct;
