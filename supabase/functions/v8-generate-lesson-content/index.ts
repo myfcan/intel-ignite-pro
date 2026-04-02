@@ -897,6 +897,80 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           return ex;
         };
 
+        // ── FLIPCARD RESCUE: Ensure each card has ≥3 options with exactly 1 correct ──
+        const rescueFlipCardQuiz = (ex: any): any => {
+          if (ex.type !== 'flipcard-quiz') return ex;
+          const d = ex.data || {};
+          if (!Array.isArray(d.cards)) return ex;
+          const DISTRACTOR_POOL = [
+            'Nenhuma das anteriores',
+            'Todas as anteriores',
+            'Depende do contexto',
+            'Não se aplica',
+          ];
+          d.cards = d.cards.map((card: any, ci: number) => {
+            if (!Array.isArray(card.options)) card.options = [];
+            // Ensure exactly 1 correct
+            const correctCount = card.options.filter((o: any) => o.isCorrect).length;
+            if (correctCount === 0 && card.options.length > 0) {
+              card.options[0].isCorrect = true;
+              console.warn(`[v8-generate] FLIPCARD RESCUE: card ${ci} had 0 correct, marked first as correct`);
+            } else if (correctCount > 1) {
+              let found = false;
+              card.options = card.options.map((o: any) => {
+                if (o.isCorrect && !found) { found = true; return o; }
+                if (o.isCorrect) return { ...o, isCorrect: false };
+                return o;
+              });
+              console.warn(`[v8-generate] FLIPCARD RESCUE: card ${ci} had ${correctCount} correct, kept only first`);
+            }
+            // Pad to minimum 3 options
+            let distIdx = 0;
+            while (card.options.length < 3 && distIdx < DISTRACTOR_POOL.length) {
+              const existing = new Set(card.options.map((o: any) => o.text));
+              if (!existing.has(DISTRACTOR_POOL[distIdx])) {
+                card.options.push({
+                  id: `pad-${ci}-${distIdx}`,
+                  text: DISTRACTOR_POOL[distIdx],
+                  isCorrect: false,
+                });
+                console.warn(`[v8-generate] FLIPCARD RESCUE: padded card ${ci} with distractor "${DISTRACTOR_POOL[distIdx]}"`);
+              }
+              distIdx++;
+            }
+            return card;
+          });
+          return { ...ex, data: d };
+        };
+
+        // ── TIMED-QUIZ RESCUE: Ensure each question has ≥3 options with exactly 1 correct ──
+        const rescueTimedQuiz = (ex: any): any => {
+          if (ex.type !== 'timed-quiz') return ex;
+          const d = ex.data || {};
+          if (!Array.isArray(d.questions)) return ex;
+          d.questions = d.questions.map((q: any, qi: number) => {
+            if (!Array.isArray(q.options)) q.options = [];
+            const correctCount = q.options.filter((o: any) => o.isCorrect).length;
+            if (correctCount === 0 && q.options.length > 0) {
+              q.options[0].isCorrect = true;
+              console.warn(`[v8-generate] TIMED-QUIZ RESCUE: question ${qi} had 0 correct`);
+            } else if (correctCount > 1) {
+              let found = false;
+              q.options = q.options.map((o: any) => {
+                if (o.isCorrect && !found) { found = true; return o; }
+                if (o.isCorrect) return { ...o, isCorrect: false };
+                return o;
+              });
+            }
+            while (q.options.length < 3) {
+              q.options.push({ id: `pad-q${qi}-${q.options.length}`, text: 'Nenhuma das anteriores', isCorrect: false });
+              console.warn(`[v8-generate] TIMED-QUIZ RESCUE: padded question ${qi}`);
+            }
+            return q;
+          });
+          return { ...ex, data: d };
+        };
+
         generatedInlineExercises = (exResult.exercises || [])
           .map((ex: any, idx: number) => rescueMultipleChoice(normalizeExerciseData({
             ...ex,
