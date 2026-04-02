@@ -979,7 +979,7 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
             instruction: sanitizeV8Text(ex.instruction || ''),
             successMessage: sanitizeV8Text(ex.successMessage || ''),
             tryAgainMessage: sanitizeV8Text(ex.tryAgainMessage || ''),
-          })))
+          })))))
           .filter((ex: any) => {
             const requiredKeys = INLINE_REQUIRED_DATA_KEYS[ex.type];
             if (!requiredKeys) {

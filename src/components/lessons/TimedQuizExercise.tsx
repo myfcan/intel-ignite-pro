@@ -19,7 +19,19 @@ const LETTER_BADGES = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 export function TimedQuizExercise({ title, instruction, data, onComplete }: TimedQuizExerciseProps) {
   const { timePerQuestion, bonusPerSecondLeft, timeoutPenalty, feedback } = data;
-  const questions = (data.questions || []).slice(0, MAX_QUESTIONS);
+  const questions = (data.questions || []).filter(q => q.options && q.options.length >= 2).slice(0, MAX_QUESTIONS);
+
+  // Guard: no valid questions
+  if (questions.length === 0) {
+    return (
+      <div className="w-full max-w-lg mx-auto py-8 text-center space-y-4">
+        <p className="text-muted-foreground text-sm">Exercício indisponível</p>
+        <button onClick={() => onComplete(100)} className="px-6 py-2 rounded-lg bg-primary text-primary-foreground font-medium">
+          Continuar
+        </button>
+      </div>
+    );
+  }
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(timePerQuestion);
