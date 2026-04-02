@@ -71,6 +71,45 @@ export const V8InlineExercise = ({ exercise, exerciseIndex, lessonId, onContinue
     return scheduleCTAScroll(() => ctaRef.current);
   }, [completed, isActive, onContinue]);
 
+  const isExerciseValid = (): boolean => {
+    const { type, data } = exercise;
+    if (!data || typeof data !== 'object') return false;
+
+    switch (type) {
+      case 'true-false':
+        return Array.isArray(data.statements) && data.statements.length >= 1;
+      case 'fill-in-blanks':
+        return Array.isArray(data.sentences) && data.sentences.length >= 1;
+      case 'complete-sentence':
+        return Array.isArray(data.sentences) && data.sentences.length >= 1;
+      case 'multiple-choice':
+        return (typeof data.question === 'string' && Array.isArray(data.options) && data.options.length >= 2) || Array.isArray(data.statements);
+      case 'flipcard-quiz':
+        return Array.isArray(data.cards) && data.cards.some((c: any) => c.options && c.options.length >= 2);
+      case 'scenario-selection':
+        return Array.isArray(data.scenarios) && data.scenarios.length >= 1 && data.scenarios.some((s: any) => Array.isArray(s.options) && s.options.length >= 2);
+      case 'platform-match':
+        return Array.isArray(data.scenarios) && data.scenarios.length >= 1 && Array.isArray(data.platforms) && data.platforms.length >= 1;
+      case 'timed-quiz':
+        return Array.isArray(data.questions) && data.questions.some((q: any) => q.options && q.options.length >= 2);
+      default:
+        return false;
+    }
+  };
+
+  if (!isExerciseValid()) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-border bg-muted/50 p-4 text-center space-y-3">
+        <p className="text-muted-foreground text-sm">Exercício indisponível</p>
+        {onContinue && (
+          <button onClick={onContinue} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
+            Continuar Aula
+          </button>
+        )}
+      </motion.div>
+    );
+  }
+
   const renderExercise = () => {
     const { type, data, title, instruction } = exercise;
 
