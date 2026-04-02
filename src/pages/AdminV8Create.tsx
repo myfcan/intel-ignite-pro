@@ -842,10 +842,10 @@ export default function AdminV8Create() {
           .eq("course_id", selectedCourseId);
         nextOrderIndex = count ?? 0;
       }
-      const patternNames = ['V8-C01', 'V8-B01', 'V8-C02', 'V8-B02', 'V8-C03', 'V8-B03'];
-      const selectedPattern = patternNames[nextOrderIndex % 6];
+      const selectedPattern = resolvePattern(nextOrderIndex);
       const isCompactPattern = selectedPattern.startsWith('V8-B');
-      addLog('info', `Padrão de exercícios: ${selectedPattern} (orderIndex=${nextOrderIndex}, ${isCompactPattern ? 'compact/7 seções' : 'standard/9 seções'})`);
+      const patternMeta = PATTERN_META[selectedPattern as PatternId];
+      addLog('info', `Pattern: ${selectedPattern} — ${patternMeta.angle} (${patternMeta.sections} seções, orderIndex=${nextOrderIndex})`);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-lesson-content`,
