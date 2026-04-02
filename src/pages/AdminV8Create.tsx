@@ -604,7 +604,7 @@ export default function AdminV8Create() {
   const handleGenerateWithAI = useCallback(async () => {
     const titleToUse = genTitle.trim() || lessonTitle;
     if (!titleToUse) {
-      toast({ title: "❌ Título obrigatório", description: "Preencha o título da aula para gerar.", variant: "destructive" });
+      toast({ title: "❌ Tema obrigatório", description: "Preencha o tema da aula para gerar.", variant: "destructive" });
       return;
     }
 
