@@ -1439,48 +1439,88 @@ export default function AdminV8Create() {
           {editorMode === "content" ? (
             <>
               {/* AI Generation Block */}
-              <div className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between mb-1">
+              <div className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Wand2 className="w-4 h-4 text-violet-500" />
                     <span className="text-xs font-bold text-slate-700">Gerar Conteúdo com IA</span>
                   </div>
                   <Select value={genModel} onValueChange={(v: any) => setGenModel(v)}>
-                    <SelectTrigger className="w-48 bg-white border-slate-200 rounded-lg text-xs h-8">
+                    <SelectTrigger className="w-44 bg-white border-slate-200 rounded-lg text-xs h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="model1">📝 Modelo 1 — Completo</SelectItem>
-                      <SelectItem value="model2">🎨 Modelo 2 — Variações</SelectItem>
+                      <SelectItem value="model1">📝 Completo</SelectItem>
+                      <SelectItem value="model2">🎨 Variações</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {genModel === "model1" ? (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título da aula</label>
-                        <input
-                          value={genTitle}
-                          onChange={(e) => setGenTitle(e.target.value)}
-                          placeholder={lessonTitle || "Ex: Como usar prompts para e-mails profissionais"}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-violet-500"
-                        />
+                    {/* ── Pattern Selector (chips) ── */}
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-500 mb-2 block">Contrato / Pattern</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPatternOverride('auto')}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                            selectedPatternOverride === 'auto'
+                              ? 'bg-slate-900 text-white border-slate-900'
+                              : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                          }`}
+                        >
+                          🔄 Auto
+                        </button>
+                        {(Object.entries(PATTERN_META) as [PatternId, typeof PATTERN_META[PatternId]][]).map(([id, meta]) => {
+                          const isCompact = id.startsWith('V8-B');
+                          const isSelected = selectedPatternOverride === id;
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => setSelectedPatternOverride(id)}
+                              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                                isSelected
+                                  ? isCompact
+                                    ? 'bg-amber-500 text-white border-amber-500'
+                                    : 'bg-indigo-500 text-white border-indigo-500'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                              }`}
+                            >
+                              {meta.label}
+                              <span className={`ml-1 text-[9px] ${isSelected ? 'text-white/70' : 'text-slate-400'}`}>
+                                {meta.sections}s
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
-                      <div>
-                        <label className="text-[11px] font-medium text-slate-500 mb-1 block">Variação narrativa</label>
-                        <Select value={genVariation} onValueChange={(v: any) => setGenVariation(v)}>
-                          <SelectTrigger className="bg-white border-slate-200 rounded-lg text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="everyday">🏠 Cotidiano</SelectItem>
-                            <SelectItem value="professional">💼 Profissional</SelectItem>
-                            <SelectItem value="curiosity">🔬 Curiosidade Técnica</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {/* Active pattern info */}
+                      {selectedPatternOverride !== 'auto' && (
+                        <div className={`mt-2 px-3 py-1.5 rounded-lg text-[10px] font-medium ${
+                          selectedPatternOverride.startsWith('V8-B')
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                        }`}>
+                          {PATTERN_META[selectedPatternOverride].sections} seções · Ângulo: {PATTERN_META[selectedPatternOverride].angle} · {selectedPatternOverride.startsWith('V8-B') ? 'Compacto' : 'Completo'}
+                        </div>
+                      )}
+                      {selectedPatternOverride === 'auto' && (
+                        <p className="mt-1.5 text-[10px] text-slate-400">Rotação automática: C01 → B01 → C02 → B02 → C03 → B03</p>
+                      )}
+                    </div>
+
+                    {/* Title + Objectives */}
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título da aula</label>
+                      <input
+                        value={genTitle}
+                        onChange={(e) => setGenTitle(e.target.value)}
+                        placeholder={lessonTitle || "Ex: Como usar prompts para e-mails profissionais"}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-violet-500"
+                      />
                     </div>
                     <div>
                       <label className="text-[11px] font-medium text-slate-500 mb-1 block">Objetivos (1 por linha, opcional)</label>
@@ -1501,7 +1541,10 @@ export default function AdminV8Create() {
                       {isGeneratingContent ? "Gerando..." : "Gerar Preview com IA"}
                     </button>
                     <p className="text-[10px] text-slate-400">
-                      Gera 9 seções completas (~15s, ~R$0.01). Revise no editor abaixo e depois clique "Converter e Gerar Tudo".
+                      {selectedPatternOverride !== 'auto' && selectedPatternOverride.startsWith('V8-B')
+                        ? 'Gera 7 seções compactas (~12s). Revise e clique "Converter e Gerar Tudo".'
+                        : 'Gera 9 seções completas (~15s). Revise e clique "Converter e Gerar Tudo".'
+                      }
                     </p>
                   </>
                 ) : (
