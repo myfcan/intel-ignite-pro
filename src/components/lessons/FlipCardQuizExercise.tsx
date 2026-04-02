@@ -314,6 +314,20 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
     );
   };
 
+  // If all cards were filtered out (broken data), auto-complete with full score
+  if (totalCards === 0) {
+    return (
+      <div className="w-full max-w-4xl mx-auto py-6 px-4 text-center">
+        <p className="text-muted-foreground text-sm">Exercício indisponível</p>
+        {onContinue && (
+          <Button onClick={() => { onComplete(100); onContinue(); }} className="mt-4">
+            Continuar
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto py-6 px-4">
       {/* Header */}
