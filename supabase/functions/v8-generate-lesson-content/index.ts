@@ -1606,6 +1606,7 @@ Cada frase deve ter no máximo 25 palavras. Seja direto e inspirador.`;
           `Analise o conteúdo completo desta aula "${lessonTitle}" e gere ${finalExerciseMin}-${finalExerciseMax} exercícios finais variados:\n\n${contentSummary}`,
           conditionalExerciseTools,
           "generate_exercises",
+          { retryOnTruncation: true },
         );
 
         const rawExercises = (exerciseResult.exercises || []).map((ex: any, idx: number) => ({
