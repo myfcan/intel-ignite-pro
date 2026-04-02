@@ -523,36 +523,81 @@ async function callAI(
   userPrompt: string,
   tools: any[],
   toolName: string,
+  options?: { retryOnTruncation?: boolean },
 ): Promise<any> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      tools,
-      tool_choice: { type: "function", function: { name: toolName } },
-    }),
-  });
+  const TIMEOUT_MS = 90_000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-  if (!response.ok) {
-    const errText = await response.text();
-    if (response.status === 429) throw new Error("RATE_LIMIT: Too many requests. Try again later.");
-    if (response.status === 402) throw new Error("CREDITS_EXHAUSTED: Add funds in Settings → Workspace → Usage.");
-    throw new Error(`AI Gateway error ${response.status}: ${errText}`);
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        tools,
+        tool_choice: { type: "function", function: { name: toolName } },
+        max_tokens: 8192,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      if (response.status === 429) throw new Error("RATE_LIMIT: Too many requests. Try again later.");
+      if (response.status === 402) throw new Error("CREDITS_EXHAUSTED: Add funds in Settings → Workspace → Usage.");
+      throw new Error(`AI Gateway error ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+
+    // Fix 5: Log finish_reason for diagnostics
+    const finishReason = data.choices?.[0]?.finish_reason;
+    console.log(`[callAI] toolName=${toolName}, finish_reason=${finishReason}, choices=${data.choices?.length}`);
+
+    // Fix 3: Detect truncation — retry once for exercises if finish_reason is "length"
+    if (finishReason === "length") {
+      console.warn(`[callAI] TRUNCATION DETECTED for ${toolName}. finish_reason=length`);
+      if (options?.retryOnTruncation) {
+        console.log(`[callAI] Retrying ${toolName} once due to truncation...`);
+        clearTimeout(timer);
+        return callAI(apiKey, systemPrompt, userPrompt, tools, toolName, { retryOnTruncation: false });
+      }
+      throw new Error(`AI_TRUNCATED: Response was truncated (finish_reason=length) for ${toolName}. Data may be incomplete.`);
+    }
+
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) throw new Error("AI did not return tool call");
+
+    // Fix 4: Validate arguments are not empty
+    const rawArgs = toolCall.function.arguments;
+    if (!rawArgs || rawArgs === "{}" || rawArgs === "null" || rawArgs.trim() === "") {
+      throw new Error(`AI_EMPTY_ARGS: tool_call for ${toolName} returned empty arguments: "${rawArgs}"`);
+    }
+
+    const parsed = JSON.parse(rawArgs);
+
+    // Fix 4b: Validate parsed result has at least one meaningful key
+    if (typeof parsed === "object" && parsed !== null && Object.keys(parsed).length === 0) {
+      throw new Error(`AI_EMPTY_OBJECT: tool_call for ${toolName} returned empty object after parse`);
+    }
+
+    return parsed;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`AI_TIMEOUT: callAI for ${toolName} timed out after ${TIMEOUT_MS / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-
-  const data = await response.json();
-  const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-  if (!toolCall) throw new Error("AI did not return tool call");
-  
-  return JSON.parse(toolCall.function.arguments);
 }
 
 async function generateImages(
@@ -804,6 +849,7 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           `Gere exercícios inline para estas seções. CADA EXERCÍCIO DEVE SER DO TIPO ESPECIFICADO:\n\n${assignmentPrompt}\n\nÍndices válidos para afterSectionIndex: ${interactionAssignments.map(a => a.sectionIndex).join(", ")}`,
           INLINE_EXERCISE_TOOLS,
           "generate_inline_exercises",
+          { retryOnTruncation: true },
         );
 
         // Log AI exercise structure for diagnostics
@@ -1226,6 +1272,7 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           `Gere um exercício Coursiv de montagem de prompt para esta seção da aula "${lessonTitle}":\n\n${coursivSectionContent}\n\nafterSectionIndex obrigatório: ${coursivTargetIdx}`,
           COURSIV_BUILDER_TOOLS,
           "generate_coursiv_exercise",
+          { retryOnTruncation: true },
         );
 
         if (coursivResult && coursivResult.sentences && coursivResult.sentences.length > 0) {
@@ -1559,6 +1606,7 @@ Cada frase deve ter no máximo 25 palavras. Seja direto e inspirador.`;
           `Analise o conteúdo completo desta aula "${lessonTitle}" e gere ${finalExerciseMin}-${finalExerciseMax} exercícios finais variados:\n\n${contentSummary}`,
           conditionalExerciseTools,
           "generate_exercises",
+          { retryOnTruncation: true },
         );
 
         const rawExercises = (exerciseResult.exercises || []).map((ex: any, idx: number) => ({

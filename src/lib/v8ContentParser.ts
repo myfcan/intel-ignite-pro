@@ -58,16 +58,42 @@ export function parseFullContent(rawText: string): ParseResult {
   console.log(`[v8Parser] ## sections found: ${parsedSections.length}`, parsedSections.map(s => s.title));
 
   // 3.1 If there's intro content between # and first ##, create a "Section 0"
+  // Fix 6: Anti-duplicação de "Abertura" — evitar 2 seções com mesmo conteúdo
   const descLen = description ? description.trim().length : 0;
   console.log(`[v8Parser] Description length: ${descLen}, first100: "${(description || '').slice(0, 100)}"`);
   if (description && descLen > 20) {
-    const introSection: ParsedSection = {
-      title: "Abertura",
-      content: sanitizeV8PedagogicalText(description),
-      position: 0,
-    };
-    parsedSections.unshift(introSection);
-    console.log(`[v8Parser] Section 0 (Abertura) created, total now: ${parsedSections.length}`);
+    const firstSectionIsAbertura = parsedSections.length > 0 &&
+      parsedSections[0].title.toLowerCase().replace(/[^a-záàâãéèêíïóôõúç\s]/g, '').trim().startsWith('abertura');
+
+    if (firstSectionIsAbertura) {
+      // Check overlap: compare first 50 chars of description with first section content
+      const descNorm = description.slice(0, 50).toLowerCase().replace(/\s+/g, ' ').trim();
+      const secNorm = (parsedSections[0].content || '').slice(0, 50).toLowerCase().replace(/\s+/g, ' ').trim();
+
+      // Calculate simple char overlap ratio
+      const shorter = Math.min(descNorm.length, secNorm.length);
+      let matchCount = 0;
+      for (let i = 0; i < shorter; i++) {
+        if (descNorm[i] === secNorm[i]) matchCount++;
+      }
+      const overlapRatio = shorter > 0 ? matchCount / shorter : 0;
+
+      if (overlapRatio >= 0.8) {
+        console.log(`[v8Parser] Section 0 SKIPPED — first ## is "Abertura" with ${Math.round(overlapRatio * 100)}% overlap`);
+      } else {
+        // Merge: prepend description to existing Abertura section
+        parsedSections[0].content = sanitizeV8PedagogicalText(description) + "\n\n" + parsedSections[0].content;
+        console.log(`[v8Parser] Section 0 MERGED into existing Abertura (overlap=${Math.round(overlapRatio * 100)}%)`);
+      }
+    } else {
+      const introSection: ParsedSection = {
+        title: "Abertura",
+        content: sanitizeV8PedagogicalText(description),
+        position: 0,
+      };
+      parsedSections.unshift(introSection);
+      console.log(`[v8Parser] Section 0 (Abertura) created, total now: ${parsedSections.length}`);
+    }
   } else {
     console.log(`[v8Parser] Section 0 SKIPPED (descLen=${descLen})`);
   }
