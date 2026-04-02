@@ -1272,6 +1272,7 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           `Gere um exercício Coursiv de montagem de prompt para esta seção da aula "${lessonTitle}":\n\n${coursivSectionContent}\n\nafterSectionIndex obrigatório: ${coursivTargetIdx}`,
           COURSIV_BUILDER_TOOLS,
           "generate_coursiv_exercise",
+          { retryOnTruncation: true },
         );
 
         if (coursivResult && coursivResult.sentences && coursivResult.sentences.length > 0) {
