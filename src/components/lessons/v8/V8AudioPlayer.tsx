@@ -157,7 +157,11 @@ export const V8AudioPlayer = ({
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // When lesson-level duration is provided, show cumulative time
+  const showTotalDuration = totalLessonDuration && totalLessonDuration > 0;
+  const displayCurrent = showTotalDuration ? elapsedBefore + currentTime : currentTime;
+  const displayDuration = showTotalDuration ? totalLessonDuration : duration;
+  const progress = displayDuration > 0 ? (displayCurrent / displayDuration) * 100 : 0;
 
   return (
     <div className="w-full flex items-center gap-3 h-12 px-3.5 rounded-xl border border-slate-200 bg-slate-50">
