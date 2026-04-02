@@ -61,7 +61,8 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
   const [showResult, setShowResult] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
 
-  const cards = data.cards;
+  // Filter out cards with fewer than 2 options — they're broken data
+  const cards = useMemo(() => data.cards.filter(c => c.options && c.options.length >= 2), [data.cards]);
   const totalCards = cards.length;
   const completedCount = answeredCards.size;
 
