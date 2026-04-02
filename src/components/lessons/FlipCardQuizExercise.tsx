@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,7 +61,8 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
   const [showResult, setShowResult] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
 
-  const cards = data.cards;
+  // Filter out cards with fewer than 2 options — they're broken data
+  const cards = useMemo(() => data.cards.filter(c => c.options && c.options.length >= 2), [data.cards]);
   const totalCards = cards.length;
   const completedCount = answeredCards.size;
 
@@ -312,6 +313,20 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete, onC
       </motion.div>
     );
   };
+
+  // If all cards were filtered out (broken data), auto-complete with full score
+  if (totalCards === 0) {
+    return (
+      <div className="w-full max-w-4xl mx-auto py-6 px-4 text-center">
+        <p className="text-muted-foreground text-sm">Exercício indisponível</p>
+        {onContinue && (
+          <Button onClick={() => { onComplete(100); onContinue(); }} className="mt-4">
+            Continuar
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto py-6 px-4">
