@@ -26,6 +26,8 @@ export const V8AudioPlayer = ({
   onPlay,
   onPause,
   onTimeUpdate,
+  totalLessonDuration,
+  elapsedBefore = 0,
 }: V8AudioPlayerProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
