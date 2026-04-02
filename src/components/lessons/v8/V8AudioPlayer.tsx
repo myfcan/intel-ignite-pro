@@ -10,6 +10,10 @@ interface V8AudioPlayerProps {
   onPlay?: () => void;
   onPause?: () => void;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
+  /** Total lesson duration (sum of all sections). When provided, the timer shows lesson-level time. */
+  totalLessonDuration?: number;
+  /** Cumulative duration of all previous sections, so currentTime offsets correctly. */
+  elapsedBefore?: number;
 }
 
 const PLAYBACK_RATES = [1, 1.25, 1.5, 2] as const;
