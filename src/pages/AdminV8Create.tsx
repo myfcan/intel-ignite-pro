@@ -624,10 +624,10 @@ export default function AdminV8Create() {
           .eq("course_id", selectedCourseId);
         preOrderIndex = count ?? 0;
       }
-      const prePatternNames = ['V8-C01', 'V8-B01', 'V8-C02', 'V8-B02', 'V8-C03', 'V8-B03'];
-      const preSelectedPattern = prePatternNames[preOrderIndex % 6];
+      const preSelectedPattern = resolvePattern(preOrderIndex);
       const preIsCompact = preSelectedPattern.startsWith('V8-B');
-      addLog('info', `Pré-calculado: pattern=${preSelectedPattern}, structure=${preIsCompact ? 'compact (7 seções)' : 'standard (9 seções)'}`);
+      const meta = PATTERN_META[preSelectedPattern];
+      addLog('info', `Pattern: ${preSelectedPattern} (${meta.angle}, ${meta.sections} seções)`);
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/v8-generate-raw-content`,
