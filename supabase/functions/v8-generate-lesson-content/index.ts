@@ -849,6 +849,7 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           `Gere exercícios inline para estas seções. CADA EXERCÍCIO DEVE SER DO TIPO ESPECIFICADO:\n\n${assignmentPrompt}\n\nÍndices válidos para afterSectionIndex: ${interactionAssignments.map(a => a.sectionIndex).join(", ")}`,
           INLINE_EXERCISE_TOOLS,
           "generate_inline_exercises",
+          { retryOnTruncation: true },
         );
 
         // Log AI exercise structure for diagnostics
