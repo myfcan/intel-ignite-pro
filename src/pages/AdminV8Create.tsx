@@ -604,7 +604,7 @@ export default function AdminV8Create() {
   const handleGenerateWithAI = useCallback(async () => {
     const titleToUse = genTitle.trim() || lessonTitle;
     if (!titleToUse) {
-      toast({ title: "❌ Título obrigatório", description: "Preencha o título da aula para gerar.", variant: "destructive" });
+      toast({ title: "❌ Tema obrigatório", description: "Preencha o tema da aula para gerar.", variant: "destructive" });
       return;
     }
 
@@ -1503,7 +1503,7 @@ export default function AdminV8Create() {
 
                     {/* Title + Objectives */}
                     <div>
-                      <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título da aula</label>
+                      <label className="text-[11px] font-medium text-slate-500 mb-1 block">Tema da aula</label>
                       <input
                         value={genTitle}
                         onChange={(e) => setGenTitle(e.target.value)}
