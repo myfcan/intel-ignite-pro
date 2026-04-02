@@ -972,7 +972,7 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
         };
 
         generatedInlineExercises = (exResult.exercises || [])
-          .map((ex: any, idx: number) => rescueMultipleChoice(normalizeExerciseData({
+          .map((ex: any, idx: number) => rescueTimedQuiz(rescueFlipCardQuiz(rescueMultipleChoice(normalizeExerciseData({
             ...ex,
             id: `inline-ex-${String(idx + 1).padStart(2, "0")}`,
             title: sanitizeV8Text(ex.title || ''),
