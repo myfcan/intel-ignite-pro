@@ -390,6 +390,8 @@ export const V8LessonPlayer = ({
                   audioUrl={currentSectionAudioUrl}
                   autoPlay={state.mode === "listen"}
                   onEnded={advance}
+                  totalLessonDuration={totalLessonDuration}
+                  elapsedBefore={elapsedBefore}
                 />
               </div>
             )}
