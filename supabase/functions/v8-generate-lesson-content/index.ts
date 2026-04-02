@@ -416,18 +416,27 @@ PROIBIÇÕES:
 - NUNCA gere subtítulos, labels ou metadados como "Segmento vida real desta atividade: X", "Atividade prática:", "Contexto real:" ou qualquer rótulo meta-narrativo. Vá DIRETO ao exercício.
 - Todos os textos DEVEM ter concordância gramatical correta (sujeito-verbo, gênero-número). Ex: "Sou um casal" é ERRADO → "Somos um casal".
 
+REGRA CRÍTICA — MÍNIMO DE OPÇÕES (OBRIGATÓRIO):
+- Exercícios com opções (multiple-choice, flipcard-quiz, timed-quiz) DEVEM ter NO MÍNIMO 3 opções por pergunta/card, com EXATAMENTE 1 correta.
+- true-false: MÍNIMO 3 statements por exercício, cada um com id, text, correct (boolean) e explanation.
+- scenario-selection: MÍNIMO 3 options por cenário, com correctAnswer correspondendo EXATAMENTE a uma delas.
+- platform-match: MÍNIMO 3 scenarios + MÍNIMO 3 platforms.
+- fill-in-blanks: MÍNIMO 2 sentences, cada uma com correctAnswers[], hint e text com _______.
+- complete-sentence: MÍNIMO 2 sentences, cada uma com text, correctAnswers[] e options[] (4 opções com a correta incluída).
+- Um exercício com APENAS 1 opção ou 1 statement é INVÁLIDO e será REJEITADO.
+
 TIPOS DISPONÍVEIS E SCHEMAS:
-- true-false: { statements: [{ id: "stmt-1", text: "afirmação", correct: true/false, explanation: "..." }], feedback: { perfect: "...", good: "...", needsReview: "..." } }
-- fill-in-blanks: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], hint: "dica" }], feedback: { allCorrect: "...", someCorrect: "...", needsReview: "..." } }
-- complete-sentence: { sentences: [{ id: "sent-1", text: "Frase curta com _______ placeholder (máx 80 chars)", correctAnswers: ["resposta (máx 30 chars)"], options: ["opção1 (máx 30 chars)", "opção2", "opção3", "resposta"] }] }. IMPORTANTE: frases curtas e opções concisas para UX mobile compacta. Máx 4 opções.
-- multiple-choice: { question: "pergunta clara sobre o conceito", options: [{ id: "opt-1", text: "alternativa A", isCorrect: true }, { id: "opt-2", text: "alternativa B", isCorrect: false }, { id: "opt-3", text: "alternativa C", isCorrect: false }], explanation: "explicação da resposta correta", feedback: { perfect: "...", good: "...", needsReview: "..." } }
-- flipcard-quiz: { cards: [{ id: "card-1", front: { label: "Conceito X", color: "#6366f1" }, back: { text: "explicação" }, options: [{ id: "opt-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
-- scenario-selection: { scenarios: [{ id: "sc-1", situation: "descrição do cenário (máx 80 chars)", options: ["opção curta A (máx 50 chars)", "opção curta B", "opção curta C"], correctAnswer: "opção curta A", explanation: "..." }] }. IMPORTANTE: as options devem ser CURTAS (máx 50 caracteres cada) para caber em telas mobile. A situation também deve ser concisa (máx 80 chars).
-- platform-match: { scenarios: [{ id: "pm-1", text: "caso de uso (máx 60 chars)", correctPlatform: "ChatGPT", emoji: "🤖" }], platforms: [{ id: "plat-1", name: "ChatGPT", icon: "🤖", color: "#10a37f" }] }. IMPORTANTE: platform.name DEVE ser um rótulo curto (máx 40 chars), como "Verificar fontes" ou "ChatGPT". NUNCA frases longas como "Pedido de fontes oficiais e verificação antes da ação física."
-- timed-quiz: { timePerQuestion: 15, bonusPerSecondLeft: 2, timeoutPenalty: "skip", visualTheme: "cyber", questions: [{ id: "tq-1", question: "pergunta", options: [{ id: "tqo-1", text: "opção", isCorrect: true/false }], explanation: "..." }] }
+- true-false: { statements: [{ id: "stmt-1", text: "afirmação", correct: true/false, explanation: "..." }, ...MIN 3], feedback: { perfect: "...", good: "...", needsReview: "..." } }
+- fill-in-blanks: { sentences: [{ id: "sent-1", text: "Frase com _______ placeholder", correctAnswers: ["resposta"], hint: "dica" }, ...MIN 2], feedback: { allCorrect: "...", someCorrect: "...", needsReview: "..." } }
+- complete-sentence: { sentences: [{ id: "sent-1", text: "Frase curta com _______ placeholder (máx 80 chars)", correctAnswers: ["resposta (máx 30 chars)"], options: ["opção1 (máx 30 chars)", "opção2", "opção3", "resposta"] }, ...MIN 2] }. IMPORTANTE: frases curtas e opções concisas para UX mobile compacta. Máx 4 opções.
+- multiple-choice: { question: "pergunta clara sobre o conceito", options: [{ id: "opt-1", text: "alternativa A", isCorrect: true }, { id: "opt-2", text: "alternativa B", isCorrect: false }, { id: "opt-3", text: "alternativa C", isCorrect: false }...MIN 3], explanation: "explicação da resposta correta", feedback: { perfect: "...", good: "...", needsReview: "..." } }
+- flipcard-quiz: { cards: [{ id: "card-1", front: { label: "Conceito X", color: "#6366f1" }, back: { text: "explicação" }, options: [{ id: "opt-1", text: "opção", isCorrect: true/false }...MIN 3 por card], explanation: "..." }, ...MIN 2 cards] }
+- scenario-selection: { scenarios: [{ id: "sc-1", situation: "descrição do cenário (máx 80 chars)", options: ["opção curta A (máx 50 chars)", "opção curta B", "opção curta C"...MIN 3], correctAnswer: "opção curta A", explanation: "..." }] }. IMPORTANTE: as options devem ser CURTAS (máx 50 caracteres cada) para caber em telas mobile. A situation também deve ser concisa (máx 80 chars).
+- platform-match: { scenarios: [{ id: "pm-1", text: "caso de uso (máx 60 chars)", correctPlatform: "ChatGPT", emoji: "🤖" }...MIN 3], platforms: [{ id: "plat-1", name: "ChatGPT", icon: "🤖", color: "#10a37f" }...MIN 3] }. IMPORTANTE: platform.name DEVE ser um rótulo curto (máx 40 chars).
+- timed-quiz: { timePerQuestion: 15, bonusPerSecondLeft: 2, timeoutPenalty: "skip", visualTheme: "cyber", questions: [{ id: "tq-1", question: "pergunta", options: [{ id: "tqo-1", text: "opção", isCorrect: true/false }...MIN 3 por question], explanation: "..." }...MIN 2] }
 
 Gere IDs únicos para todos os elementos.
-Gere 2 statements/sentences/cards/questions por exercício (máximo 2 para timed-quiz).
+Gere 2-3 statements/sentences/cards/questions por exercício.
 
 COMPACIDADE MOBILE (OBRIGATÓRIO):
 - Todos os textos de opções/alternativas devem ter NO MÁXIMO 50 caracteres. Textos longos quebram o layout mobile.
