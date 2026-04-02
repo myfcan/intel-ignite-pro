@@ -247,6 +247,25 @@ export default function AdminV8Create() {
   const [genVariation, setGenVariation] = useState<"everyday" | "professional" | "curiosity">("everyday");
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
 
+  // Pattern selector state
+  type PatternId = 'V8-C01' | 'V8-B01' | 'V8-C02' | 'V8-B02' | 'V8-C03' | 'V8-B03';
+  const [selectedPatternOverride, setSelectedPatternOverride] = useState<PatternId | 'auto'>('auto');
+
+  const PATTERN_META: Record<PatternId, { label: string; sections: number; angle: string; color: string }> = {
+    'V8-C01': { label: 'C01', sections: 9, angle: 'Cotidiano', color: 'indigo' },
+    'V8-C02': { label: 'C02', sections: 9, angle: 'Profissional', color: 'blue' },
+    'V8-C03': { label: 'C03', sections: 9, angle: 'Curiosidade', color: 'cyan' },
+    'V8-B01': { label: 'B01', sections: 7, angle: 'Comparação', color: 'amber' },
+    'V8-B02': { label: 'B02', sections: 7, angle: 'Debate', color: 'orange' },
+    'V8-B03': { label: 'B03', sections: 7, angle: 'Provocação', color: 'rose' },
+  };
+
+  const resolvePattern = useCallback((orderIdx: number): PatternId => {
+    if (selectedPatternOverride !== 'auto') return selectedPatternOverride;
+    const rotation: PatternId[] = ['V8-C01', 'V8-B01', 'V8-C02', 'V8-B02', 'V8-C03', 'V8-B03'];
+    return rotation[orderIdx % 6];
+  }, [selectedPatternOverride]);
+
   // Model 2 — Editor de Variações
   const [genModel, setGenModel] = useState<"model1" | "model2">("model1");
   const [genBaseText, setGenBaseText] = useState("");
