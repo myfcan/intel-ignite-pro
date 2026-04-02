@@ -1503,7 +1503,7 @@ export default function AdminV8Create() {
 
                     {/* Title + Objectives */}
                     <div>
-                      <label className="text-[11px] font-medium text-slate-500 mb-1 block">Título da aula</label>
+                      <label className="text-[11px] font-medium text-slate-500 mb-1 block">Tema da aula</label>
                       <input
                         value={genTitle}
                         onChange={(e) => setGenTitle(e.target.value)}
