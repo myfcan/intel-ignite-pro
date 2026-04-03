@@ -973,10 +973,14 @@ export default function AdminV8Create() {
 
       // === Hard Gate: Validação de integridade estrutural (condicional por pattern) ===
       const preFinalSections = result.sections || parsed.sections;
-      const minSections = isCompactPattern ? 7 : 9;
+      const minSections = patternMeta.sections;
+      const softMinSections = Math.max(minSections - 1, 5); // Allow 1 section tolerance before hard abort
+      if (preFinalSections.length < softMinSections) {
+        addLog('error', `${selectedPattern} VIOLATION: apenas ${preFinalSections.length} seções (esperado ≥ ${softMinSections})`);
+        throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo ${softMinSections})`);
+      }
       if (preFinalSections.length < minSections) {
-        addLog('error', `${selectedPattern} VIOLATION: apenas ${preFinalSections.length} seções (esperado ≥ ${minSections})`);
-        throw new Error(`Pipeline abortado: apenas ${preFinalSections.length} seções encontradas (mínimo ${minSections})`);
+        addLog('warning', `${selectedPattern}: ${preFinalSections.length} seções (ideal ${minSections}). Continuando com tolerância.`);
       }
       if (preFinalSections[0]?.title !== "Abertura") {
         addLog('error', `V8-C01 VIOLATION: Section 0 não é "Abertura" (é "${preFinalSections[0]?.title}")`);
