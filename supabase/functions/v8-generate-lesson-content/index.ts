@@ -1720,7 +1720,7 @@ Cada frase deve ter no máximo 25 palavras. Seja direto e inspirador.`;
             return true;
           }
           const dataKeys = Object.keys(ex.data || {});
-          const hasRequired = requiredKeys.some((k: string) => dataKeys.includes(k));
+          const hasRequired = requiredKeys.every((k: string) => dataKeys.includes(k));
           if (!hasRequired) {
             console.error(`[v8-generate-lesson-content] REJECTED exercise ${ex.id} (${ex.type}): data is empty or missing required keys [${requiredKeys.join(', ')}]. Got: [${dataKeys.join(', ')}]`);
             errors.push(`Exercício ${ex.id} (${ex.type}) rejeitado: data vazio`);
