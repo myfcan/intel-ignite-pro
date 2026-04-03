@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { CheckCircle2, XCircle, ChevronRight } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
 import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
 import { ensureElementVisible } from './v8/v8ScrollUtils';
@@ -43,12 +43,20 @@ export function ScenarioSelectionExercise({
 }: ScenarioSelectionExerciseProps) {
   const scenarioList = scenarios || data?.scenarios || [];
   const isSimpleChoice = scenarioList.length > 0 && 'isCorrect' in scenarioList[0];
-  const scenario = scenarioList[0];
 
+  // Multi-scenario state: track current scenario index and per-scenario answers
+  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, { selected: string; correct: boolean }>>({});
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [showExplanation, setShowExplanation] = useState(false);
   const { playSound } = useV7SoundEffects(0.6, true);
   const feedbackRef = useRef<HTMLDivElement>(null);
+
+  // For simple choice mode, all scenarios are shown at once (cards)
+  // For situation mode, scenarios are shown sequentially
+  const currentScenario = isSimpleChoice ? scenarioList[0] : scenarioList[currentScenarioIndex];
+  const totalSituationScenarios = isSimpleChoice ? 1 : scenarioList.length;
+  const isLastScenario = currentScenarioIndex >= totalSituationScenarios - 1;
 
   useEffect(() => {
     if (showExplanation && feedbackRef.current) {
@@ -59,7 +67,7 @@ export function ScenarioSelectionExercise({
     }
   }, [showExplanation]);
 
-  if (!scenario || scenarioList.length === 0) {
+  if (!scenarioList.length) {
     return (
       <ExerciseErrorCard 
         title="⚠️ Exercício Sem Cenários"
@@ -69,21 +77,18 @@ export function ScenarioSelectionExercise({
     );
   }
 
-  const isCorrect = isSimpleChoice
+  const isCorrectCurrent = isSimpleChoice
     ? scenarioList.find(s => s.id === selectedAnswer)?.isCorrect || false
-    : selectedAnswer === scenario.correctAnswer;
+    : selectedAnswer === currentScenario?.correctAnswer;
 
-  const rawOptions = scenario.options || [];
-  let displayOptions = rawOptions.slice(0, 3);
-  if (scenario.correctAnswer && !displayOptions.includes(scenario.correctAnswer) && rawOptions.includes(scenario.correctAnswer)) {
-    displayOptions[displayOptions.length - 1] = scenario.correctAnswer;
-  }
+  // Show ALL options — no slice truncation
+  const displayOptions = currentScenario?.options || [];
 
   const handleSubmit = () => {
     setShowExplanation(true);
     const correct = isSimpleChoice
       ? scenarioList.find(s => s.id === selectedAnswer)?.isCorrect || false
-      : selectedAnswer === scenario.correctAnswer;
+      : selectedAnswer === currentScenario?.correctAnswer;
 
     if (correct) {
       playSound('quiz-correct');
@@ -91,8 +96,23 @@ export function ScenarioSelectionExercise({
       playSound('quiz-wrong');
     }
 
-    // Report immediately — parent owns navigation buttons
-    onComplete(correct ? 100 : 0);
+    // Store answer for this scenario
+    const newAnswers = { ...answers, [currentScenarioIndex]: { selected: selectedAnswer, correct } };
+    setAnswers(newAnswers);
+
+    // If simple choice or last scenario, report final score
+    if (isSimpleChoice || isLastScenario) {
+      const totalCorrect = Object.values(newAnswers).filter(a => a.correct).length + (correct && !newAnswers[currentScenarioIndex] ? 0 : 0);
+      const correctCount = Object.values(newAnswers).filter(a => a.correct).length;
+      const finalScore = Math.round((correctCount / totalSituationScenarios) * 100);
+      onComplete(finalScore);
+    }
+  };
+
+  const handleNextScenario = () => {
+    setCurrentScenarioIndex(prev => prev + 1);
+    setSelectedAnswer('');
+    setShowExplanation(false);
   };
 
   return (
@@ -107,6 +127,21 @@ export function ScenarioSelectionExercise({
           <p className="text-sm text-muted-foreground leading-relaxed">{instruction}</p>
         </div>
       </div>
+
+      {/* Progress indicator for multi-scenario */}
+      {!isSimpleChoice && totalSituationScenarios > 1 && (
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-xs text-muted-foreground font-medium">
+            Cenário {currentScenarioIndex + 1} de {totalSituationScenarios}
+          </span>
+          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary rounded-full transition-all duration-300"
+              style={{ width: `${((currentScenarioIndex + 1) / totalSituationScenarios) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {isSimpleChoice ? (
         <div className="grid grid-cols-1 gap-2 sm:gap-3">
@@ -166,14 +201,14 @@ export function ScenarioSelectionExercise({
         <>
           <div className="p-3 sm:p-4 bg-muted/50 rounded-xl border border-border">
             <p className="text-sm sm:text-base font-medium text-foreground leading-relaxed break-words">
-              {scenario.situation}
+              {currentScenario?.situation}
             </p>
           </div>
 
           <div className="space-y-2">
             {displayOptions.map((option, index) => {
               const isSelected = selectedAnswer === option;
-              const isThisCorrect = option === scenario.correctAnswer;
+              const isThisCorrect = option === currentScenario?.correctAnswer;
 
               let borderColor = 'border-border';
               let bgColor = 'bg-background';
@@ -211,7 +246,7 @@ export function ScenarioSelectionExercise({
                   {showExplanation && isThisCorrect && (
                     <CheckCircle2 className="w-5 h-5 text-success animate-scale-in flex-shrink-0" />
                   )}
-                  {showExplanation && isSelected && !isCorrect && (
+                  {showExplanation && isSelected && !isThisCorrect && (
                     <XCircle className="w-5 h-5 text-destructive animate-scale-in flex-shrink-0" />
                   )}
                 </button>
@@ -221,7 +256,7 @@ export function ScenarioSelectionExercise({
         </>
       )}
 
-      {/* Feedback only — NO navigation buttons */}
+      {/* Feedback + Navigation */}
       <div ref={feedbackRef}>
         {!showExplanation && !isSimpleChoice ? (
           <Button
@@ -233,26 +268,39 @@ export function ScenarioSelectionExercise({
             Confirmar Resposta
           </Button>
         ) : showExplanation && !isSimpleChoice ? (
-          <div className={`p-3 rounded-lg border-2 animate-fade-in ${
-            isCorrect
-              ? 'bg-success/5 border-success/20'
-              : 'bg-destructive/5 border-destructive/20'
-          }`}>
-            <div className="flex items-start gap-2">
-              {isCorrect ? (
-                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-              ) : (
-                <XCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold mb-1 text-sm">
-                  {isCorrect ? 'Correto! 🎉' : 'Não foi dessa vez'}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
-                  {scenario.explanation}
-                </p>
+          <div className="space-y-3">
+            <div className={`p-3 rounded-lg border-2 animate-fade-in ${
+              isCorrectCurrent
+                ? 'bg-success/5 border-success/20'
+                : 'bg-destructive/5 border-destructive/20'
+            }`}>
+              <div className="flex items-start gap-2">
+                {isCorrectCurrent ? (
+                  <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold mb-1 text-sm">
+                    {isCorrectCurrent ? 'Correto! 🎉' : 'Não foi dessa vez'}
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
+                    {currentScenario?.explanation}
+                  </p>
+                </div>
               </div>
             </div>
+
+            {/* Next scenario button (only if not last) */}
+            {!isLastScenario && (
+              <Button
+                onClick={handleNextScenario}
+                className="w-full h-10 sm:h-12 text-sm sm:text-base"
+                size="lg"
+              >
+                Próximo Cenário <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
           </div>
         ) : null}
       </div>
