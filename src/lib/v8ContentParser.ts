@@ -154,10 +154,10 @@ export function parseFullContent(rawText: string): ParseResult {
     if (isEmpty) {
       console.log(`[v8Parser] → PRUNED (empty): "${parsedSections[i].title}"`);
       removedIndices.push(i);
-    } else if (hasExerciseMarker) {
-      // NEVER prune sections with exercise markers — they carry interaction intent
+    } else if (hasExerciseMarker || hasPlayground) {
+      // NEVER prune sections with exercise markers or playground — they carry interaction intent
       keptSections.push(parsedSections[i]);
-      console.log(`[v8Parser] → KEPT (exercise marker): "${parsedSections[i].title}"`);
+      console.log(`[v8Parser] → KEPT (${hasExerciseMarker ? 'exercise marker' : 'playground'}): "${parsedSections[i].title}"`);
     } else if (isShortResidual) {
       // P5: Short residual — merge into quiz question or append to previous section
       if (hasQuiz) {
