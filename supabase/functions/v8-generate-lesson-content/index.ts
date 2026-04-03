@@ -219,12 +219,12 @@ const INLINE_EXERCISE_TOOLS = [
                     },
                     scenarios: {
                       type: "array",
-                      description: "For scenario-selection: MUST include situation, options (3-4 strings), correctAnswer, explanation. For platform-match: MUST include text, correctPlatform, emoji. Items with ONLY an id are INVALID.",
+                      description: "For scenario-selection: MUST include situation, options (3-4 strings), correctAnswer, explanation. For platform-match: MUST include text, correctPlatform, emoji, where correctPlatform EXACTLY matches one platforms[].id (never platform name). Items with ONLY an id are INVALID.",
                       items: { type: "object", additionalProperties: true, properties: { id: { type: "string" }, situation: { type: "string" }, options: { type: "array", items: { type: "string" } }, correctAnswer: { type: "string" }, explanation: { type: "string" }, text: { type: "string" }, correctPlatform: { type: "string" }, emoji: { type: "string" } }, required: ["id"] }
                     },
                     platforms: {
                       type: "array",
-                      description: "For platform-match only: [{ id, name, icon, color }]",
+                      description: "For platform-match only: [{ id, name, icon, color }]. Scenario.correctPlatform MUST equal platform.id.",
                       items: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, icon: { type: "string" }, color: { type: "string" } }, required: ["id", "name", "icon", "color"] }
                     },
                     questions: {
@@ -328,7 +328,7 @@ drag-drop: { items: [{ id, text, category }], categories: [{ id, title }], feedb
 fill-in-blanks: { sentences: [{ id, text (use _______ como placeholder), correctAnswers: [], hint }], feedback: { allCorrect, someCorrect, needsReview } }
 scenario-selection: { scenarios: [{ id, situation (máx 80 chars), options: [] (cada opção máx 50 chars), correctAnswer, explanation }] }
 true-false: { statements: [{ id, text, correct: boolean, explanation }], feedback: { perfect, good, needsReview } }
-platform-match: { scenarios: [{ id, text (máx 60 chars), correctPlatform, emoji }], platforms: [{ id, name (máx 40 chars — use nomes curtos como "Verificar fontes", NÃO frases longas), icon, color }] }. IMPORTANTE: platform.name deve ser CURTO (rótulo de botão, não uma frase completa).
+ platform-match: { scenarios: [{ id, text (máx 60 chars), correctPlatform, emoji }], platforms: [{ id, name (máx 40 chars — use nomes curtos como "Verificar fontes", NÃO frases longas), icon, color }] }. IMPORTANTE: correctPlatform DEVE corresponder EXATAMENTE a um platforms[].id (nunca ao name). platform.name deve ser CURTO (rótulo de botão, não uma frase completa).
 data-collection: { scenario: { id, emoji, platform, situation, dataPoints: [{ id, label, isCorrect, explanation }], context } }
 complete-sentence: { sentences: [{ id, text (use _______ como placeholder, máx 80 chars por frase), correctAnswers: [] (cada resposta máx 30 chars), options: [] (cada opção máx 30 chars, máx 4 opções) }] }. IMPORTANTE: frases curtas e diretas para UX mobile compacta.
 multiple-choice: { question, options: [], correctAnswer, explanation }
@@ -893,6 +893,14 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           return { ...ex, data: currentData };
         };
 
+        const normalizePlatformKey = (value: unknown): string =>
+          String(value ?? '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '');
+
         // ── MC RESCUE: Auto-convert legacy formats to question+options for multiple-choice ──
         const rescueMultipleChoice = (ex: any): any => {
           if (ex.type !== 'multiple-choice') return ex;
@@ -1084,22 +1092,43 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           const d = ex.data || {};
           if (!Array.isArray(d.scenarios)) d.scenarios = [];
           if (!Array.isArray(d.platforms)) d.platforms = [];
+          d.platforms = d.platforms.filter((p: any) => p && (typeof p.id === 'string' || typeof p.name === 'string'));
           // Ensure each scenario has required fields
           d.scenarios = d.scenarios.filter((sc: any) => sc && typeof sc.text === 'string' && sc.text.length > 0);
-          for (const sc of d.scenarios) {
-            if (!sc.id) sc.id = `pm-rescue-${Math.random().toString(36).slice(2, 6)}`;
-            if (!sc.emoji) sc.emoji = '🔹';
-            if (!sc.correctPlatform && d.platforms.length > 0) {
-              sc.correctPlatform = d.platforms[0].name;
-              console.warn(`[v8-generate] PLATFORM-MATCH RESCUE: assigned default platform for ${sc.id}`);
-            }
-          }
           // Ensure platforms have required fields
           for (const p of d.platforms) {
-            if (!p.id) p.id = `plat-rescue-${Math.random().toString(36).slice(2, 6)}`;
+            if (!p.id) p.id = normalizePlatformKey(p.name) || `plat-rescue-${Math.random().toString(36).slice(2, 6)}`;
+            if (!p.name) p.name = p.id;
             if (!p.icon) p.icon = '🔹';
             if (!p.color) p.color = '#6366f1';
           }
+
+          const platformIdByToken = new Map<string, string>();
+          for (const p of d.platforms) {
+            const idKey = normalizePlatformKey(p.id);
+            const nameKey = normalizePlatformKey(p.name);
+            if (idKey) platformIdByToken.set(idKey, p.id);
+            if (nameKey) platformIdByToken.set(nameKey, p.id);
+          }
+
+          for (const sc of d.scenarios) {
+            if (!sc.id) sc.id = `pm-rescue-${Math.random().toString(36).slice(2, 6)}`;
+            if (!sc.emoji) sc.emoji = '🔹';
+
+            const rawCorrectPlatform = typeof sc.correctPlatform === 'string' ? sc.correctPlatform : '';
+            const resolvedPlatformId = platformIdByToken.get(normalizePlatformKey(rawCorrectPlatform));
+
+            if (resolvedPlatformId) {
+              if (rawCorrectPlatform !== resolvedPlatformId) {
+                console.warn(`[v8-generate] PLATFORM-MATCH RESCUE: normalized correctPlatform "${rawCorrectPlatform}" → "${resolvedPlatformId}" for ${sc.id}`);
+              }
+              sc.correctPlatform = resolvedPlatformId;
+            } else if (d.platforms.length > 0) {
+              sc.correctPlatform = d.platforms[0].id;
+              console.warn(`[v8-generate] PLATFORM-MATCH RESCUE: assigned default platform id for ${sc.id}`);
+            }
+          }
+
           return { ...ex, data: d };
         };
 
