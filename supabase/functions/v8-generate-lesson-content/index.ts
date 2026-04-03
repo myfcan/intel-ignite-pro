@@ -1255,26 +1255,80 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
           console.error(`[v8-generate] V8-C01 REJECTION DETAILS: ${JSON.stringify(rejectionReasons)}`);
         }
         
-        // ── V8-C01 GATE: Missing sections = HARD FAIL ──
+        // ── V8-C01 GATE: Missing sections → RETRY with fallback, not instant death ──
         const coveredSections = new Set(generatedInlineExercises.map((e: any) => e.afterSectionIndex));
         const missingSections = interactionAssignments.filter(a => !coveredSections.has(a.sectionIndex));
         
         if (missingSections.length > 0) {
           const missingDesc = missingSections.map(m => `S${m.sectionIndex}(${m.type})`).join(', ');
-          throw new Error(`V8-C01 HARD FAIL: Missing exercises for sections: ${missingDesc}. AI returned ${aiReturnedCount}, accepted ${acceptedCount}, rejected ${rejectedCount}. Details: ${JSON.stringify(rejectionReasons)}`);
+          console.warn(`[v8-generate] V8-C01 SOFT FAIL: Missing exercises for: ${missingDesc}. Attempting recovery...`);
+          errors.push(`Exercícios faltando para seções: ${missingDesc}`);
+          
+          // Recovery: retry only the missing sections individually
+          for (const missing of missingSections) {
+            try {
+              const section = sections[missing.sectionIndex];
+              const singlePrompt = `Seção ${missing.sectionIndex} (index ${missing.sectionIndex}): "${section.title}"\nConteúdo: ${section.content?.slice(0, 400) || ""}\n→ TIPO OBRIGATÓRIO: ${missing.type}`;
+              
+              const retryResult = await callAI(
+                LOVABLE_API_KEY,
+                INLINE_EXERCISE_SYSTEM_PROMPT + `\n\n${angleInstruction}`,
+                `Gere EXATAMENTE 1 exercício inline do tipo ${missing.type} para esta seção:\n\n${singlePrompt}\n\nafterSectionIndex obrigatório: ${missing.sectionIndex}`,
+                INLINE_EXERCISE_TOOLS,
+                "generate_inline_exercises",
+              );
+              
+              const retryExercises = (retryResult.exercises || [])
+                .map((ex: any) => {
+                  const base = normalizeExerciseData({
+                    ...ex,
+                    id: `inline-ex-retry-${missing.sectionIndex}`,
+                    afterSectionIndex: missing.sectionIndex,
+                    type: missing.type,
+                    title: sanitizeV8Text(ex.title || ''),
+                    instruction: sanitizeV8Text(ex.instruction || ''),
+                    successMessage: sanitizeV8Text(ex.successMessage || 'Muito bem!'),
+                    tryAgainMessage: sanitizeV8Text(ex.tryAgainMessage || 'Tente novamente!'),
+                  });
+                  return rescueFillInBlanks(rescueCompleteSentence(rescuePlatformMatch(rescueScenarioSelection(rescueTrueFalse(rescueTimedQuiz(rescueFlipCardQuiz(rescueMultipleChoice(base))))))));
+                })
+                .filter((ex: any) => {
+                  const requiredKeys = INLINE_REQUIRED_DATA_KEYS[ex.type];
+                  if (!requiredKeys) return false;
+                  return requiredKeys.every((k: string) => Object.keys(ex.data || {}).includes(k));
+                });
+              
+              if (retryExercises.length > 0) {
+                generatedInlineExercises.push(retryExercises[0]);
+                console.log(`[v8-generate] V8-C01 RECOVERY SUCCESS: S${missing.sectionIndex}(${missing.type})`);
+              } else {
+                console.error(`[v8-generate] V8-C01 RECOVERY FAILED: S${missing.sectionIndex}(${missing.type}) — no valid exercise after retry`);
+              }
+            } catch (retryErr) {
+              console.error(`[v8-generate] V8-C01 RECOVERY ERROR for S${missing.sectionIndex}: ${retryErr instanceof Error ? retryErr.message : retryErr}`);
+            }
+          }
+          
+          // Final check: if still missing critical exercises, warn but don't crash
+          const stillCovered = new Set(generatedInlineExercises.map((e: any) => e.afterSectionIndex));
+          const stillMissing = interactionAssignments.filter(a => !stillCovered.has(a.sectionIndex));
+          if (stillMissing.length > 0) {
+            const stillMissingDesc = stillMissing.map(m => `S${m.sectionIndex}(${m.type})`).join(', ');
+            console.error(`[v8-generate] V8-C01 WARNING: Still missing after retry: ${stillMissingDesc}. Pipeline continues with ${generatedInlineExercises.length} exercises.`);
+            errors.push(`Exercícios não recuperados: ${stillMissingDesc}`);
+          }
         }
 
-        // ── V8-C01 DUPLICATE GATE: Exactly 1 exercise per section ──
-        const perSectionCounts: Record<number, number> = {};
-        for (const ex of generatedInlineExercises) {
-          perSectionCounts[ex.afterSectionIndex] = (perSectionCounts[ex.afterSectionIndex] || 0) + 1;
-        }
-        const dupSections = interactionAssignments
-          .filter(a => (perSectionCounts[a.sectionIndex] || 0) !== 1)
-          .map(a => `S${a.sectionIndex}(count=${perSectionCounts[a.sectionIndex] || 0})`);
-        if (dupSections.length > 0) {
-          throw new Error(`V8-C01 HARD FAIL: Expected exactly 1 inline exercise per section. Offenders: ${dupSections.join(', ')}`);
-        }
+        // ── V8-C01 DEDUPLICATE: Keep only first exercise per section (AI sometimes returns multiples) ──
+        const seenSections = new Set<number>();
+        generatedInlineExercises = generatedInlineExercises.filter((ex: any) => {
+          if (seenSections.has(ex.afterSectionIndex)) {
+            console.warn(`[v8-generate] DEDUP: Removing duplicate exercise for section ${ex.afterSectionIndex}`);
+            return false;
+          }
+          seenSections.add(ex.afterSectionIndex);
+          return true;
+        });
         
         progress.push(`${generatedInlineExercises.length} exercícios inline gerados (V8-C01: ${generatedInlineExercises.map((e: any) => e.type).join(', ')})`);
       } catch (err) {
