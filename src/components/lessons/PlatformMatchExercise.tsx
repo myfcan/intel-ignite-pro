@@ -47,7 +47,7 @@ export function PlatformMatchExercise({
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const { playSound } = useV7SoundEffects(0.6, true);
-  const advanceTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const advanceTimerRef = useRef<number | null>(null);
 
   const platformLookup = useMemo(() => {
     const lookup = new Map<string, Platform>();
