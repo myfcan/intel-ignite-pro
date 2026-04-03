@@ -1333,10 +1333,6 @@ IMPORTANTE: O TIPO do exercício é definido pelo campo TIPO OBRIGATÓRIO. Você
         progress.push(`${generatedInlineExercises.length} exercícios inline gerados (V8-C01: ${generatedInlineExercises.map((e: any) => e.type).join(', ')})`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Inline exercise generation failed";
-        // V8-C01 HARD FAIL deve propagar (não capturar)
-        if (msg.includes('V8-C01 HARD FAIL')) {
-          throw err;
-        }
         errors.push(`Inline exercises: ${msg}`);
         console.error("[v8-generate-lesson-content] Inline exercise generation error:", msg);
       }
