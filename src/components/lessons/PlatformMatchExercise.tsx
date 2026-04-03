@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
 import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
@@ -28,6 +27,14 @@ interface PlatformMatchExerciseProps {
   onComplete: (score: number) => void;
 }
 
+const normalizePlatformToken = (value: string | null | undefined) =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+
 export function PlatformMatchExercise({
   title,
   instruction,
@@ -40,6 +47,41 @@ export function PlatformMatchExercise({
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const { playSound } = useV7SoundEffects(0.6, true);
+  const advanceTimerRef = useRef<number | null>(null);
+
+  const platformLookup = useMemo(() => {
+    const lookup = new Map<string, Platform>();
+
+    for (const platform of platforms) {
+      for (const key of [platform.id, platform.name]) {
+        const normalizedKey = normalizePlatformToken(key);
+        if (normalizedKey) {
+          lookup.set(normalizedKey, platform);
+        }
+      }
+    }
+
+    return lookup;
+  }, [platforms]);
+
+  const resolveScenarioPlatform = (scenario: Scenario) => {
+    const normalizedKey = normalizePlatformToken(scenario.correctPlatform);
+    return normalizedKey ? platformLookup.get(normalizedKey) : undefined;
+  };
+
+  const getScenarioCorrectPlatformId = (scenario: Scenario) =>
+    resolveScenarioPlatform(scenario)?.id ?? scenario.correctPlatform;
+
+  const getScenarioCorrectPlatformName = (scenario: Scenario) =>
+    resolveScenarioPlatform(scenario)?.name ?? scenario.correctPlatform;
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current);
+      }
+    };
+  }, []);
 
   // Validação defensiva
   if (!scenarios || scenarios.length === 0) {
@@ -62,15 +104,23 @@ export function PlatformMatchExercise({
   }
 
   const currentScenario = scenarios[currentScenarioIndex];
+  const currentCorrectPlatformId = getScenarioCorrectPlatformId(currentScenario);
+  const currentCorrectPlatformName = getScenarioCorrectPlatformName(currentScenario);
   const isLastScenario = currentScenarioIndex === scenarios.length - 1;
   const allAnswered = Object.keys(answers).length === scenarios.length;
 
   const handlePlatformSelect = (platformId: string) => {
     if (showFeedback) return;
 
-    const correct = platformId === currentScenario.correctPlatform;
+    const correct = platformId === currentCorrectPlatformId;
+    const nextAnswers = {
+      ...answers,
+      [currentScenario.id]: platformId,
+    };
+
     setIsCorrect(correct);
     setShowFeedback(true);
+    setAnswers(nextAnswers);
 
     if (correct) {
       playSound('snap-success');
@@ -78,27 +128,22 @@ export function PlatformMatchExercise({
       playSound('snap-error');
     }
 
-    // Salvar resposta
-    setAnswers(prev => ({
-      ...prev,
-      [currentScenario.id]: platformId
-    }));
-
     // Avançar após feedback
-    setTimeout(() => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+    }
+
+    advanceTimerRef.current = window.setTimeout(() => {
       setShowFeedback(false);
       if (!isLastScenario) {
         setCurrentScenarioIndex(prev => prev + 1);
       } else {
         // Calcular score final
-        const correctCount = Object.entries(answers).filter(
-          ([scenarioId, platformId]) => {
-            const scenario = scenarios.find(s => s.id === scenarioId);
-            return scenario?.correctPlatform === platformId;
-          }
-        ).length + (correct ? 1 : 0);
+        const correctCount = scenarios.filter(
+          (scenario) => nextAnswers[scenario.id] === getScenarioCorrectPlatformId(scenario)
+        ).length;
 
-        const score = (correctCount / scenarios.length) * 100;
+        const score = Math.round((correctCount / scenarios.length) * 100);
         if (score === 100) {
           playSound('level-up');
           confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
@@ -107,6 +152,8 @@ export function PlatformMatchExercise({
         }
         onComplete(score);
       }
+
+      advanceTimerRef.current = null;
     }, 1500);
   };
 
@@ -161,7 +208,7 @@ export function PlatformMatchExercise({
                   whileTap={{ scale: showFeedback ? 1 : 0.97 }}
                   className={`
                     relative px-3 py-2.5 sm:p-6 rounded-xl border-2 transition-all
-                    ${showFeedback && platform.id === currentScenario.correctPlatform
+                    ${showFeedback && platform.id === currentCorrectPlatformId
                       ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
                       : showFeedback && answers[currentScenario.id] === platform.id
                       ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
@@ -170,7 +217,7 @@ export function PlatformMatchExercise({
                     ${showFeedback ? 'cursor-not-allowed' : 'cursor-pointer'}
                   `}
                   style={{
-                    boxShadow: showFeedback && platform.id === currentScenario.correctPlatform
+                    boxShadow: showFeedback && platform.id === currentCorrectPlatformId
                       ? `0 0 20px ${platform.color}40`
                       : 'none'
                   }}
@@ -180,7 +227,7 @@ export function PlatformMatchExercise({
                     <span className="font-semibold text-xs sm:text-lg text-foreground break-words text-left sm:text-center leading-snug">{platform.name}</span>
                   </div>
 
-                  {showFeedback && platform.id === currentScenario.correctPlatform && (
+                  {showFeedback && platform.id === currentCorrectPlatformId && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
@@ -190,7 +237,7 @@ export function PlatformMatchExercise({
                     </motion.div>
                   )}
 
-                  {showFeedback && answers[currentScenario.id] === platform.id && platform.id !== currentScenario.correctPlatform && (
+                  {showFeedback && answers[currentScenario.id] === platform.id && platform.id !== currentCorrectPlatformId && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
@@ -226,7 +273,7 @@ export function PlatformMatchExercise({
                 </motion.p>
                 {!isCorrect && (
                   <p className="text-xs sm:text-sm mt-2 text-muted-foreground break-words">
-                    A resposta correta era: {platforms.find(p => p.id === currentScenario.correctPlatform)?.name}
+                    A resposta correta era: {currentCorrectPlatformName}
                   </p>
                 )}
               </motion.div>
